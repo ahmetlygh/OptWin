@@ -40,7 +40,7 @@ const translations = {
             dismCheck: { title: "DISM Check Health", desc: "Checks for corruption in the Windows image." },
             dismRepair: { title: "DISM Restore Health", desc: "Scans and repairs the Windows image using Windows Update." },
             disableSticky: { title: "Disable Sticky Keys", desc: "Disables Sticky Keys shortcut (Shift x5)." },
-            classicExplorer: { title: "Classic Explorer", desc: "Enables 'This PC' view and shows extensions by default." },
+            disableBingSearch: { title: "Disable Bing Search", desc: "Removes Bing search results from the Start Menu." },
             disableWallet: { title: "Disable Wallet Service", desc: "Disables the Wallet Service used for mobile payments." },
             disableMaps: { title: "Disable Maps Broker", desc: "Disables downloaded maps manager if you don't use Maps." },
             disableDiagTrack: { title: "Disable DiagTrack", desc: "Disables the Connected User Experiences and Telemetry service." },
@@ -74,6 +74,17 @@ const translations = {
             complete: "Operation Completed",
             thankYou: "Thank you for using OptWin",
             author: "Designed by ahmetly_"
+        },
+        overlay: {
+            title: "Script",
+            badgeRun: "Can be run multiple times",
+            badgeReady: "Ready for use",
+            downloadBtn: "Download Script",
+            closeBtn: "Close",
+            instrTitle: "How to use:",
+            step1: "Download the script file below.",
+            step2: "Right-click the downloaded file and select <b>Run as Administrator</b>.",
+            step3: "If Windows SmartScreen appears, click 'More info' and then 'Run anyway'."
         }
     },
     tr: {
@@ -117,7 +128,7 @@ const translations = {
             dismCheck: { title: "DISM Sağlık Kontrolü", desc: "Windows imajındaki bozulmaları kontrol eder." },
             dismRepair: { title: "DISM Onarım", desc: "Windows Update kullanarak Windows imajını onarır." },
             disableSticky: { title: "Yapışkan Tuşları Kapat", desc: "Shift x5 kısayolunu ve yapışkan tuşları devre dışı bırakır." },
-            classicExplorer: { title: "Klasik Dosya Gezgini", desc: "'Bu Bilgisayar'ı açar ve dosya uzantılarını gösterir." },
+            disableBingSearch: { title: "Bing Aramayı Kapat", desc: "Başlat menüsünden Bing arama sonuçlarını kaldırır." },
             disableWallet: { title: "Cüzdan Hizmetini Kapat", desc: "Mobil ödemeler için kullanılan Cüzdan Hizmetini devre dışı bırakır." },
             disableMaps: { title: "Harita Yöneticisini Kapat", desc: "Harita kullanmıyorsanız harita yöneticisini devre dışı bırakır." },
             disableDiagTrack: { title: "DiagTrack'i Kapat", desc: "Bağlı Kullanıcı Deneyimleri ve Telemetri hizmetini kapatır." },
@@ -151,6 +162,17 @@ const translations = {
             complete: "Islem Tamamlandi",
             thankYou: "OptWin'i kullandiginiz icin tesekkurler",
             author: "OptWin, ahmetly tarafindan tasarlandi"
+        },
+        overlay: {
+            title: "Script",
+            badgeRun: "Birden çok kez çalıştırılabilir",
+            badgeReady: "Kullanım için hazır",
+            downloadBtn: "Script İndir",
+            closeBtn: "Kapat",
+            instrTitle: "Nasıl kullanılır:",
+            step1: "Script dosyasını aşağıdaki butondan indirin.",
+            step2: "İndirilen dosyaya sağ tıklayın ve <b>Yönetici olarak çalıştır</b> seçeneğini seçin.",
+            step3: "Eğer Windows SmartScreen görünürse, 'Ek bilgi'ye ve ardından 'Yine de çalıştır'a tıklayın."
         }
     }
 };
@@ -207,7 +229,7 @@ const categorizedFeatures = [
         id: 'extra',
         items: [
             { id: 'disableSticky', icon: 'fa-keyboard' },
-            { id: 'classicExplorer', icon: 'fa-folder-open' },
+            { id: 'disableBingSearch', icon: 'fa-magnifying-glass-minus' },
             { id: 'showExtensions', icon: 'fa-file-code' },
             { id: 'showHiddenFiles', icon: 'fa-eye' },
             { id: 'disableMouseAccel', icon: 'fa-arrow-pointer' },
@@ -337,22 +359,34 @@ function setLang(lang) {
 
 function updateTexts() {
     const t = translations[currentLang];
-    document.getElementById('app-title').textContent = t.title;
-    document.getElementById('hero-title').textContent = t.heroTitle;
-    document.getElementById('hero-desc').textContent = t.heroDesc;
-    document.getElementById('btn-text').textContent = t.btnText;
-    document.getElementById('footer-text').textContent = t.footerText;
+
+    // Safe update helper
+    const safe = (id, val, html = false) => {
+        const el = document.getElementById(id);
+        if (el) html ? el.innerHTML = val : el.textContent = val;
+    };
+
+    const safeQ = (selector, val, html = false) => {
+        const el = document.querySelector(selector);
+        if (el) html ? el.innerHTML = val : el.textContent = val;
+    };
+
+    // Basic UI
+    safe('app-title', t.title);
+    safe('hero-title', t.heroTitle);
+    safe('hero-desc', t.heroDesc);
+    safe('btn-text', t.btnText);
+    safe('footer-text', t.footerText);
 
     // DNS Panel Strings
-    document.getElementById('dns-title').textContent = t.dnsTitle;
-    document.getElementById('ping-btn-text').textContent = t.pingBtn;
-    document.getElementById('ping-tooltip').textContent = t.pingTooltip;
+    safe('dns-title', t.dnsTitle);
+    safe('ping-btn-text', t.pingBtn);
 
     // Modal Strings
-    document.getElementById('modal-title').textContent = t.restoreModal.title;
-    document.getElementById('modal-desc').textContent = t.restoreModal.desc;
-    document.getElementById('modal-yes').innerHTML = `<i class="fa-solid fa-check"></i> ${t.restoreModal.yes}`;
-    document.getElementById('modal-no').textContent = t.restoreModal.no;
+    safe('modal-title', t.restoreModal.title);
+    safe('modal-desc', t.restoreModal.desc);
+    safe('modal-yes', `<i class="fa-solid fa-check"></i> ${t.restoreModal.yes}`, true);
+    safe('modal-no', t.restoreModal.no);
 
     // Update Category Titles
     document.querySelectorAll('[data-cat-id]').forEach(el => {
@@ -360,13 +394,25 @@ function updateTexts() {
         if (t.categories[catId]) el.textContent = t.categories[catId];
     });
 
-    // Update Warning Title if needed (using msg)
+    // Update Warning
     if (warningMsg) warningMsg.textContent = t.warningModal.msg;
 
-    // Update Preset Buttons
-    document.getElementById('txt-recommended').textContent = t.presets.recommended;
-    document.getElementById('txt-select-all').textContent = t.presets.selectAll;
-    document.getElementById('txt-reset').textContent = t.presets.reset;
+    // Preset Buttons
+    safe('txt-recommended', t.presets.recommended);
+    safe('txt-select-all', t.presets.selectAll);
+    safe('txt-reset', t.presets.reset);
+
+    // Overlay Strings
+    const overlay = t.overlay;
+    safeQ('.overlay-header h2', overlay.title);
+    safe('badge-run', overlay.badgeRun);
+    safe('badge-ready', overlay.badgeReady);
+    safe('btn-download', overlay.downloadBtn);
+    safe('btn-close', overlay.closeBtn);
+    safe('instr-title', `<i class="fa-solid fa-book"></i> ${overlay.instrTitle}`, true);
+    safe('step-1', overlay.step1, true);
+    safe('step-2', overlay.step2, true);
+    safe('step-3', overlay.step3, true);
 }
 
 // Render Features with Categories
@@ -492,6 +538,24 @@ function closeWarning() {
     warningModal.classList.add('hidden');
 }
 
+// Overlay Logic
+const scriptOverlay = document.getElementById('script-overlay');
+const closeOverlayBtn = document.getElementById('close-overlay-btn');
+const downloadScriptBtn = document.getElementById('download-script-btn');
+let currentBatContent = '';
+
+if (closeOverlayBtn) {
+    closeOverlayBtn.addEventListener('click', () => {
+        scriptOverlay.classList.remove('active');
+    });
+}
+
+if (downloadScriptBtn) {
+    downloadScriptBtn.addEventListener('click', () => {
+        downloadFile('OptWin_Script.bat', currentBatContent);
+    });
+}
+
 // Ping Test
 function generatePingTest() {
     let batContent = `@echo off\r\n`;
@@ -510,8 +574,6 @@ function generatePingTest() {
         { name: "OpenDNS (208.67.222.222)", ip: "208.67.222.222" },
         { name: "Quad9 (9.9.9.9)", ip: "9.9.9.9" },
         { name: "AdGuard (94.140.14.14)", ip: "94.140.14.14" },
-        { name: "Comodo (8.26.56.26)", ip: "8.26.56.26" },
-        { name: "Alternate (76.76.19.19)", ip: "76.76.19.19" }
     ];
 
     targets.forEach(t => {
@@ -581,23 +643,22 @@ function finalizeGeneration(createRestorePoint) {
 
     let batContent = `@echo off\r\n`;
     batContent += `title OptWin Optimized Script\r\n`;
-    batContent += `:: OptWin Optimized Script\r\n\r\n`;
+    batContent += `:: OptWin Optimized Script\r\n`;
+    batContent += `:: Generated on ${new Date().toLocaleString()}\r\n`;
+    batContent += `\r\n`;
 
-    // Admin Check
-    batContent += `>nul 2>&1 "%SYSTEMROOT%\\system32\\cacls.exe" "%SYSTEMROOT%\\system32\\config\\system"\r\n`;
-    batContent += `if '%errorlevel%' NEQ '0' (\r\n`;
-    batContent += `    echo Requesting Admin privileges...\r\n`;
-    batContent += `    goto UACPrompt\r\n`;
-    batContent += `) else ( goto gotAdmin )\r\n\r\n`;
-    batContent += `:UACPrompt\r\n`;
-    batContent += `    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\\getadmin.vbs"\r\n`;
-    batContent += `    echo UAC.ShellExecute "%~s0", "", "", "runas", 1 >> "%temp%\\getadmin.vbs"\r\n`;
-    batContent += `    "%temp%\\getadmin.vbs"\r\n`;
-    batContent += `    exit /B\r\n\r\n`;
-    batContent += `:gotAdmin\r\n`;
-    batContent += `    if exist "%temp%\\getadmin.vbs" ( del "%temp%\\getadmin.vbs" )\r\n`;
-    batContent += `    pushd "%CD%"\r\n`;
-    batContent += `    CD /D "%~dp0"\r\n`;
+    // Admin Check (New Logic: Check and Warn)
+    batContent += `net session >nul 2>&1\r\n`;
+    batContent += `if %errorLevel% neq 0 (\r\n`;
+    batContent += `    echo.\r\n`;
+    batContent += `    echo [ERROR] This script requires Administrator privileges.\r\n`;
+    batContent += `    echo Please right-click the script and select "Run as Administrator".\r\n`;
+    batContent += `    echo.\r\n`;
+    batContent += `    echo Press any key to exit...\r\n`;
+    batContent += `    pause >nul\r\n`;
+    batContent += `    exit\r\n`;
+    batContent += `)\r\n`;
+
     batContent += `\r\ncls\r\n`;
     // Set color to Light Purple (D) on standard Black (0)
     batContent += `color 0D\r\n`;
@@ -698,8 +759,10 @@ function finalizeGeneration(createRestorePoint) {
             case 'disableThrottling':
                 batContent += `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f >nul 2>&1\r\n`;
                 break;
-            case 'classicExplorer':
-                batContent += `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f >nul 2>&1\r\n`;
+            case 'disableBingSearch':
+                batContent += `reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f >nul 2>&1\r\n`;
+                batContent += `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 1 /f >nul 2>&1\r\n`;
+                batContent += `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v ConnectedSearchUseWeb /t REG_DWORD /d 0 /f >nul 2>&1\r\n`;
                 break;
             case 'showExtensions':
                 batContent += `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v HideFileExt /t REG_DWORD /d 0 /f >nul 2>&1\r\n`;

@@ -16,13 +16,13 @@
         <div class="logo-container">
             <img src="optwin.png" alt="OptWin Logo" id="app-logo">
             <h1 id="app-title">OptWin</h1>
-            <span class="version">v8.0</span>
         </div>
         <div class="controls">
+            <a href="https://github.com/ahmetlygh/optwin" target="_blank" class="github-link">
+                <i class="fa-brands fa-github"></i>
+            </a>
             <div class="lang-switch">
-                <span class="lang-opt active" data-lang="en">EN</span>
-                <span class="divider">/</span>
-                <span class="lang-opt" data-lang="tr">TR</span>
+                <span class="lang-opt active" data-lang="en">EN</span> / <span class="lang-opt" data-lang="tr">TR</span>
             </div>
             <button id="theme-toggle" aria-label="Toggle Theme">
                 <i class="fa-solid fa-moon"></i>
@@ -58,7 +58,6 @@
                     <button id="ping-test-btn" class="secondary-btn" title="Download Ping Test Tool">
                         <i class="fa-solid fa-network-wired"></i> <span id="ping-btn-text">Download Ping Test</span>
                     </button>
-                    <div class="tooltip" id="ping-tooltip">Download to test latency for best DNS.</div>
                 </div>
                 <div class="dns-options">
                     <label class="dns-option">
@@ -80,14 +79,6 @@
                     <label class="dns-option">
                         <input type="radio" name="dns-provider" value="adguard">
                         <span class="dns-label">AdGuard</span>
-                    </label>
-                    <label class="dns-option">
-                        <input type="radio" name="dns-provider" value="comodo">
-                        <span class="dns-label">Comodo Secure</span>
-                    </label>
-                    <label class="dns-option">
-                        <input type="radio" name="dns-provider" value="alternate">
-                        <span class="dns-label">Alternate DNS</span>
                     </label>
                 </div>
             </div>
@@ -113,7 +104,6 @@
             </div>
         </div>
     </div>
-
     <!-- Warning Modal -->
     <div id="warning-modal" class="modal hidden">
         <div class="modal-content warning-content">
@@ -122,11 +112,71 @@
             <p id="warning-msg" class="modal-msg">Please select at least one feature.</p>
         </div>
     </div>
+
     <footer>
-        <p>&copy; 2025 OptWin. <span id="footer-text">Secure & Open Source.</span> <br> Designed by <a
-                href="https://ahmetly.com" target="_blank"
-                style="color: var(--accent-color); text-decoration: none; font-weight: 500;">ahmetly_</a></p>
+        <div class="footer-left">
+            <a href="mailto:contact@optwin.tech">
+                <i class="fa-solid fa-envelope" style="margin-right: 5px;"></i> <span id="contact-label">Contact
+                    Mail:</span> contact@optwin.tech
+            </a>
+        </div>
+        <div class="footer-center">
+            &copy; 2025 OptWin. <span id="footer-text">Secure & Open Source.</span>
+            <span id="designed-by">Designed by <a href="https://ahmetly.com" target="_blank">ahmetly_</a></span>
+        </div>
+        <div class="footer-right">
+            v1.0
+        </div>
     </footer>
+
+    <!-- Script Ready Overlay -->
+    <div id="script-overlay" class="script-overlay">
+        <div class="script-content-wrapper">
+            <div class="overlay-header">
+                <h2>Script</h2>
+                <div class="overlay-badges">
+                    <div class="badge"><i class="fa-solid fa-rotate"></i> <span id="badge-run">Can be run multiple
+                            times</span></div>
+                    <div class="badge"><i class="fa-solid fa-check-circle"></i> <span id="badge-ready">Ready for
+                            use</span></div>
+                </div>
+            </div>
+
+            <div class="script-preview">
+                <button id="copy-script-btn" class="copy-btn"><i class="fa-solid fa-copy"></i> Kopyala</button>
+                <pre id="preview-code"># Optimize Windows with OptWin
+# Generated on ...</pre>
+            </div>
+
+            <div class="instruction-box">
+                <h3 id="instr-title"><i class="fa-solid fa-book"></i> How to use:</h3>
+                <ul class="step-list">
+                    <li>
+                        <span class="step-number">1</span>
+                        <span id="step-1">Download the script file below.</span>
+                    </li>
+                    <li>
+                        <span class="step-number">2</span>
+                        <span id="step-2">Right-click the downloaded file and select <b>Run as Administrator</b>.</span>
+                    </li>
+                    <li>
+                        <span class="step-number">3</span>
+                        <span id="step-3">If Windows SmartScreen appears, click 'More info' and then 'Run
+                            anyway'.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="overlay-actions">
+                <button id="download-script-btn" class="primary-btn">
+                    <i class="fa-solid fa-download"></i> <span id="btn-download">Download Script</span>
+                </button>
+                <button id="close-overlay-btn" class="secondary-btn">
+                    <i class="fa-solid fa-xmark"></i> <span id="btn-close">Close</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
