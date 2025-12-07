@@ -1,1 +1,0 @@
-OptWin is a lightweight, privacy-focused Windows optimization suite. It empowers users to declutter their system, enhance privacy by disabling telemetry, and boost performance through custom power plans and service management. With a user-friendly web interface, OptWin generates transparent batch scripts tailored to your specific needs. No background services required.
