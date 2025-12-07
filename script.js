@@ -81,6 +81,8 @@ const translations = {
             badgeReady: "Ready for use",
             downloadBtn: "Download Script",
             closeBtn: "Close",
+            copyBtn: "Copy",
+            copiedBtn: "Copied!",
             instrTitle: "How to use:",
             step1: "Download the script file below.",
             step2: "Right-click the downloaded file and select <b>Run as Administrator</b>.",
@@ -169,6 +171,8 @@ const translations = {
             badgeReady: "Kullanım için hazır",
             downloadBtn: "Script İndir",
             closeBtn: "Kapat",
+            copyBtn: "Kopyala",
+            copiedBtn: "Kopyalandı!",
             instrTitle: "Nasıl kullanılır:",
             step1: "Script dosyasını aşağıdaki butondan indirin.",
             step2: "İndirilen dosyaya sağ tıklayın ve <b>Yönetici olarak çalıştır</b> seçeneğini seçin.",
@@ -244,6 +248,7 @@ let currentTheme = localStorage.getItem('theme') || 'dark';
 let selectedFeatures = new Set();
 let selectedDnsProvider = 'cloudflare';
 let usageCount = localStorage.getItem('usageCount') || 0;
+let currentBatFilename = '';
 
 const recommendedFeatures = new Set([
     'cleanTemp', 'cleanPrefetch', 'recycleBin',
@@ -409,6 +414,13 @@ function updateTexts() {
     safe('badge-ready', overlay.badgeReady);
     safe('btn-download', overlay.downloadBtn);
     safe('btn-close', overlay.closeBtn);
+
+    // Update copy button if not in copied state
+    const copyBtn = document.getElementById('copy-script-btn');
+    if (copyBtn && !copyBtn.classList.contains('copied')) {
+        copyBtn.innerHTML = `<i class="fa-solid fa-copy"></i> ${overlay.copyBtn}`;
+    }
+
     safe('instr-title', `<i class="fa-solid fa-book"></i> ${overlay.instrTitle}`, true);
     safe('step-1', overlay.step1, true);
     safe('step-2', overlay.step2, true);
@@ -542,6 +554,7 @@ function closeWarning() {
 const scriptOverlay = document.getElementById('script-overlay');
 const closeOverlayBtn = document.getElementById('close-overlay-btn');
 const downloadScriptBtn = document.getElementById('download-script-btn');
+const copyScriptBtn = document.getElementById('copy-script-btn');
 let currentBatContent = '';
 
 if (closeOverlayBtn) {
@@ -552,43 +565,73 @@ if (closeOverlayBtn) {
 
 if (downloadScriptBtn) {
     downloadScriptBtn.addEventListener('click', () => {
-        downloadFile('OptWin_Script.bat', currentBatContent);
+        downloadFile(currentBatFilename || 'OptWin_Script.bat', currentBatContent);
+    });
+}
+
+if (copyScriptBtn) {
+    copyScriptBtn.addEventListener('click', () => {
+        if (currentBatContent) {
+            navigator.clipboard.writeText(currentBatContent).then(() => {
+                const t = translations[currentLang].overlay;
+                copyScriptBtn.classList.add('copied');
+                copyScriptBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t.copiedBtn}`;
+                setTimeout(() => {
+                    copyScriptBtn.classList.remove('copied');
+                    copyScriptBtn.innerHTML = `<i class="fa-solid fa-copy"></i> ${t.copyBtn}`;
+                }, 2000);
+            });
+        }
     });
 }
 
 // Ping Test
 function generatePingTest() {
+    const isEn = currentLang === 'en';
+
     let batContent = `@echo off\r\n`;
-    batContent += `title OptWin DNS Latency Test\r\n`;
-    batContent += `color 0D\r\n`; // Purple on Black
+    batContent += `chcp 65001 >nul\r\n`;
+    batContent += `title ${isEn ? 'OptWin DNS Latency Test' : 'OptWin DNS Gecikme Testi'}\r\n`;
+    batContent += `color 0D\r\n`;
     batContent += `cls\r\n`;
     batContent += `echo ==================================================\r\n`;
-    batContent += `echo       OptWin DNS Latency Test\r\n`;
+    batContent += `echo       ${isEn ? 'OptWin DNS Latency Test' : 'OptWin DNS Gecikme Testi'}\r\n`;
     batContent += `echo ==================================================\r\n`;
-    batContent += `echo Testing DNS Latency (Ping in ms). This may take a minute...\r\n`;
+    batContent += `echo ${isEn ? 'Testing DNS Latency (Ping in ms). This may take a minute...' : 'DNS Gecikmeleri Test Ediliyor (Ping ms). Bu bir dakika sürebilir...'}\r\n`;
     batContent += `echo.\r\n`;
 
     const targets = [
-        { name: "Cloudflare (1.1.1.1)", ip: "1.1.1.1" },
-        { name: "Google (8.8.8.8)", ip: "8.8.8.8" },
-        { name: "OpenDNS (208.67.222.222)", ip: "208.67.222.222" },
-        { name: "Quad9 (9.9.9.9)", ip: "9.9.9.9" },
-        { name: "AdGuard (94.140.14.14)", ip: "94.140.14.14" },
+        { name: "Cloudflare", ip: "1.1.1.1" },
+        { name: "Google", ip: "8.8.8.8" },
+        { name: "OpenDNS", ip: "208.67.222.222" },
+        { name: "Quad9", ip: "9.9.9.9" },
+        { name: "AdGuard", ip: "94.140.14.14" },
+        { name: "Comodo", ip: "8.26.56.26" },
+        { name: "Alternate", ip: "76.76.19.19" }
     ];
 
-    targets.forEach(t => {
-        batContent += `echo [Testing] ${t.name}...\r\n`;
-        batContent += `ping -n 4 ${t.ip} | find "Average"\r\n`;
+    targets.forEach(dns => {
+        batContent += `echo [${isEn ? 'Testing' : 'Test Ediliyor'}] ${dns.name} (${dns.ip})...\r\n`;
+        batContent += `ping -n 4 ${dns.ip} | find "Average"\r\n`;
         batContent += `echo ------------------------------------------\r\n`;
     });
 
     batContent += `echo.\r\n`;
-    batContent += `echo Done. Compare the "Average =" times above. Lower is better.\r\n`;
+    batContent += `echo ${isEn ? 'Done. Compare the "Average =" times above. Lower is better.' : 'Tamamlandı. Yukarıdaki "Average =" değerlerini karşılaştırın. Düşük olan daha iyidir.'}\r\n`;
+    batContent += `echo ${isEn ? 'Choose the best option for yourself.' : 'Kendiniz için en iyi seçeneği seçin.'}\r\n`;
     batContent += `echo.\r\n`;
     batContent += `pause\r\n`;
 
-    downloadFile('OptWin_DNS_Test.bat', batContent);
+    currentBatContent = batContent;
+    currentBatFilename = 'OptWin_DNS_Test.bat';
+
+    const previewEl = document.getElementById('preview-code');
+    if (previewEl) previewEl.textContent = batContent;
+
+    const overlay = document.getElementById('script-overlay');
+    if (overlay) overlay.classList.add('active');
 }
+
 
 // Preset Logic
 function applyPreset(type) {
@@ -868,7 +911,18 @@ function finalizeGeneration(createRestorePoint) {
     batContent += `echo ==================================================\r\n`;
     batContent += `pause\r\n`;
 
-    downloadFile('OptWin_Optimizer.bat', batContent);
+
+    // Store globally for download later
+    currentBatContent = batContent;
+    currentBatFilename = 'OptWin_Optimizer.bat';
+
+    // Update preview code
+    const previewEl = document.getElementById('preview-code');
+    if (previewEl) previewEl.textContent = batContent;
+
+    // Show overlay
+    const overlay = document.getElementById('script-overlay');
+    if (overlay) overlay.classList.add('active');
 }
 
 function downloadFile(filename, text) {

@@ -591,11 +591,11 @@ body.light-theme footer {
 
 .script-content-wrapper {
     width: 100%;
-    max-width: 700px;
+    max-width: 650px;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 2.5rem;
+    padding: 2rem;
     margin-top: 2rem;
     margin-bottom: 2rem;
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
@@ -655,18 +655,19 @@ body.light-theme footer {
     border-radius: 10px;
     font-family: "Consolas", monospace;
     font-size: 0.85rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     border: 1px solid #333;
     overflow-x: auto;
-    max-height: 300px;
+    max-height: 250px;
     overflow-y: auto;
     position: relative;
 }
 
 .copy-btn {
-    position: absolute;
-    top: 0.75rem;
+    position: sticky;
+    top: 0.5rem;
     right: 0.75rem;
+    float: right;
     padding: 0.4rem 0.8rem;
     background: rgba(108, 92, 231, 0.8);
     color: white;
@@ -744,7 +745,7 @@ body.light-theme footer {
     display: flex;
     justify-content: center;
     gap: 1.5rem;
-    margin-top: 2rem;
+    margin-top: 1.5rem;
 }
 
 /* Modal */
