@@ -20,7 +20,7 @@
 * **Flush DNS**: Fix connection issues by resetting the cache.
 * **Network Stack Reset**: Reset Winsock and TCP/IP.
 * **Disable Throttling**: Remove Windows network throttling limits.
-* **DNS Switcher**: Easily switch to Cloudflare, Google, OpenDNS, Quad9, AdGuard, Comodo, or Alternate DNS.
+* **DNS Switcher**: Easily switch to Cloudflare, Google, OpenDNS, Quad9, AdGuard.
 * **Ping Test Tool**: Built-in latency tester to find the fastest DNS for you.
 
 ### **Maintenance & Services**
