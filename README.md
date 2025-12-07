@@ -1,7 +1,7 @@
 # OptWin - Advanced Windows Optimization Tool
 
-<a href="https://www.buymeacoffee.com/ahmetly_">
-  <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=ahmetly_&button_colour=BD5FFF&font_colour=ffffff&font_family=Bree&outline_colour=000000&coffee_colour=FFDD00" alt="Buy Me A Coffee">
+<a href="https://www.buymeacoffee.com/ahmetly_" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-violet.png" alt="Buy Me A Coffee" height="60" width="217">
 </a>
 
 **OptWin** is a powerful, open-source web-based tool designed to generate custom Windows optimization batch scripts. Whether you're a gamer, a power user, or just want a cleaner system, OptWin lets you choose exactly what you want to optimize.
