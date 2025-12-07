@@ -461,6 +461,8 @@ main {
 /* Action Area */
 .action-area {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     margin-top: 3rem;
 }
@@ -505,6 +507,27 @@ main {
     color: var(--accent-color);
     box-shadow: 0 0 15px rgba(108, 92, 231, 0.3);
     transform: translateY(-2px);
+}
+
+/* Contact Message */
+.contact-message {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.contact-email {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-left: 0.3rem;
+}
+
+.contact-email:hover {
+    color: #a29bfe;
+    text-decoration: underline;
 }
 
 /* Footer */
@@ -665,7 +688,7 @@ body.light-theme footer {
 
 .copy-btn {
     position: sticky;
-    top: 0.5rem;
+    top: 0.2rem;
     right: 0.75rem;
     float: right;
     padding: 0.4rem 0.8rem;

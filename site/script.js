@@ -4,6 +4,7 @@ const translations = {
         heroTitle: "Optimize your Windows experience",
         heroDesc: "Select the optimizations you need and generate a custom script instantly.",
         btnText: "Create Script",
+        contactMessage: "For requests and suggestions, you can contact us via email.",
         footerText: "Secure & Open Source.",
         scriptSuccess: "Windows optimization successful",
         dnsTitle: "DNS Configuration",
@@ -72,7 +73,7 @@ const translations = {
             success: "Successful",
             fail: "Failed",
             complete: "Operation Completed",
-            thankYou: "Thank you for using optwin.com",
+            thankYou: "Thank you for using optwin.tech",
             author: "Designed by ahmetly_"
         },
         overlay: {
@@ -94,6 +95,7 @@ const translations = {
         heroTitle: "Windows Deneyiminizi Hızlandırın",
         heroDesc: "İhtiyacınız olan optimizasyonları seçin ve anında sizin için bir script oluşturun.",
         btnText: "Script Oluştur",
+        contactMessage: "İstek ve önerileriniz için mail atabilirsiniz:",
         footerText: "Güvenli ve Açık Kaynak.",
         scriptSuccess: "Windows optimizasyonu başarılı",
         dnsTitle: "DNS Yapılandırması",
@@ -381,6 +383,7 @@ function updateTexts() {
     safe('hero-title', t.heroTitle);
     safe('hero-desc', t.heroDesc);
     safe('btn-text', t.btnText);
+    safe('contact-message-text', t.contactMessage);
     safe('footer-text', t.footerText);
 
     // DNS Panel Strings
