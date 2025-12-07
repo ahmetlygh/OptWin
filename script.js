@@ -606,8 +606,6 @@ function generatePingTest() {
         { name: "OpenDNS", ip: "208.67.222.222" },
         { name: "Quad9", ip: "9.9.9.9" },
         { name: "AdGuard", ip: "94.140.14.14" },
-        { name: "Comodo", ip: "8.26.56.26" },
-        { name: "Alternate", ip: "76.76.19.19" }
     ];
 
     targets.forEach(dns => {
