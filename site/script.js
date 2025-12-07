@@ -72,7 +72,7 @@ const translations = {
             success: "Successful",
             fail: "Failed",
             complete: "Operation Completed",
-            thankYou: "Thank you for using OptWin",
+            thankYou: "Thank you for using optwin.com",
             author: "Designed by ahmetly_"
         },
         overlay: {
@@ -616,7 +616,7 @@ function generatePingTest() {
 
     batContent += `echo.\r\n`;
     batContent += `echo ${isEn ? 'Done. Compare the "Average =" times above. Lower is better.' : 'Tamamlandı. Yukarıdaki "Average =" değerlerini karşılaştırın. Düşük olan daha iyidir.'}\r\n`;
-    batContent += `echo ${isEn ? 'Choose the best option for yourself.' : 'Kendiniz için en iyi seçeneği seçin.'}\r\n`;
+    batContent += `echo ${isEn ? 'Choose the best option for yourself. optwin.tech' : 'Kendiniz için en iyi seçeneği seçin. optwin.tech'}\r\n`;
     batContent += `echo.\r\n`;
     batContent += `pause\r\n`;
 
