@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptWin - Windows Optimization</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+
+<body class="dark-theme">
+    <header>
+        <div class="logo-container">
+            <img src="logo_v2.png" alt="OptWin Logo" id="app-logo">
+            <h1 id="app-title">OptWin</h1>
+            <span class="version">v8.0</span>
+        </div>
+        <div class="controls">
+            <div class="lang-switch">
+                <span class="lang-opt active" data-lang="en">EN</span>
+                <span class="divider">/</span>
+                <span class="lang-opt" data-lang="tr">TR</span>
+            </div>
+            <button id="theme-toggle" aria-label="Toggle Theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+    <main>
+        <section class="hero">
+            <h2 id="hero-title">Optimize your Windows experience</h2>
+            <p id="hero-desc">Select the optimizations you need and generate a custom script instantly.</p>
+        </section>
+
+        <section class="preset-controls">
+            <button id="btn-recommended" class="preset-btn recommended">
+                <i class="fa-solid fa-star"></i> <span id="txt-recommended">Recommended Settings</span>
+            </button>
+            <button id="btn-select-all" class="preset-btn">
+                <i class="fa-solid fa-check-double"></i> <span id="txt-select-all">Select All</span>
+            </button>
+            <button id="btn-reset" class="preset-btn">
+                <i class="fa-solid fa-rotate-left"></i> <span id="txt-reset">Reset</span>
+            </button>
+        </section>
+
+        <section class="features-container" id="features-container">
+            <!-- Categories and Grids will be injected by JS -->
+        </section>
+
+        <section class="dns-section">
+            <div id="dns-settings-panel" class="settings-panel hidden">
+                <div class="panel-header">
+                    <h3 id="dns-title">DNS Configuration</h3>
+                    <button id="ping-test-btn" class="secondary-btn" title="Download Ping Test Tool">
+                        <i class="fa-solid fa-network-wired"></i> <span id="ping-btn-text">Download Ping Test</span>
+                    </button>
+                    <div class="tooltip" id="ping-tooltip">Download to test latency for best DNS.</div>
+                </div>
+                <div class="dns-options">
+                    <label class="dns-option">
+                        <input type="radio" name="dns-provider" value="cloudflare" checked>
+                        <span class="dns-label">Cloudflare (Recommended)</span>
+                    </label>
+                    <label class="dns-option">
+                        <input type="radio" name="dns-provider" value="google">
+                        <span class="dns-label">Google (8.8.8.8)</span>
+                    </label>
+                    <label class="dns-option">
+                        <input type="radio" name="dns-provider" value="opendns">
+                        <span class="dns-label">OpenDNS</span>
+                    </label>
+                    <label class="dns-option">
+                        <input type="radio" name="dns-provider" value="quad9">
+                        <span class="dns-label">Quad9</span>
+                    </label>
+                    <label class="dns-option">
+                        <input type="radio" name="dns-provider" value="adguard">
+                        <span class="dns-label">AdGuard</span>
+                    </label>
+                    <label class="dns-option">
+                        <input type="radio" name="dns-provider" value="comodo">
+                        <span class="dns-label">Comodo Secure</span>
+                    </label>
+                    <label class="dns-option">
+                        <input type="radio" name="dns-provider" value="alternate">
+                        <span class="dns-label">Alternate DNS</span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section class="action-area">
+            <button id="generate-btn" class="primary-btn">
+                <i class="fa-solid fa-bolt"></i> <span id="btn-text">Create Script</span>
+            </button>
+        </section>
+    </main>
+
+    <!-- System Restore Modal -->
+    <div id="restore-modal" class="modal hidden">
+        <div class="modal-content">
+            <button id="modal-close" class="modal-close-btn" aria-label="Close">&times;</button>
+            <h3 id="modal-title" class="modal-title">Create Restore Point?</h3>
+            <p id="modal-desc" class="modal-desc">Do you want to create a System Restore Point before applying
+                optimizations?</p>
+            <div class="modal-actions">
+                <button id="modal-yes" class="primary-btn">Yes, Create</button>
+                <button id="modal-no" class="secondary-btn">No, Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Modal -->
+    <div id="warning-modal" class="modal hidden">
+        <div class="modal-content warning-content">
+            <button id="warning-close" class="modal-close-btn" aria-label="Close">&times;</button>
+            <div class="warning-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <p id="warning-msg" class="modal-msg">Please select at least one feature.</p>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2025 OptWin. <span id="footer-text">Secure & Open Source.</span> <br> Designed by <a
+                href="https://ahmetly.com" target="_blank"
+                style="color: var(--accent-color); text-decoration: none; font-weight: 500;">ahmetly_</a></p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
