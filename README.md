@@ -49,4 +49,4 @@ Contribute today to ensure the sustainability and innovation of [optwin.tech](ht
 ## 📄 License
 OptWin is free and open-source software.
 
-Designed by [ahmetly](ahmetly.com)
+Designed by [ahmetly](https://ahmetly.com)
