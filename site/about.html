@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OptWin Hakkında - Ücretsiz Windows optimizasyon aracı. Kullanıcıların Windows sistemlerini güvenli ve şeffaf bir şekilde optimize etme misyonumuz hakkında bilgi edinin. | About OptWin - Free Windows optimization tool.">
+    <meta name="keywords" content="OptWin hakkında, Windows optimizasyonu, toplu komut dosyası, performans ayarlama, açık kaynak, ücretsiz araç, about OptWin, Windows optimization, batch script, performance tuning, open source, free tool">
+    <meta name="author" content="ahmetly">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#6c5ce7">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://optwin.tech/about">
+    <meta property="og:title" content="About OptWin - Windows Optimization Tool">
+    <meta property="og:description" content="Discover OptWin's mission to provide safe, transparent, and open-source Windows optimization.">
+    <meta property="og:image" content="https://optwin.tech/assets/optwin-og.png">
+    
+    <!-- Twitter Card -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://optwin.tech/about">
+    <meta property="twitter:title" content="About OptWin">
+    <meta property="twitter:image" content="https://optwin.tech/assets/optwin-twitter.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://optwin.tech/about">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="style.css" as="style">
+    <link rel="preload" href="script.js" as="script">
+    <link rel="preload" href="./assets/optwin.png" as="image">
+    
+    <title>OptWin Hakkında - Misyonumuz ve Değerlerimiz | About OptWin - Our Mission & Values</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <link rel="icon" type="image/png" href="./assets/favicon.png">
+    
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "OptWin",
+      "description": "Free Windows optimization tool with batch script generation",
+      "url": "https://optwin.tech",
+      "logo": "https://optwin.tech/assets/optwin.png",
+      "sameAs": ["https://github.com/ahmetlygh/optwin"],
+      "founder": {
+        "@type": "Person",
+        "name": "ahmetly_",
+        "url": "https://ahmetly.com"
+      }
+    }
+    </script>
+</head>
+
+<body class="dark-theme">
+    <header>
+        <div class="header-wrapper">
+            <div class="header-left">
+                <a href="./index.html" class="logo-link">
+                    <div class="logo-container">
+                        <img src="./assets/optwin.png" alt="OptWin Logo" id="app-logo">
+                        <h1 id="app-title">OptWin</h1>
+                    </div>
+                </a>
+            </div>
+            <div class="header-center">
+                <nav class="header-nav">
+                    <a href="./index.html" id="home-link" class="nav-link">
+                        <i class="fa-solid fa-home"></i> <span id="home-text">Home</span>
+                    </a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="controls">
+                    <a href="https://github.com/ahmetlygh/optwin" target="_blank" class="github-link">
+                        <i class="fa-brands fa-github"></i>
+                        <span id="github-text">GitHub</span>
+                    </a>
+                    <div class="lang-switch">
+                        <span class="lang-opt active" data-lang="en">EN</span> / <span class="lang-opt" data-lang="tr">TR</span>
+                    </div>
+                    <button id="theme-toggle" aria-label="Toggle Theme">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="about-hero">
+            <div class="container-about">
+                <h2 id="about-title">About OptWin</h2>
+                <p id="about-subtitle">Our mission is to empower Windows users with transparent, safe, and open-source optimization tools.</p>
+            </div>
+        </section>
+
+        <!-- Mission Section -->
+        <section class="about-section">
+            <div class="container-about">
+                <div class="section-content">
+                    <h3 id="mission-title">
+                        <i class="fa-solid fa-target"></i> Our Mission
+                    </h3>
+                    <p id="mission-desc">
+                        OptWin was created to solve a common problem: Windows optimization tools often come with hidden adware, bloatware, or privacy concerns. We believe optimization should be transparent, safe, and open. Every script generated by OptWin is visible to you, and you control exactly what happens on your system.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Values Section -->
+        <section class="about-section">
+            <div class="container-about">
+                <h3 id="values-title">
+                    <i class="fa-solid fa-heart"></i> Our Values
+                </h3>
+                <div class="values-grid">
+                    <div class="value-card">
+                        <i class="fa-solid fa-shield"></i>
+                        <h4 id="value-safe-title">Safe & Secure</h4>
+                        <p id="value-safe-desc">Every optimization is carefully vetted. Your system's security is our priority.</p>
+                    </div>
+                    <div class="value-card">
+                        <i class="fa-solid fa-lock-open"></i>
+                        <h4 id="value-open-title">Open Source</h4>
+                        <p id="value-open-desc">Our code is transparent. Inspect, audit, and contribute on GitHub.</p>
+                    </div>
+                    <div class="value-card">
+                        <i class="fa-solid fa-eye"></i>
+                        <h4 id="value-transparent-title">Transparent</h4>
+                        <p id="value-transparent-desc">No hidden scripts. See exactly what your optimization does before running it.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="about-section">
+            <div class="container-about">
+                <h3 id="features-title">
+                    <i class="fa-solid fa-sparkles"></i> What We Offer
+                </h3>
+                <ul class="features-list">
+                    <li id="feature-1"><i class="fa-solid fa-check"></i> <span>50+ Windows optimization options</span></li>
+                    <li id="feature-2"><i class="fa-solid fa-check"></i> <span>Custom batch script generation</span></li>
+                    <li id="feature-3"><i class="fa-solid fa-check"></i> <span>DNS optimization with multiple providers</span></li>
+                    <li id="feature-4"><i class="fa-solid fa-check"></i> <span>System restore point creation</span></li>
+                    <li id="feature-5"><i class="fa-solid fa-check"></i> <span>Free & Open Source</span></li>
+                    <li id="feature-6"><i class="fa-solid fa-check"></i> <span>Multilingual support (EN, TR)</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Support Section -->
+        <section class="about-section support-section-highlight">
+            <div class="container-about">
+                <div class="support-card">
+                    <div class="support-icon">
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                    <h3 id="support-title">Support OptWin</h3>
+                    <p id="support-desc">
+                        OptWin is a free, open-source project maintained by developers who believe in transparent optimization. If you find OptWin helpful and want to support its continued development, consider contributing through Buy Me a Coffee. Your support helps us maintain and improve the tool.
+                    </p>
+                    <div class="support-stats">
+                        <div class="support-stat">
+                            <i class="fa-solid fa-users"></i>
+                            <span id="support-users">100% Free</span>
+                        </div>
+                        <div class="support-stat">
+                            <i class="fa-solid fa-code"></i>
+                            <span id="support-opensource">Open Source</span>
+                        </div>
+                        <div class="support-stat">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span id="support-secure">Secure</span>
+                        </div>
+                    </div>
+                    <div class="support-links">
+                        <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="ahmetly_" data-color="#BD5FFF" data-emoji="💜"  data-font="Lato" data-text="Support OptWin Development" data-outline-color="#ffffff" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+                    </div>
+                    <p class="support-note">
+                        <i class="fa-solid fa-info-circle"></i> <span id="support-note-text">Every contribution helps keep OptWin free and continuously improving!</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="about-section">
+            <div class="container-about">
+                <h3 id="contact-title">
+                    <i class="fa-solid fa-envelope"></i> Get in Touch
+                </h3>
+                <p id="contact-desc">
+                    Have ideas for improvements? Found a bug? Feel free to email us at <a href="mailto:contact@optwin.tech">contact@optwin.tech</a> or open an issue on GitHub.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Statistics Section (Floating) -->
+    <section class="stats-section-floating">
+        <div class="stats-container">
+            <div class="stat-mini">
+                <i class="fa-solid fa-globe"></i>
+                <span class="stat-num" id="stats-total-visits">0</span>
+                <span class="stat-txt" id="stats-visits-label">Site Visits</span>
+            </div>
+            <div class="stat-mini">
+                <i class="fa-solid fa-download"></i>
+                <span class="stat-num" id="stats-total-downloads">0</span>
+                <span class="stat-txt" id="stats-downloads-label">Scripts Downloaded</span>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-left">
+            <a href="mailto:contact@optwin.tech">
+                <i class="fa-solid fa-envelope" style="margin-right: 5px;"></i> <span id="contact-label">Contact Mail:</span>contact@optwin.tech
+            </a>
+        </div>
+        <div class="footer-center">
+            2025 OptWin. <span id="footer-text">Secure & Open Source.</span>
+            <span id="designed-by">Designed by <a href="https://ahmetly.com" target="_blank">ahmetly_</a></span>
+        </div>
+        <div class="footer-right">
+            v1.1
+        </div>
+    </footer>
+
+    <script src="script.js" defer></script>
+    <script>
+        // Wait for DOM and script.js to load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved language preference - ensure sync with index.html
+            const savedLang = localStorage.getItem('selectedLang') || 'en';
+            
+            // Update currentLang (from script.js)
+            if (typeof currentLang !== 'undefined') {
+                currentLang = savedLang;
+            }
+            
+            // Update lang switch UI
+            const langOptsInit = document.querySelectorAll('.lang-opt');
+            langOptsInit.forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.lang === savedLang);
+            });
+            
+            // Update About text based on language
+            updateAboutText();
+            updateStatsDisplay();
+            
+            // Lang switch listener - must be inside DOMContentLoaded
+            const langOptsAbout = document.querySelectorAll('.lang-opt');
+            langOptsAbout.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const lang = opt.dataset.lang;
+                    
+                    // Always update localStorage and UI
+                    localStorage.setItem('selectedLang', lang);
+                    
+                    // Update currentLang (from script.js)
+                    if (typeof currentLang !== 'undefined') {
+                        currentLang = lang;
+                    }
+                    
+                    // Update UI
+                    langOptsAbout.forEach(o => o.classList.toggle('active', o.dataset.lang === lang));
+                    
+                    // Update texts
+                    updateAboutText();
+                    updateStatsDisplay();
+                });
+            });
+        });
+
+        function updateAboutText() {
+            // Use localStorage directly for reliability
+            const lang = localStorage.getItem('selectedLang') || 'en';
+            const aboutTexts = {
+                'en': {
+                    'about-title': 'About OptWin',
+                    'about-subtitle': 'Our mission is to empower Windows users with transparent, safe, and open-source optimization tools.',
+                    'mission-title': 'Our Mission',
+                    'mission-desc': 'OptWin was created to solve a common problem: Windows optimization tools often come with hidden adware, bloatware, or privacy concerns. We believe optimization should be transparent, safe, and open. Every script generated by OptWin is visible to you, and you control exactly what happens on your system.',
+                    'values-title': 'Our Values',
+                    'value-safe-title': 'Safe & Secure',
+                    'value-safe-desc': 'Every optimization is carefully vetted. Your system\'s security is our priority.',
+                    'value-open-title': 'Open Source',
+                    'value-open-desc': 'Our code is transparent. Inspect, audit, and contribute on GitHub.',
+                    'value-transparent-title': 'Transparent',
+                    'value-transparent-desc': 'No hidden scripts. See exactly what your optimization does before running it.',
+                    'features-title': 'What We Offer',
+                    'feature-1': '50+ Windows optimization options',
+                    'feature-2': 'Custom batch script generation',
+                    'feature-3': 'DNS optimization with multiple providers',
+                    'feature-4': 'System restore point creation',
+                    'feature-5': 'Free & Open Source',
+                    'feature-6': 'Multilingual support (EN, TR)',
+                    'support-title': 'Support OptWin',
+                    'support-desc': 'OptWin is a free, open-source project maintained by developers who believe in transparent optimization. If you find OptWin helpful and want to support its continued development, consider contributing through Buy Me a Coffee. Your support helps us maintain and improve the tool.',
+                    'support-users': '100% Free',
+                    'support-opensource': 'Open Source',
+                    'support-secure': 'Secure',
+                    'support-note-text': 'Every contribution helps keep OptWin free and continuously improving!',
+                    'github-code-link': 'View Source Code',
+                    'contact-title': 'Get in Touch',
+                    'contact-desc': 'Have ideas for improvements? Found a bug? Feel free to email us at contact@optwin.tech or open an issue on GitHub.',
+                    'home-text': 'Home'
+                },
+                'tr': {
+                    'about-title': 'Hakkımızda',
+                    'about-subtitle': 'Misyonumuz, Windows kullanıcılarına şeffaf, güvenli ve açık kaynaklı optimizasyon araçları sağlamaktır.',
+                    'mission-title': 'Misyonumuz',
+                    'mission-desc': 'OptWin, yaygın bir sorunu çözmek için oluşturuldu: Windows optimizasyon araçları genellikle gizli adware, bloatware veya gizlilik sorunları ile birlikte gelir. Optimizasyonun şeffaf, güvenli ve açık olması gerektiğine inanıyoruz. OptWin tarafından oluşturulan her script sizin tarafından görülebilir ve sisteminizde tam olarak ne olacağını siz kontrol edersiniz.',
+                    'values-title': 'Değerlerimiz',
+                    'value-safe-title': 'Güvenli',
+                    'value-safe-desc': 'Her optimizasyon dikkatle kontrol edilir. Sistemizin güvenliği bizim önceliktir.',
+                    'value-open-title': 'Açık Kaynak',
+                    'value-open-desc': 'Kodumuz şeffaftır. GitHub\'da inceleyebilir, denetleyebilir ve katkıda bulunabilirsiniz.',
+                    'value-transparent-title': 'Şeffaf',
+                    'value-transparent-desc': 'Gizli scriptler yok. Optimizasyonun ne yaptığını çalıştırmadan önce tam olarak görün.',
+                    'features-title': 'Sunduklarımız',
+                    'feature-1': '50+ Windows optimizasyon seçeneği',
+                    'feature-2': 'Özel batch script oluşturma',
+                    'feature-3': 'Birden fazla sağlayıcıyla DNS optimizasyonu',
+                    'feature-4': 'Sistem geri yükleme noktası oluşturma',
+                    'feature-5': 'Ücretsiz ve Açık Kaynak',
+                    'feature-6': 'Çok dilli destek (EN, TR)',
+                    'support-title': 'OptWin\'i Destekleyin',
+                    'support-desc': 'OptWin, şeffaf optimizasyona inanan geliştiriciler tarafından yönetilen ücretsiz bir açık kaynak projesidir. OptWin\'i faydalı buluyorsanız ve devamı gelişimini desteklemek istiyorsanız, Buy Me a Coffee aracılığıyla katkıda bulunmayı düşünün. Desteğiniz aracını geliştirmemize ve iyileştirmemize yardımcı olur.',
+                    'support-users': '%100 Ücretsiz',
+                    'support-opensource': 'Açık Kaynak',
+                    'support-secure': 'Güvenli',
+                    'support-note-text': 'Her katkı OptWin\'in ücretsiz kalmasına ve sürekli gelişmesine yardımcı olur!',
+                    'github-code-link': 'Kaynak Kodunu Görüntüle',
+                    'contact-title': 'İletişime Geçin',
+                    'contact-desc': 'İyileştirme fikirleri mi var? Hata mı buldu? contact@optwin.tech adresine e-mail göndermekten çekinmeyin veya GitHub\'da bir konu açın.',
+                    'home-text': 'Ana Sayfa'
+                }
+            };
+
+            const texts = aboutTexts[lang] || aboutTexts['en'];
+            Object.keys(texts).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = texts[id];
+                }
+            });
+
+            // Update nav link active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === './about.html') {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+    </script>
+</body>
+
+</html>

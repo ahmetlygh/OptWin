@@ -4,12 +4,35 @@ const translations = {
         heroTitle: "Optimize your Windows experience",
         heroDesc: "Select the optimizations you need and generate a custom script instantly.",
         btnText: "Create Script",
-        contactMessage: "For requests and suggestions, you can contact us via email.",
+        contactMessage: "Feel free to email us for requests and suggestions.",
         footerText: "Secure & Open Source.",
         scriptSuccess: "Windows optimization successful",
         dnsTitle: "DNS Configuration",
         pingBtn: "Download Ping Test",
         pingTooltip: "Download a script to test latency for various DNS providers.",
+        homeText: "Home",
+        aboutText: "About",
+        aboutSection: {
+            title: "About OptWin",
+            subtitle: "Our mission is to empower Windows users with transparent, safe, and open-source optimization tools.",
+            missionTitle: "Our Mission",
+            missionDesc: "OptWin was created to solve a common problem: Windows optimization tools often come with hidden adware, bloatware, or privacy concerns. We believe optimization should be transparent, safe, and open.",
+            valueSafeTitle: "Safe & Secure",
+            valueSafeDesc: "Every optimization is carefully vetted. Your system's security is our priority.",
+            valueOpenTitle: "Open Source",
+            valueOpenDesc: "Our code is transparent. Inspect, audit, and contribute on GitHub.",
+            valueTransparentTitle: "Transparent",
+            valueTransparentDesc: "No hidden scripts. See exactly what your optimization does before running it."
+        },
+        support: {
+            title: "Support OptWin Development",
+            desc: "OptWin is 100% free and open-source. If you find it helpful, consider supporting its development. Your contribution helps us maintain, improve, and keep OptWin free for everyone.",
+            btnText: "Buy Me a Coffee",
+            note: "Every contribution helps keep OptWin free and continuously improving! 💜",
+            badgeFree: "100% Free",
+            badgeOpensource: "Open Source",
+            badgeSecure: "Secure"
+        },
         categories: {
             system: "System Optimization",
             network: "Network Optimization",
@@ -87,7 +110,10 @@ const translations = {
             instrTitle: "How to use:",
             step1: "Download the script file below.",
             step2: "Right-click the downloaded file and select <b>Run as Administrator</b>.",
-            step3: "If Windows SmartScreen appears, click 'More info' and then 'Run anyway'."
+            step3: "If Windows SmartScreen appears, click 'More info' and then 'Run anyway'.",
+            adminError: "This script requires Administrator privileges.",
+            adminHint: "Please right-click the script and select \"Run as Administrator\".",
+            adminExit: "Press any key to exit..."
         }
     },
     tr: {
@@ -95,12 +121,35 @@ const translations = {
         heroTitle: "Windows Deneyiminizi Hızlandırın",
         heroDesc: "İhtiyacınız olan optimizasyonları seçin ve anında sizin için bir script oluşturun.",
         btnText: "Script Oluştur",
-        contactMessage: "İstek ve önerileriniz için mail atabilirsiniz:",
+        contactMessage: "İstek ve önerileriniz için mail atmaktan çekinmeyin.",
         footerText: "Güvenli ve Açık Kaynak.",
         scriptSuccess: "Windows optimizasyonu başarılı",
         dnsTitle: "DNS Yapılandırması",
         pingBtn: "Ping Testi İndir",
         pingTooltip: "En hızlı DNS sunucusunu bulmak için testi indirin.",
+        homeText: "Ana Sayfa",
+        aboutText: "Hakkında",
+        aboutSection: {
+            title: "OptWin Hakkında",
+            subtitle: "Misyonumuz, Windows kullanıcılarına şeffaf, güvenli ve açık kaynaklı optimizasyon araçları sağlamaktır.",
+            missionTitle: "Misyonumuz",
+            missionDesc: "OptWin, yaygın bir sorunu çözmek için oluşturuldu: Windows optimizasyon araçları genellikle gizli adware, bloatware veya gizlilik sorunları ile birlikte gelir. Optimizasyonun şeffaf, güvenli ve açık olması gerektiğine inanıyoruz.",
+            valueSafeTitle: "Güvenli",
+            valueSafeDesc: "Her optimizasyon dikkatle kontrol edilir. Sisteminizin güvenliği bizim önceliğimizdir.",
+            valueOpenTitle: "Açık Kaynak",
+            valueOpenDesc: "Kodumuz şeffaftır. GitHub'da inceleyebilir, denetleyebilir ve katkıda bulunabilirsiniz.",
+            valueTransparentTitle: "Şeffaf",
+            valueTransparentDesc: "Gizli scriptler yok. Optimizasyonun ne yaptığını çalıştırmadan önce tam olarak görün."
+        },
+        support: {
+            title: "OptWin Gelişimini Destekleyin",
+            desc: "OptWin %100 ücretsiz ve açık kaynaklıdır. Faydalı buluyorsanız, gelişimini desteklemeyi düşünün. Katkınız, OptWin'i herkes için ücretsiz tutmamıza yardımcı olur.",
+            btnText: "Bana Kahve Al",
+            note: "Her katkı OptWin'in ücretsiz kalmasına ve sürekli gelişmesine yardımcı olur! 💜",
+            badgeFree: "Ücretsiz",
+            badgeOpensource: "Açık Kaynak",
+            badgeSecure: "Güvenli"
+        },
         categories: {
             system: "Bilgisayar Optimizasyonu",
             network: "Ağ Optimizasyonu",
@@ -178,7 +227,10 @@ const translations = {
             instrTitle: "Nasıl kullanılır:",
             step1: "Script dosyasını aşağıdaki butondan indirin.",
             step2: "İndirilen dosyaya sağ tıklayın ve <b>Yönetici olarak çalıştır</b> seçeneğini seçin.",
-            step3: "Eğer Windows SmartScreen görünürse, 'Ek bilgi'ye ve ardından 'Yine de çalıştır'a tıklayın."
+            step3: "Eğer Windows SmartScreen görünürse, 'Ek bilgi'ye ve ardından 'Yine de çalıştır'a tıklayın.",
+            adminError: "Bu script Yonetici ayricaliklari gerektirir.",
+            adminHint: "Lutfen script dosyasina sag tiklayin ve \"Yonetici olarak calistir\" secenegini secin.",
+            adminExit: "Cikmak icin herhangi bir tusa basin..."
         }
     }
 };
@@ -244,6 +296,46 @@ const categorizedFeatures = [
     }
 ];
 
+// ===== STATISTICS SYSTEM (PHP API) =====
+const STATS_API = './api/stats.php';
+
+// Global stats cache
+let globalStats = { totalVisits: 0, totalScripts: 0 };
+
+async function initStats() {
+    try {
+        // Ziyareti kaydet ve güncel verileri al
+        const response = await fetch(`${STATS_API}?action=visit`);
+        const data = await response.json();
+        if (data.success) {
+            globalStats.totalVisits = data.totalVisits;
+            globalStats.totalScripts = data.totalScripts;
+            updateStatsDisplay();
+        }
+    } catch (error) {
+        console.log('Stats API not available, using cached data');
+    }
+    return globalStats;
+}
+
+async function recordScriptGeneration(selectedFeaturesArray) {
+    try {
+        const response = await fetch(`${STATS_API}?action=script`);
+        const data = await response.json();
+        if (data.success) {
+            globalStats.totalVisits = data.totalVisits;
+            globalStats.totalScripts = data.totalScripts;
+            updateStatsDisplay();
+        }
+    } catch (error) {
+        console.log('Stats API not available');
+    }
+}
+
+function getStats() {
+    return globalStats;
+}
+
 // State
 let currentLang = 'en';
 let currentTheme = localStorage.getItem('theme') || 'dark';
@@ -264,7 +356,7 @@ const recommendedFeatures = new Set([
 
 // Elements
 const themeToggle = document.getElementById('theme-toggle');
-const themeIcon = themeToggle.querySelector('i');
+const themeIcon = themeToggle ? themeToggle.querySelector('i') : null;
 const langOpts = document.querySelectorAll('.lang-opt');
 const featuresContainer = document.getElementById('features-container');
 const generateBtn = document.getElementById('generate-btn');
@@ -287,15 +379,27 @@ const warningMsg = document.getElementById('warning-msg');
 
 // Init
 function init() {
+    // Load saved language preference from localStorage - ALWAYS sync
+    const savedLang = localStorage.getItem('selectedLang') || 'en';
+    currentLang = savedLang;
+    
+    // Update lang switch UI
+    if (langOpts.length) {
+        langOpts.forEach(opt => opt.classList.toggle('active', opt.dataset.lang === savedLang));
+    }
+    
+    // Initialize statistics
+    initStats();
+    
     applyTheme(currentTheme);
     renderFeatures();
     updateTexts();
 
     // Event Listeners
-    themeToggle.addEventListener('click', toggleTheme);
-    langOpts.forEach(opt => opt.addEventListener('click', () => setLang(opt.dataset.lang)));
-    generateBtn.addEventListener('click', initiateGeneration);
-    pingTestBtn.addEventListener('click', generatePingTest);
+    if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+    if (langOpts.length) langOpts.forEach(opt => opt.addEventListener('click', () => setLang(opt.dataset.lang)));
+    if (generateBtn) generateBtn.addEventListener('click', initiateGeneration);
+    if (pingTestBtn) pingTestBtn.addEventListener('click', generatePingTest);
 
     // Presets Listeners
     btnRecommended.addEventListener('click', () => applyPreset('recommended'));
@@ -345,12 +449,13 @@ function init() {
 // Theme Logic
 function applyTheme(theme) {
     document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
-    themeIcon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+    if (themeIcon) themeIcon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
     localStorage.setItem('theme', theme);
     currentTheme = theme;
 }
 
 function toggleTheme() {
+    if (!themeIcon) return;
     themeIcon.classList.add('spin-anim');
     setTimeout(() => themeIcon.classList.remove('spin-anim'), 600);
     applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
@@ -358,7 +463,11 @@ function toggleTheme() {
 
 // Language Logic
 function setLang(lang) {
+    // Only update if language actually changed
+    if (currentLang === lang) return;
+    
     currentLang = lang;
+    localStorage.setItem('selectedLang', lang);
     langOpts.forEach(opt => opt.classList.toggle('active', opt.dataset.lang === lang));
     updateTexts();
     renderFeatures();
@@ -385,6 +494,34 @@ function updateTexts() {
     safe('btn-text', t.btnText);
     safe('contact-message-text', t.contactMessage);
     safe('footer-text', t.footerText);
+    safe('github-text', t.github || 'GitHub');
+    safe('home-text', t.homeText);
+    safe('about-text', t.aboutText);
+
+    // About Section
+    if (t.aboutSection) {
+        safe('about-title', t.aboutSection.title);
+        safe('about-subtitle', t.aboutSection.subtitle);
+        safe('mission-title', t.aboutSection.missionTitle);
+        safe('mission-desc', t.aboutSection.missionDesc);
+        safe('value-safe-title', t.aboutSection.valueSafeTitle);
+        safe('value-safe-desc', t.aboutSection.valueSafeDesc);
+        safe('value-open-title', t.aboutSection.valueOpenTitle);
+        safe('value-open-desc', t.aboutSection.valueOpenDesc);
+        safe('value-transparent-title', t.aboutSection.valueTransparentTitle);
+        safe('value-transparent-desc', t.aboutSection.valueTransparentDesc);
+    }
+
+    // Support Section
+    if (t.support) {
+        safe('support-title', t.support.title);
+        safe('support-desc', t.support.desc);
+        safe('donate-btn-text', t.support.btnText);
+        safe('support-note', t.support.note);
+        safe('badge-free', t.support.badgeFree);
+        safe('badge-opensource', t.support.badgeOpensource);
+        safe('badge-secure', t.support.badgeSecure);
+    }
 
     // DNS Panel Strings
     safe('dns-title', t.dnsTitle);
@@ -428,10 +565,44 @@ function updateTexts() {
     safe('step-1', overlay.step1, true);
     safe('step-2', overlay.step2, true);
     safe('step-3', overlay.step3, true);
+    
+    // Update stats texts
+    updateStatsDisplay();
+}
+
+function updateStatsDisplay() {
+    const stats = getStats();
+    
+    const labels = {
+        'en': { 'visits': 'Site Visits', 'downloads': 'Scripts Downloaded' },
+        'tr': { 'visits': 'Site Ziyaretleri', 'downloads': 'İndirilen Scriptler' }
+    };
+    
+    const lang = currentLang;
+    const l = labels[lang] || labels['en'];
+    
+    // Update numeric values
+    const visitsEl = document.getElementById('stats-total-visits');
+    if (visitsEl) {
+        visitsEl.textContent = stats.totalVisits;
+    }
+    
+    const downloadsEl = document.getElementById('stats-total-downloads');
+    if (downloadsEl) {
+        downloadsEl.textContent = stats.totalScripts;
+    }
+    
+    // Update labels
+    const visitsLabelEl = document.getElementById('stats-visits-label');
+    if (visitsLabelEl) visitsLabelEl.textContent = l.visits;
+    
+    const downloadsLabelEl = document.getElementById('stats-downloads-label');
+    if (downloadsLabelEl) downloadsLabelEl.textContent = l.downloads;
 }
 
 // Render Features with Categories
 function renderFeatures() {
+    if (!featuresContainer) return;
     featuresContainer.innerHTML = '';
     const tCats = translations[currentLang].categories;
     const tFeats = translations[currentLang].features;
@@ -563,6 +734,7 @@ let currentBatContent = '';
 if (closeOverlayBtn) {
     closeOverlayBtn.addEventListener('click', () => {
         scriptOverlay.classList.remove('active');
+        document.body.style.overflow = '';
     });
 }
 
@@ -630,7 +802,10 @@ function generatePingTest() {
     if (previewEl) previewEl.textContent = batContent;
 
     const overlay = document.getElementById('script-overlay');
-    if (overlay) overlay.classList.add('active');
+    if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 
@@ -681,8 +856,12 @@ function applyPreset(type) {
 function finalizeGeneration(createRestorePoint) {
     usageCount++;
     localStorage.setItem('usageCount', usageCount);
+    
+    // Record script generation statistics
+    recordScriptGeneration(Array.from(selectedFeatures));
 
     const t = translations[currentLang].scriptMsgs;
+    const tOverlay = translations[currentLang].overlay;
     const tFeat = translations[currentLang].features;
 
     let batContent = `@echo off\r\n`;
@@ -691,14 +870,14 @@ function finalizeGeneration(createRestorePoint) {
     batContent += `:: Generated on ${new Date().toLocaleString()}\r\n`;
     batContent += `\r\n`;
 
-    // Admin Check (New Logic: Check and Warn)
+    // Admin Check (EN/TR support)
     batContent += `net session >nul 2>&1\r\n`;
     batContent += `if %errorLevel% neq 0 (\r\n`;
     batContent += `    echo.\r\n`;
-    batContent += `    echo [ERROR] This script requires Administrator privileges.\r\n`;
-    batContent += `    echo Please right-click the script and select "Run as Administrator".\r\n`;
+    batContent += `    echo [ERROR] ${tOverlay.adminError}\r\n`;
+    batContent += `    echo ${tOverlay.adminHint}\r\n`;
     batContent += `    echo.\r\n`;
-    batContent += `    echo Press any key to exit...\r\n`;
+    batContent += `    echo ${tOverlay.adminExit}\r\n`;
     batContent += `    pause >nul\r\n`;
     batContent += `    exit\r\n`;
     batContent += `)\r\n`;
@@ -907,6 +1086,7 @@ function finalizeGeneration(createRestorePoint) {
     batContent += `echo.\r\n`;
     batContent += `echo ==================================================\r\n`;
     batContent += `echo    ${t.complete}\r\n`;
+    batContent += `echo    ${currentLang === 'tr' ? 'Başarılı' : 'Successful'}\r\n`;
     batContent += `echo    ${t.thankYou}\r\n`;
     batContent += `echo    ${t.author}\r\n`;
     batContent += `echo ==================================================\r\n`;
@@ -923,7 +1103,10 @@ function finalizeGeneration(createRestorePoint) {
 
     // Show overlay
     const overlay = document.getElementById('script-overlay');
-    if (overlay) overlay.classList.add('active');
+    if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 function downloadFile(filename, text) {
