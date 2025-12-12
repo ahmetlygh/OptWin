@@ -4,29 +4,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OptWin - Windows Optimization</title>
+    <meta name="description" content="Free Windows optimization tool. Generate custom batch scripts to clean temp files, disable telemetry, optimize DNS, manage services, and boost system performance. Safe, transparent, and open-source.">
+    <meta name="keywords" content="Windows optimization, batch script generator, system cleanup, DNS changer, performance tuning, telemetry blocker, Windows tweaks, free optimization">
+    <meta name="author" content="ahmetly">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#6c5ce7">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://optwin.tech">
+    <meta property="og:title" content="OptWin - Free Windows Optimization Tool">
+    <meta property="og:description" content="Generate custom Windows optimization scripts instantly. Clean, secure, and open-source.">
+    <meta property="og:image" content="https://optwin.tech/assets/optwin-og.png">
+    
+    <!-- Twitter Card -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://optwin.tech">
+    <meta property="twitter:title" content="OptWin - Windows Optimization Tool">
+    <meta property="twitter:image" content="https://optwin.tech/assets/optwin-twitter.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://optwin.tech">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="style.css" as="style">
+    <link rel="preload" href="script.js" as="script">
+    <link rel="preload" href="./assets/optwin.png" as="image">
+    
+    <title>OptWin - Free Windows Optimization Tool</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="../assets/favicon.png">
+    <link rel="icon" type="image/png" href="./assets/favicon.png">
+    
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "OptWin",
+      "description": "Free Windows Optimization Tool for generating custom batch scripts",
+      "url": "https://optwin.tech",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Windows",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "ahmetly",
+        "url": "https://ahmetly.com"
+      }
+    }
+    </script>
 </head>
 
 <body class="dark-theme">
     <header>
-        <div class="logo-container">
-            <img src="../assets/optwin.png" alt="OptWin Logo" id="app-logo">
-            <h1 id="app-title">OptWin</h1>
-        </div>
-        <div class="controls">
-            <a href="https://github.com/ahmetlygh/optwin" target="_blank" class="github-link">
-                <i class="fa-brands fa-github"></i>
-            </a>
-            <div class="lang-switch">
-                <span class="lang-opt active" data-lang="en">EN</span> / <span class="lang-opt" data-lang="tr">TR</span>
+        <div class="header-wrapper">
+            <div class="header-left">
+                <a href="https://optwin.tech" class="logo-link"> 
+                    <div class="logo-container">
+                        <img src="./assets/optwin.png" alt="OptWin Logo" id="app-logo">
+                        <h1 id="app-title">OptWin</h1>
+                    </div>
+                </a>
             </div>
-            <button id="theme-toggle" aria-label="Toggle Theme">
-                <i class="fa-solid fa-moon"></i>
-            </button>
+            <div class="header-center">
+                <nav class="header-nav">
+                    <a href="#about" id="about-link" class="nav-link">
+                        <i class="fa-solid fa-info-circle"></i> <span id="about-text">About</span>
+                    </a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="controls">
+                    <a href="https://github.com/ahmetlygh/optwin" target="_blank" class="github-link">
+                        <i class="fa-brands fa-github"></i>
+                        <span id="github-text">GitHub</span>
+                    </a>
+                    <div class="lang-switch">
+                        <span class="lang-opt active" data-lang="en">EN</span> / <span class="lang-opt" data-lang="tr">TR</span>
+                    </div>
+                    <button id="theme-toggle" aria-label="Toggle Theme">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
     <main>
@@ -89,7 +160,7 @@
                 <i class="fa-solid fa-bolt"></i> <span id="btn-text">Create Script</span>
             </button>
             <p class="contact-message">
-                <span id="contact-message-text">For requests and suggestions you can send email.</span>
+                <span id="contact-message-text">Feel free to email us for requests and suggestions.</span>
             </p>
         </section>
     </main>
@@ -116,11 +187,84 @@
         </div>
     </div>
 
+    <!-- Statistics Section (Floating) -->
+    <section class="stats-section-floating">
+        <div class="stats-container">
+            <div class="stat-mini">
+                <i class="fa-solid fa-globe"></i>
+                <span class="stat-num" id="stats-total-visits">0</span>
+                <span class="stat-txt" id="stats-visits-label">Site Ziyaretleri</span>
+            </div>
+            <div class="stat-mini">
+                <i class="fa-solid fa-download"></i>
+                <span class="stat-num" id="stats-total-downloads">0</span>
+                <span class="stat-txt" id="stats-downloads-label">İndirilen Scriptler</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section-main">
+        <div class="about-hero">
+            <h2 id="about-title">About OptWin</h2>
+            <p id="about-subtitle">Our mission is to empower Windows users with transparent, safe, and open-source optimization tools.</p>
+        </div>
+        
+        <div class="about-content">
+            <!-- Values -->
+            <div class="values-grid">
+                <div class="value-card">
+                    <i class="fa-solid fa-shield"></i>
+                    <h4 id="value-safe-title">Safe & Secure</h4>
+                    <p id="value-safe-desc">Every optimization is carefully vetted. Your system's security is our priority.</p>
+                </div>
+                <div class="value-card">
+                    <i class="fa-solid fa-lock-open"></i>
+                    <h4 id="value-open-title">Open Source</h4>
+                    <p id="value-open-desc">Our code is transparent. Inspect, audit, and contribute on GitHub.</p>
+                </div>
+                <div class="value-card">
+                    <i class="fa-solid fa-eye"></i>
+                    <h4 id="value-transparent-title">Transparent</h4>
+                    <p id="value-transparent-desc">No hidden scripts. See exactly what your optimization does before running it.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Support/Donation Section -->
+        <div class="support-section">
+            <div class="support-card-highlight">
+                <div class="support-icon-large">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+                <h3 id="support-title">Support OptWin Development</h3>
+                <p id="support-desc">OptWin is 100% free and open-source. Your contribution helps keep it free for everyone.</p>
+                <div class="support-badges">
+                    <div class="support-badge">
+                        <i class="fa-solid fa-users"></i>
+                        <span id="badge-free">100% Free</span>
+                    </div>
+                    <div class="support-badge">
+                        <i class="fa-solid fa-code"></i>
+                        <span id="badge-opensource">Open Source</span>
+                    </div>
+                    <div class="support-badge">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span id="badge-secure">Secure</span>
+                    </div>
+                </div>
+                <a href="https://www.buymeacoffee.com/ahmetly_" target="_blank" class="donate-btn">
+                    <i class="fa-solid fa-mug-hot"></i>
+                    <span id="donate-btn-text">Buy Me a Coffee</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <footer>
         <div class="footer-left">
             <a href="mailto:contact@optwin.tech">
-                <i class="fa-solid fa-envelope" style="margin-right: 5px;"></i> <span id="contact-label">Contact
-                    Mail:</span>contact@optwin.tech
+                <i class="fa-solid fa-envelope" style="margin-right: 5px;"></i> <span id="contact-label">Contact Mail:</span>contact@optwin.tech
             </a>
         </div>
         <div class="footer-center">
@@ -128,7 +272,7 @@
             <span id="designed-by">Designed by <a href="https://ahmetly.com" target="_blank">ahmetly_</a></span>
         </div>
         <div class="footer-right">
-            v1.0
+            v1.1
         </div>
     </footer>
 
@@ -188,7 +332,7 @@
         data-message="Contribute today to ensure the sustainability and innovation of OptWin! 💜" data-color="#BD5FFF"
         data-position="Right" data-x_margin="18" data-y_margin="18"></script>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 
 </html>
