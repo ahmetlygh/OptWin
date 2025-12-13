@@ -101,9 +101,89 @@
                         <i class="fa-solid fa-moon"></i>
                     </button>
                 </div>
+                <!-- Hamburger Menu Button -->
+                <button class="hamburger-menu" id="hamburger-menu" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+
+    <!-- Mobile Navigation Panel -->
+    <nav class="mobile-nav" id="mobile-nav">
+        <!-- Close Button -->
+        <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close Menu">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Logo at top -->
+        <a href="#" class="mobile-nav-logo" id="mobile-nav-home-logo">
+            <img src="./assets/optwin.png" alt="OptWin Logo" class="mobile-logo-img">
+            <span>OptWin</span>
+        </a>
+        <div class="mobile-nav-divider"></div>
+
+        <a href="#" class="mobile-nav-link active" id="mobile-home-link">
+            <i class="fa-solid fa-house"></i>
+            <span id="mobile-home-text">Home</span>
+        </a>
+        <a href="#about" class="mobile-nav-link">
+            <i class="fa-solid fa-info-circle"></i>
+            <span id="mobile-about-text">About</span>
+        </a>
+        <a href="https://github.com/ahmetlygh/optwin" target="_blank" class="mobile-nav-link">
+            <i class="fa-brands fa-github"></i>
+            <span>GitHub</span>
+        </a>
+
+        <div class="mobile-nav-divider"></div>
+
+        <div class="mobile-controls-center">
+            <div class="lang-switch-mobile">
+                <span class="lang-opt mobile-lang active" data-lang="en">EN</span>
+                <span class="lang-divider">/</span>
+                <span class="lang-opt mobile-lang" data-lang="tr">TR</span>
+            </div>
+            <button id="mobile-theme-toggle" class="theme-toggle-mobile" aria-label="Toggle Theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+
+        <!-- Mini Stats - Between dividers -->
+        <div class="mobile-nav-divider"></div>
+        <div class="mobile-stats">
+            <div class="mobile-stat">
+                <i class="fa-solid fa-globe"></i>
+                <span id="mobile-stats-visits">0</span>
+            </div>
+            <div class="mobile-stat">
+                <i class="fa-solid fa-download"></i>
+                <span id="mobile-stats-downloads">0</span>
+            </div>
+        </div>
+        <div class="mobile-nav-divider"></div>
+
+        <!-- Bottom Section - Support & Info -->
+        <div class="mobile-nav-bottom">
+            <a href="https://www.buymeacoffee.com/ahmetly_" target="_blank" class="mobile-support-btn">
+                <i class="fa-solid fa-heart"></i>
+                <span id="mobile-support-text">Support OptWin</span>
+            </a>
+            <div class="mobile-nav-footer">
+                <a href="mailto:contact@optwin.tech" class="mobile-contact">
+                    <i class="fa-solid fa-envelope"></i> contact@optwin.tech
+                </a>
+                <span class="mobile-designed-by">Designed by <a href="https://ahmetly.com"
+                        target="_blank">ahmetly_</a></span>
+                <span class="mobile-version">v1.2</span>
+            </div>
+        </div>
+    </nav>
     <main>
         <section class="hero">
             <h2 id="hero-title">Optimize your Windows experience</h2>
@@ -128,10 +208,13 @@
         <!-- Search and Selection Counter -->
         <section class="search-section">
             <div class="search-wrapper">
-                <i class="fa-solid fa-magnifying-glass"></i>
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
                 <input type="text" id="search-input" placeholder="Search features..." autocomplete="off">
+                <button class="search-clear" id="search-clear" aria-label="Clear search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <div id="selected-count" class="selected-count" style="display: none;">
+            <div id="selected-count" class="selected-count">
                 <i class="fa-solid fa-check-circle"></i> <span>0 features selected</span>
             </div>
         </section>
@@ -174,7 +257,7 @@
         </section>
 
         <section class="action-area">
-            <button id="generate-btn" class="primary-btn">
+            <button id="generate-btn" class="primary-btn btn-inactive">
                 <i class="fa-solid fa-bolt"></i> <span id="btn-text">Create Script</span>
             </button>
             <p class="contact-message">
@@ -182,6 +265,12 @@
             </p>
         </section>
     </main>
+
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="toast-notification">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <p id="toast-message">Some settings may cause unwanted changes. Please review before running.</p>
+    </div>
 
     <!-- System Restore Modal -->
     <div id="restore-modal" class="modal hidden">

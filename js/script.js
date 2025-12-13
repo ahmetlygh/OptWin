@@ -103,10 +103,28 @@ function init() {
     if (btnGamerMode) btnGamerMode.addEventListener('click', () => applyPreset('gamer'));
 
     // Search Listener
+    const searchClearBtn = document.getElementById('search-clear');
+
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             searchQuery = e.target.value.toLowerCase();
             filterFeatures();
+            // Toggle clear button visibility
+            if (searchClearBtn) {
+                searchClearBtn.classList.toggle('visible', e.target.value.length > 0);
+            }
+        });
+    }
+
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+                searchQuery = '';
+                filterFeatures();
+                searchClearBtn.classList.remove('visible');
+                searchInput.focus();
+            }
         });
     }
 
@@ -126,6 +144,7 @@ function init() {
         if (e.key === 'Escape') {
             closeModal();
             closeWarning();
+            closeMobileNav();
         }
     });
 
@@ -145,6 +164,104 @@ function init() {
 
     const defaultRadio = document.querySelector('input[value="cloudflare"]');
     if (defaultRadio) defaultRadio.checked = true;
+
+    // ===== LAZY LOADING OBSERVER =====
+    initLazyLoading();
+
+    // ===== HAMBURGER MENU =====
+    initMobileNav();
+
+    // ===== UPDATE BUTTON STATE =====
+    updateGenerateButtonState();
+}
+
+// ===== MOBILE NAVIGATION =====
+function initMobileNav() {
+    const hamburgerBtn = document.getElementById('hamburger-menu');
+    const mobileNav = document.getElementById('mobile-nav');
+    const mobileOverlay = document.getElementById('mobile-nav-overlay');
+    const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
+    const mobileLangOpts = document.querySelectorAll('.mobile-lang');
+    const mobileCloseBtn = document.getElementById('mobile-nav-close');
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleMobileNav);
+    }
+
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', closeMobileNav);
+    }
+
+    if (mobileCloseBtn) {
+        mobileCloseBtn.addEventListener('click', closeMobileNav);
+    }
+
+    if (mobileThemeToggle) {
+        mobileThemeToggle.addEventListener('click', () => {
+            toggleTheme();
+            // Sync mobile icon with desktop
+            const icon = mobileThemeToggle.querySelector('i');
+            if (icon) icon.className = currentTheme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        });
+    }
+
+    if (mobileLangOpts.length) {
+        mobileLangOpts.forEach(opt => {
+            opt.addEventListener('click', () => {
+                setLang(opt.dataset.lang);
+                // Sync mobile lang switch
+                mobileLangOpts.forEach(o => o.classList.toggle('active', o.dataset.lang === opt.dataset.lang));
+                closeMobileNav();
+            });
+        });
+    }
+
+    // Home link - smooth scroll to top
+    const mobileHomeLink = document.getElementById('mobile-home-link');
+    const mobileNavLogo = document.getElementById('mobile-nav-home-logo');
+
+    if (mobileHomeLink) {
+        mobileHomeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileNav();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    if (mobileNavLogo) {
+        mobileNavLogo.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMobileNav();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    // Close nav on other link clicks
+    document.querySelectorAll('.mobile-nav-link:not(#mobile-home-link)').forEach(link => {
+        link.addEventListener('click', closeMobileNav);
+    });
+}
+
+function toggleMobileNav() {
+    const hamburgerBtn = document.getElementById('hamburger-menu');
+    const mobileNav = document.getElementById('mobile-nav');
+    const mobileOverlay = document.getElementById('mobile-nav-overlay');
+
+    hamburgerBtn?.classList.toggle('active');
+    mobileNav?.classList.toggle('active');
+    mobileOverlay?.classList.toggle('active');
+    document.body.style.overflow = mobileNav?.classList.contains('active') ? 'hidden' : '';
+}
+
+function closeMobileNav() {
+    const hamburgerBtn = document.getElementById('hamburger-menu');
+    const mobileNav = document.getElementById('mobile-nav');
+    const mobileOverlay = document.getElementById('mobile-nav-overlay');
+
+    hamburgerBtn?.classList.remove('active');
+    mobileNav?.classList.remove('active');
+    mobileOverlay?.classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 // ===== THEME LOGIC =====
@@ -276,6 +393,16 @@ function updateTexts() {
         safe('overlay-note', '<i class="fa-solid fa-info-circle"></i> ' + overlay.note, true);
     }
 
+    // Mobile Menu Texts
+    safe('mobile-home-text', t.homeText);
+    safe('mobile-about-text', t.aboutText);
+    safe('mobile-support-text', currentLang === 'tr' ? 'OptWin\'i Destekle' : 'Support OptWin');
+
+    // Search placeholder
+    if (searchInput) {
+        searchInput.placeholder = t.searchPlaceholder;
+    }
+
     updateStatsDisplay();
     updateSelectedCount();
 }
@@ -299,6 +426,13 @@ function updateStatsDisplay() {
 
     const downloadsLabelEl = document.getElementById('stats-downloads-label');
     if (downloadsLabelEl) downloadsLabelEl.textContent = l.downloads;
+
+    // Mobile stats
+    const mobileVisits = document.getElementById('mobile-stats-visits');
+    if (mobileVisits) mobileVisits.textContent = stats.totalVisits;
+
+    const mobileDownloads = document.getElementById('mobile-stats-downloads');
+    if (mobileDownloads) mobileDownloads.textContent = stats.totalScripts;
 }
 
 // ===== SELECTED COUNT =====
@@ -308,11 +442,81 @@ function updateSelectedCount() {
     const t = translations[currentLang];
 
     if (count === 0) {
-        selectedCountEl.style.display = 'none';
+        selectedCountEl.classList.remove('visible');
     } else {
-        selectedCountEl.style.display = 'flex';
+        selectedCountEl.classList.add('visible');
         selectedCountEl.innerHTML = '<i class="fa-solid fa-check-circle"></i> <span>' + count + ' ' + t.selectedCount + '</span>';
     }
+
+    // Update generate button state
+    updateGenerateButtonState();
+}
+
+// ===== GENERATE BUTTON STATE =====
+function updateGenerateButtonState() {
+    if (!generateBtn) return;
+    const count = selectedFeatures.size;
+    const wasInactive = generateBtn.classList.contains('btn-inactive');
+
+    if (count === 0) {
+        generateBtn.classList.add('btn-inactive');
+    } else {
+        generateBtn.classList.remove('btn-inactive');
+        // Add activation animation when button becomes active
+        if (wasInactive) {
+            generateBtn.classList.add('btn-activated');
+            generateBtn.addEventListener('animationend', () => {
+                generateBtn.classList.remove('btn-activated');
+            }, { once: true });
+        }
+    }
+}
+
+// ===== LAZY LOADING & UNLOADING =====
+function initLazyLoading() {
+    const loadObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const card = entry.target;
+
+            if (entry.isIntersecting) {
+                // Load - card entering viewport
+                card.classList.remove('lazy-unloaded');
+                if (!card.classList.contains('lazy-loaded')) {
+                    card.classList.add('lazy-loaded', 'lazy-reveal');
+                    card.addEventListener('animationend', () => {
+                        card.classList.remove('lazy-reveal');
+                    }, { once: true });
+                }
+            } else {
+                // Unload - card leaving viewport (performance boost)
+                if (card.classList.contains('lazy-loaded')) {
+                    card.classList.add('lazy-unloaded');
+                }
+            }
+        });
+    }, {
+        rootMargin: '100px',
+        threshold: 0.05
+    });
+
+    // Observe all feature cards
+    document.querySelectorAll('.feature-card').forEach(card => {
+        loadObserver.observe(card);
+    });
+}
+
+// ===== TOAST NOTIFICATION =====
+function showToast(message, duration = 4000) {
+    const toast = document.getElementById('toast-notification');
+    const toastMsg = document.getElementById('toast-message');
+    if (!toast) return;
+
+    if (toastMsg && message) toastMsg.textContent = message;
+    toast.classList.add('show');
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
 }
 
 // ===== RENDER FEATURES =====
@@ -370,6 +574,8 @@ function renderFeatures() {
 function filterFeatures() {
     const cards = document.querySelectorAll('.feature-card');
     const tFeats = translations[currentLang].features;
+    const t = translations[currentLang];
+    let visibleCount = 0;
 
     cards.forEach(card => {
         const fid = card.getAttribute('data-fid');
@@ -380,7 +586,39 @@ function filterFeatures() {
         const desc = feat.desc.toLowerCase();
         const matches = title.includes(searchQuery) || desc.includes(searchQuery) || fid.toLowerCase().includes(searchQuery);
 
-        card.style.display = matches ? '' : 'none';
+        const wasHidden = card.style.display === 'none';
+        const titleEl = card.querySelector('.feature-info h3');
+        const descEl = card.querySelector('.feature-info p');
+
+        if (matches) {
+            card.style.display = '';
+
+            // Highlight matched text
+            if (searchQuery.length > 1 && titleEl && descEl) {
+                titleEl.innerHTML = highlightText(feat.title, searchQuery);
+                descEl.innerHTML = highlightText(feat.desc, searchQuery);
+            } else if (titleEl && descEl) {
+                // Reset to original text
+                titleEl.textContent = feat.title;
+                descEl.textContent = feat.desc;
+            }
+
+            // Animate "found" effect when card becomes visible (typing or deleting)
+            if (wasHidden && searchQuery.length >= 0) {
+                card.classList.remove('search-found'); // Reset animation
+                void card.offsetWidth; // Force reflow
+                card.classList.add('search-found');
+                card.addEventListener('animationend', () => {
+                    card.classList.remove('search-found');
+                }, { once: true });
+            }
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+            // Reset text when hidden
+            if (titleEl) titleEl.textContent = feat.title;
+            if (descEl) descEl.textContent = feat.desc;
+        }
     });
 
     // Show/hide category sections based on visible cards
@@ -388,6 +626,28 @@ function filterFeatures() {
         const hasVisible = Array.from(section.querySelectorAll('.feature-card')).some(c => c.style.display !== 'none');
         section.style.display = hasVisible ? '' : 'none';
     });
+
+    // Show/hide "no results" message
+    let noResultsEl = document.getElementById('no-results-message');
+    if (visibleCount === 0 && searchQuery.length > 0) {
+        if (!noResultsEl && featuresContainer) {
+            noResultsEl = document.createElement('div');
+            noResultsEl.id = 'no-results-message';
+            noResultsEl.className = 'no-results';
+            noResultsEl.innerHTML = '<i class="fa-solid fa-search"></i><p>' + t.noResults + '</p>';
+            featuresContainer.appendChild(noResultsEl);
+        }
+        if (noResultsEl) noResultsEl.style.display = 'flex';
+    } else {
+        if (noResultsEl) noResultsEl.style.display = 'none';
+    }
+}
+
+// Highlight text helper
+function highlightText(text, query) {
+    if (!query || query.length < 2) return text;
+    const regex = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
 }
 
 function toggleFeature(id, card) {
@@ -457,6 +717,11 @@ function applyPreset(type) {
                 selectedFeatures.add(item.id);
             });
         });
+        // Show warning toast for Select All
+        const toastMsg = currentLang === 'tr'
+            ? 'Tüm ayarlar sisteminizde istenmeyen değişiklikler yapabilir. Lütfen çalıştırmadan önce inceleyin.'
+            : 'All settings may cause unwanted changes. Please review before running.';
+        showToast(toastMsg);
     }
 
     allCards.forEach(c => {

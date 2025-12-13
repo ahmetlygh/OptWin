@@ -23,7 +23,9 @@ const categorizedFeatures = [
             { id: 'disableGameDVR', icon: 'fa-gamepad', risk: RISK.LOW, noRisk: true },
             { id: 'disableNotifications', icon: 'fa-bell-slash', risk: RISK.LOW, noRisk: true },
             { id: 'highPerformance', icon: 'fa-gauge-high', risk: RISK.LOW, noRisk: true },
-            { id: 'ultimatePerformance', icon: 'fa-rocket', risk: RISK.MEDIUM }
+            { id: 'ultimatePerformance', icon: 'fa-rocket', risk: RISK.MEDIUM },
+            { id: 'disableStartupDelay', icon: 'fa-forward-fast', risk: RISK.LOW, noRisk: true },
+            { id: 'disableSuperfetch', icon: 'fa-memory', risk: RISK.LOW, noRisk: true }
         ]
     },
     {
@@ -33,7 +35,9 @@ const categorizedFeatures = [
             { id: 'dismCheck', icon: 'fa-stethoscope', risk: RISK.LOW, noRisk: true },
             { id: 'dismRepair', icon: 'fa-kit-medical', risk: RISK.MEDIUM },
             { id: 'cleanEventLog', icon: 'fa-eraser', risk: RISK.LOW, noRisk: true },
-            { id: 'updateCacheClean', icon: 'fa-rotate', risk: RISK.MEDIUM }
+            { id: 'updateCacheClean', icon: 'fa-rotate', risk: RISK.MEDIUM },
+            { id: 'clearIconCache', icon: 'fa-icons', risk: RISK.LOW, noRisk: true },
+            { id: 'clearThumbsCache', icon: 'fa-image', risk: RISK.LOW, noRisk: true }
         ]
     },
     {
@@ -47,7 +51,9 @@ const categorizedFeatures = [
             { id: 'disableTouch', icon: 'fa-keyboard', risk: RISK.MEDIUM },
             { id: 'disableXbox', icon: 'fa-gamepad', risk: RISK.LOW, noRisk: true },
             { id: 'disablePrintSpooler', icon: 'fa-print', risk: RISK.MEDIUM },
-            { id: 'disableSearch', icon: 'fa-magnifying-glass', risk: RISK.HIGH }
+            { id: 'disableSearch', icon: 'fa-magnifying-glass', risk: RISK.HIGH },
+            { id: 'disableRemoteAssistance', icon: 'fa-headset', risk: RISK.LOW, noRisk: true },
+            { id: 'disableDeliveryOptimization', icon: 'fa-truck-fast', risk: RISK.LOW, noRisk: true }
         ]
     },
     {
@@ -61,7 +67,8 @@ const categorizedFeatures = [
             { id: 'disableAutoTuning', icon: 'fa-gears', risk: RISK.LOW, noRisk: true },
             { id: 'clearArpCache', icon: 'fa-broom', risk: RISK.LOW, noRisk: true },
             { id: 'enableQoS', icon: 'fa-sliders', risk: RISK.LOW, noRisk: true },
-            { id: 'disableLSO', icon: 'fa-layer-group', risk: RISK.LOW, noRisk: true }
+            { id: 'disableLSO', icon: 'fa-layer-group', risk: RISK.LOW, noRisk: true },
+            { id: 'disableP2PUpdate', icon: 'fa-share-nodes', risk: RISK.LOW, noRisk: true }
         ]
     },
     {
@@ -72,7 +79,20 @@ const categorizedFeatures = [
             { id: 'disableLocation', icon: 'fa-location-crosshairs', risk: RISK.LOW, noRisk: true },
             { id: 'disableClipboardHistory', icon: 'fa-clipboard', risk: RISK.LOW, noRisk: true },
             { id: 'disableActivityHistory', icon: 'fa-clock-rotate-left', risk: RISK.LOW, noRisk: true },
-            { id: 'disableNewsInterests', icon: 'fa-newspaper', risk: RISK.LOW, noRisk: true }
+            { id: 'disableNewsInterests', icon: 'fa-newspaper', risk: RISK.LOW, noRisk: true },
+            { id: 'disableTimeline', icon: 'fa-timeline', risk: RISK.LOW, noRisk: true },
+            { id: 'disableAdvertisingId', icon: 'fa-rectangle-ad', risk: RISK.LOW, noRisk: true }
+        ]
+    },
+    {
+        id: 'visual',
+        items: [
+            { id: 'disableTransparency', icon: 'fa-eye-slash', risk: RISK.LOW, noRisk: true },
+            { id: 'disableAnimations', icon: 'fa-wand-magic-sparkles', risk: RISK.LOW, noRisk: true },
+            { id: 'disableWindowsTips', icon: 'fa-lightbulb', risk: RISK.LOW, noRisk: true },
+            { id: 'disableWindowsSpotlight', icon: 'fa-images', risk: RISK.LOW, noRisk: true },
+            { id: 'optimizeVisualEffects', icon: 'fa-sliders', risk: RISK.LOW, noRisk: true },
+            { id: 'disableLockScreenTips', icon: 'fa-lock', risk: RISK.LOW, noRisk: true }
         ]
     },
     {
@@ -83,44 +103,62 @@ const categorizedFeatures = [
             { id: 'showExtensions', icon: 'fa-file-code', risk: RISK.LOW, noRisk: true },
             { id: 'showHiddenFiles', icon: 'fa-eye', risk: RISK.LOW, noRisk: true },
             { id: 'disableMouseAccel', icon: 'fa-arrow-pointer', risk: RISK.LOW, noRisk: true },
-            { id: 'disableTransparency', icon: 'fa-eye-slash', risk: RISK.LOW, noRisk: true },
             { id: 'clearBrowserCache', icon: 'fa-broom', risk: RISK.HIGH },
             { id: 'disableBackgroundApps', icon: 'fa-window-restore', risk: RISK.MEDIUM },
-            { id: 'enableGpuScheduling', icon: 'fa-microchip', risk: RISK.MEDIUM }
+            { id: 'enableGpuScheduling', icon: 'fa-microchip', risk: RISK.MEDIUM },
+            { id: 'disableGameBar', icon: 'fa-bars', risk: RISK.LOW, noRisk: true }
         ]
     }
 ];
 
-// ===== RECOMMENDED FEATURES (Only noRisk) =====
+// ===== RECOMMENDED FEATURES (Only noRisk - Safe for everyone) =====
 const recommendedFeatures = new Set([
+    // Cleaning - Guaranteed safe
     'cleanTemp', 'cleanPrefetch', 'recycleBin',
+    'cleanEventLog', 'clearIconCache', 'clearThumbsCache',
+    // System checks
     'systemFileCheck', 'dismCheck',
-    'disableGameDVR', 'highPerformance', 'disableNotifications',
-    'flushDNS', 'disableThrottling',
-    'cleanEventLog',
-    'disableWallet', 'disableMaps', 'disableFax', 'disableWer', 'disableXbox',
+    // Safe Optimizations
+    'highPerformance', 'disableGameDVR',
+    'disableStartupDelay', 'disableSuperfetch',
+    // Explorer improvements
     'showExtensions', 'showHiddenFiles',
-    'disableSticky', 'disableBingSearch', 'disableMouseAccel', 'disableTransparency',
-    'disableLocation', 'disableClipboardHistory', 'disableActivityHistory', 'disableNewsInterests'
+    // Safe Service disables
+    'disableWallet', 'disableMaps', 'disableFax', 'disableWer', 'disableXbox',
+    'disableRemoteAssistance', 'disableDeliveryOptimization',
+    // Privacy
+    'disableLocation', 'disableClipboardHistory', 'disableActivityHistory',
+    'disableTimeline', 'disableAdvertisingId',
+    // Network
+    'flushDNS', 'networkReset', 'clearArpCache'
 ]);
 
-// ===== GAMER MODE FEATURES (Gaming optimizations) =====
+// ===== GAMER SETTINGS (Only noRisk - Gaming focused) =====
 const gamerModeFeatures = new Set([
-    // Performance
-    'ultimatePerformance',
+    // Performance (noRisk only)
+    'highPerformance',
     'disableGameDVR',
-    'enableGpuScheduling',
-    // Network (Low Ping)
-    'disableThrottling',
-    'disableNagle',
-    'disableAutoTuning',
-    'disableLSO',
+    'disableGameBar',
+    'disableStartupDelay',
+    'disableSuperfetch',
+    // Visual Performance
+    'disableAnimations',
+    'disableTransparency',
+    'disableWindowsTips',
+    'disableLockScreenTips',
+    // Network (noRisk only)
     'flushDNS',
+    'disableThrottling',
+    'clearArpCache',
+    'enableQoS',
+    'disableP2PUpdate',
+    'networkReset',
     // Less Distractions
     'disableNotifications',
-    'disableTransparency',
+    'disableNewsInterests',
     'disableMouseAccel',
-    // Clean
+    'disableSticky',
+    // Cleanup
     'cleanTemp',
     'cleanPrefetch'
 ]);
@@ -185,6 +223,22 @@ const scriptMessages = {
         clearArpCache: 'Clearing ARP Cache...',
         enableQoS: 'Enabling QoS Packet Scheduler...',
         disableLSO: 'Disabling Large Send Offload (LSO)...',
+        // New features
+        disableStartupDelay: 'Disabling Startup Delay...',
+        disableSuperfetch: 'Disabling Superfetch/SysMain...',
+        clearIconCache: 'Clearing Icon Cache...',
+        clearThumbsCache: 'Clearing Thumbnail Cache...',
+        disableRemoteAssistance: 'Disabling Remote Assistance...',
+        disableDeliveryOptimization: 'Disabling Delivery Optimization...',
+        disableP2PUpdate: 'Disabling P2P Updates...',
+        disableTimeline: 'Disabling Timeline...',
+        disableAdvertisingId: 'Disabling Advertising ID...',
+        disableAnimations: 'Disabling Animations...',
+        disableWindowsTips: 'Disabling Windows Tips...',
+        disableWindowsSpotlight: 'Disabling Windows Spotlight...',
+        optimizeVisualEffects: 'Optimizing Visual Effects...',
+        disableLockScreenTips: 'Disabling Lock Screen Tips...',
+        disableGameBar: 'Disabling Game Bar...',
         done: 'Done!',
         restorePoint: 'Creating System Restore Point...',
         restoreSuccess: 'Restore Point created successfully!',
@@ -239,6 +293,22 @@ const scriptMessages = {
         clearArpCache: 'ARP onbellegi temizleniyor...',
         enableQoS: 'QoS paket zamanlayicisi etkinlestiriliyor...',
         disableLSO: 'Large Send Offload (LSO) kapatiliyor...',
+        // New features
+        disableStartupDelay: 'Baslangic gecikmesi kapatiliyor...',
+        disableSuperfetch: 'Superfetch/SysMain kapatiliyor...',
+        clearIconCache: 'Ikon onbellegi temizleniyor...',
+        clearThumbsCache: 'Kucuk resim onbellegi temizleniyor...',
+        disableRemoteAssistance: 'Uzaktan yardim kapatiliyor...',
+        disableDeliveryOptimization: 'Teslim optimizasyonu kapatiliyor...',
+        disableP2PUpdate: 'P2P guncellemeler kapatiliyor...',
+        disableTimeline: 'Zaman cizelgesi kapatiliyor...',
+        disableAdvertisingId: 'Reklam kimligi kapatiliyor...',
+        disableAnimations: 'Animasyonlar kapatiliyor...',
+        disableWindowsTips: 'Windows ipuclari kapatiliyor...',
+        disableWindowsSpotlight: 'Windows Spotlight kapatiliyor...',
+        optimizeVisualEffects: 'Gorsel efektler optimize ediliyor...',
+        disableLockScreenTips: 'Kilit ekrani ipuclari kapatiliyor...',
+        disableGameBar: 'Game Bar kapatiliyor...',
         done: 'Basarili!',
         restorePoint: 'Sistem Geri Yukleme Noktasi olusturuluyor...',
         restoreSuccess: 'Geri yukleme noktasi basariyla olusturuldu!',
@@ -435,6 +505,60 @@ Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" -
 `,
     disableLSO: `
 Get-NetAdapterAdvancedProperty -Name "*" -DisplayName "*Large Send Offload*" -ErrorAction SilentlyContinue | Set-NetAdapterAdvancedProperty -RegistryValue 0 -ErrorAction SilentlyContinue
+`,
+    // New features
+    disableStartupDelay: `
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" -Name "StartupDelayInMSec" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableSuperfetch: `
+Stop-Service -Name SysMain -Force -ErrorAction SilentlyContinue
+Set-Service -Name SysMain -StartupType Disabled -ErrorAction SilentlyContinue
+`,
+    clearIconCache: `
+ie4uinit.exe -ClearIconCache
+Remove-Item -Path "$env:LOCALAPPDATA\\IconCache.db" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer\\iconcache_*" -Force -ErrorAction SilentlyContinue
+`,
+    clearThumbsCache: `
+Remove-Item -Path "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer\\thumbcache_*" -Force -ErrorAction SilentlyContinue
+`,
+    disableRemoteAssistance: `
+Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Remote Assistance" -Name "fAllowToGetHelp" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableDeliveryOptimization: `
+Stop-Service -Name DoSvc -Force -ErrorAction SilentlyContinue
+Set-Service -Name DoSvc -StartupType Disabled -ErrorAction SilentlyContinue
+`,
+    disableP2PUpdate: `
+Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\DeliveryOptimization\\Config" -Name "DODownloadMode" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableTimeline: `
+Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" -Name "EnableActivityFeed" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableAdvertisingId: `
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" -Name "Enabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableAnimations: `
+Set-ItemProperty -Path "HKCU:\\Control Panel\\Desktop\\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force
+Set-ItemProperty -Path "HKCU:\\Control Panel\\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force -ErrorAction SilentlyContinue
+`,
+    disableWindowsTips: `
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "SoftLandingEnabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "SubscribedContent-338389Enabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableWindowsSpotlight: `
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "RotatingLockScreenEnabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "RotatingLockScreenOverlayEnabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    optimizeVisualEffects: `
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" -Name "VisualFXSetting" -Value 2 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableLockScreenTips: `
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" -Name "SubscribedContent-338387Enabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+`,
+    disableGameBar: `
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\GameBar" -Name "UseNexusForGameBarEnabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\\System\\GameConfigStore" -Name "GameDVR_FSEBehavior" -Value 2 -Type DWord -Force -ErrorAction SilentlyContinue
 `
 };
 
