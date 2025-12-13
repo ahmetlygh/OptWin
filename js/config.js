@@ -1,0 +1,315 @@
+/**
+ * OptWin Configuration & Translations
+ * Site ayarları ve çeviriler
+ */
+
+// ===== SITE CONFIGURATION =====
+const CONFIG = {
+    version: '1.2',
+    siteName: 'OptWin',
+    siteUrl: 'https://optwin.tech',
+    author: 'ahmetly_',
+    authorUrl: 'https://ahmetly.com',
+    githubUrl: 'https://github.com/ahmetlygh/optwin',
+    contactEmail: 'contact@optwin.tech',
+    statsApi: './api/stats.php',
+    defaultLang: 'en',
+    defaultTheme: 'dark',
+    scriptFormat: 'ps1' // 'bat' or 'ps1'
+};
+
+// ===== TRANSLATIONS =====
+const translations = {
+    en: {
+        title: "OptWin",
+        heroTitle: "Optimize your Windows experience",
+        heroDesc: "Select the optimizations you need and generate a custom script instantly.",
+        btnText: "Create Script",
+        contactMessage: "Feel free to email us for requests and suggestions.",
+        footerText: "Secure & Open Source.",
+        scriptSuccess: "Windows optimization successful",
+        dnsTitle: "DNS Configuration",
+        pingBtn: "Download Ping Test",
+        pingTooltip: "Download a script to test latency for various DNS providers.",
+        homeText: "Home",
+        aboutText: "About",
+        selectedCount: "features selected",
+        searchPlaceholder: "Search features...",
+        noResults: "No features found",
+        riskLevels: {
+            low: "Low Risk",
+            medium: "Medium Risk",
+            high: "High Risk"
+        },
+        aboutSection: {
+            title: "About OptWin",
+            subtitle: "Our mission is to empower Windows users with transparent, safe, and open-source optimization tools.",
+            missionTitle: "Our Mission",
+            missionDesc: "OptWin was created to solve a common problem: Windows optimization tools often come with hidden adware, bloatware, or privacy concerns. We believe optimization should be transparent, safe, and open.",
+            valueSafeTitle: "Safe & Secure",
+            valueSafeDesc: "Every optimization is carefully vetted. Your system's security is our priority.",
+            valueOpenTitle: "Open Source",
+            valueOpenDesc: "Our code is transparent. Inspect, audit, and contribute on GitHub.",
+            valueTransparentTitle: "Transparent",
+            valueTransparentDesc: "No hidden scripts. See exactly what your optimization does before running it."
+        },
+        support: {
+            title: "Support OptWin Development",
+            desc: "OptWin is 100% free and open-source. If you find it helpful, consider supporting its development. Your contribution helps us maintain, improve, and keep OptWin free for everyone.",
+            btnText: "Buy Me a Coffee",
+            note: "Every contribution helps keep OptWin free and continuously improving! 💜",
+            badgeFree: "100% Free",
+            badgeOpensource: "Open Source",
+            badgeSecure: "Secure"
+        },
+        categories: {
+            system: "System Optimization",
+            network: "Network Optimization",
+            maintenance: "Maintenance & Repair",
+            services: "Services Management",
+            extra: "Extra Tweaks",
+            privacy: "Privacy & Security"
+        },
+        warningModal: {
+            msg: "Please select at least one feature to generate a script.",
+            conflict: "You can only select one Power Plan (High or Ultimate)."
+        },
+        presets: {
+            recommended: "Recommended Settings",
+            selectAll: "Select All",
+            reset: "Reset",
+            gamerMode: "Gamer Mode"
+        },
+        features: {
+            cleanTemp: { title: "Clean Temporary Files", desc: "Removes temporary files from %temp% and Windows/Temp to free up space." },
+            cleanPrefetch: { title: "Clean Prefetch", desc: "Clears the Prefetch folder to refresh system caching/boot files." },
+            recycleBin: { title: "Empty Recycle Bin", desc: "Permanently deletes all files currently in the Recycle Bin." },
+            disableHibernate: { title: "Disable Hibernate", desc: "Disables hibernation to save several GBs of disk space (hiberfil.sys)." },
+            systemFileCheck: { title: "Repair System Files", desc: "Runs sfc /scannow to identify and automatically fix corrupted Windows files." },
+            disableTelemetry: { title: "Disable Telemetry", desc: "Reduces Windows tracking, data collection, and feedback notifications." },
+            disableGameDVR: { title: "Disable Game DVR", desc: "Turns off Xbox Game DVR and Game Bar to free up background resources." },
+            highPerformance: { title: "High Performance Mode", desc: "Sets the power plan to 'High Performance' for better responsiveness." },
+            ultimatePerformance: { title: "Ultimate Performance", desc: "Enables the hidden 'Ultimate Performance' power plan for maximum speed." },
+            flushDNS: { title: "Flush DNS Cache", desc: "Resets the DNS resolver cache to fix connection or loading issues." },
+            changeDNS: { title: "Change DNS", desc: "Switch to a faster DNS provider (Cloudflare, Google, Quad9, AdGuard)." },
+            dismCheck: { title: "DISM Check Health", desc: "Checks for corruption in the Windows image." },
+            dismRepair: { title: "DISM Restore Health", desc: "Scans and repairs the Windows image using Windows Update." },
+            disableSticky: { title: "Disable Sticky Keys", desc: "Disables Sticky Keys shortcut (Shift x5)." },
+            disableBingSearch: { title: "Disable Bing Search", desc: "Removes Bing search results from the Start Menu." },
+            disableWallet: { title: "Disable Wallet Service", desc: "Disables the Wallet Service used for mobile payments." },
+            disableMaps: { title: "Disable Maps Broker", desc: "Disables downloaded maps manager if you don't use Maps." },
+            disableDiagTrack: { title: "Disable DiagTrack", desc: "Disables the Connected User Experiences and Telemetry service." },
+            disableFax: { title: "Disable Fax Service", desc: "Disables the legacy Fax service." },
+            disableWer: { title: "Disable Error Reporting", desc: "Disables Windows Error Reporting service." },
+            disableTouch: { title: "Disable Touch Keyboard", desc: "Disables Touch Keyboard and Handwriting service (TabletInputService)." },
+            disableXbox: { title: "Disable Xbox Services", desc: "Disables Xbox Auth, Game Save, and Networking services." },
+            disableMouseAccel: { title: "Disable Mouse Acceleration", desc: "Disables 'Enhance Pointer Precision' for raw mouse input." },
+            disableTransparency: { title: "Disable Transparency", desc: "Disables Windows transparency effects for better performance." },
+            disableNotifications: { title: "Disable Notifications", desc: "Disables Windows tips, suggestions, and app notifications." },
+            networkReset: { title: "Network Stack Reset", desc: "Resets Winsock and TCP/IP stack to fix connectivity issues." },
+            cleanEventLog: { title: "Clear Event Logs", desc: "Clears all Windows Event Viewer logs to free up space/clutter." },
+            updateCacheClean: { title: "Clean Update Cache", desc: "Clears Windows Update download cache (SoftwareDistribution) to fix update errors." },
+            disablePrintSpooler: { title: "Disable Print Spooler", desc: "Disables printing service. Recommended if you don't use a printer." },
+            disableSearch: { title: "Disable Windows Search", desc: "Disables Windows Search Indexing to save CPU/Disk usage." },
+            disableThrottling: { title: "Disable Network Throttling", desc: "Disables Windows network throttling mechanism for better throughput." },
+            showExtensions: { title: "Show File Extensions", desc: "Always show file extensions (e.g. .txt, .exe) in Explorer." },
+            showHiddenFiles: { title: "Show Hidden Files", desc: "Show hidden files and folders in Explorer." },
+            // New features
+            disableCortana: { title: "Disable Cortana", desc: "Disables Cortana assistant to free up resources." },
+            disableOneDrive: { title: "Disable OneDrive", desc: "Removes OneDrive from startup and Explorer." },
+            clearBrowserCache: { title: "Clear Browser Cache", desc: "Clears cache for Chrome, Edge, and Firefox browsers. May log you out of sites." },
+            disableBackgroundApps: { title: "Disable Background Apps", desc: "Prevents apps from running in the background." },
+            enableGpuScheduling: { title: "GPU Scheduling", desc: "Enables Hardware-accelerated GPU scheduling for better gaming." },
+            disableLocation: { title: "Disable Location", desc: "Disables location services for privacy." },
+            disableClipboardHistory: { title: "Disable Clipboard History", desc: "Disables Windows clipboard history feature." },
+            disableActivityHistory: { title: "Disable Activity History", desc: "Stops Windows from collecting activity history." },
+            disableNewsInterests: { title: "Disable News & Interests", desc: "Removes the news widget from taskbar." },
+            // Network features
+            disableNagle: { title: "Disable Nagle Algorithm", desc: "Disables Nagle algorithm to reduce network latency." },
+            disableAutoTuning: { title: "Disable TCP Auto-Tuning", desc: "Disables TCP auto-tuning for improved network performance." },
+            clearArpCache: { title: "Clear ARP Cache", desc: "Clears ARP cache to resolve network connectivity issues." },
+            enableQoS: { title: "Enable QoS Optimization", desc: "Removes bandwidth reservation for better network speed." },
+            disableLSO: { title: "Disable Large Send Offload", desc: "Disables LSO to reduce network latency in games." }
+        },
+        restoreModal: {
+            title: "System Restore Point",
+            desc: "Do you want to add a System Restore Point creation step to the script? (Recommended)",
+            yes: "Add",
+            no: "No, Skip"
+        },
+        scriptMsgs: {
+            header: "Faster Windows with OptWin",
+            processing: "Processing...",
+            success: "Successful",
+            fail: "Failed",
+            complete: "Operation Completed",
+            thankYou: "Thank you for using optwin.tech",
+            author: "Designed by ahmetly_"
+        },
+        overlay: {
+            title: "Script Preview",
+            badgeRun: "Can be run multiple times",
+            badgeReady: "Ready for use",
+            downloadBtn: "Download Script",
+            closeBtn: "Close",
+            copyBtn: "Copy",
+            copiedBtn: "Copied!",
+            instrTitle: "How to use:",
+            step1: "Download the script file below.",
+            step2: "Right-click the downloaded file and select <b>Run with PowerShell</b>.",
+            step3: "If SmartScreen appears, click <b>More info</b> → <b>Run anyway</b>.",
+            note: "Note: This script is open source. You can review the code on GitHub.",
+            adminError: "This script requires Administrator privileges.",
+            adminHint: "Please right-click the script and select \"Run as Administrator\".",
+            adminExit: "Press any key to exit..."
+        }
+    },
+    tr: {
+        title: "OptWin",
+        heroTitle: "Windows Deneyiminizi Hızlandırın",
+        heroDesc: "İhtiyacınız olan optimizasyonları seçin ve anında sizin için bir script oluşturun.",
+        btnText: "Script Oluştur",
+        contactMessage: "İstek ve önerileriniz için mail atmaktan çekinmeyin.",
+        footerText: "Güvenli ve Açık Kaynak.",
+        scriptSuccess: "Windows optimizasyonu başarılı",
+        dnsTitle: "DNS Yapılandırması",
+        pingBtn: "Ping Testi İndir",
+        pingTooltip: "En hızlı DNS sunucusunu bulmak için testi indirin.",
+        homeText: "Ana Sayfa",
+        aboutText: "Hakkında",
+        selectedCount: "özellik seçildi",
+        searchPlaceholder: "Özellik ara...",
+        noResults: "Özellik bulunamadı",
+        riskLevels: {
+            low: "Düşük Risk",
+            medium: "Orta Risk",
+            high: "Yüksek Risk"
+        },
+        aboutSection: {
+            title: "OptWin Hakkında",
+            subtitle: "Misyonumuz, Windows kullanıcılarına şeffaf, güvenli ve açık kaynaklı optimizasyon araçları sağlamaktır.",
+            missionTitle: "Misyonumuz",
+            missionDesc: "OptWin, yaygın bir sorunu çözmek için oluşturuldu: Windows optimizasyon araçları genellikle gizli adware, bloatware veya gizlilik sorunları ile birlikte gelir. Optimizasyonun şeffaf, güvenli ve açık olması gerektiğine inanıyoruz.",
+            valueSafeTitle: "Güvenli",
+            valueSafeDesc: "Her optimizasyon dikkatle kontrol edilir. Sisteminizin güvenliği bizim önceliğimizdir.",
+            valueOpenTitle: "Açık Kaynak",
+            valueOpenDesc: "Kodumuz şeffaftır. GitHub'da inceleyebilir, denetleyebilir ve katkıda bulunabilirsiniz.",
+            valueTransparentTitle: "Şeffaf",
+            valueTransparentDesc: "Gizli scriptler yok. Optimizasyonun ne yaptığını çalıştırmadan önce tam olarak görün."
+        },
+        support: {
+            title: "OptWin Gelişimini Destekleyin",
+            desc: "OptWin %100 ücretsiz ve açık kaynaklıdır. Faydalı buluyorsanız, gelişimini desteklemeyi düşünün. Katkınız, OptWin'i herkes için ücretsiz tutmamıza yardımcı olur.",
+            btnText: "Bana Kahve Al",
+            note: "Her katkı OptWin'in ücretsiz kalmasına ve sürekli gelişmesine yardımcı olur! 💜",
+            badgeFree: "Ücretsiz",
+            badgeOpensource: "Açık Kaynak",
+            badgeSecure: "Güvenli"
+        },
+        categories: {
+            system: "Bilgisayar Optimizasyonu",
+            network: "Ağ Optimizasyonu",
+            maintenance: "Bakım ve Onarım",
+            services: "Hizmet Yönetimi",
+            extra: "Ekstra Ayarlar",
+            privacy: "Gizlilik ve Güvenlik"
+        },
+        warningModal: {
+            msg: "Lütfen script oluşturmak için en az bir özellik seçin.",
+            conflict: "Sadece bir Güç Planı seçebilirsiniz (Yüksek veya Nihai)."
+        },
+        presets: {
+            recommended: "Önerilen Ayarlar",
+            selectAll: "Hepsini Seç",
+            reset: "Sıfırla",
+            gamerMode: "Oyuncu Modu"
+        },
+        features: {
+            cleanTemp: { title: "Geçici Dosyaları Temizle", desc: "%temp% ve Windows/Temp klasörlerindeki gereksiz dosyaları silerek yer açar." },
+            cleanPrefetch: { title: "Prefetch Temizle", desc: "Sistem önbelleğini ve başlangıç dosyalarını yenilemek için temizler." },
+            recycleBin: { title: "Çöp Kutusunu Boşalt", desc: "Geri Dönüşüm Kutusundaki dosyaları kalıcı olarak siler." },
+            disableHibernate: { title: "Hazırda Bekleti Kapat", desc: "Disk alanı kazanmak için (hiberfil.sys) hazırda bekletme modunu kapatır." },
+            systemFileCheck: { title: "Sistem Dosyalarını Onar", desc: "Bozuk Windows dosyalarını tespit edip onarmak için sfc /scannow çalıştırır." },
+            disableTelemetry: { title: "Telemetriyi Kapat", desc: "Windows izleme, veri toplama ve geri bildirim bildirimlerini azaltır." },
+            disableGameDVR: { title: "Oyun Modu (DVR) Kapat", desc: "Arka plan kaynaklarını boşaltmak için Xbox Game DVR ve Oyun Çubuğunu kapatır." },
+            highPerformance: { title: "Yüksek Performans", desc: "Daha iyi tepki süresi için güç planını 'Yüksek Performans' moduna alır." },
+            ultimatePerformance: { title: "Nihai Performans", desc: "Maksimum hız için gizli 'Nihai Performans' güç planını etkinleştirir." },
+            flushDNS: { title: "DNS Önbelleğini Temizle", desc: "Bağlantı sorunlarını çözmek için DNS çözümleyici önbelleğini sıfırlar." },
+            changeDNS: { title: "DNS Değiştir", desc: "Daha hızlı bir DNS sağlayıcısına geçin (Cloudflare, Google, Quad9, AdGuard)." },
+            dismCheck: { title: "DISM Sağlık Kontrolü", desc: "Windows imajındaki bozulmaları kontrol eder." },
+            dismRepair: { title: "DISM Onarım", desc: "Windows Update kullanarak Windows imajını onarır." },
+            disableSticky: { title: "Yapışkan Tuşları Kapat", desc: "Shift x5 kısayolunu ve yapışkan tuşları devre dışı bırakır." },
+            disableBingSearch: { title: "Bing Aramayı Kapat", desc: "Başlat menüsünden Bing arama sonuçlarını kaldırır." },
+            disableWallet: { title: "Cüzdan Hizmetini Kapat", desc: "Mobil ödemeler için kullanılan Cüzdan Hizmetini devre dışı bırakır." },
+            disableMaps: { title: "Harita Yöneticisini Kapat", desc: "Harita kullanmıyorsanız harita yöneticisini devre dışı bırakır." },
+            disableDiagTrack: { title: "DiagTrack'i Kapat", desc: "Bağlı Kullanıcı Deneyimleri ve Telemetri hizmetini kapatır." },
+            disableFax: { title: "Faks Hizmetini Kapat", desc: "Eski Faks hizmetini devre dışı bırakır." },
+            disableWer: { title: "Hata Raporlamayı Kapat", desc: "Windows Hata Raporlama hizmetini kapatır." },
+            disableTouch: { title: "Dokunmatik Klavyeyi Kapat", desc: "Dokunmatik Klavye ve El Yazısı hizmetini kapatır." },
+            disableXbox: { title: "Xbox Hizmetlerini Kapat", desc: "Xbox Kimlik Doğrulama, Oyun Kaydetme ve Ağ hizmetlerini kapatır." },
+            disableMouseAccel: { title: "Fare İvmesini Kapat", desc: "Daha iyi oyun performansı için 'İşaretçi Hassasiyetini Artır' seçeneğini kapatır." },
+            disableTransparency: { title: "Saydamlığı Kapat", desc: "Performansı artırmak için Windows saydamlık efektlerini kapatır." },
+            disableNotifications: { title: "Bildirimleri Kapat", desc: "Windows ipuçlarını, önerilerini ve uygulama bildirimlerini kapatır." },
+            networkReset: { title: "Ağ Yığınını Sıfırla", desc: "Bağlantı sorunlarını çözmek için Winsock ve TCP/IP yığınını sıfırlar." },
+            cleanEventLog: { title: "Olay Günlüklerini Temizle", desc: "Tüm Windows Olay Görüntüleyici günlüklerini temizler." },
+            updateCacheClean: { title: "Güncelleme Önbelleğini Temizle", desc: "Güncelleme hatalarını düzeltmek için Windows Update önbelleğini temizler." },
+            disablePrintSpooler: { title: "Yazıcı Hizmetini Kapat", desc: "Yazıcı yazdırma biriktiricisini kapatır. Yazıcı kullanmıyorsanız önerilir." },
+            disableSearch: { title: "Windows Aramayı Kapat", desc: "CPU/Disk kullanımını azaltmak için Windows Arama Dizini'ni kapatır." },
+            disableThrottling: { title: "Ağ Kısıtlamasını Kapat", desc: "Daha iyi veri akışı için Windows ağ kısıtlama mekanizmasını devre dışı bırakır." },
+            showExtensions: { title: "Dosya Uzantılarını Göster", desc: "Dosya uzantılarını (örn. .txt, .exe) her zaman gösterir." },
+            showHiddenFiles: { title: "Gizli Dosyaları Göster", desc: "Gizli dosya ve klasörleri Gezgin'de görünür yapar." },
+            disableCortana: { title: "Cortana'yı Kapat", desc: "Kaynak kullanımını azaltmak için Cortana asistanını devre dışı bırakır." },
+            disableOneDrive: { title: "OneDrive'ı Kapat", desc: "OneDrive'ı başlangıçtan ve Gezgin'den kaldırır." },
+            clearBrowserCache: { title: "Tarayıcı Önbelleğini Temizle", desc: "Chrome, Edge ve Firefox tarayıcılarının önbelleğini temizler. Sitelerden çıkış yapabilir." },
+            disableBackgroundApps: { title: "Arka Plan Uygulamalarını Kapat", desc: "Uygulamaların arka planda çalışmasını engeller." },
+            enableGpuScheduling: { title: "GPU Zamanlaması", desc: "Daha iyi oyun performansı için donanım GPU zamanlamasını etkinleştirir." },
+            disableLocation: { title: "Konumu Kapat", desc: "Gizlilik için konum servislerini devre dışı bırakır." },
+            disableClipboardHistory: { title: "Pano Geçmişini Kapat", desc: "Windows pano geçmişi özelliğini devre dışı bırakır." },
+            disableActivityHistory: { title: "Aktivite Geçmişini Kapat", desc: "Windows'un aktivite geçmişi toplamasını durdurur." },
+            disableNewsInterests: { title: "Haber ve İlgi Alanlarını Kapat", desc: "Görev çubuğundaki haber widget'ını kaldırır." },
+            disableNagle: { title: "Nagle Algoritmasını Kapat", desc: "Ağ gecikmesini azaltmak için Nagle algoritmasını devre dışı bırakır." },
+            disableAutoTuning: { title: "TCP Auto-Tuning Kapat", desc: "Ağ performansını artırmak için TCP otomatik ayarlamayı kapatır." },
+            clearArpCache: { title: "ARP Önbelleğini Temizle", desc: "Ağ bağlantı sorunlarını çözmek için ARP önbelleğini temizler." },
+            enableQoS: { title: "QoS Optimizasyonu", desc: "Daha iyi ağ hızı için bant genişliği rezervasyonunu kaldırır." },
+            disableLSO: { title: "Large Send Offload Kapat", desc: "Oyunlarda ağ gecikmesini azaltmak için LSO'yu devre dışı bırakır." }
+        },
+        restoreModal: {
+            title: "Sistem Geri Yükleme Noktası",
+            desc: "Scripte geri yükleme noktası oluşturmayı eklemek ister misiniz? (Önerilir)",
+            yes: "Ekle",
+            no: "Hayır, atla"
+        },
+        // scriptMsgs stays ASCII for PowerShell compatibility
+        scriptMsgs: {
+            header: "OptWin ile Daha Hizli Windows",
+            processing: "Islem yapiliyor...",
+            success: "Basarili",
+            fail: "Basarisiz",
+            complete: "Islem Tamamlandi",
+            thankYou: "OptWin'i kullandiginiz icin tesekkurler",
+            author: "OptWin, ahmetly tarafindan tasarlandi"
+        },
+        overlay: {
+            title: "Script Önizleme",
+            badgeRun: "Birden çok kez çalıştırılabilir",
+            badgeReady: "Kullanım için hazır",
+            downloadBtn: "Script İndir",
+            closeBtn: "Kapat",
+            copyBtn: "Kopyala",
+            copiedBtn: "Kopyalandı!",
+            instrTitle: "Nasıl kullanılır:",
+            step1: "Script dosyasını aşağıdaki butondan indirin.",
+            step2: "İndirilen dosyaya sağ tıklayın ve <b>PowerShell ile Çalıştır</b> seçeneğini seçin.",
+            step3: "SmartScreen çıkarsa, <b>Daha fazla bilgi</b> → <b>Yine de çalıştır</b> tıklayın.",
+            note: "Not: Bu script açık kaynaklıdır. Kodu GitHub'da inceleyebilirsiniz.",
+            adminError: "Bu script Yönetici ayrıcalıkları gerektirir.",
+            adminHint: "Lütfen script dosyasına sağ tıklayın ve \"Yönetici olarak çalıştır\" seçeneğini seçin.",
+            adminExit: "Çıkmak için herhangi bir tuşa basın..."
+        }
+    }
+};
+
+// Export for use in other files
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { CONFIG, translations };
+}
