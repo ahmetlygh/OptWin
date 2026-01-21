@@ -1,0 +1,10 @@
+# OptWin - Nixpacks Configuration
+# Forces PHP detection for stats API
+
+providers = ["php"]
+
+[phases.setup]
+nixPkgs = ["php83"]
+
+[start]
+cmd = "php -S 0.0.0.0:${PORT:-5244} -t /app"
