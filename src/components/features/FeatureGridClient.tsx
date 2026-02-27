@@ -3,8 +3,9 @@
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { FeatureCard } from "./FeatureCard";
 import { TranslatableText } from "../shared/TranslatableText";
-import { useEffect, useState } from "react";
-import { Feature } from "@/types/feature";
+import { useEffect, useState, Fragment } from "react";
+import { Feature, DnsProvider } from "@/types/feature";
+import { DnsModal } from "../modals/DnsModal";
 
 type CategoryData = {
     id: string;
@@ -14,7 +15,7 @@ type CategoryData = {
     features: any[];
 };
 
-export function FeatureGridClient({ categories }: { categories: CategoryData[] }) {
+export function FeatureGridClient({ categories, dnsProviders }: { categories: CategoryData[], dnsProviders: DnsProvider[] }) {
     const { searchQuery, lang } = useOptWinStore();
     const [mounted, setMounted] = useState(false);
 
@@ -33,11 +34,14 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
 
                     return (
                         <section key={cat.id} className="animate-fade-in-up" id={cat.slug}>
-                            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6 flex items-center gap-3">
-                                {cat.icon && <i className={`fa-solid ${cat.icon} text-[var(--accent-color)]`}></i>}
-                                <TranslatableText en={nameEn} tr={nameTr} />
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="flex items-center gap-3 mb-5">
+                                {cat.icon && <i className={`fa-solid ${cat.icon} text-[var(--accent-color)] text-2xl`}></i>}
+                                <h3 className="text-xl font-bold text-white">
+                                    <TranslatableText en={nameEn} tr={nameTr} />
+                                </h3>
+                                <div className="h-px flex-1 bg-[var(--border-color)]"></div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {cat.features.map(f => (
                                     <FeatureCard key={f.id} feature={f as unknown as Feature} />
                                 ))}
@@ -94,12 +98,15 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
 
                 return (
                     <section key={`${cat.id}-${query}`} className="animate-fade-in-up" id={cat.slug}>
-                        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6 flex items-center gap-3">
-                            {cat.icon && <i className={`fa-solid ${cat.icon} text-[var(--accent-color)]`}></i>}
-                            <TranslatableText en={nameEn} tr={nameTr} />
-                        </h2>
+                        <div className="flex items-center gap-3 mb-5">
+                            {cat.icon && <i className={`fa-solid ${cat.icon} text-[var(--accent-color)] text-2xl`}></i>}
+                            <h3 className="text-xl font-bold text-white">
+                                <TranslatableText en={nameEn} tr={nameTr} />
+                            </h3>
+                            <div className="h-px flex-1 bg-[var(--border-color)]"></div>
+                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {cat.features.map(f => (
                                 <FeatureCard key={f.id} feature={f as unknown as Feature} />
                             ))}
@@ -107,6 +114,9 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                     </section>
                 )
             })}
+
+            {/* Floating pop-up modal for DNS selection */}
+            <DnsModal providers={dnsProviders} />
         </div>
     );
 }

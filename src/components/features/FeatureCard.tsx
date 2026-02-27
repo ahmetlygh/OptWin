@@ -11,14 +11,18 @@ interface FeatureCardProps {
 }
 
 export function FeatureCard({ feature }: FeatureCardProps) {
-    const { selectedFeatures, toggleFeature, lang } = useOptWinStore();
+    const isSelected = useOptWinStore(state => state.selectedFeatures.has(feature.slug));
+    const toggleFeature = useOptWinStore(state => state.toggleFeature);
+    const lang = useOptWinStore(state => state.lang);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    const isSelected = selectedFeatures.has(feature.slug);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     const titleEn = feature.translations.find(t => t.lang === "en")?.title || feature.slug;
     const titleTr = feature.translations.find(t => t.lang === "tr")?.title || feature.slug;
     const descEn = feature.translations.find(t => t.lang === "en")?.desc || "";
@@ -53,43 +57,61 @@ export function FeatureCard({ feature }: FeatureCardProps) {
     }
 
     return (
-        <div
-            onClick={() => mounted && toggleFeature(feature.slug)}
-            className={`
-        relative flex gap-3.5 p-5 rounded-2xl border cursor-pointer transition-all duration-300 shadow-sm
-        ${isSelected
-                    ? "border-[var(--accent-color)] bg-[var(--accent-color)]/5 shadow-[0_0_15px_rgba(108,92,231,0.2)]"
-                    : "border-[var(--border-color)] bg-[var(--card-bg)] hover:border-[var(--accent-color)]"
-                }
-      `}
+        <label
+            className={`group relative rounded-xl p-5 border transition-all cursor-pointer overflow-hidden ${isSelected
+                ? "bg-[var(--accent-color)]/10 border-[var(--accent-color)] shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-[1.01]"
+                : "bg-[var(--card-bg)] border-[var(--border-color)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-[var(--accent-color)]/10"
+                }`}
         >
-            <div className="text-2xl text-[var(--accent-color)] shrink-0 pt-0.5">
-                <i className={`${feature.iconType === "brands" ? "fa-brands" : "fa-solid"} ${feature.icon}`}></i>
-            </div>
+            {isSelected && (
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-color)]/5 to-transparent pointer-events-none animate-in fade-in duration-300"></div>
+            )}
+            <div className="absolute top-4 right-4 z-10 pointer-events-none">
+                <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={isSelected}
+                    onChange={() => mounted && toggleFeature(feature.slug)}
+                />
 
-            <div className="flex-1">
-                <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1.5 pr-8 tracking-tight">
-                    <HighlightText text={lang === "tr" ? titleTr : titleEn} />
-                </h3>
+                {/* Custom glowing circular indicator */}
+                <div className={`relative flex items-center justify-center w-[22px] h-[22px] rounded-full border-[2px] transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'border-[var(--accent-color)] bg-[var(--accent-color)] shadow-[0_0_12px_rgba(107,91,230,0.5)] scale-110' : 'border-[var(--border-color)] bg-black/20 scale-100 group-hover:border-[var(--accent-color)]/50'}`}>
 
-                <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
-                    <HighlightText text={lang === "tr" ? descTr : descEn} />
-                </p>
-
-                {!feature.noRisk && (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${riskBadgeBg} ${riskBadgeColor}`}>
-                        <TranslatableText en={riskBadgeTextEn} tr={riskBadgeTextTr} />
+                    {/* Animated checkmark inside */}
+                    <span className={`material-symbols-outlined text-white text-[16px] font-black transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}`}>
+                        check
                     </span>
-                )}
-            </div>
 
-            {/* Checkbox indicator top right */}
-            <div className={`
-        absolute top-4 right-4 w-5 h-5 border rounded-md flex items-center justify-center transition-all duration-300
-        ${isSelected ? "bg-[var(--accent-color)] border-[var(--accent-color)]" : "border-[var(--border-color)]"}
-      `}>
-                {isSelected && <span className="text-white text-xs leading-none font-bold block mt-[1px]">✓</span>}
+                    {/* Ripple effect on check */}
+                    {isSelected && (
+                        <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-color)] animate-ping opacity-0" style={{ animationDuration: '1s' }}></div>
+                    )}
+                </div>
             </div>
-        </div>
+            <div className="flex items-start gap-4 pointer-events-none">
+                <div className="w-10 h-10 rounded-lg bg-[var(--accent-color)]/10 flex items-center justify-center flex-shrink-0 text-[var(--accent-color)]">
+                    <i className={`${feature.iconType === "brands" ? "fa-brands" : "fa-solid"} ${feature.icon} text-lg`}></i>
+                </div>
+                <div className="flex-1 pr-6">
+                    {!feature.noRisk ? (
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h4 className="text-white font-semibold tracking-tight">
+                                <HighlightText text={lang === "tr" ? titleTr : titleEn} />
+                            </h4>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${riskBadgeBg} ${riskBadgeColor}`}>
+                                <TranslatableText en={riskBadgeTextEn} tr={riskBadgeTextTr} />
+                            </span>
+                        </div>
+                    ) : (
+                        <h4 className="text-white font-semibold tracking-tight mb-1">
+                            <HighlightText text={lang === "tr" ? titleTr : titleEn} />
+                        </h4>
+                    )}
+                    <p className="text-sm text-[var(--text-secondary)] leading-snug">
+                        <HighlightText text={lang === "tr" ? descTr : descEn} />
+                    </p>
+                </div>
+            </div>
+        </label>
     );
 }

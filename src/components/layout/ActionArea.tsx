@@ -26,43 +26,35 @@ export function ActionArea() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center mt-16 mb-8 w-full">
-            <button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className={`
-          flex items-center gap-3 px-10 py-4 rounded-xl text-lg font-bold transition-all duration-300 w-full md:w-auto min-w-[300px] justify-center
-          ${hasSelections
-                        ? "bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] text-white shadow-[0_8px_20px_rgba(108,92,231,0.3)] hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(108,92,231,0.5),0_0_20px_rgba(108,92,231,0.3)]"
-                        : "bg-gradient-to-br from-gray-600 to-gray-700 text-gray-300 cursor-not-allowed opacity-70"
-                    }
-        `}
-            >
-                {isGenerating ? (
-                    <>
-                        <i className="fa-solid fa-spinner fa-spin text-xl"></i>
-                        <TranslatableText en="Generating..." tr="Oluşturuluyor..." noSpan />
-                    </>
-                ) : (
-                    <>
-                        <i className="fa-solid fa-terminal text-xl"></i>
-                        <TranslatableText en="Generate Script" tr="Scripti Oluştur" noSpan />
-                        {hasSelections && (
-                            <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-sm">
-                                {selectedFeatures.size}
-                            </span>
-                        )}
-                    </>
-                )}
-            </button>
-
-            {/* Helper text */}
-            <p className="mt-4 text-sm text-[var(--text-secondary)] text-center max-w-lg">
-                <TranslatableText
-                    en="Selected features will be bundled into a single executing PowerShell script. No installation required on the target machine."
-                    tr="Seçilen özellikler tek bir PowerShell script dosyasına paketlenir. Hedef makinede kuruluma gerek yoktur."
-                />
-            </p>
+        <div className={`fixed bottom-0 left-0 w-full p-6 pointer-events-none flex justify-center z-[100] transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${hasSelections ? "-translate-y-8 opacity-100" : "translate-y-full opacity-0"}`}>
+            <div className="pointer-events-auto bg-[var(--card-bg)]/90 backdrop-blur-xl border border-[var(--border-color)] p-2.5 rounded-2xl shadow-[0_10px_40px_rgba(107,91,230,0.2)] flex items-center gap-4 transition-all">
+                <div className="px-5 text-sm font-medium text-white hidden sm:block">
+                    <span className="text-[var(--accent-color)] font-bold text-lg">{selectedFeatures.size}</span>
+                    <span className="ml-1 text-[var(--text-secondary)]">
+                        <TranslatableText en="optimizations selected" tr="optimizasyon seçildi" />
+                    </span>
+                </div>
+                <button
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    className={`glow-button h-12 px-8 rounded-xl text-white font-bold text-lg flex items-center gap-2 transition-all ${hasSelections
+                        ? "bg-gradient-to-r from-[var(--accent-color)] to-[#a855f7] cursor-pointer hover:shadow-[0_0_25px_rgba(107,91,230,0.6)]"
+                        : "bg-gradient-to-r from-slate-600 to-slate-700 cursor-not-allowed opacity-70"
+                        }`}
+                >
+                    {isGenerating ? (
+                        <>
+                            <span className="material-symbols-outlined animate-spin text-xl">sync</span>
+                            <TranslatableText en="Generating..." tr="Oluşturuluyor..." noSpan />
+                        </>
+                    ) : (
+                        <>
+                            <span className="material-symbols-outlined text-xl">terminal</span>
+                            <TranslatableText en="Create Script" tr="Scripti Oluştur" noSpan />
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
     );
 }

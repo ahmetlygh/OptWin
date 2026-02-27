@@ -7,12 +7,22 @@ import { useEffect, useState } from "react";
 export function ScriptOverlay() {
     const { isScriptOverlayOpen, setScriptOverlayOpen, selectedFeatures, showToast, previewCode } = useOptWinStore();
     const [mounted, setMounted] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    if (!mounted || !isScriptOverlayOpen) return null;
+    useEffect(() => {
+        if (isScriptOverlayOpen) {
+            setIsVisible(true);
+        } else {
+            const timer = setTimeout(() => setIsVisible(false), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isScriptOverlayOpen]);
+
+    if (!mounted || (!isScriptOverlayOpen && !isVisible)) return null;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(previewCode);
@@ -34,9 +44,9 @@ export function ScriptOverlay() {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-fade-in">
+        <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl transition-all duration-300 ${isScriptOverlayOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div
-                className="w-full max-w-4xl bg-[#131121] border border-[var(--border-color)] rounded-3xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row h-[85vh] md:h-[75vh]"
+                className={`w-full max-w-4xl bg-[#131121] border border-[var(--border-color)] rounded-3xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row h-[85vh] md:h-[75vh] transition-all duration-300 transform ${isScriptOverlayOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <button

@@ -11,12 +11,22 @@ export function RestorePointModal() {
     } = useOptWinStore();
     const [mounted, setMounted] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    if (!mounted || !isRestoreModalOpen) return null;
+    useEffect(() => {
+        if (isRestoreModalOpen) {
+            setIsVisible(true);
+        } else {
+            const timer = setTimeout(() => setIsVisible(false), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isRestoreModalOpen]);
+
+    if (!mounted || (!isRestoreModalOpen && !isVisible)) return null;
 
     const generateAndOpendoScript = async (createRestorePoint: boolean) => {
         setIsGenerating(true);
@@ -54,9 +64,9 @@ export function RestorePointModal() {
     const handleNo = () => generateAndOpendoScript(false);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+        <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all duration-300 ${isRestoreModalOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div
-                className="w-full max-w-lg bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden animate-fade-in-up"
+                className={`w-full max-w-lg bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden transition-all duration-300 transform ${isRestoreModalOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[var(--accent-color)]/10 rounded-full blur-[50px] pointer-events-none"></div>
@@ -73,11 +83,11 @@ export function RestorePointModal() {
                         <i className="fa-solid fa-clock-rotate-left"></i>
                     </div>
 
-                    <h3 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                    <h3 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">
                         <TranslatableText en="Create Restore Point?" tr="Geri Yükleme Noktası?" />
                     </h3>
 
-                    <p className="text-[var(--text-secondary)] leading-relaxed text-lg pb-4">
+                    <p className="text-[var(--text-secondary)] leading-relaxed text-base pb-4">
                         <TranslatableText
                             en="Do you want to create a System Restore Point before applying the selected optimizations? This is highly recommended for safety."
                             tr="Seçilen optimizasyonları uygulamadan önce bir Sistem Geri Yükleme Noktası oluşturmak ister misiniz? Güvenlik için şiddetle tavsiye edilir."

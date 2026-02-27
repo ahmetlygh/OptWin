@@ -32,7 +32,7 @@ export function PresetControls({ presets, allFeatureSlugs }: { presets: PresetDe
     };
 
     return (
-        <div className="flex justify-center gap-4 mb-10 flex-wrap animate-fade-in-up">
+        <div className="flex flex-wrap gap-3 justify-center md:justify-center">
             {presets.map((preset) => (
                 <button
                     key={preset.id}

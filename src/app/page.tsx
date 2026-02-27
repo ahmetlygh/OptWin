@@ -3,7 +3,7 @@ import { PresetControls } from "@/components/layout/PresetControls";
 import { Hero } from "@/components/layout/Hero";
 import { SearchBar } from "@/components/features/SearchBar";
 import { FeatureGrid } from "@/components/features/FeatureGrid";
-import { DnsPanel } from "@/components/features/DnsPanel";
+
 import { ActionArea } from "@/components/layout/ActionArea";
 import { StatsSection } from "@/components/sections/StatsSection";
 import { AboutSection } from "@/components/sections/AboutSection";
@@ -37,15 +37,18 @@ export default async function Home() {
   const allFeatureSlugs = allFeatures.map(f => f.slug);
 
   return (
-    <div className="flex flex-col gap-12 pt-8 animate-fade-in-up">
-      <Hero />
-      <PresetControls presets={presetsFormatted} allFeatureSlugs={allFeatureSlugs} />
-      <SearchBar />
-      <FeatureGrid />
-      <DnsPanel providers={dnsProvidersDb} />
+    <>
+      <div className="flex flex-col gap-12 pt-8 animate-fade-in-up">
+        <Hero />
+        <section className="flex flex-col gap-6 sticky top-20 z-40 bg-[var(--bg-color)]/95 backdrop-blur-sm py-4 -mx-6 px-6 border-b border-[var(--border-color)] md:static md:bg-transparent md:border-none md:p-0 md:backdrop-blur-none transition-colors animate-fade-in-up">
+          <PresetControls presets={presetsFormatted} allFeatureSlugs={allFeatureSlugs} />
+          <SearchBar />
+        </section>
+        <FeatureGrid />
+        <StatsSection />
+        <AboutSection />
+      </div>
       <ActionArea />
-      <StatsSection />
-      <AboutSection />
-    </div>
+    </>
   );
 }

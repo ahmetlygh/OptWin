@@ -1,6 +1,3 @@
-// OptWin v1.3 — Prisma Schema
-// PostgreSQL — All site content is database-driven
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,8 +6,6 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// ===== AUTH =====
 
 model AdminUser {
   id        String   @id @default(cuid())
@@ -23,23 +18,14 @@ model AdminUser {
   @@map("admin_users")
 }
 
-// ===== FEATURES & CATEGORIES =====
-
-enum RiskLevel {
-  low
-  medium
-  high
-}
-
 model Category {
-  id           String   @id @default(cuid())
-  slug         String   @unique // e.g. "system", "network"
-  icon         String?  // font-awesome class
-  order        Int      @default(0)
-  enabled      Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  id           String                @id @default(cuid())
+  slug         String                @unique
+  icon         String?
+  order        Int                   @default(0)
+  enabled      Boolean               @default(true)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
   translations CategoryTranslation[]
   features     Feature[]
 
@@ -47,86 +33,77 @@ model Category {
 }
 
 model CategoryTranslation {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   categoryId String
-  lang       String // "en", "tr"
-  name       String // e.g. "System Optimization"
-
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  lang       String
+  name       String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([categoryId, lang])
   @@map("category_translations")
 }
 
 model Feature {
-  id         String    @id @default(cuid())
-  slug       String    @unique // e.g. "cleanTemp"
-  categoryId String
-  icon       String    // font-awesome class e.g. "fa-trash-can"
-  iconType   String    @default("solid") // "solid" or "brands"
-  risk       RiskLevel @default(low)
-  noRisk     Boolean   @default(false) // if true, risk badge is hidden
-  order      Int       @default(0)
-  enabled    Boolean   @default(true)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  category     Category              @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  translations FeatureTranslation[]
+  id           String               @id @default(cuid())
+  slug         String               @unique
+  categoryId   String
+  icon         String
+  iconType     String               @default("solid")
+  risk         RiskLevel            @default(low)
+  noRisk       Boolean              @default(false)
+  order        Int                  @default(0)
+  enabled      Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
   commands     FeatureCommand[]
+  translations FeatureTranslation[]
+  category     Category             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@map("features")
 }
 
 model FeatureTranslation {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   featureId String
-  lang      String // "en", "tr"
+  lang      String
   title     String
   desc      String
-
-  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  feature   Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
   @@unique([featureId, lang])
   @@map("feature_translations")
 }
 
 model FeatureCommand {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   featureId     String
-  lang          String // "en", "tr" — for script progress messages
-  command       String // PowerShell command(s)
-  scriptMessage String // e.g. "Cleaning temporary files..."
-
-  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  lang          String
+  command       String
+  scriptMessage String
+  feature       Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
   @@unique([featureId, lang])
   @@map("feature_commands")
 }
 
-// ===== DNS =====
-
 model DnsProvider {
   id        String  @id @default(cuid())
-  slug      String  @unique // e.g. "cloudflare"
-  name      String  // Display name
-  primary   String  // Primary IP
-  secondary String  // Secondary IP
+  slug      String  @unique
+  name      String
+  primary   String
+  secondary String
   order     Int     @default(0)
   enabled   Boolean @default(true)
 
   @@map("dns_providers")
 }
 
-// ===== PRESETS =====
-
 model Preset {
-  id          String   @id @default(cuid())
-  slug        String   @unique // "recommended", "gamer"
-  featureSlugs String[] // array of feature slugs
-  enabled     Boolean  @default(true)
-  order       Int      @default(0)
-
+  id           String              @id @default(cuid())
+  slug         String              @unique
+  featureSlugs String[]
+  enabled      Boolean             @default(true)
+  order        Int                 @default(0)
   translations PresetTranslation[]
 
   @@map("presets")
@@ -136,15 +113,12 @@ model PresetTranslation {
   id       String @id @default(cuid())
   presetId String
   lang     String
-  name     String // e.g. "Recommended Settings"
-
-  preset Preset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  name     String
+  preset   Preset @relation(fields: [presetId], references: [id], onDelete: Cascade)
 
   @@unique([presetId, lang])
   @@map("preset_translations")
 }
-
-// ===== STATS =====
 
 model SiteStats {
   id           String   @id @default("main")
@@ -156,16 +130,13 @@ model SiteStats {
 }
 
 model DailyStat {
-  id       String   @id @default(cuid())
-  date     DateTime @db.Date
-  visits   Int      @default(0)
-  scripts  Int      @default(0)
+  id      String   @id @default(cuid())
+  date    DateTime @unique @db.Date
+  visits  Int      @default(0)
+  scripts Int      @default(0)
 
-  @@unique([date])
   @@map("daily_stats")
 }
-
-// ===== CONTACT MESSAGES =====
 
 model ContactMessage {
   id        String   @id @default(cuid())
@@ -180,26 +151,28 @@ model ContactMessage {
   @@map("contact_messages")
 }
 
-// ===== SITE SETTINGS — Admin-controlled key-value store =====
-
 model SiteSetting {
-  key         String   @id // e.g. "maintenance_mode", "site_version", "footer_year"
-  value       String   // stored as string, parsed by type
-  type        String   @default("string") // "string", "boolean", "number", "json"
+  key         String   @id
+  value       String
+  type        String   @default("string")
   description String?
   updatedAt   DateTime @updatedAt
 
   @@map("site_settings")
 }
 
-// ===== UI TRANSLATIONS — All static strings admin-editable =====
-
 model UiTranslation {
   id    String @id @default(cuid())
-  key   String // e.g. "hero.title", "footer.text", "preset.recommended"
+  key   String
   lang  String
   value String
 
   @@unique([key, lang])
   @@map("ui_translations")
+}
+
+enum RiskLevel {
+  low
+  medium
+  high
 }

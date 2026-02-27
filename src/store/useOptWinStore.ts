@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Lang = "en" | "tr";
+export type Lang = "en" | "tr" | "zh" | "es" | "hi";
 export type Theme = "dark" | "light";
 
 interface OptWinState {
@@ -35,6 +35,8 @@ interface OptWinState {
     setWarningModalOpen: (isOpen: boolean) => void;
     isScriptOverlayOpen: boolean;
     setScriptOverlayOpen: (isOpen: boolean) => void;
+    isDnsModalOpen: boolean;
+    setDnsModalOpen: (isOpen: boolean) => void;
 
     previewCode: string;
     setPreviewCode: (code: string) => void;
@@ -82,6 +84,9 @@ export const useOptWinStore = create<OptWinState>()(
                         next.delete(slug);
                     } else {
                         next.add(slug);
+                        if (slug === "changeDNS") {
+                            setTimeout(() => get().setDnsModalOpen(true), 10);
+                        }
                     }
 
                     return { selectedFeatures: next };
@@ -112,6 +117,9 @@ export const useOptWinStore = create<OptWinState>()(
 
             isScriptOverlayOpen: false,
             setScriptOverlayOpen: (isOpen) => set({ isScriptOverlayOpen: isOpen }),
+
+            isDnsModalOpen: false,
+            setDnsModalOpen: (isOpen) => set({ isDnsModalOpen: isOpen }),
 
             previewCode: "",
             setPreviewCode: (code) => set({ previewCode: code }),
