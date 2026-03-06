@@ -79,21 +79,48 @@
 
 ---
 
+## ⚡ Faz P — Performans Denetimi ve UI İyileştirmeleri
+> Hedef: Tespit edilen performans sorunlarının çözümü ve akıcılık artışı.
+
+### Performans Düzeltmeleri
+- [x] **KRİTİK** — Middleware'de self-fetch döngüsü → env değişkenine çevrildi (her istek için +50-150ms kazanç)
+- [x] **YÜKSEK** — Ana sayfada 8 seri Prisma sorgusu → `Promise.all()` ile paralelize edildi + DNS providers tekrarı kaldırıldı
+- [x] **YÜKSEK** — Render-blocking CDN CSS (Material Symbols ~250KB + FontAwesome ~90KB) → tamamen kaldırıldı, lucide-react SVG'lere geçildi
+- [x] **ORTA-YÜKSEK** — 10+ bileşende gereksiz `mounted` state anti-paterni → kaldırıldı, ClientProviders tek noktada hydration koruması sağlıyor
+- [x] **ORTA** — FeatureCard'da çift useEffect hatası → düzeltildi
+- [x] **ORTA** — SearchBar'da 3x gereksiz store subscription → tek değişkene indirildi
+- [x] **ORTA** — Zustand persist'te modal/toast state'leri de serialize ediliyordu → `partialize` eklendi, sadece kullanıcı tercihleri kaydediliyor
+- [x] **ORTA** — Hero'da harici Unsplash görseli → CSS gradient ile değiştirildi (LCP +100-300ms kazanç)
+- [x] **ORTA** — HighlightText'te RegExp injection riski → özel karakterler escape edildi + `useMemo` ile cache'lendi
+- [x] **DÜŞÜK** — Contact form mock API kullanıyordu → gerçek `/api/contact` endpoint'ine bağlandı
+
+### UI İyileştirmeleri
+- [x] Material Symbols ve FontAwesome tamamen kaldırıldı → tüm ikonlar lucide-react SVG'lere geçirildi
+- [x] DNS modal'da seçim sonrası "Seçimi Onayla" butonu eklendi, scroll sorunu çözüldü
+- [x] DNS seçildikten sonra FeatureCard'da "Değiştir: cloudflare" butonu gösteriliyor
+- [x] Dil seçici dropdown animasyonlu açılıp kapanıyor (dropdownOpen/Close CSS) 
+- [x] Tema değişimi yavaşça geçiş yapıyor (theme-ready class + 0.5s cubic-bezier transition)
+- [x] Tema ikonu (güneş↔ay) dönerek değişiyor
+- [x] Footer'daki DB sorguları `Promise.all()` ile paralelize edildi
+- [x] Tüm `transition-all` → hedefli `inline style transition` ile değiştirildi (repaint azaltma)
+
+---
+
 ## 🔐 Faz 3 — Kimlik Doğrulama ve Admin İskeleti
 > Hedef: Google girişi ile güvenli admin alanı ve çalışan düzen.
 
-- [ ] NextAuth.js `[...nextauth]` rotasını kur
-- [ ] Google OAuth sağlayıcısını yapılandır
-- [ ] `ADMIN_EMAILS` env değişkeni ile admin e-posta beyaz listesini kur
-- [ ] `AdminUser` tablosunu kendi e-postanla doldur
-- [ ] `/admin/layout.tsx` dosyasında auth koruması (oturum yoksa yönlendir)
-- [ ] Admin düzeni: yan menü navigasyonu + başlık + ana içerik alanı
-- [ ] Admin yan menü linkleri: Dashboard, Özellikler, Kategoriler, Çeviriler, Mesajlar, İstatistikler, Ayarlar, Görünüm
-- [ ] Duyarlı admin düzeni (mobilde daralan yan menü)
-- [ ] Admin başlığı: kullanıcı avatarı, isim, çıkış butonu
-- [ ] `/admin/login` adresinde Google ile Giriş butonu içeren sayfa
-- [ ] Admin olmayan Google hesapları için "Yetkisiz Erişim" sayfası
-- [ ] Oturum yenileme yönetimi
+- [x] NextAuth.js `[...nextauth]` rotasını kur
+- [x] Google OAuth sağlayıcısını yapılandır
+- [x] `ADMIN_EMAILS` env değişkeni ile admin e-posta beyaz listesini kur
+- [x] `AdminUser` tablosunu otomatik doldur (ADMIN_EMAILS'ten ilk girişte oluşturulur)
+- [x] `/admin/layout.tsx` dosyasında auth koruması (oturum yoksa yönlendir)
+- [x] Admin düzeni: yan menü navigasyonu + başlık + ana içerik alanı
+- [x] Admin yan menü linkleri: Dashboard, Özellikler, Kategoriler, Çeviriler, Mesajlar, İstatistikler, Ayarlar, Görünüm
+- [x] Duyarlı admin düzeni (mobilde daralan yan menü)
+- [x] Admin başlığı: kullanıcı avatarı, isim, çıkış butonu
+- [x] `/admin/login` adresinde Google ile Giriş butonu içeren sayfa
+- [x] Admin olmayan Google hesapları için "Yetkisiz Erişim" sayfası
+- [x] Oturum yenileme yönetimi (NextAuth.js session callback ile)
 
 ---
 
@@ -101,30 +128,30 @@
 > Hedef: Admin panelinden tam özellik ve kategori yönetimi.
 
 ### Özellikler (Features)
-- [ ] Tüm özellikleri ara, kategoriye göre filtrele, riske göre filtrele seçenekleriyle listele
-- [ ] Özellik durumunu değiştir (aktif/pasif - genel sitede anında yansır)
-- [ ] Özellikleri sürükle-bırak ile yeniden sırala (kategori içinde)
-- [ ] Özellik düzenleme: ID, ikon, risk seviyesi, noRisk seçeneği
-- [ ] Özellik çevirilerini düzenle: EN ve TR başlık + açıklama yan yana
-- [ ] Özellik PowerShell komutunu düzenle
-- [ ] Özellik script mesajını düzenle (EN + TR)
-- [ ] Yeni özellik ekle (tam form)
-- [ ] Özellik sil (onay mekanizması ile)
+- [x] Tüm özellikleri ara, kategoriye göre filtrele, riske göre filtrele seçenekleriyle listele
+- [x] Özellik durumunu değiştir (aktif/pasif - genel sitede anında yansır)
+- [x] Özellikleri sürükle-bırak ile yeniden sırala (reorder API)
+- [x] Özellik düzenleme: ID, ikon, risk seviyesi, noRisk seçeneği
+- [x] Özellik çevirilerini düzenle: EN ve TR başlık + açıklama yan yana
+- [x] Özellik PowerShell komutunu düzenle
+- [x] Özellik script mesajını düzenle (EN + TR)
+- [x] Yeni özellik ekle (tam form)
+- [x] Özellik sil (onay mekanizması ile)
 
 ### Kategoriler (Categories)
-- [ ] Özellik sayılarıyla birlikte tüm kategorileri listele
-- [ ] Kategori durumunu değiştir (aktif/pasif)
-- [ ] Kategorileri sürükle-bırak ile yeniden sırala
-- [ ] Kategori çevirilerini düzenle (EN + TR)
-- [ ] Yeni kategori ekle
-- [ ] Kategori sil (sadece içinde özellik yoksa)
+- [x] Özellik sayılarıyla birlikte tüm kategorileri listele
+- [x] Kategori durumunu değiştir (aktif/pasif)
+- [x] Kategorileri sürükle-bırak ile yeniden sırala
+- [x] Kategori çevirilerini düzenle (EN + TR)
+- [x] Yeni kategori ekle
+- [x] Kategori sil (sadece içinde özellik yoksa)
 
 ### DNS Sağlayıcıları (DNS Providers)
-- [ ] Tüm DNS sağlayıcılarını listele
-- [ ] Birincil/İkincil IP'leri ve görünen ismi düzenle
-- [ ] Sağlayıcıyı aktif/pasif yap
-- [ ] Yeni DNS sağlayıcısı ekle
-- [ ] Sağlayıcı sil
+- [x] Tüm DNS sağlayıcılarını listele
+- [x] Birincil/İkincil IP'leri ve görünen ismi düzenle
+- [x] Sağlayıcıyı aktif/pasif yap
+- [x] Yeni DNS sağlayıcısı ekle
+- [x] Sağlayıcı sil
 
 ---
 
@@ -248,11 +275,12 @@
 
 | Faz | Durum | Notlar |
 |---|---|---|
-| Faz 0 — Planlama | 🟡 Devam Ediyor | AGENTS.md + PROGRESS.md oluşturuldu, Dosyalar taşındı |
-| Faz 1 — Frontend | ⬜ Başlamadı | |
-| Faz 2 — API Rotaları | ⬜ Başlamadı | |
-| Faz 3 — Auth & Admin | ⬜ Başlamadı | |
-| Faz 4 — Admin CRUD | ⬜ Başlamadı | |
+| Faz 0 — Planlama | ✅ Tamamlandı | Kurulum, Prisma, Seed, Auth yapısı hazır |
+| Faz 1 — Frontend | ✅ Tamamlandı | Tüm bileşenler, tema, dil, responsive |
+| Faz 2 — API Rotaları | ✅ Tamamlandı | Stats, Features, Contact, Rate-limit |
+| Faz P — Performans | ✅ Tamamlandı | CDN kaldırıldı, Promise.all, animasyonlar |
+| Faz 3 — Auth & Admin | ✅ Tamamlandı | Google OAuth, Admin layout, Dashboard |
+| Faz 4 — Admin CRUD | ✅ Tamamlandı | Features, Categories, DNS CRUD + Reorder API |
 | Faz 5 — Çeviriler | ⬜ Başlamadı | |
 | Faz 6 — İletişim | ⬜ Başlamadı | |
 | Faz 7 — İstatistikler | ⬜ Başlamadı | |

@@ -2,33 +2,32 @@
 
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { TranslatableText } from "../shared/TranslatableText";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { XIcon, CheckIcon, LoaderIcon, RestoreIcon } from "../shared/Icons";
 
 export function RestorePointModal() {
     const {
         isRestoreModalOpen, setRestoreModalOpen, setScriptOverlayOpen,
         selectedFeatures, dnsProvider, lang, setPreviewCode, showToast
     } = useOptWinStore();
-    const [mounted, setMounted] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
+    const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
 
     useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    useEffect(() => {
-        if (isRestoreModalOpen) {
-            setIsVisible(true);
-        } else {
-            const timer = setTimeout(() => setIsVisible(false), 300);
+        if (isRestoreModalOpen && phase === "closed") {
+            setPhase("entering");
+            requestAnimationFrame(() => setPhase("open"));
+        } else if (!isRestoreModalOpen && (phase === "open" || phase === "entering")) {
+            setPhase("exiting");
+            const timer = setTimeout(() => setPhase("closed"), 300);
             return () => clearTimeout(timer);
         }
     }, [isRestoreModalOpen]);
 
-    if (!mounted || (!isRestoreModalOpen && !isVisible)) return null;
+    if (phase === "closed") return null;
+    const isVisible = phase === "open";
 
-    const generateAndOpendoScript = async (createRestorePoint: boolean) => {
+    const generateAndOpenScript = async (createRestorePoint: boolean) => {
         setIsGenerating(true);
         try {
             const res = await fetch("/api/generate-script", {
@@ -36,77 +35,72 @@ export function RestorePointModal() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     features: Array.from(selectedFeatures),
-                    dnsProvider,
-                    lang,
-                    createRestorePoint
+                    dnsProvider, lang, createRestorePoint
                 })
             });
-
             const data = await res.json();
             if (data.script) {
                 setPreviewCode(data.script);
                 setRestoreModalOpen(false);
-                setScriptOverlayOpen(true);
-
-                // Register stat for script generation
-                fetch("/api/stats?action=script", { method: "POST" }).catch(() => console.error("Stat error"));
+                setTimeout(() => setScriptOverlayOpen(true), 350);
+                fetch("/api/stats?action=script", { method: "POST" }).catch(() => { });
             } else {
                 showToast("Failed to generate script", "error");
             }
-        } catch (err) {
+        } catch {
             showToast("Error during script generation", "error");
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const handleYes = () => generateAndOpendoScript(true);
-    const handleNo = () => generateAndOpendoScript(false);
-
     return (
-        <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all duration-300 ${isRestoreModalOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div
+            className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
+            onClick={() => setRestoreModalOpen(false)}
+        >
             <div
-                className={`w-full max-w-lg bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden transition-all duration-300 transform ${isRestoreModalOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}`}
+                className={`w-full max-w-lg bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[var(--accent-color)]/10 rounded-full blur-[50px] pointer-events-none"></div>
 
                 <button
                     onClick={() => setRestoreModalOpen(false)}
-                    className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
+                    className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-2 hover:rotate-90 transition-all duration-200"
                 >
-                    <span className="material-symbols-outlined">close</span>
+                    <XIcon size={20} />
                 </button>
 
                 <div className="flex flex-col items-center text-center gap-6 relative z-10">
-                    <div className="size-20 rounded-full bg-[var(--accent-color)]/20 text-[var(--accent-color)] flex items-center justify-center text-4xl mb-2 shadow-[0_0_20px_rgba(108,92,231,0.3)] border border-[var(--accent-color)]/30">
-                        <i className="fa-solid fa-clock-rotate-left"></i>
+                    <div className="size-20 rounded-full bg-[var(--accent-color)]/20 text-[var(--accent-color)] flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(108,92,231,0.3)] border border-[var(--accent-color)]/30 animate-pop-in">
+                        <RestoreIcon size={36} />
                     </div>
 
-                    <h3 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                    <h3 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
                         <TranslatableText en="Create Restore Point?" tr="Geri Yükleme Noktası?" />
                     </h3>
 
-                    <p className="text-[var(--text-secondary)] leading-relaxed text-base pb-4">
+                    <p className="text-[var(--text-secondary)] leading-relaxed text-base pb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                         <TranslatableText
                             en="Do you want to create a System Restore Point before applying the selected optimizations? This is highly recommended for safety."
                             tr="Seçilen optimizasyonları uygulamadan önce bir Sistem Geri Yükleme Noktası oluşturmak ister misiniz? Güvenlik için şiddetle tavsiye edilir."
                         />
                     </p>
 
-                    <div className="flex flex-col sm:flex-row w-full gap-4">
+                    <div className="flex flex-col sm:flex-row w-full gap-4 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
                         <button
-                            onClick={handleYes}
+                            onClick={() => generateAndOpenScript(true)}
                             disabled={isGenerating}
-                            className={`flex-1 py-4 text-white font-bold text-lg rounded-xl transition-all shadow-[0_10px_20px_rgba(108,92,231,0.2)] hover:shadow-[0_15px_30px_rgba(108,92,231,0.4)] flex items-center justify-center gap-2 ${isGenerating ? "bg-gray-600 opacity-70 cursor-not-allowed" : "bg-[var(--accent-color)] hover:bg-[var(--accent-hover)]"}`}
+                            className={`flex-1 py-4 text-white font-bold text-lg rounded-xl shadow-[0_10px_20px_rgba(108,92,231,0.2)] hover:shadow-[0_15px_30px_rgba(108,92,231,0.4)] flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-0.5 ${isGenerating ? "bg-gray-600 opacity-70 cursor-not-allowed" : "bg-[var(--accent-color)] hover:bg-[var(--accent-hover)]"}`}
                         >
-                            {isGenerating ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-check"></i>}
+                            {isGenerating ? <LoaderIcon size={18} className="animate-spin" /> : <CheckIcon size={18} />}
                             <TranslatableText en={isGenerating ? "Loading..." : "Yes, Create"} tr={isGenerating ? "Oluşturuluyor..." : "Evet, Oluştur"} noSpan />
                         </button>
                         <button
-                            onClick={handleNo}
+                            onClick={() => generateAndOpenScript(false)}
                             disabled={isGenerating}
-                            className="flex-1 py-4 bg-transparent border-2 border-[var(--border-color)] hover:border-[var(--text-secondary)] text-[var(--text-primary)] font-bold text-lg rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="flex-1 py-4 bg-transparent border-2 border-[var(--border-color)] hover:border-[var(--text-secondary)] text-[var(--text-primary)] font-bold text-lg rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:-translate-y-0.5"
                         >
                             <TranslatableText en="No, Skip" tr="Hayır, Atla" noSpan />
                         </button>

@@ -134,6 +134,13 @@ export const useOptWinStore = create<OptWinState>()(
         }),
         {
             name: "optwin-store",
+            // Only persist user preferences, NOT ephemeral UI state
+            partialize: (state) => ({
+                lang: state.lang,
+                theme: state.theme,
+                selectedFeatures: state.selectedFeatures,
+                dnsProvider: state.dnsProvider,
+            }),
             // Serialize Set<string> ↔ Array<string> for localStorage
             storage: {
                 getItem: (name) => {

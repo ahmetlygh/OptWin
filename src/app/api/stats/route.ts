@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 
 // GET /api/stats -> returns { totalVisits, totalScripts }
@@ -24,7 +24,7 @@ export async function GET() {
 }
 
 // POST /api/stats?action=visit|script -> increments counters
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
 
@@ -33,6 +33,54 @@ export async function POST(req: Request) {
     }
 
     try {
+        // IP-based daily unique visit tracking
+        if (action === "visit") {
+            const forwarded = req.headers.get("x-forwarded-for");
+            const ip = forwarded ? forwarded.split(",")[0].trim() : req.headers.get("x-real-ip") || "unknown";
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Check if this IP already visited today using a simple hash
+            const visitKey = `visit:${ip}:${today.toISOString().slice(0, 10)}`;
+
+            // Use SiteSetting as a simple key-value store for visit dedup
+            const existing = await prisma.siteSetting.findUnique({
+                where: { key: visitKey }
+            });
+
+            if (existing) {
+                // Already counted this IP today
+                const stats = await prisma.siteStats.findUnique({ where: { id: "main" } });
+                return NextResponse.json({
+                    success: true,
+                    alreadyCounted: true,
+                    totalVisits: stats?.totalVisits || 0,
+                    totalScripts: stats?.totalScripts || 0
+                });
+            }
+
+            // Record this visit
+            await prisma.siteSetting.create({
+                data: {
+                    key: visitKey,
+                    value: ip,
+                    type: "visit_dedup",
+                    description: `Visit from ${ip} on ${today.toISOString().slice(0, 10)}`
+                }
+            });
+
+            // Clean up old visit dedup entries (older than 2 days)
+            const twoDaysAgo = new Date();
+            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+            await prisma.siteSetting.deleteMany({
+                where: {
+                    type: "visit_dedup",
+                    updatedAt: { lt: twoDaysAgo }
+                }
+            });
+        }
+
         let stats = await prisma.siteStats.findUnique({ where: { id: "main" } });
 
         if (!stats) {

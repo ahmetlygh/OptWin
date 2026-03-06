@@ -12,12 +12,16 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
     const theme = useOptWinStore((state) => state.theme);
     const lang = useOptWinStore((state) => state.lang);
 
-    // Re-hydrate state from localStorage on mount and apply to DOM
     useEffect(() => {
         setMounted(true);
+        // Enable smooth theme transitions AFTER initial paint to prevent FOUC
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document.body.classList.add("theme-ready");
+            });
+        });
     }, []);
 
-    // Update theme class on HTML element
     useEffect(() => {
         if (!mounted) return;
         const root = document.documentElement;
@@ -30,13 +34,11 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
         }
     }, [theme, mounted]);
 
-    // Update language attribute on HTML element
     useEffect(() => {
         if (!mounted) return;
         document.documentElement.lang = lang;
     }, [lang, mounted]);
 
-    // Prevent flash of unstyled content
     if (!mounted) {
         return <div style={{ visibility: "hidden" }}>{children}</div>;
     }
@@ -44,6 +46,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
     return (
         <>
             {children}
+            {/* All modals rendered at ROOT level for proper z-index stacking */}
             <WarningModal />
             <RestorePointModal />
             <ScriptOverlay />

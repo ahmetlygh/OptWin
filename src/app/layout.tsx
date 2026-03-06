@@ -4,7 +4,6 @@ import "./globals.css";
 import { ClientProviders } from "@/components/providers/ClientProviders";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
-import { getSettings } from "@/lib/settings";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -18,22 +17,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Fetch early settings if needed globally, but we mostly handle in components
-  const settings = await getSettings(["maintenance_mode"]);
-
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
-        {/* We add FontAwesome as it's used in features DB */}
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-        />
-      </head>
       <body className={`${inter.variable} antialiased selection:bg-[#6c5ce7] selection:text-white`}>
         <ClientProviders>
           {/* Performant Ambient Background Effects */}
@@ -41,7 +26,6 @@ export default async function RootLayout({
             <div className="absolute top-[-20%] right-[-10%] w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-[radial-gradient(circle,rgba(107,91,230,0.12)_0%,transparent_70%)]"></div>
             <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-[radial-gradient(circle,rgba(147,51,234,0.12)_0%,transparent_70%)]"></div>
             <div className="absolute top-[40%] left-[30%] w-[70vw] h-[70vw] max-w-[1000px] max-h-[1000px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.08)_0%,transparent_70%)]"></div>
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02]"></div>
           </div>
 
           <div className="flex flex-col min-h-screen relative z-0">

@@ -19,11 +19,5 @@ export async function FeatureGrid() {
         }
     });
 
-    const dnsProvidersDb = await prisma.dnsProvider.findMany({
-        where: { enabled: true },
-        orderBy: { order: 'asc' }
-    });
-
-    // Pass data to Client component for live search filtering
-    return <FeatureGridClient categories={categoriesDb as any} dnsProviders={dnsProvidersDb} />;
+    return <FeatureGridClient categories={categoriesDb as any} />;
 }

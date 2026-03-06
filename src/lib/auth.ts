@@ -13,23 +13,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async signIn({ user }) {
             if (!user.email) return false;
 
-            // Check if user is an authorized admin
+            // Check AdminUser table or ADMIN_EMAILS env
             const admin = await prisma.adminUser.findUnique({
                 where: { email: user.email },
             });
 
-            return !!admin;
+            const envAdmins = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
+            const isAdmin = !!admin || envAdmins.includes(user.email.toLowerCase());
+
+            // If admin not in DB yet, create the record
+            if (isAdmin && !admin) {
+                await prisma.adminUser.create({
+                    data: {
+                        email: user.email,
+                        name: user.name || undefined,
+                        image: user.image || undefined,
+                    },
+                });
+            }
+
+            return isAdmin;
         },
         async session({ session }) {
-            // Attach admin flag to session
             if (session.user?.email) {
                 const admin = await prisma.adminUser.findUnique({
                     where: { email: session.user.email },
                 });
-                if (admin) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (session as any).isAdmin = true;
-                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (session as any).isAdmin = !!admin;
             }
             return session;
         },

@@ -2,23 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { TranslatableText } from "../shared/TranslatableText";
+import { GlobeIcon, DownloadIcon } from "../shared/Icons";
 
 export function StatsSection() {
-    // For Phase 1 we can mock these or fetch from an API later
     const [stats, setStats] = useState({ visits: 0, downloads: 0 });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // Initial fetch
                 const res = await fetch("/api/stats");
                 const data = await res.json();
                 if (data.success) {
                     setStats({ visits: data.totalVisits, downloads: data.totalScripts });
                 }
 
-                // Track visit
-                await fetch("/api/stats?action=visit", { method: "POST" });
+                // Track visit — only once per browser session
+                const visitKey = "optwin_visit_tracked";
+                if (!sessionStorage.getItem(visitKey)) {
+                    sessionStorage.setItem(visitKey, "1");
+                    await fetch("/api/stats?action=visit", { method: "POST" });
+                }
             } catch (err) {
                 console.error("Failed to fetch/track stats", err);
             }
@@ -37,7 +40,7 @@ export function StatsSection() {
 
                 <div className="flex flex-col items-center text-center gap-1.5 relative z-10 w-full sm:w-1/2">
                     <div className="size-10 rounded-full bg-[var(--accent-color)]/10 text-[var(--accent-color)] flex items-center justify-center shadow-[0_0_10px_var(--accent-color)]/20">
-                        <span className="material-symbols-outlined text-[20px]">public</span>
+                        <GlobeIcon size={20} />
                     </div>
                     <span className="text-3xl font-extrabold text-[var(--text-primary)] font-mono tracking-tight">
                         {formatNumber(stats.visits)}
@@ -53,7 +56,7 @@ export function StatsSection() {
 
                 <div className="flex flex-col items-center text-center gap-1.5 relative z-10 w-full sm:w-1/2">
                     <div className="size-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-                        <span className="material-symbols-outlined text-[20px]">download</span>
+                        <DownloadIcon size={20} />
                     </div>
                     <span className="text-3xl font-extrabold text-[var(--text-primary)] font-mono tracking-tight">
                         {formatNumber(stats.downloads)}

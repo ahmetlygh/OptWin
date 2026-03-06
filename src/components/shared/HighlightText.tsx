@@ -1,16 +1,29 @@
 "use client";
 
 import { useOptWinStore } from "@/store/useOptWinStore";
+import { useMemo } from "react";
+
+// Escape special regex characters to prevent crashes from user input
+function escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 export function HighlightText({ text }: { text: string }) {
-    const { searchQuery } = useOptWinStore();
+    const searchQuery = useOptWinStore(state => state.searchQuery);
 
-    if (!searchQuery || searchQuery.trim() === "" || !text) {
+    const parts = useMemo(() => {
+        if (!searchQuery || searchQuery.trim() === "" || !text) {
+            return null;
+        }
+        const escaped = escapeRegExp(searchQuery.trim());
+        return text.split(new RegExp(`(${escaped})`, "gi"));
+    }, [text, searchQuery]);
+
+    if (!parts) {
         return <>{text}</>;
     }
 
     const query = searchQuery.trim();
-    const parts = text.split(new RegExp(`(${query})`, "gi"));
 
     return (
         <span className="break-words">

@@ -1,8 +1,9 @@
 "use client";
 
-import { useOptWinStore } from "@/store/useOptWinStore";
 import { TranslatableText } from "@/components/shared/TranslatableText";
 import { useState } from "react";
+import { SendIcon, LoaderIcon, CheckCircleIcon, ArrowLeftIcon } from "@/components/shared/Icons";
+import Link from "next/link";
 
 export default function Contact() {
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -12,11 +13,23 @@ export default function Contact() {
         e.preventDefault();
         setStatus("loading");
 
-        // Fake API submission for Phase 1
-        setTimeout(() => {
-            setStatus("success");
-            setFormData({ name: "", email: "", subject: "", message: "" });
-        }, 1500);
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setStatus("success");
+                setFormData({ name: "", email: "", subject: "", message: "" });
+            } else {
+                setStatus("error");
+            }
+        } catch {
+            setStatus("error");
+        }
     };
 
     return (
@@ -42,7 +55,7 @@ export default function Contact() {
                     {status === "success" ? (
                         <div className="flex flex-col items-center text-center py-10 animate-fade-in-up">
                             <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6">
-                                <span className="material-symbols-outlined text-4xl">check_circle</span>
+                                <CheckCircleIcon size={40} />
                             </div>
                             <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
                                 <TranslatableText en="Message Sent!" tr="Mesaj Gönderildi!" />
@@ -50,12 +63,23 @@ export default function Contact() {
                             <p className="text-[var(--text-secondary)] mb-8">
                                 <TranslatableText en="Thank you for reaching out. We will respond to your email as soon as possible." tr="Ulaştığınız için teşekkürler. E-postanıza en kısa sürede yanıt vereceğiz." />
                             </p>
-                            <button
-                                onClick={() => setStatus("idle")}
-                                className="px-6 py-3 rounded-xl bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-semibold hover:bg-[var(--accent-color)]/20 transition-all border border-[var(--accent-color)]/20"
-                            >
-                                <TranslatableText en="Send Another Message" tr="Yeni Bir Mesaj Gönder" />
-                            </button>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setStatus("idle")}
+                                    className="px-6 py-3 rounded-xl bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-semibold hover:bg-[var(--accent-color)]/20 border border-[var(--accent-color)]/20"
+                                    style={{ transition: "all 0.2s" }}
+                                >
+                                    <TranslatableText en="Send Another Message" tr="Yeni Bir Mesaj Gönder" />
+                                </button>
+                                <Link
+                                    href="/"
+                                    className="px-6 py-3 rounded-xl bg-[var(--border-color)]/50 text-[var(--text-primary)] font-semibold hover:bg-[var(--border-color)] flex items-center gap-2"
+                                    style={{ transition: "all 0.2s" }}
+                                >
+                                    <ArrowLeftIcon size={16} />
+                                    <TranslatableText en="Back Home" tr="Ana Sayfa" noSpan />
+                                </Link>
+                            </div>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5 relative z-10">
@@ -70,7 +94,8 @@ export default function Contact() {
                                         disabled={status === "loading"}
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)] transition-all"
+                                        className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)]"
+                                        style={{ transition: "border-color 0.2s, box-shadow 0.2s" }}
                                         placeholder="John Doe"
                                     />
                                 </div>
@@ -85,7 +110,8 @@ export default function Contact() {
                                         disabled={status === "loading"}
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)] transition-all"
+                                        className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)]"
+                                        style={{ transition: "border-color 0.2s, box-shadow 0.2s" }}
                                         placeholder="john@example.com"
                                     />
                                 </div>
@@ -101,7 +127,8 @@ export default function Contact() {
                                     disabled={status === "loading"}
                                     value={formData.subject}
                                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)] transition-all"
+                                    className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)]"
+                                    style={{ transition: "border-color 0.2s, box-shadow 0.2s" }}
                                     placeholder="Feature request, bug report..."
                                 />
                             </div>
@@ -116,19 +143,21 @@ export default function Contact() {
                                     disabled={status === "loading"}
                                     value={formData.message}
                                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)] transition-all resize-none"
+                                    className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)] resize-none"
+                                    style={{ transition: "border-color 0.2s, box-shadow 0.2s" }}
                                     placeholder="Hello, I would like to report that..."
                                 />
                             </div>
 
                             <button
                                 disabled={status === "loading"}
-                                className="mt-2 w-full flex items-center justify-center gap-2 h-14 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_20px_rgba(108,92,231,0.25)] hover:shadow-[0_12px_25px_rgba(108,92,231,0.4)]"
+                                className="mt-2 w-full flex items-center justify-center gap-2 h-14 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_20px_rgba(108,92,231,0.25)] hover:shadow-[0_12px_25px_rgba(108,92,231,0.4)]"
+                                style={{ transition: "all 0.2s" }}
                             >
                                 {status === "loading" ? (
-                                    <span className="material-symbols-outlined animate-spin pr-1">progress_activity</span>
+                                    <LoaderIcon size={20} className="animate-spin" />
                                 ) : (
-                                    <span className="material-symbols-outlined pr-1">send</span>
+                                    <SendIcon size={20} />
                                 )}
                                 <TranslatableText en="Send Message" tr="Mesajı Gönder" noSpan />
                             </button>

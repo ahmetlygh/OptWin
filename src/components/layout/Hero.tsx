@@ -1,62 +1,81 @@
 import { prisma } from "@/lib/db";
 import { TranslatableText } from "../shared/TranslatableText";
+import Image from "next/image";
+import { HeroStats } from "./HeroStats";
 
 export async function Hero() {
-    // Fetch hero DB contents 
-    const uiTranslations = await prisma.uiTranslation.findMany({
-        where: {
-            key: {
-                in: ["hero.title", "hero.subtitle"]
+    // Parallel fetch for all data
+    const [uiTranslations, stats, featuresCount] = await Promise.all([
+        prisma.uiTranslation.findMany({
+            where: {
+                key: {
+                    in: ["hero.title", "hero.subtitle"]
+                }
             }
-        }
-    });
+        }),
+        prisma.siteStats.findUnique({ where: { id: "main" } }),
+        prisma.feature.count({ where: { enabled: true } })
+    ]);
 
     const getTranslation = (key: string, lang: string, fallback: string) => {
         return uiTranslations.find(t => t.key === key && t.lang === lang)?.value || fallback;
     };
 
-    const titleEn = getTranslation("hero.title", "en", "Windows experience");
-    const titleTr = getTranslation("hero.title", "tr", "Windows deneyiminizi");
+    const titleEn = getTranslation("hero.title", "en", "Windows Experience");
+    const titleTr = getTranslation("hero.title", "tr", "Windows Deneyiminizi Hızlandırın");
 
     const subtitleEn = getTranslation("hero.subtitle", "en", "The premium optimization tool for power users and gamers. Debloat, tweak, and accelerate your system with a single script.");
     const subtitleTr = getTranslation("hero.subtitle", "tr", "Gelişmiş kullanıcılar ve oyuncular için premium optimizasyon aracı. Tek bir komut dosyası ile sisteminizi temizleyin, ince ayar yapın ve hızlandırın.");
 
+    const totalScripts = stats?.totalScripts || 0;
+    const totalVisits = stats?.totalVisits || 0;
+
+
+
     return (
-        <section className="relative rounded-2xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border-color)] animate-fade-in-up">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-color)] via-[var(--bg-color)]/90 to-transparent"></div>
+        <section className="relative rounded-[1.5rem] overflow-hidden border border-[var(--border-color)] animate-fade-in-up min-h-[340px] sm:min-h-[380px] md:min-h-[420px] lg:min-h-[440px]">
 
-            <div className="relative z-10 p-8 md:p-12 flex flex-col items-start max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-color)]/20 border border-[var(--accent-color)]/30 text-[var(--accent-color)] text-xs font-bold uppercase tracking-wider mb-4">
-                    <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse"></span> v2.4 Released
-                </div>
+            {/* Background Image with next/image for optimization */}
+            <Image
+                src="/background.png"
+                alt="OptWin Hero Background"
+                fill
+                priority
+                quality={85}
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+            />
 
-                <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight mb-4 text-white">
-                    <TranslatableText en="Optimize your " tr="Optimize edin " />
+            {/* Dark overlay gradient — left-to-right for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0d0d12]/95 via-[#0d0d12]/80 to-[#0d0d12]/30 z-[1]"></div>
+
+            {/* Bottom fade for smooth blend with page */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d12]/70 via-transparent to-transparent z-[1]"></div>
+
+            {/* Content */}
+            <div className="relative z-10 p-6 sm:p-8 md:p-12 lg:p-16 flex flex-col items-start justify-center h-full transform transition-all duration-1000 animate-fade-in-up">
+
+                {/* Title */}
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black leading-[1.1] tracking-tight mb-6 max-w-xl lg:max-w-3xl animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+                    <span className="text-white">
+                        <TranslatableText en="Optimize your " tr="Windows Deneyiminizi " />
+                    </span>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-color)] to-purple-400">
-                        <TranslatableText en={titleEn} tr={titleTr} noSpan />
+                        <TranslatableText en="Windows Experience" tr="Hızlandırın" noSpan />
                     </span>
                 </h2>
 
-                <p className="text-[var(--text-secondary)] text-lg mb-8 max-w-lg">
+                {/* Subtitle */}
+                <p className="text-[var(--text-secondary)] text-sm sm:text-base md:text-lg leading-relaxed mb-8 max-w-md lg:max-w-lg animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
                     <TranslatableText en={subtitleEn} tr={subtitleTr} />
                 </p>
 
-                <div className="flex flex-wrap gap-6 items-center">
-                    <div className="flex flex-col">
-                        <span className="text-2xl font-bold text-white">2.4M+</span>
-                        <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide">
-                            <TranslatableText en="Downloads" tr="İndirme" noSpan />
-                        </span>
-                    </div>
-                    <div className="w-px h-10 bg-[var(--border-color)]"></div>
-                    <div className="flex flex-col">
-                        <span className="text-2xl font-bold text-white">150+</span>
-                        <span className="text-xs text-[var(--text-secondary)] uppercase tracking-wide">
-                            <TranslatableText en="Optimizations" tr="Optimizasyon" noSpan />
-                        </span>
-                    </div>
-                </div>
+                {/* Hero Stats (Client Component) */}
+                <HeroStats
+                    totalVisits={totalVisits}
+                    totalScripts={totalScripts}
+                    featuresCount={featuresCount}
+                />
             </div>
         </section>
     );

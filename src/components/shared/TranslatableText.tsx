@@ -1,7 +1,6 @@
 "use client";
 
 import { useOptWinStore } from "@/store/useOptWinStore";
-import { useEffect, useState } from "react";
 
 interface TranslatableTextProps {
     en: string;
@@ -13,18 +12,9 @@ interface TranslatableTextProps {
 
 export function TranslatableText({ en, tr, className, noSpan }: TranslatableTextProps) {
     const lang = useOptWinStore((state) => state.lang);
-    const [mounted, setMounted] = useState(false);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // Avoid hydration mismatch by initially rendering nothing or English
-    if (!mounted) {
-        if (noSpan) return <>{en}</>;
-        return <span className={className}>{en}</span>;
-    }
-
+    // ClientProviders already handles mounted/hydration guard
+    // so we can safely read lang here without flash
     const text = lang === "tr" ? tr : en;
 
     if (noSpan) return <>{text}</>;
