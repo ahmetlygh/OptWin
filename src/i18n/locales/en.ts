@@ -21,6 +21,8 @@ const en = {
     // Search
     "search.placeholder": "Search features...",
     "search.selected": "selected",
+    "search.hideDesc": "Hide Desc",
+    "search.showDesc": "Show Desc",
 
     // Presets
     "preset.clearAll": "Clear All",
@@ -96,6 +98,7 @@ const en = {
     "support.way1": "Buy us a coffee to fuel the next feature update.",
     "support.way2": "Star our GitHub repo for more visibility.",
     "support.way3": "Share OptWin with friends and communities.",
+    "support.linkCopied": "Link copied!",
     "support.close": "Close",
 
     // Footer

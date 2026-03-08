@@ -3,8 +3,8 @@
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { TranslatableText } from "../shared/TranslatableText";
-import { StarIcon, GamepadIcon, ResetIcon, CheckAllIcon, CheckIcon, GlobeIcon } from "../shared/Icons";
-import { useState } from "react";
+import { StarIcon, GamepadIcon, ResetIcon, CheckAllIcon, CheckIcon, GlobeIcon, XIcon } from "../shared/Icons";
+import { useState, useEffect } from "react";
 import { DnsProvider } from "@/types/feature";
 
 type PresetDef = {
@@ -19,6 +19,21 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
     const { selectFeatures, clearFeatures, showToast, dnsProvider, setDnsProvider } = useOptWinStore();
     const { t, lang } = useTranslation();
     const [showInlineDns, setShowInlineDns] = useState(false);
+    const [dnsPhase, setDnsPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
+
+    // Animated open/close for DNS bar
+    useEffect(() => {
+        if (showInlineDns && dnsPhase === "hidden") {
+            setDnsPhase("entering");
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => setDnsPhase("visible"));
+            });
+        } else if (!showInlineDns && (dnsPhase === "visible" || dnsPhase === "entering")) {
+            setDnsPhase("exiting");
+            const timer = setTimeout(() => setDnsPhase("hidden"), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [showInlineDns]);
 
     const handleApplyPreset = (featureSlugs: string[]) => {
         selectFeatures(featureSlugs);
@@ -51,6 +66,10 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
         setShowInlineDns(true);
     };
 
+    const handleCloseDns = () => {
+        setShowInlineDns(false);
+    };
+
     return (
         <div className="flex flex-col md:flex-row flex-wrap gap-3 justify-center items-center animate-fade-in-up stagger-children">
             {presets.map((preset) => (
@@ -80,9 +99,14 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
                 {t["preset.selectAll"]}
             </button>
 
-            {/* Inline DNS Selector */}
-            {showInlineDns && (
-                <div className="w-full md:w-auto flex items-center bg-[var(--card-bg)] border border-[var(--accent-color)]/30 rounded-xl p-1.5 shadow-[0_0_20px_rgba(107,91,230,0.15)] animate-slide-in-right overflow-x-auto snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {/* Inline DNS Selector — animated enter/exit */}
+            {dnsPhase !== "hidden" && (
+                <div
+                    className={`w-full md:w-auto flex items-center bg-[var(--card-bg)] border border-[var(--accent-color)]/30 rounded-xl p-1.5 shadow-[0_0_20px_rgba(107,91,230,0.15)] overflow-x-auto snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] origin-top ${dnsPhase === "visible"
+                        ? "opacity-100 scale-100 translate-y-0"
+                        : "opacity-0 scale-95 -translate-y-2"
+                        }`}
+                >
                     <div className="flex items-center px-3 border-r border-[var(--border-color)] mr-1.5 gap-2 shrink-0 h-10">
                         <GlobeIcon size={16} className="text-[var(--accent-color)]" />
                         <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">
@@ -119,6 +143,17 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
                                 {p.name}
                             </button>
                         ))}
+                    </div>
+
+                    {/* Close button */}
+                    <div className="flex items-center pl-1.5 ml-1.5 border-l border-[var(--border-color)] shrink-0">
+                        <button
+                            onClick={handleCloseDns}
+                            className="size-8 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-red-500/15 hover:text-red-400 transition-colors duration-200"
+                            title="Close DNS"
+                        >
+                            <XIcon size={14} />
+                        </button>
                     </div>
                 </div>
             )}

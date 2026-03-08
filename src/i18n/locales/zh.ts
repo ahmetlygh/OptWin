@@ -17,6 +17,8 @@ const zh = {
 
     "search.placeholder": "搜索功能...",
     "search.selected": "已选择",
+    "search.hideDesc": "隐藏",
+    "search.showDesc": "显示",
 
     "preset.clearAll": "全部清除",
     "preset.selectAll": "全选",
@@ -84,6 +86,7 @@ const zh = {
     "support.way1": "请我们喝杯咖啡来推动下一次更新。",
     "support.way2": "给我们的 GitHub 仓库点个星。",
     "support.way3": "与朋友和社区分享 OptWin。",
+    "support.linkCopied": "链接已复制！",
     "support.close": "关闭",
 
     "footer.description": "终极开源 Windows 优化套件。为游戏玩家和专业人士提供安全、快速和可靠的系统调优。",

@@ -119,11 +119,19 @@ export function FeatureCard({ feature }: FeatureCardProps) {
                         </h4>
                     )}
 
-                    {/* Description — animated show/hide */}
-                    <div className={`transition-all duration-300 ease-out overflow-hidden ${showDescriptions ? 'max-h-40 opacity-100 mt-0' : 'max-h-0 opacity-0'}`}>
-                        <p className="text-sm text-[var(--text-secondary)] leading-snug">
-                            <HighlightText text={desc} />
-                        </p>
+                    {/* Description — GPU-accelerated show/hide with grid trick */}
+                    <div
+                        className="transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grid"
+                        style={{
+                            gridTemplateRows: showDescriptions ? '1fr' : '0fr',
+                            opacity: showDescriptions ? 1 : 0,
+                        }}
+                    >
+                        <div className="overflow-hidden">
+                            <p className="text-sm text-[var(--text-secondary)] leading-snug pt-0.5">
+                                <HighlightText text={desc} />
+                            </p>
+                        </div>
                     </div>
 
                     {/* DNS Change button */}

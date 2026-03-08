@@ -17,6 +17,8 @@ const de = {
 
     "search.placeholder": "Funktionen suchen...",
     "search.selected": "ausgewählt",
+    "search.hideDesc": "Ausblenden",
+    "search.showDesc": "Anzeigen",
 
     "preset.clearAll": "Alle löschen",
     "preset.selectAll": "Alle auswählen",
@@ -84,6 +86,7 @@ const de = {
     "support.way1": "Kaufen Sie uns einen Kaffee für das nächste Update.",
     "support.way2": "Geben Sie unserem GitHub-Repo einen Stern.",
     "support.way3": "Teilen Sie OptWin mit Freunden und Communities.",
+    "support.linkCopied": "Link kopiert!",
     "support.close": "Schließen",
 
     "footer.description": "Ultimative Open-Source Windows-Optimierungssuite. Sichere, schnelle und zuverlässige Systemoptimierung für Gamer und Profis.",

@@ -69,11 +69,11 @@ export function SupportModal() {
             text: t["support.way2"],
             color: "text-yellow-500",
             bg: "bg-yellow-500/10",
-            onClick: () => window.open("https://github.com/ahmetly", "_blank"),
+            onClick: () => window.open("https://github.com/ahmetlygh/OptWin", "_blank"),
         },
         {
             icon: copied ? <CheckIcon size={20} /> : <UsersIcon size={20} />,
-            text: copied ? "Link copied!" : t["support.way3"],
+            text: copied ? t["support.linkCopied"] : t["support.way3"],
             color: copied ? "text-emerald-500" : "text-blue-500",
             bg: copied ? "bg-emerald-500/10" : "bg-blue-500/10",
             onClick: handleCopyLink,
@@ -86,7 +86,7 @@ export function SupportModal() {
             onClick={handleClose}
         >
             <div
-                className={`w-full max-w-md bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
+                className={`w-fit min-w-[28rem] max-w-[95vw] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Glow */}
@@ -125,13 +125,13 @@ export function SupportModal() {
                             <button
                                 key={i}
                                 onClick={way.onClick}
-                                className="w-full flex items-start gap-3 p-3 rounded-xl bg-[var(--border-color)]/30 border border-[var(--border-color)]/50 hover:bg-[var(--border-color)]/60 hover:border-[var(--border-color)] transition-all duration-200 cursor-pointer text-left group"
+                                className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--border-color)]/30 border border-[var(--border-color)]/50 hover:bg-[var(--border-color)]/60 hover:border-[var(--border-color)] transition-all duration-200 cursor-pointer text-left group"
                             >
                                 <div className={`size-9 rounded-lg ${way.bg} ${way.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
                                     {way.icon}
                                 </div>
-                                <div className="flex items-center gap-2 pt-1.5">
-                                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed group-hover:text-[var(--text-primary)] transition-colors">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed group-hover:text-[var(--text-primary)] transition-colors whitespace-nowrap">
                                         {way.text}
                                     </p>
                                     <ExternalLinkIcon size={12} className="text-[var(--text-secondary)]/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -17,6 +17,8 @@ const tr = {
 
     "search.placeholder": "Özellik ara...",
     "search.selected": "seçildi",
+    "search.hideDesc": "Gizle",
+    "search.showDesc": "Göster",
 
     "preset.clearAll": "Hepsini Sıfırla",
     "preset.selectAll": "Hepsini Seç",
@@ -84,6 +86,7 @@ const tr = {
     "support.way1": "Sonraki güncelleme için bize bir kahve ısmarla.",
     "support.way2": "GitHub repomuza yıldız verin.",
     "support.way3": "OptWin'i arkadaşlarınızla ve topluluklarla paylaşın.",
+    "support.linkCopied": "Link kopyalandı!",
     "support.close": "Kapat",
 
     "footer.description": "En kapsamlı açık kaynaklı Windows optimizasyon paketi. Oyuncular ve Profesyoneller için güvenli, hızlı ve güvenilir sistem ayarlama.",

@@ -32,7 +32,7 @@ export async function Hero() {
             <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d12]/70 via-transparent to-transparent z-[1]"></div>
 
             {/* Content */}
-            <div className="relative z-10 p-6 sm:p-8 md:p-12 lg:p-16 flex flex-col items-start justify-center h-full transform transition-all duration-1000 animate-fade-in-up">
+            <div className="relative z-10 p-6 sm:p-8 md:p-12 lg:p-16 flex flex-col items-start justify-end h-full transform transition-all duration-1000 animate-fade-in-up">
 
                 {/* Title — rendered client-side for per-language highlighting */}
                 <HeroTitle />

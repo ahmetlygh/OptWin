@@ -17,6 +17,8 @@ const hi = {
 
     "search.placeholder": "सुविधाएं खोजें...",
     "search.selected": "चयनित",
+    "search.hideDesc": "छिपाएं",
+    "search.showDesc": "दिखाएं",
 
     "preset.clearAll": "सभी साफ़ करें",
     "preset.selectAll": "सभी चुनें",
@@ -84,6 +86,7 @@ const hi = {
     "support.way1": "अगली अपडेट के लिए हमें एक कॉफी पिलाएं।",
     "support.way2": "हमारे GitHub रेपो को स्टार दें।",
     "support.way3": "OptWin को दोस्तों और समुदायों के साथ साझा करें।",
+    "support.linkCopied": "लिंक कॉपी हो गया!",
     "support.close": "बंद करें",
 
     "footer.description": "अंतिम ओपन-सोर्स Windows ऑप्टिमाइज़ेशन सूट। गेमर्स और प्रोफेशनल्स के लिए सुरक्षित, तेज़ और विश्वसनीय सिस्टम ट्यूनिंग।",

@@ -7,6 +7,10 @@ import { ActionArea } from "@/components/layout/ActionArea";
 import { StatsSection } from "@/components/sections/StatsSection";
 import { AboutSection } from "@/components/sections/AboutSection";
 import { DnsModal } from "@/components/modals/DnsModal";
+import { ScriptOverlay } from "@/components/modals/ScriptOverlay";
+import { RestorePointModal } from "@/components/modals/RestorePointModal";
+import { WarningModal } from "@/components/modals/WarningModal";
+import { Toast } from "@/components/modals/Toast";
 
 export default async function Home() {
     // Parallelized DB queries — all run simultaneously
@@ -50,8 +54,13 @@ export default async function Home() {
                 <AboutSection />
             </div>
             <ActionArea />
-            {/* DNS modal stays on homepage only */}
+            {/* Modals and overlays — driven by Zustand store state */}
             <DnsModal providers={dnsProvidersDb} />
+            <ScriptOverlay />
+            <RestorePointModal />
+            <WarningModal />
+            <Toast />
         </>
     );
 }
+

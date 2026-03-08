@@ -17,6 +17,8 @@ const es = {
 
     "search.placeholder": "Buscar funciones...",
     "search.selected": "seleccionados",
+    "search.hideDesc": "Ocultar",
+    "search.showDesc": "Mostrar",
 
     "preset.clearAll": "Borrar Todo",
     "preset.selectAll": "Seleccionar Todo",
@@ -84,6 +86,7 @@ const es = {
     "support.way1": "Invítanos un café para impulsar la próxima actualización.",
     "support.way2": "Dale una estrella a nuestro repo de GitHub.",
     "support.way3": "Comparte OptWin con amigos y comunidades.",
+    "support.linkCopied": "¡Enlace copiado!",
     "support.close": "Cerrar",
 
     "footer.description": "Suite de optimización Windows de código abierto definitiva. Ajuste de sistema seguro, rápido y confiable para Gamers y Profesionales.",

@@ -146,7 +146,7 @@ export const useOptWinStore = create<OptWinState>()(
             toast: null,
             showToast: (message, type = "success") => {
                 set({ toast: { show: true, message, type } });
-                setTimeout(() => set({ toast: null }), 3000);
+                setTimeout(() => set({ toast: null }), 5000);
             },
             hideToast: () => set({ toast: null }),
         }),

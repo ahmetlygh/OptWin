@@ -32,7 +32,7 @@ export function Footer() {
                         <div className="flex flex-col gap-2.5">
                             <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.support"]}</span>
                             <Link href="/contact" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.contactUs"]}</Link>
-                            <a href="https://github.com/ahmetly" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors flex items-center gap-1.5">
+                            <a href="https://github.com/ahmetlygh/OptWin" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors flex items-center gap-1.5">
                                 <GithubIcon size={12} /> GitHub
                             </a>
                         </div>

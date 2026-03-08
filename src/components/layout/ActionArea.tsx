@@ -94,10 +94,10 @@ export function ActionArea() {
                     )}
                 </button>
 
-                {/* Clear Button */}
+                {/* Clear Button — simple, clean animation */}
                 <button
                     onClick={clearFeatures}
-                    className="size-11 flex items-center justify-center rounded-xl bg-[var(--border-color)]/50 text-[var(--text-secondary)] hover:bg-red-500/20 hover:text-red-400 hover:rotate-90 transition-all duration-300 shrink-0"
+                    className="size-11 flex items-center justify-center rounded-xl bg-[var(--border-color)]/50 text-[var(--text-secondary)] hover:bg-red-500/15 hover:text-red-400 transition-colors duration-200 shrink-0"
                     title="Clear selections"
                 >
                     <XIcon size={14} />

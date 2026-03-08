@@ -46,16 +46,19 @@ export function SearchBar() {
                 </div>
             </div>
 
-            {/* Toggle descriptions button */}
+            {/* Toggle descriptions button — with text label */}
             <button
                 onClick={toggleDescriptions}
-                className={`shrink-0 h-[50px] w-[50px] flex items-center justify-center rounded-xl border transition-all duration-300 ${showDescriptions
+                className={`shrink-0 h-[50px] flex items-center gap-2 px-4 rounded-xl border transition-all duration-300 ${showDescriptions
                     ? 'bg-[var(--card-bg)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:border-[var(--accent-color)]/50'
                     : 'bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-[var(--accent-color)]'
                     }`}
-                title={showDescriptions ? "Hide descriptions" : "Show descriptions"}
+                title={showDescriptions ? t["search.hideDesc"] : t["search.showDesc"]}
             >
                 {showDescriptions ? <EyeOffIcon size={18} /> : <Eye size={18} />}
+                <span className="text-xs font-bold whitespace-nowrap hidden sm:inline">
+                    {showDescriptions ? t["search.hideDesc"] : t["search.showDesc"]}
+                </span>
             </button>
         </div>
     );

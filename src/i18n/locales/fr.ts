@@ -17,6 +17,8 @@ const fr = {
 
     "search.placeholder": "Rechercher des fonctionnalités...",
     "search.selected": "sélectionnés",
+    "search.hideDesc": "Masquer",
+    "search.showDesc": "Afficher",
 
     "preset.clearAll": "Tout effacer",
     "preset.selectAll": "Tout sélectionner",
@@ -84,6 +86,7 @@ const fr = {
     "support.way1": "Offrez-nous un café pour propulser la prochaine mise à jour.",
     "support.way2": "Mettez une étoile à notre dépôt GitHub pour plus de visibilité.",
     "support.way3": "Partagez OptWin avec vos amis et communautés.",
+    "support.linkCopied": "Lien copié !",
     "support.close": "Fermer",
 
     "footer.description": "Suite d'optimisation Windows open source ultime. Réglage système sûr, rapide et fiable pour les Gamers et les Professionnels.",
