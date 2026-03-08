@@ -1,21 +1,22 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 
-// GET /api/stats -> returns { totalVisits, totalScripts }
+// GET /api/stats -> returns { totalVisits, totalScripts, totalDownloads }
 export async function GET() {
     try {
         let stats = await prisma.siteStats.findUnique({ where: { id: "main" } });
 
         if (!stats) {
             stats = await prisma.siteStats.create({
-                data: { id: "main", totalVisits: 0, totalScripts: 0 }
+                data: { id: "main", totalVisits: 0, totalScripts: 0, totalDownloads: 0 }
             });
         }
 
         return NextResponse.json({
             success: true,
             totalVisits: stats.totalVisits,
-            totalScripts: stats.totalScripts
+            totalScripts: stats.totalScripts,
+            totalDownloads: stats.totalDownloads
         });
     } catch (error) {
         console.error("Stats API GET error:", error);
@@ -23,12 +24,12 @@ export async function GET() {
     }
 }
 
-// POST /api/stats?action=visit|script -> increments counters
+// POST /api/stats?action=visit|script|download -> increments counters
 export async function POST(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
 
-    if (action !== "visit" && action !== "script") {
+    if (action !== "visit" && action !== "script" && action !== "download") {
         return NextResponse.json({ success: false, error: "Invalid action parameter" }, { status: 400 });
     }
 
@@ -56,7 +57,8 @@ export async function POST(req: NextRequest) {
                     success: true,
                     alreadyCounted: true,
                     totalVisits: stats?.totalVisits || 0,
-                    totalScripts: stats?.totalScripts || 0
+                    totalScripts: stats?.totalScripts || 0,
+                    totalDownloads: stats?.totalDownloads || 0
                 });
             }
 
@@ -85,36 +87,47 @@ export async function POST(req: NextRequest) {
 
         if (!stats) {
             stats = await prisma.siteStats.create({
-                data: { id: "main", totalVisits: 0, totalScripts: 0 }
+                data: { id: "main", totalVisits: 0, totalScripts: 0, totalDownloads: 0 }
             });
         }
 
-        const incrementData = action === "visit" ? { totalVisits: 1 } : { totalScripts: 1 };
+        // Build increment data based on action
+        const updateData: Record<string, { increment: number } | undefined> = {
+            totalVisits: action === "visit" ? { increment: 1 } : undefined,
+            totalScripts: action === "script" ? { increment: 1 } : undefined,
+            totalDownloads: action === "download" ? { increment: 1 } : undefined,
+        };
+
         stats = await prisma.siteStats.update({
             where: { id: "main" },
-            data: {
-                totalVisits: incrementData.totalVisits ? { increment: 1 } : undefined,
-                totalScripts: incrementData.totalScripts ? { increment: 1 } : undefined,
-            }
+            data: updateData
         });
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const dailyData = action === "visit" ? { visits: 1 } : { scripts: 1 };
+        const dailyCreate: Record<string, number> = {
+            visits: action === "visit" ? 1 : 0,
+            scripts: action === "script" ? 1 : 0,
+            downloads: action === "download" ? 1 : 0
+        };
+        const dailyUpdate: Record<string, { increment: number } | undefined> = {
+            visits: action === "visit" ? { increment: 1 } : undefined,
+            scripts: action === "script" ? { increment: 1 } : undefined,
+            downloads: action === "download" ? { increment: 1 } : undefined,
+        };
+
         await prisma.dailyStat.upsert({
             where: { date: today },
-            create: { date: today, visits: dailyData.visits || 0, scripts: dailyData.scripts || 0 },
-            update: {
-                visits: dailyData.visits ? { increment: 1 } : undefined,
-                scripts: dailyData.scripts ? { increment: 1 } : undefined,
-            }
+            create: { date: today, ...dailyCreate },
+            update: dailyUpdate
         });
 
         return NextResponse.json({
             success: true,
             totalVisits: stats.totalVisits,
-            totalScripts: stats.totalScripts
+            totalScripts: stats.totalScripts,
+            totalDownloads: stats.totalDownloads
         });
     } catch (error) {
         console.error("Stats API POST error:", error);

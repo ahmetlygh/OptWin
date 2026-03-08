@@ -1,11 +1,12 @@
 "use client";
 
-import { TranslatableText } from "@/components/shared/TranslatableText";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
 import { SendIcon, LoaderIcon, CheckCircleIcon, ArrowLeftIcon } from "@/components/shared/Icons";
 import Link from "next/link";
 
 export default function Contact() {
+    const { t } = useTranslation();
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
 
@@ -37,13 +38,10 @@ export default function Contact() {
 
             <div className="text-center mb-10 w-full max-w-2xl px-4">
                 <h1 className="text-4xl md:text-5xl font-bold mb-4 text-[var(--text-primary)]">
-                    <TranslatableText en="Get in Touch" tr="İletişime Geçin" />
+                    {t["contact.title"]}
                 </h1>
                 <p className="text-[var(--text-secondary)] text-lg leading-relaxed">
-                    <TranslatableText
-                        en="Have a question, feedback, or need help with a generated script? Drop us a message and we'll get back to you soon."
-                        tr="Bir sorunuz mu var, geri bildirimde bulunmak mı istiyorsunuz veya bir betikle ilgili yardıma mı ihtiyacınız var? Bize mesaj atın, en kısa sürede dönüş yapalım."
-                    />
+                    {t["contact.description"]}
                 </p>
             </div>
 
@@ -58,10 +56,10 @@ export default function Contact() {
                                 <CheckCircleIcon size={40} />
                             </div>
                             <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-                                <TranslatableText en="Message Sent!" tr="Mesaj Gönderildi!" />
+                                {t["contact.sent"]}
                             </h3>
                             <p className="text-[var(--text-secondary)] mb-8">
-                                <TranslatableText en="Thank you for reaching out. We will respond to your email as soon as possible." tr="Ulaştığınız için teşekkürler. E-postanıza en kısa sürede yanıt vereceğiz." />
+                                {t["contact.sentDesc"]}
                             </p>
                             <div className="flex gap-3">
                                 <button
@@ -69,7 +67,7 @@ export default function Contact() {
                                     className="px-6 py-3 rounded-xl bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-semibold hover:bg-[var(--accent-color)]/20 border border-[var(--accent-color)]/20"
                                     style={{ transition: "all 0.2s" }}
                                 >
-                                    <TranslatableText en="Send Another Message" tr="Yeni Bir Mesaj Gönder" />
+                                    {t["contact.sendAnother"]}
                                 </button>
                                 <Link
                                     href="/"
@@ -77,7 +75,7 @@ export default function Contact() {
                                     style={{ transition: "all 0.2s" }}
                                 >
                                     <ArrowLeftIcon size={16} />
-                                    <TranslatableText en="Back Home" tr="Ana Sayfa" noSpan />
+                                    {t["contact.backHome"]}
                                 </Link>
                             </div>
                         </div>
@@ -86,7 +84,7 @@ export default function Contact() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider ml-1">
-                                        <TranslatableText en="Your Name" tr="Adınız" />
+                                        {t["contact.name"]}
                                     </label>
                                     <input
                                         required
@@ -102,7 +100,7 @@ export default function Contact() {
 
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider ml-1">
-                                        <TranslatableText en="Email Address" tr="E-posta Adresi" />
+                                        {t["contact.email"]}
                                     </label>
                                     <input
                                         required
@@ -119,7 +117,7 @@ export default function Contact() {
 
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider ml-1">
-                                    <TranslatableText en="Subject" tr="Konu" />
+                                    {t["contact.subject"]}
                                 </label>
                                 <input
                                     required
@@ -129,13 +127,12 @@ export default function Contact() {
                                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                                     className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)]"
                                     style={{ transition: "border-color 0.2s, box-shadow 0.2s" }}
-                                    placeholder="Feature request, bug report..."
                                 />
                             </div>
 
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider ml-1">
-                                    <TranslatableText en="Message" tr="Mesajınız" />
+                                    {t["contact.message"]}
                                 </label>
                                 <textarea
                                     required
@@ -145,7 +142,6 @@ export default function Contact() {
                                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                     className="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)] resize-none"
                                     style={{ transition: "border-color 0.2s, box-shadow 0.2s" }}
-                                    placeholder="Hello, I would like to report that..."
                                 />
                             </div>
 
@@ -159,7 +155,7 @@ export default function Contact() {
                                 ) : (
                                     <SendIcon size={20} />
                                 )}
-                                <TranslatableText en="Send Message" tr="Mesajı Gönder" noSpan />
+                                {t["contact.send"]}
                             </button>
                         </form>
                     )}

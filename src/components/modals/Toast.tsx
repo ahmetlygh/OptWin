@@ -8,35 +8,33 @@ import { AlertTriangle } from "lucide-react";
 export function Toast() {
     const { toast, hideToast } = useOptWinStore();
     const [internalToast, setInternalToast] = useState(toast);
-    const [phase, setPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
+    const [phase, setPhase] = useState<"hidden" | "visible" | "exiting">("hidden");
 
     useEffect(() => {
         if (toast) {
             setInternalToast(toast);
-            setPhase("entering");
-            requestAnimationFrame(() => setPhase("visible"));
+            setPhase("visible");
         } else if (phase === "visible") {
             setPhase("exiting");
             const timer = setTimeout(() => {
                 setPhase("hidden");
                 setInternalToast(null);
-            }, 400);
+            }, 400); // Match animation duration
             return () => clearTimeout(timer);
         }
     }, [toast]);
 
     if (phase === "hidden" || !internalToast) return null;
-    const isVisible = phase === "visible";
 
     const getIconAndColor = () => {
         switch (internalToast.type) {
             case "success":
-                return { Icon: CheckCircleIcon, color: "text-emerald-400", bg: "bg-emerald-500/20", border: "border-emerald-500/30" };
+                return { Icon: CheckCircleIcon, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" };
             case "error":
-                return { Icon: AlertCircleIcon, color: "text-red-400", bg: "bg-red-500/20", border: "border-red-500/30" };
+                return { Icon: AlertCircleIcon, color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" };
             case "warning":
             default:
-                return { Icon: AlertTriangle, color: "text-[#FFDD00]", bg: "bg-[#FFDD00]/20", border: "border-[#FFDD00]/30" };
+                return { Icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" };
         }
     };
 
@@ -44,22 +42,24 @@ export function Toast() {
 
     return (
         <div
-            className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[210] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-8 opacity-0 scale-95 pointer-events-none"}`}
+            className={`fixed bottom-36 left-1/2 z-[300] pointer-events-none ${phase === "visible" ? "animate-toast-in" : "animate-toast-out"}`}
         >
-            <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] bg-[var(--card-bg)]/95 border ${border} backdrop-blur-xl`}>
-                <div className={`flex items-center justify-center size-8 rounded-full ${bg} ${color} animate-pop-in`}>
-                    <Icon size={18} />
+            <div className={`pointer-events-auto flex items-center gap-3 px-6 py-3.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] bg-[var(--card-bg)]/95 border ${border} backdrop-blur-xl min-w-[300px] max-w-[90vw]`}>
+                <div className={`flex items-center justify-center size-9 rounded-xl ${bg} ${color} shrink-0`}>
+                    <Icon size={20} />
                 </div>
-                <div className="text-[var(--text-primary)] font-medium text-sm md:text-base">
+                <div className="flex-1 text-[var(--text-primary)] font-bold text-sm md:text-base leading-tight pr-2">
                     {internalToast.message}
                 </div>
                 <button
                     onClick={hideToast}
-                    className="ml-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1 transition-colors duration-200"
+                    className="size-7 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--text-secondary)]/10 hover:text-[var(--text-primary)] transition-all shrink-0"
                 >
-                    <XIcon size={16} />
+                    <XIcon size={14} />
                 </button>
             </div>
+            {/* Subtle glow effect behind toast */}
+            <div className={`absolute -inset-4 ${bg} blur-3xl opacity-20 -z-10 rounded-full`} />
         </div>
     );
 }

@@ -225,6 +225,38 @@ body.theme-ready nav {
   animation: checkBounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.9);
+  }
+}
+
+.animate-toast-in {
+  animation: toastIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-toast-out {
+  animation: toastOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .animate-slide-in-right {
   animation: slideInRight 0.3s ease-out both;
 }
@@ -390,4 +422,37 @@ body.theme-ready nav {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
   background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}
+
+/* ============================================================
+   CUSTOM SCROLLBAR — Script code preview  
+   ============================================================ */
+.script-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.script-scrollbar::-webkit-scrollbar-track {
+  background: rgba(107, 91, 230, 0.05);
+  border-radius: 4px;
+}
+
+.script-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(107, 91, 230, 0.35);
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.script-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 91, 230, 0.55);
+}
+
+.script-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+.script-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 91, 230, 0.35) rgba(107, 91, 230, 0.05);
 }

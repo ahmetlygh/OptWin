@@ -158,7 +158,7 @@
 ## 📝 Faz 5 — Admin Paneli: İçerik ve Çeviriler
 > Hedef: Genel sitede görünen her metnin admin panelinden düzenlenebilmesi.
 
-- [ ] Çeviri editörü: Tüm UI metinleri için yan yana EN / TR düzenleme
+- [ ] Çeviri editörü: Tüm UI metinleri için yan yana düzenleme
 - [ ] Hero bölümü: Dil başına düzenlenebilir başlık + açıklama
 - [ ] Hakkında bölümü: Dil başına başlık, alt başlık ve değer kartları düzenleme
 - [ ] Destek bölümü: Dil başına başlık, açıklama ve not düzenleme

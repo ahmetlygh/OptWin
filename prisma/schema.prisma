@@ -121,19 +121,21 @@ model PresetTranslation {
 }
 
 model SiteStats {
-  id           String   @id @default("main")
-  totalVisits  Int      @default(0)
-  totalScripts Int      @default(0)
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default("main")
+  totalVisits    Int      @default(0)
+  totalScripts   Int      @default(0)
+  totalDownloads Int      @default(0)
+  updatedAt      DateTime @updatedAt
 
   @@map("site_stats")
 }
 
 model DailyStat {
-  id      String   @id @default(cuid())
-  date    DateTime @unique @db.Date
-  visits  Int      @default(0)
-  scripts Int      @default(0)
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  visits    Int      @default(0)
+  scripts   Int      @default(0)
+  downloads Int      @default(0)
 
   @@map("daily_stats")
 }

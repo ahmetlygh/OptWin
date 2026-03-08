@@ -1,12 +1,13 @@
 "use client";
 
 import { useOptWinStore } from "@/store/useOptWinStore";
-import { TranslatableText } from "../shared/TranslatableText";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useState, useEffect } from "react";
 import { XIcon, AlertCircleIcon } from "../shared/Icons";
 
 export function WarningModal() {
     const { isWarningModalOpen, setWarningModalOpen } = useOptWinStore();
+    const { t } = useTranslation();
     const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
 
     useEffect(() => {
@@ -47,14 +48,11 @@ export function WarningModal() {
                     </div>
 
                     <h3 className="text-2xl font-bold text-[var(--text-primary)] animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
-                        <TranslatableText en="No Features Selected" tr="Özellik Seçilmedi" />
+                        {t["warning.title"]}
                     </h3>
 
                     <p className="text-[var(--text-secondary)] leading-relaxed animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                        <TranslatableText
-                            en="Please select at least one optimization feature from the list above before generating your custom script."
-                            tr="Lütfen özel betiğinizi oluşturmadan önce yukarıdaki listeden en az bir optimizasyon özelliği seçin."
-                        />
+                        {t["warning.description"]}
                     </p>
 
                     <button
@@ -62,7 +60,7 @@ export function WarningModal() {
                         className="mt-4 w-full py-3 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-lg shadow-[var(--accent-color)]/20 transition-all duration-200 hover:-translate-y-0.5 animate-fade-in-up"
                         style={{ animationDelay: "0.15s" }}
                     >
-                        <TranslatableText en="Got it" tr="Anladım" noSpan />
+                        {t["warning.gotIt"]}
                     </button>
                 </div>
             </div>

@@ -1,8 +1,11 @@
 "use client";
 
 import { useOptWinStore } from "@/store/useOptWinStore";
+import { useTranslation } from "@/i18n/useTranslation";
 import { TranslatableText } from "../shared/TranslatableText";
-import { StarIcon, GamepadIcon, ResetIcon, CheckAllIcon } from "../shared/Icons";
+import { StarIcon, GamepadIcon, ResetIcon, CheckAllIcon, CheckIcon, GlobeIcon } from "../shared/Icons";
+import { useState } from "react";
+import { DnsProvider } from "@/types/feature";
 
 type PresetDef = {
     id: string;
@@ -12,11 +15,14 @@ type PresetDef = {
     tr: string;
 };
 
-export function PresetControls({ presets, allFeatureSlugs }: { presets: PresetDef[], allFeatureSlugs: string[] }) {
-    const { selectFeatures, clearFeatures, showToast, lang } = useOptWinStore();
+export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { presets: PresetDef[], allFeatureSlugs: string[], dnsProviders: DnsProvider[] }) {
+    const { selectFeatures, clearFeatures, showToast, dnsProvider, setDnsProvider } = useOptWinStore();
+    const { t, lang } = useTranslation();
+    const [showInlineDns, setShowInlineDns] = useState(false);
 
     const handleApplyPreset = (featureSlugs: string[]) => {
         selectFeatures(featureSlugs);
+        setShowInlineDns(false);
     };
 
     const getPresetButtonStyle = (slug: string) => {
@@ -38,13 +44,20 @@ export function PresetControls({ presets, allFeatureSlugs }: { presets: PresetDe
         }
     };
 
+    const handleSelectAll = () => {
+        const filtered = allFeatureSlugs.filter(f => f !== "highPerformance");
+        selectFeatures(filtered);
+        showToast(t["preset.selectAllWarning"], "warning");
+        setShowInlineDns(true);
+    };
+
     return (
-        <div className="flex flex-wrap gap-3 justify-center md:justify-center animate-fade-in-up stagger-children">
+        <div className="flex flex-col md:flex-row flex-wrap gap-3 justify-center items-center animate-fade-in-up stagger-children">
             {presets.map((preset) => (
                 <button
                     key={preset.id}
                     onClick={() => handleApplyPreset(preset.featureSlugs)}
-                    className={`flex items-center gap-2 px-6 py-3 border-2 rounded-xl font-semibold transition-all duration-300 hover:-translate-y-[2px] active:scale-95 ${getPresetButtonStyle(preset.slug)}`}
+                    className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 rounded-xl font-semibold transition-all duration-300 hover:-translate-y-[2px] active:scale-95 ${getPresetButtonStyle(preset.slug)}`}
                 >
                     {getPresetIcon(preset.slug)}
                     <TranslatableText en={preset.en} tr={preset.tr} noSpan />
@@ -52,27 +65,63 @@ export function PresetControls({ presets, allFeatureSlugs }: { presets: PresetDe
             ))}
 
             <button
-                onClick={clearFeatures}
-                className="flex items-center gap-2 px-6 py-3 border-2 border-[var(--border-color)] bg-transparent text-[var(--text-primary)] rounded-xl font-semibold hover:border-red-500 hover:text-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-[2px] active:scale-95 transition-all duration-300"
+                onClick={() => { clearFeatures(); setShowInlineDns(false); }}
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 border-[var(--border-color)] bg-transparent text-[var(--text-primary)] rounded-xl font-semibold hover:border-red-500 hover:text-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-[2px] active:scale-95 transition-all duration-300"
             >
                 <ResetIcon size={18} />
-                <TranslatableText en="Clear All" tr="Hepsini Sıfırla" noSpan />
+                {t["preset.clearAll"]}
             </button>
 
             <button
-                onClick={() => {
-                    const filtered = allFeatureSlugs.filter(f => f !== "highPerformance");
-                    selectFeatures(filtered);
-                    const msg = lang === "tr"
-                        ? "Tüm ayarlar sisteminizde istenmeyen değişiklikler yapabilir. Lütfen çalıştırmadan önce inceleyin."
-                        : "All settings may cause unwanted changes. Please review before running.";
-                    showToast(msg, "warning");
-                }}
-                className="flex items-center gap-2 px-6 py-3 border-2 border-[var(--border-color)] bg-transparent text-[var(--text-primary)] rounded-xl font-semibold hover:border-[var(--accent-color)] hover:text-[var(--accent-color)] hover:shadow-[0_0_15px_rgba(108,92,231,0.3)] hover:-translate-y-[2px] active:scale-95 transition-all duration-300"
+                onClick={handleSelectAll}
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 border-[var(--border-color)] bg-transparent text-[var(--text-primary)] rounded-xl font-semibold hover:border-[var(--accent-color)] hover:text-[var(--accent-color)] hover:shadow-[0_0_15px_rgba(108,92,231,0.3)] hover:-translate-y-[2px] active:scale-95 transition-all duration-300"
             >
                 <CheckAllIcon size={18} />
-                <TranslatableText en="Select All" tr="Hepsini Seç" noSpan />
+                {t["preset.selectAll"]}
             </button>
+
+            {/* Inline DNS Selector */}
+            {showInlineDns && (
+                <div className="w-full md:w-auto flex items-center bg-[var(--card-bg)] border border-[var(--accent-color)]/30 rounded-xl p-1.5 shadow-[0_0_20px_rgba(107,91,230,0.15)] animate-slide-in-right overflow-x-auto snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <div className="flex items-center px-3 border-r border-[var(--border-color)] mr-1.5 gap-2 shrink-0 h-10">
+                        <GlobeIcon size={16} className="text-[var(--accent-color)]" />
+                        <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+                            DNS
+                        </span>
+                    </div>
+
+                    <div className="flex gap-1.5 shrink-0">
+                        <button
+                            onClick={() => setDnsProvider("default")}
+                            className={`flex items-center gap-2 px-3 h-10 rounded-lg text-sm font-bold transition-all whitespace-nowrap snap-center ${dnsProvider === "default"
+                                ? "bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/30"
+                                : "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]"}
+                            `}
+                        >
+                            <div className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border ${dnsProvider === "default" ? "border-white" : "border-[var(--text-secondary)]"}`}>
+                                {dnsProvider === "default" && <CheckIcon size={8} strokeWidth={4} />}
+                            </div>
+                            {t["preset.default"]}
+                        </button>
+
+                        {dnsProviders.map(p => (
+                            <button
+                                key={p.slug}
+                                onClick={() => setDnsProvider(p.slug)}
+                                className={`flex items-center gap-2 px-3 h-10 rounded-lg text-sm font-bold transition-all whitespace-nowrap snap-center ${dnsProvider === p.slug
+                                    ? "bg-[var(--accent-color)] text-white shadow-md shadow-[var(--accent-color)]/30"
+                                    : "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]"}
+                                `}
+                            >
+                                <div className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border ${dnsProvider === p.slug ? "border-white" : "border-[var(--text-secondary)]"}`}>
+                                    {dnsProvider === p.slug && <CheckIcon size={8} strokeWidth={4} />}
+                                </div>
+                                {p.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

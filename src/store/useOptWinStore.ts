@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Lang = "en" | "tr" | "zh" | "es" | "hi";
+export type Lang = "en" | "tr" | "zh" | "es" | "hi" | "de" | "fr";
 export type Theme = "dark" | "light";
 
 interface OptWinState {
@@ -24,9 +24,13 @@ interface OptWinState {
     dnsProvider: string;
     setDnsProvider: (provider: string) => void;
 
-    // Search
+    // Search & Display
     searchQuery: string;
     setSearchQuery: (query: string) => void;
+    showDescriptions: boolean;
+    toggleDescriptions: () => void;
+    collapsedCategories: Set<string>;
+    toggleCategoryCollapse: (slug: string) => void;
 
     // Modals & Overlays
     isRestoreModalOpen: boolean;
@@ -37,6 +41,8 @@ interface OptWinState {
     setScriptOverlayOpen: (isOpen: boolean) => void;
     isDnsModalOpen: boolean;
     setDnsModalOpen: (isOpen: boolean) => void;
+    isSupportModalOpen: boolean;
+    setSupportModalOpen: (isOpen: boolean) => void;
 
     previewCode: string;
     setPreviewCode: (code: string) => void;
@@ -56,6 +62,8 @@ export const useOptWinStore = create<OptWinState>()(
             selectedFeatures: new Set<string>(),
             dnsProvider: "cloudflare",
             searchQuery: "",
+            showDescriptions: true,
+            collapsedCategories: new Set<string>(),
 
             // Language
             setLang: (lang) => set({ lang }),
@@ -105,8 +113,15 @@ export const useOptWinStore = create<OptWinState>()(
             // DNS
             setDnsProvider: (provider) => set({ dnsProvider: provider }),
 
-            // Search
+            // Search & Display
             setSearchQuery: (query) => set({ searchQuery: query }),
+            toggleDescriptions: () => set((state) => ({ showDescriptions: !state.showDescriptions })),
+            toggleCategoryCollapse: (slug) => set((state) => {
+                const next = new Set(state.collapsedCategories);
+                if (next.has(slug)) next.delete(slug);
+                else next.add(slug);
+                return { collapsedCategories: next };
+            }),
 
             // Modals
             isRestoreModalOpen: false,
@@ -120,6 +135,9 @@ export const useOptWinStore = create<OptWinState>()(
 
             isDnsModalOpen: false,
             setDnsModalOpen: (isOpen) => set({ isDnsModalOpen: isOpen }),
+
+            isSupportModalOpen: false,
+            setSupportModalOpen: (isOpen) => set({ isSupportModalOpen: isOpen }),
 
             previewCode: "",
             setPreviewCode: (code) => set({ previewCode: code }),

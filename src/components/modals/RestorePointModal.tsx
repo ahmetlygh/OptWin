@@ -1,7 +1,7 @@
 "use client";
 
 import { useOptWinStore } from "@/store/useOptWinStore";
-import { TranslatableText } from "../shared/TranslatableText";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useState, useEffect } from "react";
 import { XIcon, CheckIcon, LoaderIcon, RestoreIcon } from "../shared/Icons";
 
@@ -10,6 +10,7 @@ export function RestorePointModal() {
         isRestoreModalOpen, setRestoreModalOpen, setScriptOverlayOpen,
         selectedFeatures, dnsProvider, lang, setPreviewCode, showToast
     } = useOptWinStore();
+    const { t } = useTranslation();
     const [isGenerating, setIsGenerating] = useState(false);
     const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
 
@@ -45,10 +46,10 @@ export function RestorePointModal() {
                 setTimeout(() => setScriptOverlayOpen(true), 350);
                 fetch("/api/stats?action=script", { method: "POST" }).catch(() => { });
             } else {
-                showToast("Failed to generate script", "error");
+                showToast(t["restore.errorGenerate"], "error");
             }
         } catch {
-            showToast("Error during script generation", "error");
+            showToast(t["restore.errorDuring"], "error");
         } finally {
             setIsGenerating(false);
         }
@@ -78,14 +79,11 @@ export function RestorePointModal() {
                     </div>
 
                     <h3 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
-                        <TranslatableText en="Create Restore Point?" tr="Geri Yükleme Noktası?" />
+                        {t["restore.title"]}
                     </h3>
 
                     <p className="text-[var(--text-secondary)] leading-relaxed text-base pb-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                        <TranslatableText
-                            en="Do you want to create a System Restore Point before applying the selected optimizations? This is highly recommended for safety."
-                            tr="Seçilen optimizasyonları uygulamadan önce bir Sistem Geri Yükleme Noktası oluşturmak ister misiniz? Güvenlik için şiddetle tavsiye edilir."
-                        />
+                        {t["restore.description"]}
                     </p>
 
                     <div className="flex flex-col sm:flex-row w-full gap-4 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
@@ -95,14 +93,14 @@ export function RestorePointModal() {
                             className={`flex-1 py-4 text-white font-bold text-lg rounded-xl shadow-[0_10px_20px_rgba(108,92,231,0.2)] hover:shadow-[0_15px_30px_rgba(108,92,231,0.4)] flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-0.5 ${isGenerating ? "bg-gray-600 opacity-70 cursor-not-allowed" : "bg-[var(--accent-color)] hover:bg-[var(--accent-hover)]"}`}
                         >
                             {isGenerating ? <LoaderIcon size={18} className="animate-spin" /> : <CheckIcon size={18} />}
-                            <TranslatableText en={isGenerating ? "Loading..." : "Yes, Create"} tr={isGenerating ? "Oluşturuluyor..." : "Evet, Oluştur"} noSpan />
+                            {isGenerating ? t["restore.loading"] : t["restore.yesCreate"]}
                         </button>
                         <button
                             onClick={() => generateAndOpenScript(false)}
                             disabled={isGenerating}
                             className="flex-1 py-4 bg-transparent border-2 border-[var(--border-color)] hover:border-[var(--text-secondary)] text-[var(--text-primary)] font-bold text-lg rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:-translate-y-0.5"
                         >
-                            <TranslatableText en="No, Skip" tr="Hayır, Atla" noSpan />
+                            {t["restore.noSkip"]}
                         </button>
                     </div>
                 </div>

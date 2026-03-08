@@ -2,7 +2,6 @@
 
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { Feature } from "@/types/feature";
-import { TranslatableText } from "../shared/TranslatableText";
 import { HighlightText } from "../shared/HighlightText";
 import { FeatureIcon, CheckIcon, GlobeIcon } from "../shared/Icons";
 
@@ -16,43 +15,59 @@ export function FeatureCard({ feature }: FeatureCardProps) {
     const setDnsModalOpen = useOptWinStore(state => state.setDnsModalOpen);
     const dnsProvider = useOptWinStore(state => state.dnsProvider);
     const lang = useOptWinStore(state => state.lang);
+    const showDescriptions = useOptWinStore(state => state.showDescriptions);
 
     const isChangeDns = feature.slug === "changeDNS";
 
-    const titleEn = feature.translations.find(t => t.lang === "en")?.title || feature.slug;
-    const titleTr = feature.translations.find(t => t.lang === "tr")?.title || feature.slug;
-    const descEn = feature.translations.find(t => t.lang === "en")?.desc || "";
-    const descTr = feature.translations.find(t => t.lang === "tr")?.desc || "";
+    // Multi-language: try selected lang first, then fallback to en, then slug
+    const getTranslation = (field: "title" | "desc") => {
+        const langTr = feature.translations.find(t => t.lang === lang);
+        if (langTr && langTr[field]) return langTr[field];
+        const enTr = feature.translations.find(t => t.lang === "en");
+        if (enTr && enTr[field]) return enTr[field];
+        return field === "title" ? feature.slug : "";
+    };
+
+    const title = getTranslation("title");
+    const desc = getTranslation("desc");
+
+    // Risk badge — multi-language
+    const riskLabels: Record<string, Record<string, string>> = {
+        high: { en: "Critical", tr: "Riskli", de: "Kritisch", fr: "Critique", zh: "危险", es: "Crítico", hi: "खतरनाक" },
+        medium: { en: "Read Desc", tr: "Dikkat", de: "Achtung", fr: "Attention", zh: "注意", es: "Cuidado", hi: "ध्यान दें" },
+        low: { en: "Safe", tr: "Güvenli", de: "Sicher", fr: "Sûr", zh: "安全", es: "Seguro", hi: "सुरक्षित" },
+    };
 
     let riskBadgeColor = "";
     let riskBadgeBg = "";
-    let riskBadgeTextEn = "";
-    let riskBadgeTextTr = "";
+    let riskBadgeText = "";
 
     switch (feature.risk) {
         case "high":
             riskBadgeColor = "text-[#ff6b6b]";
             riskBadgeBg = "bg-[#ff6b6b]/10 border-[#ff6b6b]/30";
-            riskBadgeTextEn = "Critical";
-            riskBadgeTextTr = "Riskli";
+            riskBadgeText = riskLabels.high[lang] || riskLabels.high.en;
             break;
         case "medium":
             riskBadgeColor = "text-[#feca57]";
             riskBadgeBg = "bg-[#feca57]/10 border-[#feca57]/30";
-            riskBadgeTextEn = "Read Desc";
-            riskBadgeTextTr = "Dikkat";
+            riskBadgeText = riskLabels.medium[lang] || riskLabels.medium.en;
             break;
         default:
             riskBadgeColor = "text-[#1dd1a1]";
             riskBadgeBg = "bg-[#1dd1a1]/10 border-[#1dd1a1]/30";
-            riskBadgeTextEn = "Safe";
-            riskBadgeTextTr = "Güvenli";
+            riskBadgeText = riskLabels.low[lang] || riskLabels.low.en;
             break;
     }
 
+    const dnsDisplayName: Record<string, string> = {
+        default: "Default", cloudflare: "Cloudflare", google: "Google",
+        opendns: "OpenDNS", quad9: "Quad9", adguard: "AdGuard",
+    };
+
     return (
         <label
-            className={`group relative rounded-xl p-5 border cursor-pointer overflow-hidden transition-all duration-300 ease-out ${isSelected
+            className={`group relative rounded-xl ${showDescriptions ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out ${isSelected
                 ? "bg-[var(--accent-color)]/10 border-[var(--accent-color)] shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-[1.02]"
                 : "bg-[var(--card-bg)] border-[var(--border-color)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-[var(--accent-color)]/10 hover:scale-[1.01]"
                 }`}
@@ -92,20 +107,24 @@ export function FeatureCard({ feature }: FeatureCardProps) {
                     {!feature.noRisk ? (
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                             <h4 className="text-[var(--text-primary)] font-semibold tracking-tight">
-                                <HighlightText text={lang === "tr" ? titleTr : titleEn} />
+                                <HighlightText text={title} />
                             </h4>
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${riskBadgeBg} ${riskBadgeColor}`}>
-                                <TranslatableText en={riskBadgeTextEn} tr={riskBadgeTextTr} />
+                                {riskBadgeText}
                             </span>
                         </div>
                     ) : (
                         <h4 className="text-[var(--text-primary)] font-semibold tracking-tight mb-1">
-                            <HighlightText text={lang === "tr" ? titleTr : titleEn} />
+                            <HighlightText text={title} />
                         </h4>
                     )}
-                    <p className="text-sm text-[var(--text-secondary)] leading-snug">
-                        <HighlightText text={lang === "tr" ? descTr : descEn} />
-                    </p>
+
+                    {/* Description — animated show/hide */}
+                    <div className={`transition-all duration-300 ease-out overflow-hidden ${showDescriptions ? 'max-h-40 opacity-100 mt-0' : 'max-h-0 opacity-0'}`}>
+                        <p className="text-sm text-[var(--text-secondary)] leading-snug">
+                            <HighlightText text={desc} />
+                        </p>
+                    </div>
 
                     {/* DNS Change button */}
                     {isChangeDns && isSelected && (
@@ -118,7 +137,7 @@ export function FeatureCard({ feature }: FeatureCardProps) {
                             className="pointer-events-auto mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/30 text-[var(--accent-color)] text-xs font-bold hover:bg-[var(--accent-color)]/25 transition-all duration-200 animate-slide-in-right"
                         >
                             <GlobeIcon size={14} />
-                            <span>{lang === "tr" ? "Değiştir" : "Change"}: {dnsProvider}</span>
+                            <span>{lang === "tr" ? "Değiştir" : "Change"}: {dnsDisplayName[dnsProvider] || dnsProvider}</span>
                         </button>
                     )}
                 </div>

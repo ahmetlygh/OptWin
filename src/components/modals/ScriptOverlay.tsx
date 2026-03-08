@@ -1,13 +1,16 @@
 "use client";
 
 import { useOptWinStore } from "@/store/useOptWinStore";
-import { TranslatableText } from "../shared/TranslatableText";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useState, useEffect, useCallback } from "react";
-import { XIcon, CheckIcon, BookOpenIcon, DownloadIcon, RepeatIcon, CopyIcon } from "../shared/Icons";
-import { MonitorCog } from "lucide-react";
+import { XIcon, DownloadIcon, CopyIcon, CheckIcon, RepeatIcon, ExternalLinkIcon, BookOpenIcon, ShieldIcon } from "../shared/Icons";
 
 export function ScriptOverlay() {
-    const { isScriptOverlayOpen, setScriptOverlayOpen, showToast, previewCode } = useOptWinStore();
+    const {
+        isScriptOverlayOpen, setScriptOverlayOpen,
+        previewCode, showToast
+    } = useOptWinStore();
+    const { t } = useTranslation();
     const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
 
     useEffect(() => {
@@ -21,7 +24,21 @@ export function ScriptOverlay() {
         }
     }, [isScriptOverlayOpen]);
 
-    // Lock body scroll when open
+    const handleClose = useCallback(() => {
+        setScriptOverlayOpen(false);
+    }, [setScriptOverlayOpen]);
+
+    // ESC to close
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") handleClose();
+        };
+        if (phase !== "closed") {
+            document.addEventListener("keydown", onKeyDown);
+            return () => document.removeEventListener("keydown", onKeyDown);
+        }
+    }, [phase, handleClose]);
+
     useEffect(() => {
         if (phase !== "closed") {
             document.body.style.overflow = "hidden";
@@ -31,145 +48,136 @@ export function ScriptOverlay() {
         return () => { document.body.style.overflow = ""; };
     }, [phase]);
 
-    // ESC key to close
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === "Escape") setScriptOverlayOpen(false);
-    }, [setScriptOverlayOpen]);
+    const handleDownload = async () => {
+        const blob = new Blob([previewCode], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "OptWin.bat";
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(t["script.downloadToast"], "success");
+        fetch("/api/stats?action=download", { method: "POST" }).catch(() => { });
+    };
 
-    useEffect(() => {
-        if (phase !== "closed") {
-            document.addEventListener("keydown", handleKeyDown);
-            return () => document.removeEventListener("keydown", handleKeyDown);
-        }
-    }, [phase, handleKeyDown]);
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(previewCode);
+        showToast(t["script.copiedToast"], "success");
+    };
 
     if (phase === "closed") return null;
     const isVisible = phase === "open";
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(previewCode);
-        showToast("Script copied to clipboard!", "success");
-    };
-
-    const handleDownload = () => {
-        const blob = new Blob([previewCode], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `OptWin-${new Date().toISOString().slice(0, 10)}.bat`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast("Download started!", "success");
-    };
-
     return (
         <div
             className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
-            onClick={() => setScriptOverlayOpen(false)}
+            onClick={handleClose}
         >
             <div
-                className={`w-full max-w-6xl bg-[#131121] border border-[var(--border-color)] rounded-3xl overflow-hidden shadow-2xl shadow-[var(--accent-color)]/10 relative flex flex-col md:flex-row h-[85vh] md:h-[80vh] ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
+                className={`w-full max-w-4xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[85vh] ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button
-                    onClick={() => setScriptOverlayOpen(false)}
-                    className="absolute top-4 right-4 z-20 size-8 flex items-center justify-center rounded-full bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 hover:text-white hover:rotate-90 transition-all duration-200"
-                >
-                    <XIcon size={14} />
-                </button>
+                {/* Left Side: Info & Actions */}
+                <div className="w-full md:w-[35%] p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[var(--border-color)] relative overflow-hidden">
+                    {/* Decorative glow */}
+                    <div className="absolute -top-20 -left-20 w-40 h-40 bg-[var(--accent-color)]/10 rounded-full blur-[60px] pointer-events-none"></div>
 
-                {/* Left Side: Instructions */}
-                <div className="w-full md:w-[28%] bg-gradient-to-b from-black/40 to-black/20 p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[var(--border-color)]">
-                    <div className="space-y-8">
-                        <div className="animate-fade-in-up">
-                            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Script Ready</h2>
-                            <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                                <span className="bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-md border border-emerald-500/20 flex items-center gap-1 animate-pop-in" style={{ animationDelay: "0.1s" }}>
-                                    <CheckIcon size={12} /> Safe
-                                </span>
-                                <span className="bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-md border border-blue-500/20 flex items-center gap-1 animate-pop-in" style={{ animationDelay: "0.15s" }}>
-                                    <RepeatIcon size={12} /> Reusable
-                                </span>
+                    {/* Close button */}
+                    <button
+                        onClick={handleClose}
+                        className="absolute top-4 right-4 size-8 flex items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border-color)] hover:rotate-90 transition-all duration-200 md:hidden"
+                    >
+                        <XIcon size={16} />
+                    </button>
+
+                    <div className="relative z-10">
+                        {/* Header */}
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="size-12 rounded-xl bg-[var(--accent-color)]/20 text-[var(--accent-color)] flex items-center justify-center shadow-inner border border-[var(--accent-color)]/30">
+                                <BookOpenIcon size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">{t["script.ready"]}</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded-full font-bold flex items-center gap-1">
+                                        <CheckIcon size={10} /> {t["script.safe"]}
+                                    </span>
+                                    <span className="text-[10px] px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded-full font-bold flex items-center gap-1">
+                                        <RepeatIcon size={10} /> {t["script.reusable"]}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <BookOpenIcon size={18} className="text-[var(--accent-color)]" />
-                                <TranslatableText en="How to use" tr="Nasıl kullanılır" />
-                            </h3>
-                            <ul className="space-y-4 text-[var(--text-secondary)] text-sm stagger-children">
-                                <li className="flex gap-3">
-                                    <span className="shrink-0 size-6 rounded-full bg-[var(--accent-color)]/20 text-[var(--accent-color)] font-bold flex items-center justify-center">1</span>
-                                    <span><TranslatableText en="Download the script using the button below." tr="Aşağıdaki butonu kullanarak betiği indirin." /></span>
+                        {/* Steps */}
+                        <div className="space-y-3 mb-6">
+                            <h4 className="text-xs font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["script.howToUse"]}</h4>
+                            <ol className="space-y-3 text-sm text-[var(--text-secondary)]">
+                                <li className="flex items-start gap-2.5">
+                                    <span className="text-[var(--accent-color)] font-black text-base leading-none mt-0.5 shrink-0">1.</span>
+                                    <span>{t["script.step1"]}</span>
                                 </li>
-                                <li className="flex gap-3">
-                                    <span className="shrink-0 size-6 rounded-full bg-[var(--accent-color)]/20 text-[var(--accent-color)] font-bold flex items-center justify-center">2</span>
-                                    <span><TranslatableText en="Right-click and select" tr="Sağ tıkla ve şunu seç:" /> <b>Run as Administrator / PowerShell</b>.</span>
+                                <li className="flex items-start gap-2.5">
+                                    <span className="text-[var(--accent-color)] font-black text-base leading-none mt-0.5 shrink-0">2.</span>
+                                    <span>{t["script.step2"]} <b className="text-[var(--text-primary)]">Run as Administrator</b></span>
                                 </li>
-                                <li className="flex gap-3">
-                                    <span className="shrink-0 size-6 rounded-full bg-[var(--accent-color)]/20 text-[var(--accent-color)] font-bold flex items-center justify-center">3</span>
-                                    <span><TranslatableText en="Wait for the terminal window to close." tr="Terminal penceresinin kapanmasını bekleyin." /></span>
+                                <li className="flex items-start gap-2.5">
+                                    <span className="text-[var(--accent-color)] font-black text-base leading-none mt-0.5 shrink-0">3.</span>
+                                    <span>{t["script.step3"]}</span>
                                 </li>
-                            </ul>
+                            </ol>
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-[var(--border-color)] hidden md:block animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-                        <p className="text-xs text-[var(--text-secondary)] opacity-70 mb-4 whitespace-pre-wrap flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-                            Open source logic
-                        </p>
-                        <div className="flex flex-col gap-3">
+                    {/* Action buttons */}
+                    <div className="flex flex-col gap-2.5 relative z-10">
+                        <button
+                            onClick={handleDownload}
+                            className="w-full py-3.5 bg-gradient-to-r from-[var(--accent-color)] to-[#a855f7] text-white font-bold rounded-xl shadow-[0_10px_20px_rgba(108,92,231,0.2)] hover:shadow-[0_15px_30px_rgba(108,92,231,0.4)] hover:-translate-y-0.5 flex items-center justify-center gap-2 transition-all duration-300"
+                        >
+                            <DownloadIcon size={18} /> {t["script.download"]}
+                        </button>
+                        <div className="flex gap-2.5">
                             <button
-                                onClick={handleDownload}
-                                className="w-full flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(107,91,230,0.4)]"
+                                onClick={handleCopy}
+                                className="flex-1 py-3 bg-transparent border-2 border-[var(--border-color)] hover:border-[var(--text-secondary)] text-[var(--text-primary)] font-bold rounded-xl flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-0.5"
                             >
-                                <DownloadIcon size={18} /> <TranslatableText en="Download" tr="İndir" noSpan />
+                                <CopyIcon size={16} /> {t["script.copy"]}
                             </button>
                             <button
-                                onClick={() => setScriptOverlayOpen(false)}
-                                className="w-full flex items-center justify-center gap-2 h-12 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all duration-200"
+                                onClick={handleClose}
+                                className="flex-1 py-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold rounded-xl transition-all duration-300"
                             >
-                                <TranslatableText en="Cancel" tr="İptal" noSpan />
+                                {t["script.cancel"]}
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Right Side: Code Preview */}
-                <div className="w-full md:w-[72%] p-4 md:p-6 flex flex-col h-full bg-[#0a0a0f]">
-                    <div className="flex items-center justify-between bg-black/50 border border-white/5 rounded-t-xl px-4 py-3 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-                        <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
-                            <MonitorCog size={14} className="text-blue-400" /> OptWin.bat
-                        </div>
-                        <button
-                            onClick={handleCopy}
-                            className="flex items-center gap-2 text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg border border-white/5 transition-all duration-200 hover:scale-105"
+                <div className="w-full md:w-[65%] relative flex flex-col">
+                    {/* Top bar with close & source link */}
+                    <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+                        <a
+                            href="https://github.com/ahmetly"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--border-color)]/50 text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors"
                         >
-                            <CopyIcon size={14} />
-                            <TranslatableText en="Copy" tr="Kopyala" noSpan />
+                            <ExternalLinkIcon size={12} /> {t["script.openSource"]}
+                        </a>
+                        <button
+                            onClick={handleClose}
+                            className="size-8 hidden md:flex items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border-color)] hover:rotate-90 transition-all duration-200"
+                        >
+                            <XIcon size={16} />
                         </button>
-                    </div>
-                    <div className="flex-1 bg-black/80 border-x border-b border-white/5 rounded-b-xl overflow-hidden relative">
-                        <textarea
-                            readOnly
-                            value={previewCode}
-                            className="absolute inset-0 w-full h-full p-6 bg-transparent text-[#a2e88a] font-mono text-xs md:text-sm resize-none focus:outline-none selection:bg-[var(--accent-color)]/30"
-                        />
                     </div>
 
-                    {/* Mobile Actions */}
-                    <div className="pt-4 flex md:hidden flex-row gap-2">
-                        <button
-                            onClick={handleDownload}
-                            className="flex-1 flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-lg text-sm transition-all duration-200"
-                        >
-                            <DownloadIcon size={16} /> <TranslatableText en="Download" tr="İndir" noSpan />
-                        </button>
-                    </div>
+                    {/* Code */}
+                    <pre className="flex-1 p-6 text-xs text-[var(--text-secondary)] font-mono leading-relaxed overflow-auto max-h-[50vh] md:max-h-none script-scrollbar bg-[var(--bg-color)]/50">
+                        <code>{previewCode}</code>
+                    </pre>
                 </div>
             </div>
         </div>

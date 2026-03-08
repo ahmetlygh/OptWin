@@ -1,99 +1,58 @@
-import { getSettings } from "@/lib/settings";
-import { prisma } from "@/lib/db";
-import { TranslatableText } from "../shared/TranslatableText";
-import Link from "next/link";
-import { GithubIcon, InfoIcon } from "../shared/Icons";
+"use client";
 
-export async function Footer() {
-    // Parallel fetch
-    const [settings, uiTranslations] = await Promise.all([
-        getSettings(["site_version", "contact_email"]),
-        prisma.uiTranslation.findMany({
-            where: { key: "footer.text" }
-        }),
-    ]);
+import { useTranslation } from "@/i18n/useTranslation";
+import Link from "next/link";
+import { GithubIcon, HeartIcon } from "../shared/Icons";
+
+export function Footer() {
+    const { t } = useTranslation();
 
     return (
-        <footer className="w-full border-t border-[var(--border-color)] bg-[rgba(13,13,18,0.7)] backdrop-blur-xl mt-auto">
-            <div className="max-w-[1440px] mx-auto px-4 md:px-10 py-12">
-                <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-10">
-
-                    {/* Brand Section */}
-                    <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4 max-w-sm">
-                        <Link href="/" className="flex items-center gap-3 group">
-                            <div className="h-10 w-auto flex items-center justify-center">
-                                <img src="/optwin.png" alt="OptWin Logo" className="h-full w-auto object-contain drop-shadow-[0_0_10px_rgba(107,91,230,0.3)] group-hover:drop-shadow-[0_0_15px_rgba(107,91,230,0.6)]" style={{ transition: "filter 0.3s" }} />
-                            </div>
-                            <h2 className="text-[var(--text-primary)] text-2xl font-extrabold tracking-tight">
-                                OptWin
-                            </h2>
-                        </Link>
-                        <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                            <TranslatableText
-                                en="Ultimate open-source Windows optimization suite. Secure, fast, and reliable system tuning for Gamers and Professionals."
-                                tr="Açık kaynaklı nihai Windows optimizasyon aracı. Oyuncular ve Profesyoneller için güvenli, hızlı ve güvenilir sistem ince ayarı."
-                            />
+        <footer className="w-full mt-4 border-t border-[var(--border-color)] bg-[var(--card-bg)]/80 backdrop-blur-lg">
+            <div className="max-w-[1200px] mx-auto px-6 py-10">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                    {/* Left */}
+                    <div className="flex flex-col gap-3 max-w-md">
+                        <div className="flex items-center gap-2">
+                            <img src="/optwin.png" alt="OptWin" className="h-7 w-auto" />
+                            <span className="text-lg font-black text-gradient">OptWin</span>
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                            {t["footer.description"]}
                         </p>
                     </div>
 
-                    {/* Quick Links */}
-                    <div className="flex flex-col sm:flex-row gap-10 sm:gap-20 text-center md:text-left">
-                        {/* Legal */}
-                        <div className="flex flex-col gap-3">
-                            <h3 className="text-[var(--text-primary)] font-bold text-sm tracking-widest uppercase mb-1">
-                                <TranslatableText en="Legal" tr="Yasal" />
-                            </h3>
-                            <Link href="/privacy" className="text-[var(--text-secondary)] hover:text-[var(--accent-color)] text-sm font-medium" style={{ transition: "color 0.2s" }}>
-                                <TranslatableText en="Privacy Policy" tr="Gizlilik Politikası" />
-                            </Link>
-                            <Link href="/terms" className="text-[var(--text-secondary)] hover:text-[var(--accent-color)] text-sm font-medium" style={{ transition: "color 0.2s" }}>
-                                <TranslatableText en="Terms of Service" tr="Hizmet Şartları" />
-                            </Link>
+                    {/* Right */}
+                    <div className="flex gap-12 text-sm">
+                        <div className="flex flex-col gap-2.5">
+                            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.legal"]}</span>
+                            <Link href="/privacy" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.privacy"]}</Link>
+                            <Link href="/terms" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.terms"]}</Link>
                         </div>
-
-                        {/* Support */}
-                        <div className="flex flex-col gap-3">
-                            <h3 className="text-[var(--text-primary)] font-bold text-sm tracking-widest uppercase mb-1">
-                                <TranslatableText en="Support" tr="Destek" />
-                            </h3>
-                            <Link href="/contact" className="text-[var(--text-secondary)] hover:text-[var(--accent-color)] text-sm font-medium" style={{ transition: "color 0.2s" }}>
-                                <TranslatableText en="Contact Us" tr="Bize Ulaşın" />
-                            </Link>
-                            <a href={`mailto:${settings.contact_email || "contact@optwin.tech"}`} className="text-[var(--text-secondary)] hover:text-[var(--accent-color)] text-sm font-medium" style={{ transition: "color 0.2s" }}>
-                                {settings.contact_email || "contact@optwin.tech"}
+                        <div className="flex flex-col gap-2.5">
+                            <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.support"]}</span>
+                            <Link href="/contact" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.contactUs"]}</Link>
+                            <a href="https://github.com/ahmetly" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors flex items-center gap-1.5">
+                                <GithubIcon size={12} /> GitHub
                             </a>
                         </div>
                     </div>
                 </div>
 
-                {/* Bottom Bar */}
-                <div className="mt-12 pt-8 border-t border-[var(--border-color)] flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="text-[var(--text-secondary)] text-xs font-medium">
-                        &copy; 2026 OptWin. <TranslatableText en="All rights reserved." tr="Tüm hakları saklıdır." />
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                        <Link
-                            href="https://github.com/ahmetlygh/optwin/releases"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-mono font-semibold flex items-center gap-1.5"
-                            style={{ transition: "color 0.2s" }}
-                        >
-                            <InfoIcon size={14} />
-                            {settings.site_version || "v1.3.0"}
-                        </Link>
+                {/* Bottom */}
+                <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <span className="text-[11px] text-[var(--text-secondary)]">© {new Date().getFullYear()} OptWin. {t["footer.allRights"]}</span>
+                    <span className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1">
+                        Made with <HeartIcon size={11} className="text-red-500 inline-block" /> by{" "}
                         <a
-                            href="https://github.com/ahmetlygh/optwin"
+                            href="https://www.ahmetly.com"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-2"
-                            style={{ transition: "color 0.2s" }}
+                            className="text-[var(--accent-color)] hover:text-purple-400 font-semibold transition-colors"
                         >
-                            <GithubIcon size={18} />
-                            <span className="text-xs font-semibold">GitHub</span>
+                            ahmetly_
                         </a>
-                    </div>
+                    </span>
                 </div>
             </div>
         </footer>
