@@ -1,14 +1,14 @@
 "use client";
 
 import { useOptWinStore } from "@/store/useOptWinStore";
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 
 // Escape special regex characters to prevent crashes from user input
 function escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function HighlightText({ text }: { text: string }) {
+export const HighlightText = memo(function HighlightText({ text }: { text: string }) {
     const searchQuery = useOptWinStore(state => state.searchQuery);
 
     const parts = useMemo(() => {
@@ -38,4 +38,4 @@ export function HighlightText({ text }: { text: string }) {
             )}
         </span>
     );
-}
+});

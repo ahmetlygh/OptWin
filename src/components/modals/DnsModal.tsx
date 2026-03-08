@@ -2,58 +2,25 @@
 
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { DnsProvider } from "@/types/feature";
-import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
+import { useModalPhase } from "@/hooks/useModalPhase";
 import { XIcon, CheckIcon, GlobeIcon } from "../shared/Icons";
 
 export function DnsModal({ providers }: { providers: DnsProvider[] }) {
     const { isDnsModalOpen, setDnsModalOpen, dnsProvider, setDnsProvider } = useOptWinStore();
     const { t } = useTranslation();
-    const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
-
-    useEffect(() => {
-        if (isDnsModalOpen && phase === "closed") {
-            setPhase("entering");
-            requestAnimationFrame(() => setPhase("open"));
-        } else if (!isDnsModalOpen && (phase === "open" || phase === "entering")) {
-            setPhase("exiting");
-            const timer = setTimeout(() => setPhase("closed"), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isDnsModalOpen]);
-
-    useEffect(() => {
-        if (phase !== "closed") {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "";
-        }
-        return () => { document.body.style.overflow = ""; };
-    }, [phase]);
-
-    const handleClose = useCallback(() => {
-        setDnsModalOpen(false);
-    }, [setDnsModalOpen]);
-
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") handleClose();
-        };
-        if (phase !== "closed") {
-            document.addEventListener("keydown", onKeyDown);
-            return () => document.removeEventListener("keydown", onKeyDown);
-        }
-    }, [phase, handleClose]);
+    const handleClose = () => setDnsModalOpen(false);
+    const { isVisible, isMounted, phase, containerRef } = useModalPhase(isDnsModalOpen, handleClose);
 
     const handleSelect = (slug: string) => {
         setDnsProvider(slug);
     };
 
-    if (phase === "closed") return null;
-    const isVisible = phase === "open";
+    if (!isMounted) return null;
 
     return (
         <div
+            ref={containerRef}
             className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-xl ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
             onClick={handleClose}
         >

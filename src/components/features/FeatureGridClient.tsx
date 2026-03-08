@@ -11,7 +11,7 @@ type CategoryData = {
     slug: string;
     icon: string | null;
     translations: { lang: string; name: string }[];
-    features: any[];
+    features: Feature[];
 };
 
 export function FeatureGridClient({ categories }: { categories: CategoryData[] }) {
@@ -31,7 +31,7 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
     const filteredCategories = categories.map(cat => {
         const filteredFeatures = cat.features.filter(f => {
             if (!query) return true;
-            const matchesAnyTranslation = f.translations?.some((tr: any) =>
+            const matchesAnyTranslation = f.translations?.some((tr) =>
                 (tr.title?.toLowerCase() || "").includes(query) ||
                 (tr.desc?.toLowerCase() || "").includes(query)
             );
@@ -103,13 +103,13 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                 <div className="flex flex-col items-center justify-center p-12 text-center bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl animate-fade-in-up">
                     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-secondary)] mb-4 opacity-50"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                        {lang === "tr" ? "Sonuç bulunamadı." : "No results found."}
+                        {t["search.noResults"]}
                     </h3>
                     <button
                         onClick={() => useOptWinStore.getState().setSearchQuery("")}
                         className="mt-4 px-5 py-2.5 bg-[#6c5ce7]/15 text-[#6c5ce7] font-bold rounded-xl hover:bg-[#6c5ce7] hover:text-white transition-all duration-300"
                     >
-                        {lang === "tr" ? "Aramayı Temizle" : "Clear Search"}
+                        {t["search.clearSearch"]}
                     </button>
                 </div>
             )}
@@ -176,7 +176,7 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                             </div>
                         </div>
 
-                        {/* Features grid — smooth animated collapse via CSS grid trick */}
+                        {/* Features grid — CSS grid animation */}
                         <div
                             className="grid transition-[grid-template-rows,opacity] duration-350 ease-[cubic-bezier(0.4,0,0.2,1)]"
                             style={{
@@ -186,8 +186,8 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                         >
                             <div className="overflow-hidden">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1 stagger-children">
-                                    {cat.features.map((f: any) => (
-                                        <FeatureCard key={f.id} feature={f as unknown as Feature} />
+                                    {cat.features.map((f) => (
+                                        <FeatureCard key={f.id} feature={f} />
                                     ))}
                                 </div>
                             </div>

@@ -42,9 +42,9 @@ export function HeroTitle() {
     const parts = titleParts[lang] || titleParts.en;
 
     return (
-        <div className="min-h-[140px] sm:min-h-[160px] md:min-h-[180px] flex flex-col justify-end">
+        <div className="min-h-[120px] sm:min-h-[160px] md:min-h-[180px] flex flex-col justify-end">
             {/* Title */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black leading-[1.1] tracking-tight mb-4 max-w-xl lg:max-w-3xl animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+            <h2 className="text-[2rem] leading-[1.1] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black tracking-tight mb-3 sm:mb-4 max-w-xl lg:max-w-3xl animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                 {parts.map((part, i) => (
                     <span
                         key={i}
@@ -59,7 +59,7 @@ export function HeroTitle() {
             </h2>
 
             {/* Subtitle */}
-            <p className="text-[var(--text-secondary)] text-sm sm:text-base md:text-lg leading-relaxed mb-8 max-w-md lg:max-w-lg animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+            <p className="text-[var(--text-secondary)] text-[13px] sm:text-base md:text-lg leading-relaxed mb-6 sm:mb-8 max-w-md lg:max-w-lg animate-fade-in-up opacity-90" style={{ animationDelay: "0.2s" }}>
                 {t["hero.subtitle"]}
             </p>
         </div>

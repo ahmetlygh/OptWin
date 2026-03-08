@@ -10,7 +10,7 @@ import {
     RotateCw, MonitorCog, Palette, MapPin, UserCog, Printer, Headset,
     TruckIcon, Network, Zap, Wifi, Cog, Brush, Sliders,
     Layers, Share2, MicOff, CloudDownload, MapPinOff, Clipboard,
-    History, Newspaper, Clock, BadgeInfo, EyeOffIcon, Wand2,
+    History, Newspaper, Clock, BadgeInfo, Wand2,
     Lightbulb, Images, Lock, Keyboard, SearchX, FileCode, Eye,
     MousePointer, AppWindow, Cpu, AlignJustify, Phone, Bug, Github,
     BookOpen, Repeat, ExternalLink, ClockArrowUp,

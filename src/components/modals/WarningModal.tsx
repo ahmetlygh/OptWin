@@ -2,32 +2,22 @@
 
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useState, useEffect } from "react";
+import { useModalPhase } from "@/hooks/useModalPhase";
 import { XIcon, AlertCircleIcon } from "../shared/Icons";
 
 export function WarningModal() {
     const { isWarningModalOpen, setWarningModalOpen } = useOptWinStore();
     const { t } = useTranslation();
-    const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
+    const handleClose = () => setWarningModalOpen(false);
+    const { isVisible, isMounted, phase, containerRef } = useModalPhase(isWarningModalOpen, handleClose);
 
-    useEffect(() => {
-        if (isWarningModalOpen && phase === "closed") {
-            setPhase("entering");
-            requestAnimationFrame(() => setPhase("open"));
-        } else if (!isWarningModalOpen && (phase === "open" || phase === "entering")) {
-            setPhase("exiting");
-            const timer = setTimeout(() => setPhase("closed"), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isWarningModalOpen]);
-
-    if (phase === "closed") return null;
-    const isVisible = phase === "open";
+    if (!isMounted) return null;
 
     return (
         <div
+            ref={containerRef}
             className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
-            onClick={() => setWarningModalOpen(false)}
+            onClick={handleClose}
         >
             <div
                 className={`w-full max-w-md bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
@@ -36,7 +26,7 @@ export function WarningModal() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-[40px] pointer-events-none"></div>
 
                 <button
-                    onClick={() => setWarningModalOpen(false)}
+                    onClick={handleClose}
                     className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-2 hover:rotate-90 transition-all duration-200"
                 >
                     <XIcon size={20} />
@@ -56,7 +46,7 @@ export function WarningModal() {
                     </p>
 
                     <button
-                        onClick={() => setWarningModalOpen(false)}
+                        onClick={handleClose}
                         className="mt-4 w-full py-3 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-lg shadow-[var(--accent-color)]/20 transition-all duration-200 hover:-translate-y-0.5 animate-fade-in-up"
                         style={{ animationDelay: "0.15s" }}
                     >

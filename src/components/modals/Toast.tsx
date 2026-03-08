@@ -5,24 +5,37 @@ import { useEffect, useState } from "react";
 import { CheckCircleIcon, AlertCircleIcon, XIcon } from "../shared/Icons";
 import { AlertTriangle } from "lucide-react";
 
+type ToastData = { show: boolean; message: string; type: "success" | "warning" | "error" };
+
 export function Toast() {
     const { toast, hideToast } = useOptWinStore();
-    const [internalToast, setInternalToast] = useState(toast);
+    const [internalToast, setInternalToast] = useState<ToastData | null>(toast);
     const [phase, setPhase] = useState<"hidden" | "visible" | "exiting">("hidden");
+    const [prevToast, setPrevToast] = useState<ToastData | null>(toast);
 
-    useEffect(() => {
-        if (toast) {
-            setInternalToast(toast);
-            setPhase("visible");
-        } else if (phase === "visible") {
+    // Render-time derivation: detect toast appearing/disappearing
+    if (toast && toast !== prevToast) {
+        setPrevToast(toast);
+        setInternalToast(toast);
+        setPhase("visible");
+    }
+    if (!toast && prevToast) {
+        setPrevToast(null);
+        if (phase === "visible") {
             setPhase("exiting");
+        }
+    }
+
+    // "exiting" → "hidden" after animation duration
+    useEffect(() => {
+        if (phase === "exiting") {
             const timer = setTimeout(() => {
                 setPhase("hidden");
                 setInternalToast(null);
-            }, 400); // Match animation duration
+            }, 400);
             return () => clearTimeout(timer);
         }
-    }, [toast]);
+    }, [phase]);
 
     if (phase === "hidden" || !internalToast) return null;
 
@@ -42,6 +55,8 @@ export function Toast() {
 
     return (
         <div
+            role="status"
+            aria-live="polite"
             className={`fixed bottom-36 left-1/2 z-[300] pointer-events-none ${phase === "visible" ? "animate-toast-in" : "animate-toast-out"}`}
         >
             <div className={`pointer-events-auto flex items-center gap-3 px-6 py-3.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] bg-[var(--card-bg)]/95 border ${border} backdrop-blur-xl min-w-[300px] max-w-[90vw]`}>

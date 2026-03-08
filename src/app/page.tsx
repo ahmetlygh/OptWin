@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/db";
-import { PresetControls } from "@/components/layout/PresetControls";
 import { Hero } from "@/components/layout/Hero";
-import { SearchBar } from "@/components/features/SearchBar";
 import { FeatureGrid } from "@/components/features/FeatureGrid";
 import { ActionArea } from "@/components/layout/ActionArea";
 import { StatsSection } from "@/components/sections/StatsSection";
@@ -12,6 +10,7 @@ import { RestorePointModal } from "@/components/modals/RestorePointModal";
 import { WarningModal } from "@/components/modals/WarningModal";
 import { Toast } from "@/components/modals/Toast";
 import { HashScroller } from "@/components/shared/HashScroller";
+import { StickyControlsPanel } from "@/components/layout/StickyControlsPanel";
 
 export default async function Home() {
     // Parallelized DB queries — all run simultaneously
@@ -45,10 +44,11 @@ export default async function Home() {
         <>
             <div className="flex flex-col gap-12 pt-8 animate-fade-in-up">
                 <Hero />
-                <section className="flex flex-col gap-6 sticky top-16 z-40 bg-[var(--bg-color)]/95 backdrop-blur-sm py-4 -mx-6 px-6 border-b border-[var(--border-color)] md:static md:bg-transparent md:border-none md:p-0 md:backdrop-blur-none animate-fade-in-up">
-                    <PresetControls presets={presetsFormatted} allFeatureSlugs={allFeatureSlugs} dnsProviders={dnsProvidersDb} />
-                    <SearchBar />
-                </section>
+                <StickyControlsPanel
+                    presets={presetsFormatted}
+                    allFeatureSlugs={allFeatureSlugs}
+                    dnsProviders={dnsProvidersDb}
+                />
                 <div style={{ overflowAnchor: "none" }}>
                     <FeatureGrid />
                 </div>

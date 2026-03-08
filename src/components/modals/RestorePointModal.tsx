@@ -2,7 +2,8 @@
 
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useModalPhase } from "@/hooks/useModalPhase";
 import { XIcon, CheckIcon, LoaderIcon, RestoreIcon } from "../shared/Icons";
 
 export function RestorePointModal() {
@@ -12,21 +13,10 @@ export function RestorePointModal() {
     } = useOptWinStore();
     const { t } = useTranslation();
     const [isGenerating, setIsGenerating] = useState(false);
-    const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
+    const handleClose = () => setRestoreModalOpen(false);
+    const { isVisible, isMounted, phase, containerRef } = useModalPhase(isRestoreModalOpen, handleClose);
 
-    useEffect(() => {
-        if (isRestoreModalOpen && phase === "closed") {
-            setPhase("entering");
-            requestAnimationFrame(() => setPhase("open"));
-        } else if (!isRestoreModalOpen && (phase === "open" || phase === "entering")) {
-            setPhase("exiting");
-            const timer = setTimeout(() => setPhase("closed"), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isRestoreModalOpen]);
-
-    if (phase === "closed") return null;
-    const isVisible = phase === "open";
+    if (!isMounted) return null;
 
     const generateAndOpenScript = async (createRestorePoint: boolean) => {
         setIsGenerating(true);
@@ -57,8 +47,9 @@ export function RestorePointModal() {
 
     return (
         <div
+            ref={containerRef}
             className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
-            onClick={() => setRestoreModalOpen(false)}
+            onClick={handleClose}
         >
             <div
                 className={`w-full max-w-lg bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
@@ -67,7 +58,7 @@ export function RestorePointModal() {
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[var(--accent-color)]/10 rounded-full blur-[50px] pointer-events-none"></div>
 
                 <button
-                    onClick={() => setRestoreModalOpen(false)}
+                    onClick={handleClose}
                     className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-2 hover:rotate-90 transition-all duration-200"
                 >
                     <XIcon size={20} />

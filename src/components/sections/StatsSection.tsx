@@ -10,9 +10,21 @@ interface StatsData {
     totalDownloads: number;
 }
 
+function StatSkeleton() {
+    return (
+        <div className="relative overflow-hidden bg-[var(--card-bg)]/80 border border-[var(--border-color)] rounded-2xl p-5 flex items-center gap-4">
+            <div className="size-12 rounded-xl bg-[var(--border-color)] shrink-0 animate-pulse" />
+            <div className="flex-1 space-y-2.5">
+                <div className="h-7 w-20 rounded-lg bg-[var(--border-color)] animate-pulse" />
+                <div className="h-3 w-28 rounded-md bg-[var(--border-color)]/60 animate-pulse" />
+            </div>
+        </div>
+    );
+}
+
 export function StatsSection() {
     const { t } = useTranslation();
-    const [stats, setStats] = useState<StatsData>({ totalVisits: 0, totalScripts: 0, totalDownloads: 0 });
+    const [stats, setStats] = useState<StatsData | null>(null);
 
     useEffect(() => {
         fetch("/api/stats")
@@ -22,7 +34,7 @@ export function StatsSection() {
                 totalScripts: data.totalScripts || 0,
                 totalDownloads: data.totalDownloads || 0,
             }))
-            .catch(() => { });
+            .catch(() => setStats({ totalVisits: 0, totalScripts: 0, totalDownloads: 0 }));
     }, []);
 
     const formatNumber = (n: number) => {
@@ -30,6 +42,18 @@ export function StatsSection() {
         if (n >= 1000) return (n / 1000).toFixed(1) + "K";
         return n.toLocaleString();
     };
+
+    if (!stats) {
+        return (
+            <section className="w-full animate-fade-in-up">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatSkeleton />
+                    <StatSkeleton />
+                    <StatSkeleton />
+                </div>
+            </section>
+        );
+    }
 
     const statItems = [
         { icon: <GlobeIcon size={20} />, value: stats.totalVisits, label: t["stats.totalVisits"], color: "from-blue-500/20 to-blue-500/5" },

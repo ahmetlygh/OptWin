@@ -2,28 +2,23 @@
 
 import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { ChevronDownIcon, SunIcon, MoonIcon, HeartIcon } from "../shared/Icons";
 import { USFlag, TRFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "../shared/Flags";
 
 export function Header() {
     const { lang, setLang, theme, toggleTheme, setSupportModalOpen } = useOptWinStore();
     const { t } = useTranslation();
-    const [mounted, setMounted] = useState(false);
+    const mounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isLangClosing, setIsLangClosing] = useState(false);
     const langRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setMounted(true);
-        const handleClickOutside = (event: MouseEvent) => {
-            if (langRef.current && !langRef.current.contains(event.target as Node)) {
-                closeLangDropdown();
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const closeLangDropdown = useCallback(() => {
         if (!isLangOpen) return;
@@ -33,6 +28,16 @@ export function Header() {
             setIsLangClosing(false);
         }, 150);
     }, [isLangOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (langRef.current && !langRef.current.contains(event.target as Node)) {
+                closeLangDropdown();
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [closeLangDropdown]);
 
     const toggleLangDropdown = () => {
         if (isLangOpen) {
@@ -70,20 +75,20 @@ export function Header() {
 
                 {/* Left: Logo — scroll to top when clicked */}
                 <div className="flex items-center gap-3">
-                    <a href="/" onClick={handleLogoClick} className="flex items-center gap-3 group cursor-pointer">
+                    <Link href="/" onClick={handleLogoClick} className="flex items-center gap-3 group cursor-pointer">
                         <div className="h-9 w-auto flex items-center justify-center">
-                            <img src="/optwin.png" alt="OptWin Logo" className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
+                            <Image src="/optwin.png" alt="OptWin Logo" width={36} height={36} className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <h1 className="text-2xl font-black tracking-tight bg-clip-text text-transparent text-gradient mt-0.5">
                             OptWin
                         </h1>
-                    </a>
+                    </Link>
                 </div>
 
                 {/* Right */}
                 <div className="flex items-center gap-4 md:gap-6">
                     <nav className="hidden md:flex items-center gap-6">
-                        <a
+                        <Link
                             href="/#about"
                             onClick={(e) => {
                                 e.preventDefault();
@@ -96,13 +101,13 @@ export function Header() {
                             className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200"
                         >
                             {mounted ? t["nav.about"] : "About"}
-                        </a>
-                        <a
+                        </Link>
+                        <Link
                             href="/contact"
                             className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200"
                         >
                             {mounted ? t["nav.contact"] : "Contact"}
-                        </a>
+                        </Link>
                         <button
                             onClick={() => setSupportModalOpen(true)}
                             className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200 flex items-center gap-1.5"

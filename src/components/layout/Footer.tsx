@@ -2,6 +2,7 @@
 
 import { useTranslation } from "@/i18n/useTranslation";
 import Link from "next/link";
+import Image from "next/image";
 import { GithubIcon, HeartIcon } from "../shared/Icons";
 
 export function Footer() {
@@ -14,7 +15,7 @@ export function Footer() {
                     {/* Left */}
                     <div className="flex flex-col gap-3 max-w-md items-center md:items-start">
                         <div className="flex items-center gap-2">
-                            <img src="/optwin.png" alt="OptWin" className="h-7 w-auto" />
+                            <Image src="/optwin.png" alt="OptWin" width={28} height={28} className="h-7 w-auto" />
                             <span className="text-lg font-black text-gradient">OptWin</span>
                         </div>
                         <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
@@ -33,9 +34,6 @@ export function Footer() {
                             <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.support"]}</span>
                             <Link href="/contact" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.contactUs"]}</Link>
                             <a href="mailto:contact@optwin.tech" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">contact@optwin.tech</a>
-                            <a href="https://github.com/ahmetlygh/OptWin" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors flex items-center gap-1.5 justify-center md:justify-start">
-                                <GithubIcon size={12} /> GitHub
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -43,17 +41,27 @@ export function Footer() {
                 {/* Bottom */}
                 <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-3">
                     <span className="text-[11px] text-[var(--text-secondary)]">© {new Date().getFullYear()} OptWin. {t["footer.allRights"]}</span>
-                    <span className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1">
-                        Made with <HeartIcon size={11} className="text-red-500 inline-block" /> by{" "}
+                    <div className="text-[11px] text-[var(--text-secondary)] flex items-center gap-3">
                         <a
-                            href="https://www.ahmetly.com"
+                            href="https://github.com/ahmetlygh/OptWin"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[var(--accent-color)] hover:text-purple-400 font-semibold transition-colors"
+                            className="flex items-center gap-1.5 hover:text-[var(--accent-color)] transition-colors"
                         >
-                            ahmetly_
+                            <GithubIcon size={12} /> GitHub
                         </a>
-                    </span>
+                        <span className="flex items-center gap-1">
+                            Made with <HeartIcon size={11} className="text-red-500 inline-block" /> by{" "}
+                            <a
+                                href="https://www.ahmetly.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[var(--accent-color)] hover:text-purple-400 font-semibold transition-colors"
+                            >
+                                ahmetly_
+                            </a>
+                        </span>
+                    </div>
                 </div>
             </div>
         </footer>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, memo } from "react";
+import { useState, memo } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { Feature } from "@/types/feature";
 import { HighlightText } from "../shared/HighlightText";
@@ -17,11 +17,13 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     const dnsProvider = useOptWinStore(state => state.dnsProvider);
     const lang = useOptWinStore(state => state.lang);
     const showDescriptions = useOptWinStore(state => state.showDescriptions);
-    const [localShowDesc, setLocalShowDesc] = useState(false);
+    const [descState, setDescState] = useState({ show: false, key: showDescriptions });
 
-    useEffect(() => {
-        setLocalShowDesc(false);
-    }, [showDescriptions]);
+    // Reset local toggle when global showDescriptions changes (React-safe state derivation)
+    const localShowDesc = descState.key === showDescriptions ? descState.show : false;
+    if (descState.key !== showDescriptions) {
+        setDescState({ show: false, key: showDescriptions });
+    }
 
     const isChangeDns = feature.slug === "changeDNS";
     const isDescVisible = showDescriptions || localShowDesc;
@@ -75,8 +77,8 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     return (
         <label
             className={`group relative rounded-xl ${isDescVisible ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out ${isSelected
-                ? "bg-[var(--accent-color)]/10 border-[var(--accent-color)] shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-[1.02]"
-                : "bg-[var(--card-bg)] border-[var(--border-color)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-[var(--accent-color)]/10 hover:scale-[1.01]"
+                ? "bg-[var(--accent-color)]/10 border-[var(--accent-color)] shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-100 md:scale-[1.02]"
+                : "bg-[var(--card-bg)] border-[var(--border-color)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-[var(--accent-color)]/10 md:hover:scale-[1.01]"
                 }`}
         >
             {/* Selection glow */}
@@ -125,7 +127,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    setLocalShowDesc(!localShowDesc);
+                                    setDescState({ show: !localShowDesc, key: showDescriptions });
                                 }}
                                 className={`flex items-center justify-center rounded-full p-1 transition-colors duration-200 opacity-0 group-hover:opacity-100 ${localShowDesc ? 'text-[var(--accent-color)] bg-[var(--accent-color)]/10' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]'}`}
                                 title={localShowDesc ? "Hide description" : "Show description"}

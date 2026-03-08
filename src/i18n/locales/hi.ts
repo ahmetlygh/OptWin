@@ -17,6 +17,8 @@ const hi = {
 
     "search.placeholder": "सुविधाएं खोजें...",
     "search.selected": "चयनित",
+    "search.clearSearch": "खोज साफ़ करें",
+    "search.noResults": "कोई परिणाम नहीं मिला।",
     "search.hideDesc": "छिपाएं",
     "search.showDesc": "दिखाएं",
 
@@ -34,6 +36,7 @@ const hi = {
 
     "action.selected": "चयनित",
     "action.createScript": "स्क्रिप्ट बनाएं",
+    "action.createShort": "बनाएं",
     "action.generating": "बनाया जा रहा है...",
 
     "script.ready": "स्क्रिप्ट तैयार",
@@ -42,10 +45,11 @@ const hi = {
     "script.howToUse": "उपयोग कैसे करें",
     "script.step1": "नीचे दिए बटन से स्क्रिप्ट डाउनलोड करें।",
     "script.step2": "राइट-क्लिक करें और चुनें",
+    "script.runAsAdmin": "व्यवस्थापक के रूप में चलाएं / PowerShell",
     "script.step3": "टर्मिनल विंडो बंद होने तक प्रतीक्षा करें।",
     "script.openSource": "ओपन सोर्स लॉजिक",
     "script.download": "डाउनलोड",
-    "script.cancel": "रद्द करें",
+    "script.cancel": "बंद करें",
     "script.copy": "कॉपी",
     "script.copiedToast": "स्क्रिप्ट क्लिपबोर्ड पर कॉपी हो गई!",
     "script.downloadToast": "डाउनलोड शुरू हुआ!",
@@ -73,6 +77,7 @@ const hi = {
     "dns.defaultDesc": "अपने ISP का डिफ़ॉल्ट DNS उपयोग करें",
     "dns.recommended": "अनुशंसित",
     "dns.confirm": "पुष्टि करें",
+    "dns.select": "DNS चुनें",
 
     "about.title": "OptWin के बारे में",
     "about.description": "हमारा मिशन Windows उपयोगकर्ताओं को पारदर्शी, सुरक्षित और ओपन-सोर्स ऑप्टिमाइज़ेशन टूल प्रदान करना है।",

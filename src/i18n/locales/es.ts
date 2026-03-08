@@ -17,6 +17,8 @@ const es = {
 
     "search.placeholder": "Buscar funciones...",
     "search.selected": "seleccionados",
+    "search.clearSearch": "Limpiar búsqueda",
+    "search.noResults": "No se encontraron resultados.",
     "search.hideDesc": "Ocultar",
     "search.showDesc": "Mostrar",
 
@@ -34,6 +36,7 @@ const es = {
 
     "action.selected": "Seleccionados",
     "action.createScript": "Crear Script",
+    "action.createShort": "Crear",
     "action.generating": "Generando...",
 
     "script.ready": "Script Listo",
@@ -42,10 +45,11 @@ const es = {
     "script.howToUse": "Cómo usar",
     "script.step1": "Descarga el script usando el botón de abajo.",
     "script.step2": "Haz clic derecho y selecciona",
+    "script.runAsAdmin": "Ejecutar como Administrador / PowerShell",
     "script.step3": "Espera a que la ventana del terminal se cierre.",
     "script.openSource": "Lógica de código abierto",
     "script.download": "Descargar",
-    "script.cancel": "Cancelar",
+    "script.cancel": "Cerrar",
     "script.copy": "Copiar",
     "script.copiedToast": "¡Script copiado al portapapeles!",
     "script.downloadToast": "¡Descarga iniciada!",
@@ -73,6 +77,7 @@ const es = {
     "dns.defaultDesc": "Usar el DNS predeterminado de tu ISP",
     "dns.recommended": "RECOMENDADO",
     "dns.confirm": "Confirmar",
+    "dns.select": "Elegir DNS",
 
     "about.title": "Acerca de OptWin",
     "about.description": "Nuestra misión es empoderar a los usuarios de Windows con herramientas de optimización transparentes, seguras y de código abierto.",

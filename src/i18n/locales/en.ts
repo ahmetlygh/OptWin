@@ -21,6 +21,8 @@ const en = {
     // Search
     "search.placeholder": "Search features...",
     "search.selected": "selected",
+    "search.clearSearch": "Clear Search",
+    "search.noResults": "No results found.",
     "search.hideDesc": "Hide Desc",
     "search.showDesc": "Show Desc",
 
@@ -41,6 +43,7 @@ const en = {
     // Action Area
     "action.selected": "Selected",
     "action.createScript": "Create Script",
+    "action.createShort": "Create",
     "action.generating": "Generating...",
 
     // Script Overlay
@@ -50,10 +53,11 @@ const en = {
     "script.howToUse": "How to use",
     "script.step1": "Download the script using the button below.",
     "script.step2": "Right-click and select",
+    "script.runAsAdmin": "Run as Administrator / PowerShell",
     "script.step3": "Wait for the terminal window to close.",
     "script.openSource": "Open source logic",
     "script.download": "Download",
-    "script.cancel": "Cancel",
+    "script.cancel": "Close",
     "script.copy": "Copy",
     "script.copiedToast": "Script copied to clipboard!",
     "script.downloadToast": "Download started!",
@@ -84,6 +88,7 @@ const en = {
     "dns.defaultDesc": "Use your ISP's default DNS",
     "dns.recommended": "RECOMMENDED",
     "dns.confirm": "Confirm",
+    "dns.select": "Select DNS",
 
     // About Section
     "about.title": "About OptWin",

@@ -17,6 +17,8 @@ const fr = {
 
     "search.placeholder": "Rechercher des fonctionnalités...",
     "search.selected": "sélectionnés",
+    "search.clearSearch": "Effacer la recherche",
+    "search.noResults": "Aucun résultat trouvé.",
     "search.hideDesc": "Masquer",
     "search.showDesc": "Afficher",
 
@@ -34,6 +36,7 @@ const fr = {
 
     "action.selected": "Sélectionnés",
     "action.createScript": "Créer le Script",
+    "action.createShort": "Créer",
     "action.generating": "Génération...",
 
     "script.ready": "Script Prêt",
@@ -42,10 +45,11 @@ const fr = {
     "script.howToUse": "Comment utiliser",
     "script.step1": "Téléchargez le script en utilisant le bouton ci-dessous.",
     "script.step2": "Cliquez droit et sélectionnez",
+    "script.runAsAdmin": "Exécuter en tant qu'Administrateur / PowerShell",
     "script.step3": "Attendez que la fenêtre du terminal se ferme.",
     "script.openSource": "Logique open source",
     "script.download": "Télécharger",
-    "script.cancel": "Annuler",
+    "script.cancel": "Fermer",
     "script.copy": "Copier",
     "script.copiedToast": "Script copié dans le presse-papiers !",
     "script.downloadToast": "Téléchargement lancé !",
@@ -73,6 +77,7 @@ const fr = {
     "dns.defaultDesc": "Utiliser le DNS par défaut de votre FAI",
     "dns.recommended": "RECOMMANDÉ",
     "dns.confirm": "Confirmer",
+    "dns.select": "Choisir DNS",
 
     "about.title": "À propos d'OptWin",
     "about.description": "Notre mission est de fournir aux utilisateurs Windows des outils d'optimisation transparents, sûrs et open source.",

@@ -17,6 +17,8 @@ const tr = {
 
     "search.placeholder": "Özellik ara...",
     "search.selected": "seçildi",
+    "search.clearSearch": "Aramayı Temizle",
+    "search.noResults": "Sonuç bulunamadı.",
     "search.hideDesc": "Açıklamayı Gizle",
     "search.showDesc": "Açıklamayı Göster",
 
@@ -34,6 +36,7 @@ const tr = {
 
     "action.selected": "Seçildi",
     "action.createScript": "Scripti Oluştur",
+    "action.createShort": "Oluştur",
     "action.generating": "Oluşturuluyor...",
 
     "script.ready": "Script Hazır",
@@ -42,10 +45,11 @@ const tr = {
     "script.howToUse": "Nasıl Kullanılır",
     "script.step1": "Aşağıdaki butonu kullanarak scripti indirin.",
     "script.step2": "Sağ tıklayıp şunu seçin",
+    "script.runAsAdmin": "Yönetici olarak çalıştır / PowerShell",
     "script.step3": "Terminal penceresi kapanana kadar bekleyin.",
     "script.openSource": "Açık kaynak mantığı",
     "script.download": "İndir",
-    "script.cancel": "İptal",
+    "script.cancel": "Kapat",
     "script.copy": "Kopyala",
     "script.copiedToast": "Script panoya kopyalandı!",
     "script.downloadToast": "İndirme başladı!",
@@ -73,6 +77,7 @@ const tr = {
     "dns.defaultDesc": "İnternet sağlayıcınızın varsayılan DNS'ini kullan",
     "dns.recommended": "ÖNERİLEN",
     "dns.confirm": "Onayla",
+    "dns.select": "DNS Seç",
 
     "about.title": "OptWin Hakkında",
     "about.description": "Misyonumuz, Windows kullanıcılarını şeffaf, güvenli ve açık kaynaklı optimizasyon araçlarıyla güçlendirmektir. Oyuncuların ve profesyonellerin tamamen güvenebileceği araçlar geliştiriyoruz.",

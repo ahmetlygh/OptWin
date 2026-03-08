@@ -2,53 +2,18 @@
 
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useModalPhase } from "@/hooks/useModalPhase";
 import { XIcon, HeartIcon, CoffeeIcon, StarIcon, UsersIcon, ExternalLinkIcon, CheckIcon } from "../shared/Icons";
 
 export function SupportModal() {
     const { isSupportModalOpen, setSupportModalOpen } = useOptWinStore();
     const { t } = useTranslation();
-    const [phase, setPhase] = useState<"closed" | "entering" | "open" | "exiting">("closed");
+    const handleClose = () => setSupportModalOpen(false);
+    const { isVisible, isMounted, phase, containerRef } = useModalPhase(isSupportModalOpen, handleClose);
     const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        if (isSupportModalOpen && phase === "closed") {
-            setPhase("entering");
-            requestAnimationFrame(() => setPhase("open"));
-        } else if (!isSupportModalOpen && (phase === "open" || phase === "entering")) {
-            setPhase("exiting");
-            const timer = setTimeout(() => setPhase("closed"), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isSupportModalOpen]);
-
-    const handleClose = useCallback(() => {
-        setSupportModalOpen(false);
-    }, [setSupportModalOpen]);
-
-    // ESC to close
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") handleClose();
-        };
-        if (phase !== "closed") {
-            document.addEventListener("keydown", onKeyDown);
-            return () => document.removeEventListener("keydown", onKeyDown);
-        }
-    }, [phase, handleClose]);
-
-    // Lock body scroll
-    useEffect(() => {
-        if (phase !== "closed") {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "";
-        }
-        return () => { document.body.style.overflow = ""; };
-    }, [phase]);
-
-    if (phase === "closed") return null;
-    const isVisible = phase === "open";
+    if (!isMounted) return null;
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText("https://optwin.tech");
@@ -82,6 +47,7 @@ export function SupportModal() {
 
     return (
         <div
+            ref={containerRef}
             className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
             onClick={handleClose}
         >

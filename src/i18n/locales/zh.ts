@@ -17,6 +17,8 @@ const zh = {
 
     "search.placeholder": "搜索功能...",
     "search.selected": "已选择",
+    "search.clearSearch": "清除搜索",
+    "search.noResults": "未找到结果。",
     "search.hideDesc": "隐藏",
     "search.showDesc": "显示",
 
@@ -34,6 +36,7 @@ const zh = {
 
     "action.selected": "已选择",
     "action.createScript": "创建脚本",
+    "action.createShort": "创建",
     "action.generating": "生成中...",
 
     "script.ready": "脚本就绪",
@@ -42,10 +45,11 @@ const zh = {
     "script.howToUse": "使用方法",
     "script.step1": "使用下方按钮下载脚本。",
     "script.step2": "右键点击并选择",
+    "script.runAsAdmin": "以管理员身份运行 / PowerShell",
     "script.step3": "等待终端窗口关闭。",
     "script.openSource": "开源逻辑",
     "script.download": "下载",
-    "script.cancel": "取消",
+    "script.cancel": "关闭",
     "script.copy": "复制",
     "script.copiedToast": "脚本已复制到剪贴板！",
     "script.downloadToast": "下载已开始！",
@@ -73,6 +77,7 @@ const zh = {
     "dns.defaultDesc": "使用 ISP 的默认 DNS",
     "dns.recommended": "推荐",
     "dns.confirm": "确认",
+    "dns.select": "选择 DNS",
 
     "about.title": "关于 OptWin",
     "about.description": "我们的使命是为 Windows 用户提供透明、安全和开源的优化工具。我们构建游戏玩家和专业人士可以完全信赖的实用工具。",

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { FeatureGridClient } from "./FeatureGridClient";
+import type { Category } from "@/types/feature";
 
 export async function FeatureGrid() {
     // Fetch active categories and features
@@ -19,5 +20,5 @@ export async function FeatureGrid() {
         }
     });
 
-    return <FeatureGridClient categories={categoriesDb as any} />;
+    return <FeatureGridClient categories={categoriesDb as Category[]} />;
 }

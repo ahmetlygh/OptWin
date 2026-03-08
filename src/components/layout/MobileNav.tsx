@@ -3,6 +3,7 @@
 import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
+import Link from "next/link";
 import { MenuIcon, XIcon, HeartIcon } from "../shared/Icons";
 import { USFlag, TRFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "../shared/Flags";
 
@@ -57,7 +58,7 @@ export function MobileNav() {
                     </div>
 
                     <nav className="flex flex-col gap-2 pt-2 border-t border-[var(--border-color)]">
-                        <a
+                        <Link
                             href="/#about"
                             onClick={(e) => {
                                 e.preventDefault();
@@ -72,7 +73,7 @@ export function MobileNav() {
                         >
                             {t["nav.aboutOptwin"]}
                             <MenuIcon size={16} className="opacity-40" />
-                        </a>
+                        </Link>
                         <button
                             onClick={() => {
                                 setIsOpen(false);

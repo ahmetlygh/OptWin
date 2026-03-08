@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { WarningModal } from "@/components/modals/WarningModal";
 import { RestorePointModal } from "@/components/modals/RestorePointModal";
@@ -8,12 +8,18 @@ import { ScriptOverlay } from "@/components/modals/ScriptOverlay";
 import { Toast } from "@/components/modals/Toast";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
-    const [mounted, setMounted] = useState(false);
     const theme = useOptWinStore((state) => state.theme);
     const lang = useOptWinStore((state) => state.lang);
 
+    // Detect client-side mount without setState in useEffect
+    // useSyncExternalStore with getServerSnapshot=false, getSnapshot=true gives us a safe hydration-aware flag
+    const mounted = useSyncExternalStore(
+        () => () => {},    // subscribe: no-op (value never changes after mount)
+        () => true,        // getSnapshot: always true on client
+        () => false        // getServerSnapshot: false during SSR
+    );
+
     useEffect(() => {
-        setMounted(true);
         // Enable smooth theme transitions AFTER initial paint to prevent FOUC
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
