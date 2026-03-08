@@ -11,6 +11,7 @@ import { ScriptOverlay } from "@/components/modals/ScriptOverlay";
 import { RestorePointModal } from "@/components/modals/RestorePointModal";
 import { WarningModal } from "@/components/modals/WarningModal";
 import { Toast } from "@/components/modals/Toast";
+import { HashScroller } from "@/components/shared/HashScroller";
 
 export default async function Home() {
     // Parallelized DB queries — all run simultaneously
@@ -35,8 +36,7 @@ export default async function Home() {
         id: p.id,
         slug: p.slug,
         featureSlugs: p.featureSlugs,
-        en: p.translations.find(t => t.lang === "en")?.name || p.slug,
-        tr: p.translations.find(t => t.lang === "tr")?.name || p.slug,
+        translations: p.translations.map(t => ({ lang: t.lang, name: t.name })),
     }));
 
     const allFeatureSlugs = allFeatures.map(f => f.slug);
@@ -45,11 +45,13 @@ export default async function Home() {
         <>
             <div className="flex flex-col gap-12 pt-8 animate-fade-in-up">
                 <Hero />
-                <section className="flex flex-col gap-6 sticky top-20 z-40 bg-[var(--bg-color)]/95 backdrop-blur-sm py-4 -mx-6 px-6 border-b border-[var(--border-color)] md:static md:bg-transparent md:border-none md:p-0 md:backdrop-blur-none animate-fade-in-up">
+                <section className="flex flex-col gap-6 sticky top-16 z-40 bg-[var(--bg-color)]/95 backdrop-blur-sm py-4 -mx-6 px-6 border-b border-[var(--border-color)] md:static md:bg-transparent md:border-none md:p-0 md:backdrop-blur-none animate-fade-in-up">
                     <PresetControls presets={presetsFormatted} allFeatureSlugs={allFeatureSlugs} dnsProviders={dnsProvidersDb} />
                     <SearchBar />
                 </section>
-                <FeatureGrid />
+                <div style={{ overflowAnchor: "none" }}>
+                    <FeatureGrid />
+                </div>
                 <StatsSection />
                 <AboutSection />
             </div>
@@ -60,6 +62,7 @@ export default async function Home() {
             <RestorePointModal />
             <WarningModal />
             <Toast />
+            <HashScroller />
         </>
     );
 }

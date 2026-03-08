@@ -17,12 +17,19 @@ const tr = {
 
     "search.placeholder": "Özellik ara...",
     "search.selected": "seçildi",
-    "search.hideDesc": "Gizle",
-    "search.showDesc": "Göster",
+    "search.hideDesc": "Açıklamayı Gizle",
+    "search.showDesc": "Açıklamayı Göster",
+
+    "category.collapseAll": "Tümünü Daralt",
+    "category.expandAll": "Tümünü Genişlet",
+    "category.selectAll": "Kategoriyi Seç",
+    "category.deselectAll": "Kategoriyi Temizle",
 
     "preset.clearAll": "Hepsini Sıfırla",
     "preset.selectAll": "Hepsini Seç",
     "preset.default": "Varsayılan",
+    "preset.recommended": "Önerilen Ayarlar",
+    "preset.gamer": "Oyuncu Ayarları",
     "preset.selectAllWarning": "Tüm ayarlar sisteminizde istenmeyen değişiklikler yapabilir. Lütfen çalıştırmadan önce inceleyin.",
 
     "action.selected": "Seçildi",

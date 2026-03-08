@@ -51,7 +51,7 @@ export function SupportModal() {
     const isVisible = phase === "open";
 
     const handleCopyLink = () => {
-        navigator.clipboard.writeText("https://optwin.app");
+        navigator.clipboard.writeText("https://optwin.tech");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -86,7 +86,7 @@ export function SupportModal() {
             onClick={handleClose}
         >
             <div
-                className={`w-fit min-w-[28rem] max-w-[95vw] bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
+                className={`w-full max-w-2xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Glow */}
@@ -116,28 +116,26 @@ export function SupportModal() {
                         </p>
                     </div>
 
-                    {/* Ways to support — each clickable */}
-                    <div className="w-full space-y-2.5 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+                    <div className="w-full animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                         <h4 className="text-xs font-black text-[var(--text-secondary)] uppercase tracking-widest text-left mb-3">
                             {t["support.howToSupport"]}
                         </h4>
-                        {ways.map((way, i) => (
-                            <button
-                                key={i}
-                                onClick={way.onClick}
-                                className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--border-color)]/30 border border-[var(--border-color)]/50 hover:bg-[var(--border-color)]/60 hover:border-[var(--border-color)] transition-all duration-200 cursor-pointer text-left group"
-                            >
-                                <div className={`size-9 rounded-lg ${way.bg} ${way.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
-                                    {way.icon}
-                                </div>
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed group-hover:text-[var(--text-primary)] transition-colors whitespace-nowrap">
+                        <div className="flex flex-col sm:flex-row gap-2.5">
+                            {ways.map((way, i) => (
+                                <button
+                                    key={i}
+                                    onClick={way.onClick}
+                                    className="flex-1 flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--border-color)]/30 border border-[var(--border-color)]/50 hover:bg-[var(--border-color)]/60 hover:border-[var(--border-color)] transition-all duration-200 cursor-pointer text-center group"
+                                >
+                                    <div className={`size-9 rounded-lg ${way.bg} ${way.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                                        {way.icon}
+                                    </div>
+                                    <p className="text-xs text-[var(--text-secondary)] leading-snug group-hover:text-[var(--text-primary)] transition-colors">
                                         {way.text}
                                     </p>
-                                    <ExternalLinkIcon size={12} className="text-[var(--text-secondary)]/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </div>
-                            </button>
-                        ))}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* CTA */}

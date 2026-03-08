@@ -1,0 +1,1063 @@
+{
+  "categories": {
+    "system": {
+      "zh": "系统优化",
+      "es": "Optimización del sistema",
+      "hi": "सिस्टम अनुकूलन",
+      "de": "Systemoptimierung",
+      "fr": "Optimisation du système"
+    },
+    "maintenance": {
+      "zh": "保养与维修",
+      "es": "Mantenimiento y reparación",
+      "hi": "रख - रखाव मरम्मत",
+      "de": "Wartung und Reparatur",
+      "fr": "Entretien et réparation"
+    },
+    "services": {
+      "zh": "服务管理",
+      "es": "Gestión de Servicios",
+      "hi": "सेवाएँ प्रबंधन",
+      "de": "Dienstleistungsmanagement",
+      "fr": "Gestion des services"
+    },
+    "network": {
+      "zh": "网络优化",
+      "es": "Optimización de la red",
+      "hi": "नेटवर्क अनुकूलन",
+      "de": "Netzwerkoptimierung",
+      "fr": "Optimisation du réseau"
+    },
+    "privacy": {
+      "zh": "隐私与安全",
+      "es": "Privacidad y seguridad",
+      "hi": "निजता एवं सुरक्षा",
+      "de": "Datenschutz und Sicherheit",
+      "fr": "Confidentialité et sécurité"
+    },
+    "visual": {
+      "zh": "视觉与性能",
+      "es": "Visual y rendimiento",
+      "hi": "दृश्य एवं प्रदर्शन",
+      "de": "Visuell und Leistung",
+      "fr": "Visuel & Performance"
+    },
+    "extra": {
+      "zh": "额外的调整",
+      "es": "Ajustes adicionales",
+      "hi": "अतिरिक्त बदलाव",
+      "de": "Zusätzliche Optimierungen",
+      "fr": "Ajustements supplémentaires"
+    }
+  },
+  "features": {
+    "cleanTemp": {
+      "title": {
+        "zh": "清理临时文件",
+        "es": "Limpiar archivos temporales",
+        "hi": "अस्थायी फ़ाइलें साफ़ करें",
+        "de": "Bereinigen Sie temporäre Dateien",
+        "fr": "Nettoyer les fichiers temporaires"
+      },
+      "desc": {
+        "zh": "从 %temp% 和 Windows/Temp 中删除临时文件以释放空间。",
+        "es": "Elimina archivos temporales de %temp% y Windows/Temp para liberar espacio.",
+        "hi": "स्थान खाली करने के लिए %temp% और Windows/Temp से अस्थायी फ़ाइलें हटाता है।",
+        "de": "Entfernt temporäre Dateien aus %temp% und Windows/Temp, um Speicherplatz freizugeben.",
+        "fr": "Supprime les fichiers temporaires de %temp% et Windows/Temp pour libérer de l'espace."
+      }
+    },
+    "cleanPrefetch": {
+      "title": {
+        "zh": "干净的预取",
+        "es": "Captación previa limpia",
+        "hi": "स्वच्छ प्रीफ़ेच",
+        "de": "Sauberes Prefetch",
+        "fr": "Prélecture propre"
+      },
+      "desc": {
+        "zh": "清除 Prefetch 文件夹以刷新系统缓存/启动文件。",
+        "es": "Borra la carpeta Prefetch para actualizar los archivos de arranque/caché del sistema.",
+        "hi": "सिस्टम कैशिंग/बूट फ़ाइलों को ताज़ा करने के लिए प्रीफ़ेच फ़ोल्डर को साफ़ करता है।",
+        "de": "Löscht den Prefetch-Ordner, um System-Caching-/Boot-Dateien zu aktualisieren.",
+        "fr": "Efface le dossier Prefetch pour actualiser les fichiers de mise en cache/de démarrage du système."
+      }
+    },
+    "recycleBin": {
+      "title": {
+        "zh": "清空回收站",
+        "es": "Papelera de reciclaje vacía",
+        "hi": "खाली रीसायकल बिन",
+        "de": "Leeren Sie den Papierkorb",
+        "fr": "Corbeille vide"
+      },
+      "desc": {
+        "zh": "永久删除当前位于回收站中的所有文件。",
+        "es": "Elimina permanentemente todos los archivos que se encuentran actualmente en la Papelera de reciclaje.",
+        "hi": "रीसायकल बिन में वर्तमान में मौजूद सभी फ़ाइलों को स्थायी रूप से हटा देता है।",
+        "de": "Löscht alle derzeit im Papierkorb befindlichen Dateien dauerhaft.",
+        "fr": "Supprime définitivement tous les fichiers actuellement dans la corbeille."
+      }
+    },
+    "disableHibernate": {
+      "title": {
+        "zh": "禁用休眠",
+        "es": "Desactivar hibernación",
+        "hi": "हाइबरनेट अक्षम करें",
+        "de": "Deaktivieren Sie den Ruhezustand",
+        "fr": "Désactiver la mise en veille prolongée"
+      },
+      "desc": {
+        "zh": "禁用休眠以节省数 GB 的磁盘空间 (hiberfil.sys)。",
+        "es": "Desactiva la hibernación para ahorrar varios GB de espacio en disco (hiberfil.sys).",
+        "hi": "कई जीबी डिस्क स्थान (hiberfil.sys) को बचाने के लिए हाइबरनेशन को अक्षम करता है।",
+        "de": "Deaktiviert den Ruhezustand, um mehrere GB Speicherplatz zu sparen (hiberfil.sys).",
+        "fr": "Désactive la mise en veille prolongée pour économiser plusieurs Go d'espace disque (hiberfil.sys)."
+      }
+    },
+    "disableTelemetry": {
+      "title": {
+        "zh": "禁用遥测",
+        "es": "Desactivar telemetría",
+        "hi": "टेलीमेट्री अक्षम करें",
+        "de": "Telemetrie deaktivieren",
+        "fr": "Désactiver la télémétrie"
+      },
+      "desc": {
+        "zh": "减少 Windows 跟踪、数据收集和反馈通知。",
+        "es": "Reduce el seguimiento de Windows, la recopilación de datos y las notificaciones de comentarios.",
+        "hi": "विंडोज़ ट्रैकिंग, डेटा संग्रह और फीडबैक सूचनाओं को कम करता है।",
+        "de": "Reduziert Windows-Verfolgung, Datenerfassung und Feedback-Benachrichtigungen.",
+        "fr": "Réduit le suivi Windows, la collecte de données et les notifications de commentaires."
+      }
+    },
+    "disableGameDVR": {
+      "title": {
+        "zh": "禁用游戏 DVR",
+        "es": "Deshabilitar juego DVR",
+        "hi": "गेम डीवीआर अक्षम करें",
+        "de": "Spiel-DVR deaktivieren",
+        "fr": "Désactiver le DVR du jeu"
+      },
+      "desc": {
+        "zh": "关闭 Xbox 游戏 DVR 和游戏栏以释放后台资源。",
+        "es": "Desactiva Xbox Game DVR y Game Bar para liberar recursos en segundo plano.",
+        "hi": "पृष्ठभूमि संसाधनों को खाली करने के लिए Xbox गेम DVR और गेम बार को बंद कर देता है।",
+        "de": "Schaltet den Xbox Game DVR und die Game Bar aus, um Hintergrundressourcen freizugeben.",
+        "fr": "Désactive le Xbox Game DVR et la Game Bar pour libérer des ressources en arrière-plan."
+      }
+    },
+    "disableNotifications": {
+      "title": {
+        "zh": "禁用通知",
+        "es": "Desactivar notificaciones",
+        "hi": "सूचनाएं अक्षम करें",
+        "de": "Deaktivieren Sie Benachrichtigungen",
+        "fr": "Désactiver les notifications"
+      },
+      "desc": {
+        "zh": "禁用 Windows 提示、建议和应用程序通知。",
+        "es": "Deshabilita los consejos, sugerencias y notificaciones de aplicaciones de Windows.",
+        "hi": "विंडोज़ युक्तियाँ, सुझाव और ऐप सूचनाएं अक्षम करता है।",
+        "de": "Deaktiviert Windows-Tipps, Vorschläge und App-Benachrichtigungen.",
+        "fr": "Désactive les conseils, suggestions et notifications d'applications Windows."
+      }
+    },
+    "highPerformance": {
+      "title": {
+        "zh": "高性能模式",
+        "es": "Modo de alto rendimiento",
+        "hi": "उच्च निष्पादन मोड",
+        "de": "Hochleistungsmodus",
+        "fr": "Mode hautes performances"
+      },
+      "desc": {
+        "zh": "将电源计划设置为“高性能”以获得更好的响应能力。",
+        "es": "Establece el plan de energía en \"Alto rendimiento\" para una mejor capacidad de respuesta.",
+        "hi": "बेहतर प्रतिक्रिया के लिए पावर प्लान को 'उच्च प्रदर्शन' पर सेट करता है।",
+        "de": "Stellt den Energieplan für eine bessere Reaktionsfähigkeit auf „Hohe Leistung“.",
+        "fr": "Définit le plan d'alimentation sur « Hautes performances » pour une meilleure réactivité."
+      }
+    },
+    "ultimatePerformance": {
+      "title": {
+        "zh": "终极性能",
+        "es": "Máximo rendimiento",
+        "hi": "परम प्रदर्शन",
+        "de": "Ultimative Leistung",
+        "fr": "Performance ultime"
+      },
+      "desc": {
+        "zh": "启用隐藏的“终极性能”电源计划以获得最大速度。",
+        "es": "Habilita el plan de energía oculto 'Ultimate Performance' para una velocidad máxima.",
+        "hi": "अधिकतम गति के लिए छिपे हुए 'अल्टीमेट परफॉर्मेंस' पावर प्लान को सक्षम करता है।",
+        "de": "Aktiviert den versteckten Energieplan „Ultimate Performance“ für maximale Geschwindigkeit.",
+        "fr": "Active le plan d'alimentation caché « Ultimate Performance » pour une vitesse maximale."
+      }
+    },
+    "disableStartupDelay": {
+      "title": {
+        "zh": "禁用启动延迟",
+        "es": "Deshabilitar el retraso de inicio",
+        "hi": "स्टार्टअप विलंब अक्षम करें",
+        "de": "Deaktivieren Sie die Startverzögerung",
+        "fr": "Désactiver le délai de démarrage"
+      },
+      "desc": {
+        "zh": "消除 Windows 启动延迟以加快启动时间。",
+        "es": "Elimina el retraso en el inicio de Windows para tiempos de inicio más rápidos.",
+        "hi": "तेज़ बूट समय के लिए विंडोज़ स्टार्टअप विलंब को हटाता है।",
+        "de": "Entfernt die Windows-Startverzögerung für schnellere Startzeiten.",
+        "fr": "Supprime le délai de démarrage de Windows pour des temps de démarrage plus rapides."
+      }
+    },
+    "disableSuperfetch": {
+      "title": {
+        "zh": "禁用超级获取",
+        "es": "Deshabilitar Superbúsqueda",
+        "hi": "सुपरफच अक्षम करें",
+        "de": "Deaktivieren Sie Superfetch",
+        "fr": "Désactiver la superextraction"
+      },
+      "desc": {
+        "zh": "禁用 SysMain/Superfetch 服务（推荐用于 SSD）。",
+        "es": "Deshabilita el servicio SysMain/Superfetch (recomendado para SSD).",
+        "hi": "SysMain/Superfetch सेवा अक्षम करता है (SSD के लिए अनुशंसित)।",
+        "de": "Deaktiviert den SysMain/Superfetch-Dienst (empfohlen für SSD).",
+        "fr": "Désactive le service SysMain/Superfetch (recommandé pour les SSD)."
+      }
+    },
+    "systemFileCheck": {
+      "title": {
+        "zh": "修复系统文件",
+        "es": "Reparar archivos del sistema",
+        "hi": "सिस्टम फ़ाइलें सुधारें",
+        "de": "Systemdateien reparieren",
+        "fr": "Réparer les fichiers système"
+      },
+      "desc": {
+        "zh": "运行 sfc /scannow 来识别并自动修复损坏的 Windows 文件。",
+        "es": "Ejecuta sfc /scannow para identificar y reparar automáticamente archivos de Windows corruptos.",
+        "hi": "दूषित विंडोज़ फ़ाइलों को पहचानने और स्वचालित रूप से ठीक करने के लिए sfc /scannow चलाता है।",
+        "de": "Führt sfc /scannow aus, um beschädigte Windows-Dateien zu identifizieren und automatisch zu reparieren.",
+        "fr": "Exécute sfc /scannow pour identifier et réparer automatiquement les fichiers Windows corrompus."
+      }
+    },
+    "dismCheck": {
+      "title": {
+        "zh": "DISM 检查健康状况",
+        "es": "DISM Comprobar estado",
+        "hi": "डीआईएसएम स्वास्थ्य की जांच करें",
+        "de": "DISM-Zustand prüfen",
+        "fr": "DISM Vérifier l'état de santé"
+      },
+      "desc": {
+        "zh": "检查 Windows 映像是否损坏。",
+        "es": "Comprueba si hay daños en la imagen de Windows.",
+        "hi": "विंडोज़ छवि में भ्रष्टाचार की जाँच करता है।",
+        "de": "Überprüft, ob das Windows-Image beschädigt ist.",
+        "fr": "Vérifie la corruption dans l’image Windows."
+      }
+    },
+    "dismRepair": {
+      "title": {
+        "zh": "DISM 恢复健康",
+        "es": "DISM Restaurar salud",
+        "hi": "डीआईएसएम स्वास्थ्य बहाल करें",
+        "de": "DISM Wiederherstellung der Gesundheit",
+        "fr": "DISM restaurer la santé"
+      },
+      "desc": {
+        "zh": "使用 Windows 更新扫描并修复 Windows 映像。",
+        "es": "Escanea y repara la imagen de Windows usando Windows Update.",
+        "hi": "Windows अद्यतन का उपयोग करके Windows छवि को स्कैन और मरम्मत करता है।",
+        "de": "Scannt und repariert das Windows-Image mithilfe von Windows Update.",
+        "fr": "Analyse et répare l'image Windows à l'aide de Windows Update."
+      }
+    },
+    "cleanEventLog": {
+      "title": {
+        "zh": "清除事件日志",
+        "es": "Borrar registros de eventos",
+        "hi": "इवेंट लॉग साफ़ करें",
+        "de": "Löschen Sie Ereignisprotokolle",
+        "fr": "Effacer les journaux d'événements"
+      },
+      "desc": {
+        "zh": "清除所有 Windows 事件查看器日志以释放空间/混乱。",
+        "es": "Borra todos los registros del Visor de eventos de Windows para liberar espacio/desorden.",
+        "hi": "स्थान/अव्यवस्था खाली करने के लिए सभी विंडोज़ इवेंट व्यूअर लॉग साफ़ करता है।",
+        "de": "Löscht alle Protokolle der Windows-Ereignisanzeige, um Platz/Unordnung zu schaffen.",
+        "fr": "Efface tous les journaux de l'Observateur d'événements Windows pour libérer de l'espace/de l'encombrement."
+      }
+    },
+    "updateCacheClean": {
+      "title": {
+        "zh": "清理更新缓存",
+        "es": "Limpiar caché de actualización",
+        "hi": "अपडेट कैश साफ़ करें",
+        "de": "Bereinigen Sie den Update-Cache",
+        "fr": "Nettoyer le cache de mise à jour"
+      },
+      "desc": {
+        "zh": "清除 Windows 更新下载缓存 (SoftwareDistribution) 以修复更新错误。",
+        "es": "Borra el caché de descarga de Windows Update (SoftwareDistribution) para corregir errores de actualización.",
+        "hi": "अद्यतन त्रुटियों को ठीक करने के लिए Windows अद्यतन डाउनलोड कैश (सॉफ़्टवेयर वितरण) साफ़ करता है।",
+        "de": "Löscht den Windows Update-Download-Cache (SoftwareDistribution), um Update-Fehler zu beheben.",
+        "fr": "Efface le cache de téléchargement de Windows Update (SoftwareDistribution) pour corriger les erreurs de mise à jour."
+      }
+    },
+    "clearIconCache": {
+      "title": {
+        "zh": "清除图标缓存",
+        "es": "Borrar caché de iconos",
+        "hi": "चिह्न कैश साफ़ करें",
+        "de": "Symbol-Cache löschen",
+        "fr": "Effacer le cache des icônes"
+      },
+      "desc": {
+        "zh": "清除 Windows 图标缓存以修复损坏的图标。",
+        "es": "Borra el caché de íconos de Windows para reparar íconos rotos.",
+        "hi": "टूटे हुए आइकन को ठीक करने के लिए विंडोज़ आइकन कैश साफ़ करता है।",
+        "de": "Löscht den Windows-Symbolcache, um defekte Symbole zu reparieren.",
+        "fr": "Efface le cache des icônes Windows pour réparer les icônes cassées."
+      }
+    },
+    "clearThumbsCache": {
+      "title": {
+        "zh": "清除缩略图缓存",
+        "es": "Borrar caché de miniaturas",
+        "hi": "थंबनेल कैश साफ़ करें",
+        "de": "Miniaturbild-Cache leeren",
+        "fr": "Vider le cache des vignettes"
+      },
+      "desc": {
+        "zh": "清除缩略图缓存以修复丢失的预览。",
+        "es": "Borra el caché de miniaturas para corregir las vistas previas que faltan.",
+        "hi": "गायब पूर्वावलोकन को ठीक करने के लिए थंबनेल कैश साफ़ करता है।",
+        "de": "Löscht den Miniaturbild-Cache, um fehlende Vorschauen zu beheben.",
+        "fr": "Efface le cache des vignettes pour corriger les aperçus manquants."
+      }
+    },
+    "disableWallet": {
+      "title": {
+        "zh": "禁用钱包服务",
+        "es": "Deshabilitar el servicio de billetera",
+        "hi": "वॉलेट सेवा अक्षम करें",
+        "de": "Deaktivieren Sie den Wallet-Dienst",
+        "fr": "Désactiver le service de portefeuille"
+      },
+      "desc": {
+        "zh": "禁用用于移动支付的电子钱包服务。",
+        "es": "Desactiva el servicio Wallet utilizado para pagos móviles.",
+        "hi": "मोबाइल भुगतान के लिए उपयोग की जाने वाली वॉलेट सेवा को अक्षम कर देता है।",
+        "de": "Deaktiviert den Wallet-Dienst, der für mobile Zahlungen verwendet wird.",
+        "fr": "Désactive le service Wallet utilisé pour les paiements mobiles."
+      }
+    },
+    "disableMaps": {
+      "title": {
+        "zh": "禁用地图代理",
+        "es": "Deshabilitar el corredor de mapas",
+        "hi": "मानचित्र ब्रोकर को अक्षम करें",
+        "de": "Deaktivieren Sie Maps Broker",
+        "fr": "Désactiver le courtier Maps"
+      },
+      "desc": {
+        "zh": "如果您不使用地图，请禁用下载的地图管理器。",
+        "es": "Desactiva el administrador de mapas descargados si no usas Maps.",
+        "hi": "यदि आप मानचित्र का उपयोग नहीं करते हैं तो डाउनलोड किए गए मानचित्र प्रबंधक को अक्षम कर देता है।",
+        "de": "Deaktiviert den Manager für heruntergeladene Karten, wenn Sie Maps nicht verwenden.",
+        "fr": "Désactive le gestionnaire de cartes téléchargées si vous n'utilisez pas Maps."
+      }
+    },
+    "disableDiagTrack": {
+      "title": {
+        "zh": "禁用 DiagTrack",
+        "es": "Desactivar DiagTrack",
+        "hi": "डायगट्रैक अक्षम करें",
+        "de": "Deaktivieren Sie DiagTrack",
+        "fr": "Désactiver DiagTrack"
+      },
+      "desc": {
+        "zh": "禁用连接的用户体验和遥测服务。",
+        "es": "Deshabilita el servicio de Telemetría y Experiencias de Usuario Conectado.",
+        "hi": "कनेक्टेड उपयोगकर्ता अनुभव और टेलीमेट्री सेवा को अक्षम कर देता है।",
+        "de": "Deaktiviert den Connected User Experiences- und Telemetriedienst.",
+        "fr": "Désactive le service Expériences utilisateur connectées et télémétrie."
+      }
+    },
+    "disableFax": {
+      "title": {
+        "zh": "禁用传真服务",
+        "es": "Deshabilitar el servicio de fax",
+        "hi": "फैक्स सेवा अक्षम करें",
+        "de": "Deaktivieren Sie den Faxdienst",
+        "fr": "Désactiver le service de télécopie"
+      },
+      "desc": {
+        "zh": "禁用旧传真服务。",
+        "es": "Deshabilita el servicio de fax heredado.",
+        "hi": "लीगेसी फैक्स सेवा को अक्षम कर देता है।",
+        "de": "Deaktiviert den alten Faxdienst.",
+        "fr": "Désactive le service de télécopie hérité."
+      }
+    },
+    "disableWer": {
+      "title": {
+        "zh": "禁用错误报告",
+        "es": "Deshabilitar el informe de errores",
+        "hi": "त्रुटि रिपोर्टिंग अक्षम करें",
+        "de": "Deaktivieren Sie die Fehlerberichterstattung",
+        "fr": "Disable Error Reporting"
+      },
+      "desc": {
+        "zh": "禁用 Windows 错误报告服务。",
+        "es": "Deshabilita el servicio de informe de errores de Windows.",
+        "hi": "विंडोज़ त्रुटि रिपोर्टिंग सेवा अक्षम करता है।",
+        "de": "Deaktiviert den Windows-Fehlerberichtsdienst.",
+        "fr": "Désactive le service de rapport d'erreurs Windows."
+      }
+    },
+    "disableTouch": {
+      "title": {
+        "zh": "禁用触摸键盘",
+        "es": "Deshabilitar el teclado táctil",
+        "hi": "टच कीबोर्ड अक्षम करें",
+        "de": "Deaktivieren Sie die Touch-Tastatur",
+        "fr": "Désactiver le clavier tactile"
+      },
+      "desc": {
+        "zh": "禁用触摸键盘和手写服务 (TabletInputService)。",
+        "es": "Desactiva el teclado táctil y el servicio de escritura a mano (TabletInputService).",
+        "hi": "टच कीबोर्ड और हस्तलेखन सेवा (TabletInputService) अक्षम करता है।",
+        "de": "Disables Touch Keyboard and Handwriting service (TabletInputService).",
+        "fr": "Désactive le service de clavier tactile et d’écriture manuscrite (TabletInputService)."
+      }
+    },
+    "disableXbox": {
+      "title": {
+        "zh": "禁用 Xbox 服务",
+        "es": "Deshabilitar los servicios de Xbox",
+        "hi": "Xbox सेवाएँ अक्षम करें",
+        "de": "Deaktivieren Sie die Xbox-Dienste",
+        "fr": "Désactiver les services Xbox"
+      },
+      "desc": {
+        "zh": "禁用 Xbox Auth、游戏保存和网络服务。",
+        "es": "Deshabilita los servicios de autenticación de Xbox, guardado de juegos y de red.",
+        "hi": "Xbox प्रामाणिक, गेम सेव और नेटवर्किंग सेवाओं को अक्षम करता है।",
+        "de": "Deaktiviert die Dienste Xbox Auth, Game Save und Netzwerk.",
+        "fr": "Désactive les services Xbox Auth, Game Save et Networking."
+      }
+    },
+    "disablePrintSpooler": {
+      "title": {
+        "zh": "禁用后台打印程序",
+        "es": "Deshabilitar la cola de impresión",
+        "hi": "प्रिंट स्पूलर अक्षम करें",
+        "de": "Deaktivieren Sie den Druckspooler",
+        "fr": "Désactiver le spouleur d'impression"
+      },
+      "desc": {
+        "zh": "禁用打印服务。如果您不使用打印机，建议您使用。",
+        "es": "Desactiva el servicio de impresión. Recomendado si no utilizas impresora.",
+        "hi": "मुद्रण सेवा अक्षम करता है. यदि आप प्रिंटर का उपयोग नहीं करते हैं तो अनुशंसित।",
+        "de": "Deaktiviert den Druckdienst. Empfohlen, wenn Sie keinen Drucker verwenden.",
+        "fr": "Désactive le service d'impression. Recommandé si vous n'utilisez pas d'imprimante."
+      }
+    },
+    "disableSearch": {
+      "title": {
+        "zh": "禁用 Windows 搜索",
+        "es": "Deshabilitar la búsqueda de Windows",
+        "hi": "Windows खोज अक्षम करें",
+        "de": "Deaktivieren Sie die Windows-Suche",
+        "fr": "Désactiver la recherche Windows"
+      },
+      "desc": {
+        "zh": "禁用 Windows 搜索索引以节省 CPU/磁盘使用量。",
+        "es": "Deshabilita la indexación de búsqueda de Windows para ahorrar uso de CPU/disco.",
+        "hi": "सीपीयू/डिस्क उपयोग को बचाने के लिए विंडोज सर्च इंडेक्सिंग को अक्षम करता है।",
+        "de": "Deaktiviert die Windows-Suchindizierung, um CPU-/Festplattennutzung zu sparen.",
+        "fr": "Désactive l’indexation de recherche Windows pour économiser l’utilisation du processeur/disque."
+      }
+    },
+    "disableRemoteAssistance": {
+      "title": {
+        "zh": "禁用远程协助",
+        "es": "Deshabilitar la asistencia remota",
+        "hi": "दूरस्थ सहायता अक्षम करें",
+        "de": "Deaktivieren Sie die Remoteunterstützung",
+        "fr": "Désactiver l'assistance à distance"
+      },
+      "desc": {
+        "zh": "为了安全起见，禁用 Windows 远程协助。",
+        "es": "Desactiva la Asistencia remota de Windows por seguridad.",
+        "hi": "सुरक्षा के लिए विंडोज़ रिमोट सहायता अक्षम करता है।",
+        "de": "Deaktiviert aus Sicherheitsgründen die Windows-Remoteunterstützung.",
+        "fr": "Désactive l'assistance à distance Windows pour des raisons de sécurité."
+      }
+    },
+    "disableDeliveryOptimization": {
+      "title": {
+        "zh": "禁用交付优化",
+        "es": "Deshabilitar la optimización de entrega",
+        "hi": "डिलिवरी अनुकूलन अक्षम करें",
+        "de": "Deaktivieren Sie die Versandoptimierung",
+        "fr": "Désactiver l'optimisation de la livraison"
+      },
+      "desc": {
+        "zh": "禁用 Windows 更新交付优化服务。",
+        "es": "Deshabilita el servicio de optimización de entrega de Windows Update.",
+        "hi": "Windows अद्यतन वितरण अनुकूलन सेवा अक्षम करता है।",
+        "de": "Deaktiviert den Windows Update-Lieferoptimierungsdienst.",
+        "fr": "Désactive le service d’optimisation de la livraison de Windows Update."
+      }
+    },
+    "flushDNS": {
+      "title": {
+        "zh": "刷新 DNS 缓存",
+        "es": "Vaciar la caché de DNS",
+        "hi": "डीएनएस कैश फ्लश करें",
+        "de": "Leeren Sie den DNS-Cache",
+        "fr": "Vider le cache DNS"
+      },
+      "desc": {
+        "zh": "重置 DNS 解析器缓存以修复连接或加载问题。",
+        "es": "Restablece el caché de resolución de DNS para solucionar problemas de conexión o carga.",
+        "hi": "कनेक्शन या लोडिंग समस्याओं को ठीक करने के लिए DNS रिज़ॉल्वर कैश को रीसेट करता है।",
+        "de": "Setzt den DNS-Resolver-Cache zurück, um Verbindungs- oder Ladeprobleme zu beheben.",
+        "fr": "Réinitialise le cache du résolveur DNS pour résoudre les problèmes de connexion ou de chargement."
+      }
+    },
+    "disableThrottling": {
+      "title": {
+        "zh": "禁用网络限制",
+        "es": "Deshabilitar la limitación de red",
+        "hi": "नेटवर्क थ्रॉटलिंग अक्षम करें",
+        "de": "Deaktivieren Sie die Netzwerkdrosselung",
+        "fr": "Désactiver la limitation du réseau"
+      },
+      "desc": {
+        "zh": "禁用 Windows 网络限制机制以获得更好的吞吐量。",
+        "es": "Deshabilita el mecanismo de limitación de red de Windows para mejorar el rendimiento.",
+        "hi": "बेहतर थ्रूपुट के लिए विंडोज़ नेटवर्क थ्रॉटलिंग तंत्र को अक्षम करता है।",
+        "de": "Deaktiviert den Windows-Netzwerkdrosselungsmechanismus für einen besseren Durchsatz.",
+        "fr": "Désactive le mécanisme de limitation du réseau Windows pour un meilleur débit."
+      }
+    },
+    "changeDNS": {
+      "title": {
+        "zh": "更改 DNS",
+        "es": "Cambiar DNS",
+        "hi": "डीएनएस बदलें",
+        "de": "DNS ändern",
+        "fr": "Changer le DNS"
+      },
+      "desc": {
+        "zh": "切换到更快的 DNS 提供商（Cloudflare、Google、Quad9、AdGuard）。",
+        "es": "Cambie a un proveedor de DNS más rápido (Cloudflare, Google, Quad9, AdGuard).",
+        "hi": "तेज़ DNS प्रदाता (Cloudflare, Google, Quad9, AdGuard) पर स्विच करें।",
+        "de": "Wechseln Sie zu einem schnelleren DNS-Anbieter (Cloudflare, Google, Quad9, AdGuard).",
+        "fr": "Passez à un fournisseur DNS plus rapide (Cloudflare, Google, Quad9, AdGuard)."
+      }
+    },
+    "networkReset": {
+      "title": {
+        "zh": "网络堆栈重置",
+        "es": "Restablecimiento de la pila de red",
+        "hi": "नेटवर्क स्टैक रीसेट",
+        "de": "Zurücksetzen des Netzwerkstapels",
+        "fr": "Réinitialisation de la pile réseau"
+      },
+      "desc": {
+        "zh": "重置 Winsock 和 TCP/IP 堆栈以修复连接问题。",
+        "es": "Restablece la pila Winsock y TCP/IP para solucionar problemas de conectividad.",
+        "hi": "कनेक्टिविटी समस्याओं को ठीक करने के लिए विंसॉक और टीसीपी/आईपी स्टैक को रीसेट करता है।",
+        "de": "Setzt Winsock und TCP/IP-Stack zurück, um Verbindungsprobleme zu beheben.",
+        "fr": "Réinitialise la pile Winsock et TCP/IP pour résoudre les problèmes de connectivité."
+      }
+    },
+    "disableNagle": {
+      "title": {
+        "zh": "禁用 Nagle 算法",
+        "es": "Deshabilitar el algoritmo de Nagle",
+        "hi": "नागल एल्गोरिथम अक्षम करें",
+        "de": "Deaktivieren Sie den Nagle-Algorithmus",
+        "fr": "Désactiver l'algorithme Nagle"
+      },
+      "desc": {
+        "zh": "禁用 Nagle 算法以减少网络延迟。",
+        "es": "Deshabilita el algoritmo Nagle para reducir la latencia de la red.",
+        "hi": "नेटवर्क विलंबता को कम करने के लिए नागल एल्गोरिदम को अक्षम करता है।",
+        "de": "Deaktiviert den Nagle-Algorithmus, um die Netzwerklatenz zu reduzieren.",
+        "fr": "Désactive l'algorithme Nagle pour réduire la latence du réseau."
+      }
+    },
+    "disableAutoTuning": {
+      "title": {
+        "zh": "禁用 TCP 自动调整",
+        "es": "Deshabilitar el ajuste automático de TCP",
+        "hi": "टीसीपी ऑटो-ट्यूनिंग अक्षम करें",
+        "de": "Deaktivieren Sie die TCP-Autooptimierung",
+        "fr": "Désactiver le réglage automatique TCP"
+      },
+      "desc": {
+        "zh": "禁用 TCP 自动调整以提高网络性能。",
+        "es": "Desactiva el ajuste automático de TCP para mejorar el rendimiento de la red.",
+        "hi": "बेहतर नेटवर्क प्रदर्शन के लिए टीसीपी ऑटो-ट्यूनिंग अक्षम करता है।",
+        "de": "Deaktiviert die automatische TCP-Optimierung für eine verbesserte Netzwerkleistung.",
+        "fr": "Désactive le réglage automatique TCP pour améliorer les performances du réseau."
+      }
+    },
+    "clearArpCache": {
+      "title": {
+        "zh": "清除 ARP 缓存",
+        "es": "Borrar caché ARP",
+        "hi": "एआरपी कैश साफ़ करें",
+        "de": "ARP-Cache leeren",
+        "fr": "Effacer le cache ARP"
+      },
+      "desc": {
+        "zh": "清除 ARP 缓存以解决网络连接问题。",
+        "es": "Borra la caché ARP para resolver problemas de conectividad de red.",
+        "hi": "नेटवर्क कनेक्टिविटी समस्याओं को हल करने के लिए ARP कैश साफ़ करता है।",
+        "de": "Löscht den ARP-Cache, um Netzwerkverbindungsprobleme zu beheben.",
+        "fr": "Efface le cache ARP pour résoudre les problèmes de connectivité réseau."
+      }
+    },
+    "enableQoS": {
+      "title": {
+        "zh": "启用 QoS 优化",
+        "es": "Habilitar la optimización de QoS",
+        "hi": "QoS अनुकूलन सक्षम करें",
+        "de": "Aktivieren Sie die QoS-Optimierung",
+        "fr": "Activer l'optimisation de la qualité de service"
+      },
+      "desc": {
+        "zh": "删除带宽预留以获得更好的网络速度。",
+        "es": "Elimina la reserva de ancho de banda para una mejor velocidad de la red.",
+        "hi": "बेहतर नेटवर्क स्पीड के लिए बैंडविड्थ आरक्षण हटाता है।",
+        "de": "Entfernt die Bandbreitenreservierung für eine bessere Netzwerkgeschwindigkeit.",
+        "fr": "Supprime la réservation de bande passante pour une meilleure vitesse du réseau."
+      }
+    },
+    "disableLSO": {
+      "title": {
+        "zh": "禁用大量发送卸载",
+        "es": "Deshabilitar la descarga de envíos grandes",
+        "hi": "बड़े पैमाने पर भेजें ऑफलोड अक्षम करें",
+        "de": "Deaktivieren Sie den großen Sende-Offload",
+        "fr": "Désactiver le déchargement des envois volumineux"
+      },
+      "desc": {
+        "zh": "禁用 LSO 以减少游戏中的网络延迟。",
+        "es": "Desactiva LSO para reducir la latencia de la red en los juegos.",
+        "hi": "गेम्स में नेटवर्क विलंबता को कम करने के लिए एलएसओ को अक्षम करता है।",
+        "de": "Deaktiviert LSO, um die Netzwerklatenz in Spielen zu reduzieren.",
+        "fr": "Désactive LSO pour réduire la latence du réseau dans les jeux."
+      }
+    },
+    "disableP2PUpdate": {
+      "title": {
+        "zh": "禁用 P2P 更新",
+        "es": "Deshabilitar actualizaciones P2P",
+        "hi": "पी2पी अपडेट अक्षम करें",
+        "de": "Deaktivieren Sie P2P-Updates",
+        "fr": "Désactiver les mises à jour P2P"
+      },
+      "desc": {
+        "zh": "禁用点对点 Windows 更新共享。",
+        "es": "Deshabilita el uso compartido de Windows Update de igual a igual.",
+        "hi": "पीयर-टू-पीयर विंडोज अपडेट साझाकरण अक्षम करता है।",
+        "de": "Deaktiviert die Peer-to-Peer-Windows Update-Freigabe.",
+        "fr": "Désactive le partage Windows Update peer-to-peer."
+      }
+    },
+    "disableCortana": {
+      "title": {
+        "zh": "禁用 Cortana",
+        "es": "Deshabilitar Cortana",
+        "hi": "कॉर्टाना अक्षम करें",
+        "de": "Deaktivieren Sie Cortana",
+        "fr": "Désactiver Cortana"
+      },
+      "desc": {
+        "zh": "禁用 Cortana 助手以释放资源。",
+        "es": "Desactiva el asistente de Cortana para liberar recursos.",
+        "hi": "संसाधनों को मुक्त करने के लिए Cortana सहायक को अक्षम करता है।",
+        "de": "Deaktiviert den Cortana-Assistenten, um Ressourcen freizugeben.",
+        "fr": "Désactive l'assistant Cortana pour libérer des ressources."
+      }
+    },
+    "disableOneDrive": {
+      "title": {
+        "zh": "禁用 OneDrive",
+        "es": "Deshabilitar OneDrive",
+        "hi": "वनड्राइव अक्षम करें",
+        "de": "Deaktivieren Sie OneDrive",
+        "fr": "Désactiver OneDrive"
+      },
+      "desc": {
+        "zh": "从启动和资源管理器中删除 OneDrive。",
+        "es": "Elimina OneDrive del inicio y del Explorador.",
+        "hi": "OneDrive को स्टार्टअप और एक्सप्लोरर से हटा देता है।",
+        "de": "Entfernt OneDrive aus dem Start und Explorer.",
+        "fr": "Supprime OneDrive du démarrage et de l'Explorateur."
+      }
+    },
+    "disableLocation": {
+      "title": {
+        "zh": "禁用位置",
+        "es": "Desactivar ubicación",
+        "hi": "स्थान अक्षम करें",
+        "de": "Standort deaktivieren",
+        "fr": "Désactiver la localisation"
+      },
+      "desc": {
+        "zh": "为了隐私而禁用位置服务。",
+        "es": "Desactiva los servicios de ubicación para mayor privacidad.",
+        "hi": "गोपनीयता के लिए स्थान सेवाएँ अक्षम करता है.",
+        "de": "Deaktiviert Ortungsdienste aus Datenschutzgründen.",
+        "fr": "Désactive les services de localisation pour des raisons de confidentialité."
+      }
+    },
+    "disableClipboardHistory": {
+      "title": {
+        "zh": "禁用剪贴板历史记录",
+        "es": "Deshabilitar el historial del portapapeles",
+        "hi": "क्लिपबोर्ड इतिहास अक्षम करें",
+        "de": "Deaktivieren Sie den Zwischenablageverlauf",
+        "fr": "Désactiver l'historique du Presse-papiers"
+      },
+      "desc": {
+        "zh": "禁用 Windows 剪贴板历史记录功能。",
+        "es": "Desactiva la función de historial del portapapeles de Windows.",
+        "hi": "विंडोज़ क्लिपबोर्ड इतिहास सुविधा को अक्षम करता है।",
+        "de": "Deaktiviert die Verlaufsfunktion der Windows-Zwischenablage.",
+        "fr": "Désactive la fonctionnalité d’historique du presse-papiers Windows."
+      }
+    },
+    "disableActivityHistory": {
+      "title": {
+        "zh": "禁用活动历史记录",
+        "es": "Deshabilitar el historial de actividad",
+        "hi": "गतिविधि इतिहास अक्षम करें",
+        "de": "Aktivitätsverlauf deaktivieren",
+        "fr": "Désactiver l'historique des activités"
+      },
+      "desc": {
+        "zh": "阻止 Windows 收集活动历史记录。",
+        "es": "Impide que Windows recopile el historial de actividad.",
+        "hi": "विंडोज़ को गतिविधि इतिहास एकत्र करने से रोकता है।",
+        "de": "Verhindert, dass Windows den Aktivitätsverlauf erfasst.",
+        "fr": "Empêche Windows de collecter l'historique des activités."
+      }
+    },
+    "disableNewsInterests": {
+      "title": {
+        "zh": "禁用新闻和兴趣",
+        "es": "Desactivar noticias e intereses",
+        "hi": "समाचार और रुचियाँ अक्षम करें",
+        "de": "Deaktivieren Sie Nachrichten und Interessen",
+        "fr": "Désactiver les actualités et les centres d'intérêt"
+      },
+      "desc": {
+        "zh": "从任务栏中删除新闻小部件。",
+        "es": "Elimina el widget de noticias de la barra de tareas.",
+        "hi": "टास्कबार से समाचार विजेट हटाता है।",
+        "de": "Entfernt das Nachrichten-Widget aus der Taskleiste.",
+        "fr": "Supprime le widget d'actualités de la barre des tâches."
+      }
+    },
+    "disableTimeline": {
+      "title": {
+        "zh": "禁用时间轴",
+        "es": "Desactivar línea de tiempo",
+        "hi": "टाइमलाइन अक्षम करें",
+        "de": "Zeitleiste deaktivieren",
+        "fr": "Désactiver la chronologie"
+      },
+      "desc": {
+        "zh": "禁用 Windows 时间轴功能。",
+        "es": "Desactiva la función de línea de tiempo de Windows.",
+        "hi": "विंडोज़ टाइमलाइन सुविधा को अक्षम करता है।",
+        "de": "Deaktiviert die Windows-Timeline-Funktion.",
+        "fr": "Désactive la fonctionnalité de chronologie Windows."
+      }
+    },
+    "disableAdvertisingId": {
+      "title": {
+        "zh": "禁用广告 ID",
+        "es": "Desactivar ID de publicidad",
+        "hi": "विज्ञापन आईडी अक्षम करें",
+        "de": "Werbe-ID deaktivieren",
+        "fr": "Désactiver l'identifiant publicitaire"
+      },
+      "desc": {
+        "zh": "出于隐私考虑禁用 Windows 广告 ID。",
+        "es": "Desactiva el ID de publicidad de Windows para mayor privacidad.",
+        "hi": "गोपनीयता के लिए विंडोज़ विज्ञापन आईडी अक्षम करता है।",
+        "de": "Deaktiviert die Windows-Werbe-ID aus Datenschutzgründen.",
+        "fr": "Désactive l'identifiant publicitaire Windows pour des raisons de confidentialité."
+      }
+    },
+    "disableTransparency": {
+      "title": {
+        "zh": "禁用透明度",
+        "es": "Desactivar transparencia",
+        "hi": "पारदर्शिता अक्षम करें",
+        "de": "Transparenz deaktivieren",
+        "fr": "Désactiver la transparence"
+      },
+      "desc": {
+        "zh": "禁用 Windows 透明度效果以获得更好的性能。",
+        "es": "Desactiva los efectos de transparencia de Windows para un mejor rendimiento.",
+        "hi": "बेहतर प्रदर्शन के लिए विंडोज़ पारदर्शिता प्रभाव अक्षम करता है।",
+        "de": "Deaktiviert Windows-Transparenzeffekte für eine bessere Leistung.",
+        "fr": "Désactive les effets de transparence de Windows pour de meilleures performances."
+      }
+    },
+    "disableAnimations": {
+      "title": {
+        "zh": "禁用动画",
+        "es": "Deshabilitar animaciones",
+        "hi": "एनिमेशन अक्षम करें",
+        "de": "Animationen deaktivieren",
+        "fr": "Désactiver les animations"
+      },
+      "desc": {
+        "zh": "禁用 Windows 动画以获得更快的 UI 响应。",
+        "es": "Desactiva las animaciones de Windows para una respuesta más rápida de la interfaz de usuario.",
+        "hi": "तेज़ यूआई प्रतिक्रिया के लिए विंडोज़ एनिमेशन अक्षम करता है।",
+        "de": "Deaktiviert Windows-Animationen für eine schnellere Reaktion der Benutzeroberfläche.",
+        "fr": "Désactive les animations Windows pour une réponse plus rapide de l'interface utilisateur."
+      }
+    },
+    "disableWindowsTips": {
+      "title": {
+        "zh": "禁用 Windows 提示",
+        "es": "Deshabilitar los consejos de Windows",
+        "hi": "Windows युक्तियाँ अक्षम करें",
+        "de": "Deaktivieren Sie Windows-Tipps",
+        "fr": "Désactiver les astuces Windows"
+      },
+      "desc": {
+        "zh": "禁用 Windows 提示和建议弹出窗口。",
+        "es": "Deshabilita las ventanas emergentes de sugerencias y consejos de Windows.",
+        "hi": "विंडोज़ युक्तियाँ और सुझाव पॉपअप अक्षम करता है।",
+        "de": "Deaktiviert Windows-Popups mit Tipps und Vorschlägen.",
+        "fr": "Désactive les fenêtres contextuelles de conseils et de suggestions Windows."
+      }
+    },
+    "disableWindowsSpotlight": {
+      "title": {
+        "zh": "禁用 Windows 聚光灯",
+        "es": "Deshabilitar Windows Spotlight",
+        "hi": "विंडोज़ स्पॉटलाइट अक्षम करें",
+        "de": "Deaktivieren Sie Windows Spotlight",
+        "fr": "Désactiver Windows Spotlight"
+      },
+      "desc": {
+        "zh": "禁用锁屏旋转图像。",
+        "es": "Desactiva la rotación de imágenes de la pantalla de bloqueo.",
+        "hi": "लॉक स्क्रीन पर घूमने वाली छवियों को अक्षम करता है।",
+        "de": "Deaktiviert das Drehen von Bildern auf dem Sperrbildschirm.",
+        "fr": "Désactive la rotation des images sur l'écran de verrouillage."
+      }
+    },
+    "optimizeVisualEffects": {
+      "title": {
+        "zh": "优化视觉效果",
+        "es": "Optimizar efectos visuales",
+        "hi": "दृश्य प्रभावों का अनुकूलन करें",
+        "de": "Optimieren Sie visuelle Effekte",
+        "fr": "Optimiser les effets visuels"
+      },
+      "desc": {
+        "zh": "优化视觉效果以获得最佳性能。",
+        "es": "Optimiza los efectos visuales para un mejor rendimiento.",
+        "hi": "सर्वोत्तम प्रदर्शन के लिए दृश्य प्रभावों को अनुकूलित करता है।",
+        "de": "Optimiert visuelle Effekte für beste Leistung.",
+        "fr": "Optimise les effets visuels pour de meilleures performances."
+      }
+    },
+    "disableLockScreenTips": {
+      "title": {
+        "zh": "禁用锁屏提示",
+        "es": "Deshabilitar los consejos de la pantalla de bloqueo",
+        "hi": "लॉक स्क्रीन युक्तियाँ अक्षम करें",
+        "de": "Deaktivieren Sie die Tipps zum Sperrbildschirm",
+        "fr": "Désactiver les conseils sur l'écran de verrouillage"
+      },
+      "desc": {
+        "zh": "禁用锁定屏幕上的提示和广告。",
+        "es": "Desactiva consejos y anuncios en la pantalla de bloqueo.",
+        "hi": "लॉक स्क्रीन पर युक्तियाँ और विज्ञापन अक्षम करता है।",
+        "de": "Deaktiviert Tipps und Anzeigen auf dem Sperrbildschirm.",
+        "fr": "Désactive les conseils et les publicités sur l'écran de verrouillage."
+      }
+    },
+    "disableSticky": {
+      "title": {
+        "zh": "禁用粘滞键",
+        "es": "Desactivar teclas adhesivas",
+        "hi": "स्टिकी कुंजियाँ अक्षम करें",
+        "de": "Deaktivieren Sie Sticky Keys",
+        "fr": "Désactiver les touches rémanentes"
+      },
+      "desc": {
+        "zh": "禁用粘滞键快捷键 (Shift x5)。",
+        "es": "Desactiva el acceso directo de Sticky Keys (Shift x5).",
+        "hi": "स्टिकी कुंजी शॉर्टकट अक्षम करता है (Shift x5)।",
+        "de": "Deaktiviert die Tastenkombination „Sticky Keys“ (Umschalt x5).",
+        "fr": "Désactive le raccourci Sticky Keys (Maj x5)."
+      }
+    },
+    "disableBingSearch": {
+      "title": {
+        "zh": "禁用必应搜索",
+        "es": "Deshabilitar la búsqueda de Bing",
+        "hi": "बिंग खोज अक्षम करें",
+        "de": "Deaktivieren Sie die Bing-Suche",
+        "fr": "Désactiver la recherche Bing"
+      },
+      "desc": {
+        "zh": "从“开始”菜单中删除 Bing 搜索结果。",
+        "es": "Elimina los resultados de búsqueda de Bing del menú Inicio.",
+        "hi": "प्रारंभ मेनू से बिंग खोज परिणाम हटा देता है।",
+        "de": "Entfernt Bing-Suchergebnisse aus dem Startmenü.",
+        "fr": "Supprime les résultats de recherche Bing du menu Démarrer."
+      }
+    },
+    "showExtensions": {
+      "title": {
+        "zh": "显示文件扩展名",
+        "es": "Mostrar extensiones de archivo",
+        "hi": "फ़ाइल एक्सटेंशन दिखाएँ",
+        "de": "Dateierweiterungen anzeigen",
+        "fr": "Afficher les extensions de fichiers"
+      },
+      "desc": {
+        "zh": "始终在资源管理器中显示文件扩展名（例如 .txt、.exe）。",
+        "es": "Mostrar siempre las extensiones de archivo (por ejemplo, .txt, .exe) en el Explorador.",
+        "hi": "एक्सप्लोरर में हमेशा फ़ाइल एक्सटेंशन (जैसे .txt, .exe) दिखाएं।",
+        "de": "Dateierweiterungen (z. B. .txt, .exe) immer im Explorer anzeigen.",
+        "fr": "Affichez toujours les extensions de fichiers (par exemple .txt, .exe) dans l'Explorateur."
+      }
+    },
+    "showHiddenFiles": {
+      "title": {
+        "zh": "显示隐藏文件",
+        "es": "Mostrar archivos ocultos",
+        "hi": "छुपी हुई फ़ाइलें दिखाएँ",
+        "de": "Versteckte Dateien anzeigen",
+        "fr": "Afficher les fichiers cachés"
+      },
+      "desc": {
+        "zh": "在资源管理器中显示隐藏的文件和文件夹。",
+        "es": "Mostrar archivos y carpetas ocultos en el Explorador.",
+        "hi": "एक्सप्लोरर में छिपी हुई फ़ाइलें और फ़ोल्डर्स दिखाएं।",
+        "de": "Versteckte Dateien und Ordner im Explorer anzeigen.",
+        "fr": "Afficher les fichiers et dossiers cachés dans l'Explorateur."
+      }
+    },
+    "disableMouseAccel": {
+      "title": {
+        "zh": "禁用鼠标加速",
+        "es": "Deshabilitar la aceleración del mouse",
+        "hi": "माउस त्वरण अक्षम करें",
+        "de": "Deaktivieren Sie die Mausbeschleunigung",
+        "fr": "Désactiver l'accélération de la souris"
+      },
+      "desc": {
+        "zh": "禁用原始鼠标输入的“增强指针精度”。",
+        "es": "Desactiva 'Mejorar la precisión del puntero' para la entrada sin formato del mouse.",
+        "hi": "कच्चे माउस इनपुट के लिए 'एन्हांस पॉइंटर प्रिसिजन' को अक्षम करता है।",
+        "de": "Deaktiviert „Zeigerpräzision verbessern“ für reine Mauseingaben.",
+        "fr": "Désactive « Améliorer la précision du pointeur » pour la saisie brute de la souris."
+      }
+    },
+    "clearBrowserCache": {
+      "title": {
+        "zh": "清除浏览器缓存",
+        "es": "Borrar caché del navegador",
+        "hi": "ब्राउज़र कैश साफ़ करें",
+        "de": "Browser-Cache leeren",
+        "fr": "Vider le cache du navigateur"
+      },
+      "desc": {
+        "zh": "清除 Chrome、Edge 和 Firefox 浏览器的缓存。可能会让您退出网站。",
+        "es": "Borra el caché de los navegadores Chrome, Edge y Firefox. Puede cerrarle la sesión en los sitios.",
+        "hi": "क्रोम, एज और फ़ायरफ़ॉक्स ब्राउज़र के लिए कैश साफ़ करता है। आपको साइटों से लॉग आउट कर सकता है.",
+        "de": "Löscht den Cache für Chrome-, Edge- und Firefox-Browser. Möglicherweise werden Sie von Websites abgemeldet.",
+        "fr": "Efface le cache des navigateurs Chrome, Edge et Firefox. Peut vous déconnecter des sites."
+      }
+    },
+    "disableBackgroundApps": {
+      "title": {
+        "zh": "禁用后台应用程序",
+        "es": "Deshabilitar aplicaciones en segundo plano",
+        "hi": "बैकग्राउंड ऐप्स अक्षम करें",
+        "de": "Hintergrund-Apps deaktivieren",
+        "fr": "Désactiver les applications en arrière-plan"
+      },
+      "desc": {
+        "zh": "防止应用程序在后台运行。",
+        "es": "Evita que las aplicaciones se ejecuten en segundo plano.",
+        "hi": "ऐप्स को बैकग्राउंड में चलने से रोकता है।",
+        "de": "Verhindert, dass Apps im Hintergrund ausgeführt werden.",
+        "fr": "Empêche les applications de s'exécuter en arrière-plan."
+      }
+    },
+    "enableGpuScheduling": {
+      "title": {
+        "zh": "GPU调度",
+        "es": "Programación de GPU",
+        "hi": "जीपीयू शेड्यूलिंग",
+        "de": "GPU-Planung",
+        "fr": "Planification GPU"
+      },
+      "desc": {
+        "zh": "启用硬件加速 GPU 调度以获得更好的游戏体验。",
+        "es": "Permite la programación de GPU acelerada por hardware para mejorar los juegos.",
+        "hi": "बेहतर गेमिंग के लिए हार्डवेयर-त्वरित जीपीयू शेड्यूलिंग सक्षम करता है।",
+        "de": "Ermöglicht hardwarebeschleunigte GPU-Planung für besseres Gaming.",
+        "fr": "Permet la planification GPU accélérée par le matériel pour un meilleur jeu."
+      }
+    },
+    "disableGameBar": {
+      "title": {
+        "zh": "禁用游戏栏",
+        "es": "Deshabilitar la barra de juegos",
+        "hi": "गेम बार अक्षम करें",
+        "de": "Spielleiste deaktivieren",
+        "fr": "Désactiver la barre de jeu"
+      },
+      "desc": {
+        "zh": "完全禁用 Xbox 游戏栏覆盖。",
+        "es": "Desactiva completamente la superposición de la barra de juegos de Xbox.",
+        "hi": "Xbox गेम बार ओवरले को पूरी तरह से अक्षम कर देता है।",
+        "de": "Deaktiviert das Xbox Game Bar-Overlay vollständig.",
+        "fr": "Désactive complètement la superposition de la Xbox Game Bar."
+      }
+    }
+  },
+  "presets": {
+    "recommended": {
+      "zh": "推荐设置",
+      "es": "Configuraciones recomendadas",
+      "hi": "अनुशंसित सेटिंग्स",
+      "de": "Empfohlene Einstellungen",
+      "fr": "Paramètres recommandés"
+    },
+    "gamer": {
+      "zh": "游戏设置",
+      "es": "Configuración de juego",
+      "hi": "गेमिंग सेटिंग्स",
+      "de": "Gaming-Einstellungen",
+      "fr": "Paramètres de jeu"
+    }
+  }
+}

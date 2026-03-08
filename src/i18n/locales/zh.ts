@@ -20,9 +20,16 @@ const zh = {
     "search.hideDesc": "隐藏",
     "search.showDesc": "显示",
 
+    "category.collapseAll": "折叠全部",
+    "category.expandAll": "展开全部",
+    "category.selectAll": "选择分类",
+    "category.deselectAll": "清除分类",
+
     "preset.clearAll": "全部清除",
     "preset.selectAll": "全选",
     "preset.default": "默认",
+    "preset.recommended": "推荐设置",
+    "preset.gamer": "玩家设置",
     "preset.selectAllWarning": "所有设置可能会导致不需要的更改。请在运行前检查。",
 
     "action.selected": "已选择",

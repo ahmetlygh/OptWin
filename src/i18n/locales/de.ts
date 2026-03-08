@@ -20,9 +20,16 @@ const de = {
     "search.hideDesc": "Ausblenden",
     "search.showDesc": "Anzeigen",
 
+    "category.collapseAll": "Alle minimieren",
+    "category.expandAll": "Alle erweitern",
+    "category.selectAll": "Kategorie auswählen",
+    "category.deselectAll": "Kategorie löschen",
+
     "preset.clearAll": "Alle löschen",
     "preset.selectAll": "Alle auswählen",
     "preset.default": "Standard",
+    "preset.recommended": "Empfohlene Einstellungen",
+    "preset.gamer": "Spieleinstellungen",
     "preset.selectAllWarning": "Alle Einstellungen können unerwünschte Änderungen verursachen. Bitte überprüfen Sie vor dem Ausführen.",
 
     "action.selected": "Ausgewählt",

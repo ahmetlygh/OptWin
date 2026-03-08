@@ -10,9 +10,9 @@ export function Footer() {
     return (
         <footer className="w-full mt-4 border-t border-[var(--border-color)] bg-[var(--card-bg)]/80 backdrop-blur-lg">
             <div className="max-w-[1200px] mx-auto px-6 py-10">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
                     {/* Left */}
-                    <div className="flex flex-col gap-3 max-w-md">
+                    <div className="flex flex-col gap-3 max-w-md items-center md:items-start">
                         <div className="flex items-center gap-2">
                             <img src="/optwin.png" alt="OptWin" className="h-7 w-auto" />
                             <span className="text-lg font-black text-gradient">OptWin</span>
@@ -23,16 +23,17 @@ export function Footer() {
                     </div>
 
                     {/* Right */}
-                    <div className="flex gap-12 text-sm">
-                        <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 text-sm justify-center">
+                        <div className="flex flex-col gap-2.5 items-center md:items-start">
                             <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.legal"]}</span>
                             <Link href="/privacy" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.privacy"]}</Link>
                             <Link href="/terms" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.terms"]}</Link>
                         </div>
-                        <div className="flex flex-col gap-2.5">
+                        <div className="flex flex-col gap-2.5 items-center md:items-start">
                             <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.support"]}</span>
                             <Link href="/contact" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.contactUs"]}</Link>
-                            <a href="https://github.com/ahmetlygh/OptWin" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors flex items-center gap-1.5">
+                            <a href="mailto:contact@optwin.tech" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">contact@optwin.tech</a>
+                            <a href="https://github.com/ahmetlygh/OptWin" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors flex items-center gap-1.5 justify-center md:justify-start">
                                 <GithubIcon size={12} /> GitHub
                             </a>
                         </div>

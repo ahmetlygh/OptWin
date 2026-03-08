@@ -20,9 +20,16 @@ const hi = {
     "search.hideDesc": "छिपाएं",
     "search.showDesc": "दिखाएं",
 
+    "category.collapseAll": "सभी संक्षिप्त करें",
+    "category.expandAll": "सभी विस्तृत करें",
+    "category.selectAll": "श्रेणी चुनें",
+    "category.deselectAll": "श्रेणी साफ़ करें",
+
     "preset.clearAll": "सभी साफ़ करें",
     "preset.selectAll": "सभी चुनें",
     "preset.default": "डिफ़ॉल्ट",
+    "preset.recommended": "अनुशंसित सेटिंग्स",
+    "preset.gamer": "गेमिंग सेटिंग्स",
     "preset.selectAllWarning": "सभी सेटिंग्स अवांछित परिवर्तन कर सकती हैं। कृपया चलाने से पहले समीक्षा करें।",
 
     "action.selected": "चयनित",

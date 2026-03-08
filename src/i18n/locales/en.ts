@@ -24,10 +24,18 @@ const en = {
     "search.hideDesc": "Hide Desc",
     "search.showDesc": "Show Desc",
 
+    // Categories
+    "category.collapseAll": "Collapse All",
+    "category.expandAll": "Expand All",
+    "category.selectAll": "Select Category",
+    "category.deselectAll": "Clear Category",
+
     // Presets
     "preset.clearAll": "Clear All",
     "preset.selectAll": "Select All",
     "preset.default": "Default",
+    "preset.recommended": "Recommended Settings",
+    "preset.gamer": "Gaming Settings",
     "preset.selectAllWarning": "All settings may cause unwanted changes. Please review before running.",
 
     // Action Area

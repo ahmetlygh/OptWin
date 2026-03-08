@@ -3,11 +3,21 @@ import { categories } from "./seed-data/categories";
 import { defaultSettings, defaultDnsProviders, defaultUiTranslations } from "./seed-data/settings";
 import { featuresP1 } from "./seed-data/features-p1";
 import { featuresP2 } from "./seed-data/features-p2";
+import * as fs from 'fs';
+import * as path from 'path';
 
 const prisma = new PrismaClient();
 
 async function main() {
     console.log("🌱 Seeding OptWin database...\n");
+
+    let translatedData: any = null;
+    const translatedPath = path.join(__dirname, 'seed-data', 'translated.json');
+    if (fs.existsSync(translatedPath)) {
+        translatedData = JSON.parse(fs.readFileSync(translatedPath, 'utf8'));
+        console.log("Found translated.json! Will seed extra languages.");
+    }
+    const extraLangs = ['zh', 'es', 'hi', 'de', 'fr'];
 
     // 1. Categories
     console.log("📁 Creating categories...");
@@ -29,6 +39,19 @@ async function main() {
             update: { name: cat.tr },
             create: { categoryId: created.id, lang: "tr", name: cat.tr },
         });
+
+        if (translatedData && translatedData.categories[cat.slug]) {
+            for (const lang of extraLangs) {
+                const trName = translatedData.categories[cat.slug][lang];
+                if (trName) {
+                    await prisma.categoryTranslation.upsert({
+                        where: { categoryId_lang: { categoryId: created.id, lang } },
+                        update: { name: trName },
+                        create: { categoryId: created.id, lang, name: trName },
+                    });
+                }
+            }
+        }
     }
     console.log(`  ✅ ${categories.length} categories created\n`);
 
@@ -55,6 +78,20 @@ async function main() {
             update: { title: trTitle, desc: trDesc },
             create: { featureId: feature.id, lang: "tr", title: trTitle, desc: trDesc },
         });
+
+        if (translatedData && translatedData.features[slug]) {
+            for (const lang of extraLangs) {
+                const trTitleExtra = translatedData.features[slug].title[lang];
+                const trDescExtra = translatedData.features[slug].desc[lang];
+                if (trTitleExtra && trDescExtra) {
+                    await prisma.featureTranslation.upsert({
+                        where: { featureId_lang: { featureId: feature.id, lang } },
+                        update: { title: trTitleExtra, desc: trDescExtra },
+                        create: { featureId: feature.id, lang, title: trTitleExtra, desc: trDescExtra },
+                    });
+                }
+            }
+        }
     }
     console.log(`  ✅ ${allFeatures.length} features created\n`);
 
@@ -128,6 +165,19 @@ async function main() {
             update: { name: preset.tr },
             create: { presetId: created.id, lang: "tr", name: preset.tr },
         });
+
+        if (translatedData && translatedData.presets[preset.slug]) {
+            for (const lang of extraLangs) {
+                const trName = translatedData.presets[preset.slug][lang];
+                if (trName) {
+                    await prisma.presetTranslation.upsert({
+                        where: { presetId_lang: { presetId: created.id, lang } },
+                        update: { name: trName },
+                        create: { presetId: created.id, lang, name: trName },
+                    });
+                }
+            }
+        }
     }
     console.log("  ✅ 2 presets created\n");
 

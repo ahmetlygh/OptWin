@@ -58,11 +58,15 @@ export function MobileNav() {
 
                     <nav className="flex flex-col gap-2 pt-2 border-t border-[var(--border-color)]">
                         <a
-                            href="#about"
+                            href="/#about"
                             onClick={(e) => {
                                 e.preventDefault();
                                 setIsOpen(false);
-                                document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+                                if (window.location.pathname === '/') {
+                                    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+                                } else {
+                                    window.location.href = '/#about';
+                                }
                             }}
                             className="flex items-center justify-between p-4 rounded-xl bg-white/5 text-[var(--text-primary)] font-bold active:scale-95 transition-all"
                         >

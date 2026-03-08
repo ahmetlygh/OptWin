@@ -20,9 +20,16 @@ const fr = {
     "search.hideDesc": "Masquer",
     "search.showDesc": "Afficher",
 
+    "category.collapseAll": "Réduire tout",
+    "category.expandAll": "Développer tout",
+    "category.selectAll": "Sélectionner la catégorie",
+    "category.deselectAll": "Effacer la catégorie",
+
     "preset.clearAll": "Tout effacer",
     "preset.selectAll": "Tout sélectionner",
     "preset.default": "Par défaut",
+    "preset.recommended": "Paramètres recommandés",
+    "preset.gamer": "Paramètres de jeu",
     "preset.selectAllWarning": "Tous les paramètres peuvent causer des modifications indésirables. Veuillez vérifier avant d'exécuter.",
 
     "action.selected": "Sélectionnés",

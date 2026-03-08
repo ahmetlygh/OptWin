@@ -3,7 +3,6 @@
 import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { MobileNav } from "./MobileNav";
 import { ChevronDownIcon, SunIcon, MoonIcon, HeartIcon } from "../shared/Icons";
 import { USFlag, TRFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "../shared/Flags";
 
@@ -85,10 +84,14 @@ export function Header() {
                 <div className="flex items-center gap-4 md:gap-6">
                     <nav className="hidden md:flex items-center gap-6">
                         <a
-                            href="#about"
+                            href="/#about"
                             onClick={(e) => {
                                 e.preventDefault();
-                                document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+                                if (window.location.pathname === '/') {
+                                    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+                                } else {
+                                    window.location.href = '/#about';
+                                }
                             }}
                             className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200"
                         >
@@ -164,9 +167,7 @@ export function Header() {
                         ) : null}
                     </button>
 
-                    <div className="md:hidden">
-                        <MobileNav />
-                    </div>
+                    {/* MobileNav removed per user request */}
                 </div>
 
             </div>

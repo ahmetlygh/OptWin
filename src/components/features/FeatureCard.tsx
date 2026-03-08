@@ -1,23 +1,30 @@
 "use client";
 
+import { useState, useEffect, memo } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { Feature } from "@/types/feature";
 import { HighlightText } from "../shared/HighlightText";
-import { FeatureIcon, CheckIcon, GlobeIcon } from "../shared/Icons";
+import { FeatureIcon, CheckIcon, GlobeIcon, InfoIcon } from "../shared/Icons";
 
 interface FeatureCardProps {
     feature: Feature;
 }
 
-export function FeatureCard({ feature }: FeatureCardProps) {
+export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardProps) {
     const isSelected = useOptWinStore(state => state.selectedFeatures.has(feature.slug));
     const toggleFeature = useOptWinStore(state => state.toggleFeature);
     const setDnsModalOpen = useOptWinStore(state => state.setDnsModalOpen);
     const dnsProvider = useOptWinStore(state => state.dnsProvider);
     const lang = useOptWinStore(state => state.lang);
     const showDescriptions = useOptWinStore(state => state.showDescriptions);
+    const [localShowDesc, setLocalShowDesc] = useState(false);
+
+    useEffect(() => {
+        setLocalShowDesc(false);
+    }, [showDescriptions]);
 
     const isChangeDns = feature.slug === "changeDNS";
+    const isDescVisible = showDescriptions || localShowDesc;
 
     // Multi-language: try selected lang first, then fallback to en, then slug
     const getTranslation = (field: "title" | "desc") => {
@@ -67,7 +74,7 @@ export function FeatureCard({ feature }: FeatureCardProps) {
 
     return (
         <label
-            className={`group relative rounded-xl ${showDescriptions ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out ${isSelected
+            className={`group relative rounded-xl ${isDescVisible ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out ${isSelected
                 ? "bg-[var(--accent-color)]/10 border-[var(--accent-color)] shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-[1.02]"
                 : "bg-[var(--card-bg)] border-[var(--border-color)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-[var(--accent-color)]/10 hover:scale-[1.01]"
                 }`}
@@ -104,27 +111,36 @@ export function FeatureCard({ feature }: FeatureCardProps) {
                     <FeatureIcon icon={feature.icon} size={18} />
                 </div>
                 <div className="flex-1 pr-6">
-                    {!feature.noRisk ? (
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h4 className="text-[var(--text-primary)] font-semibold tracking-tight">
-                                <HighlightText text={title} />
-                            </h4>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${riskBadgeBg} ${riskBadgeColor}`}>
-                                {riskBadgeText}
-                            </span>
-                        </div>
-                    ) : (
-                        <h4 className="text-[var(--text-primary)] font-semibold tracking-tight mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1 pointer-events-auto">
+                        <h4 className="text-[var(--text-primary)] font-semibold tracking-tight pointer-events-none">
                             <HighlightText text={title} />
                         </h4>
-                    )}
+                        {!feature.noRisk && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${riskBadgeBg} ${riskBadgeColor} pointer-events-none`}>
+                                {riskBadgeText}
+                            </span>
+                        )}
+                        {!showDescriptions && (
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setLocalShowDesc(!localShowDesc);
+                                }}
+                                className={`flex items-center justify-center rounded-full p-1 transition-colors duration-200 opacity-0 group-hover:opacity-100 ${localShowDesc ? 'text-[var(--accent-color)] bg-[var(--accent-color)]/10' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]'}`}
+                                title={localShowDesc ? "Hide description" : "Show description"}
+                            >
+                                <InfoIcon size={14} />
+                            </button>
+                        )}
+                    </div>
 
                     {/* Description — GPU-accelerated show/hide with grid trick */}
                     <div
-                        className="transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grid"
+                        className="transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grid pointer-events-none"
                         style={{
-                            gridTemplateRows: showDescriptions ? '1fr' : '0fr',
-                            opacity: showDescriptions ? 1 : 0,
+                            gridTemplateRows: isDescVisible ? '1fr' : '0fr',
+                            opacity: isDescVisible ? 1 : 0,
                         }}
                     >
                         <div className="overflow-hidden">
@@ -152,4 +168,4 @@ export function FeatureCard({ feature }: FeatureCardProps) {
             </div>
         </label>
     );
-}
+});

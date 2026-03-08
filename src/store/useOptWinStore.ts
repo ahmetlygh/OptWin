@@ -31,6 +31,7 @@ interface OptWinState {
     toggleDescriptions: () => void;
     collapsedCategories: Set<string>;
     toggleCategoryCollapse: (slug: string) => void;
+    setCollapsedCategories: (slugs: string[]) => void;
 
     // Modals & Overlays
     isRestoreModalOpen: boolean;
@@ -122,6 +123,7 @@ export const useOptWinStore = create<OptWinState>()(
                 else next.add(slug);
                 return { collapsedCategories: next };
             }),
+            setCollapsedCategories: (slugs) => set({ collapsedCategories: new Set(slugs) }),
 
             // Modals
             isRestoreModalOpen: false,
@@ -146,7 +148,7 @@ export const useOptWinStore = create<OptWinState>()(
             toast: null,
             showToast: (message, type = "success") => {
                 set({ toast: { show: true, message, type } });
-                setTimeout(() => set({ toast: null }), 5000);
+                setTimeout(() => set({ toast: null }), 3000);
             },
             hideToast: () => set({ toast: null }),
         }),
