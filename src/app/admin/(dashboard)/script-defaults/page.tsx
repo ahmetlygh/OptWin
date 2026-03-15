@@ -81,6 +81,7 @@ export default function ScriptDefaultsPage() {
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [keyOrder, setKeyOrder] = useState<Record<string, number>>({});
+    const [originalKeyOrder, setOriginalKeyOrder] = useState<Record<string, number>>({});
     const newKeyRef = useRef<HTMLInputElement>(null);
     const unsavedCtx = useUnsavedChanges();
 
@@ -114,7 +115,9 @@ export default function ScriptDefaultsPage() {
                 setLanguages(data.languages);
                 // Initialize key order from first language
                 const firstLang = data.languages[0] || "en";
-                setKeyOrder(buildKeyOrder(data.labels[firstLang] || {}));
+                const initOrder = buildKeyOrder(data.labels[firstLang] || {});
+                setKeyOrder(initOrder);
+                setOriginalKeyOrder(JSON.parse(JSON.stringify(initOrder)));
             }
         } catch {
             setError("Script etiketleri yüklenemedi");
@@ -137,8 +140,8 @@ export default function ScriptDefaultsPage() {
         return () => window.removeEventListener("keydown", handler);
     }, [editMode, editingLineKey]);
 
-    // J11: beforeunload guard + context sync
-    const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels);
+    // J11: beforeunload guard + context sync (includes order changes)
+    const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels) || JSON.stringify(keyOrder) !== JSON.stringify(originalKeyOrder);
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
             if (hasChanges) { e.preventDefault(); }
@@ -186,6 +189,7 @@ export default function ScriptDefaultsPage() {
             const data = await res.json();
             if (data.success) {
                 setOriginalLabels(JSON.parse(JSON.stringify(labels)));
+                setOriginalKeyOrder(JSON.parse(JSON.stringify(keyOrder)));
                 setSaved(true);
                 setTimeout(() => setSaved(false), 2000);
             } else {
@@ -200,6 +204,7 @@ export default function ScriptDefaultsPage() {
 
     const handleCancel = () => {
         setLabels(JSON.parse(JSON.stringify(originalLabels)));
+        setKeyOrder(JSON.parse(JSON.stringify(originalKeyOrder)));
         setEditMode("off");
         setEditingLineKey(null);
     };
@@ -409,9 +414,12 @@ export default function ScriptDefaultsPage() {
             { text: ``, key: null, editable: false },
             { text: `# ${L.adminRequest || "Requesting admin privileges..."}`, key: "adminRequest", editable: true },
             { text: `# ${L.adminPrompt || "Please click Yes on the UAC prompt"}`, key: "adminPrompt", editable: true },
+            { text: `# ${L.adminError || "Failed to elevate privileges"}`, key: "adminError", editable: true },
+            { text: `# ${L.adminHint || "Right-click and Run as Administrator"}`, key: "adminHint", editable: true },
             { text: ``, key: null, editable: false },
             { text: `Write-Host "[*] ${L.restorePoint || "Creating restore point..."}" -ForegroundColor Yellow`, key: "restorePoint", editable: true },
             { text: `Write-Host "[+] ${L.restoreSuccess || "Restore point created"}" -ForegroundColor Green`, key: "restoreSuccess", editable: true },
+            { text: `Write-Host "[-] ${L.restoreFail || "Failed to create restore point"}" -ForegroundColor Red`, key: "restoreFail", editable: true },
             { text: ``, key: null, editable: false },
             { text: `# --- Optimizations ---`, key: null, editable: false },
             { text: `Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White`, key: null, editable: false },
@@ -606,7 +614,10 @@ export default function ScriptDefaultsPage() {
                                                         const nk = e.target.value.trim();
                                                         if (nk && nk !== key) handleRenameKey(key, nk);
                                                     }}
-                                                    onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                                                    onKeyDown={e => {
+                                                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                                        if (e.key === "Escape") { (e.target as HTMLInputElement).value = key; (e.target as HTMLInputElement).blur(); }
+                                                    }}
                                                     className="w-full text-[11px] font-mono font-bold text-white/50 bg-transparent border border-transparent hover:border-white/[0.06] focus:border-[#6b5be6]/30 rounded px-1.5 py-0.5 focus:outline-none transition-all"
                                                     title="Anahtar adını düzenle"
                                                 />
@@ -619,6 +630,7 @@ export default function ScriptDefaultsPage() {
                                                 <textarea
                                                     value={current || ""}
                                                     onChange={e => handleValueChange(key, e.target.value)}
+                                                    onKeyDown={e => { if (e.key === "Escape") (e.target as HTMLTextAreaElement).blur(); }}
                                                     rows={1}
                                                     placeholder="Değer girin..."
                                                     className="w-full bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] focus:border-[#6b5be6]/30 rounded-lg px-2.5 py-1.5 text-[13px] text-white/80 placeholder-white/15 focus:outline-none transition-all resize-none"

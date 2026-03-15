@@ -210,6 +210,10 @@ export function FeatureIcon({
     className?: string;
     size?: number;
 }) {
+    // Custom uploaded icon (file path)
+    if (icon && (icon.startsWith("/uploads/") || icon.startsWith("/assets/"))) {
+        return <img src={icon} alt="" width={size} height={size} className={`object-contain ${className}`} />;
+    }
     const IconComponent = FA_ICON_MAP[icon] || Cog;
     return <IconComponent className={className} size={size} strokeWidth={2} />;
 }

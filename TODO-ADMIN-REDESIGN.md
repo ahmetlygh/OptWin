@@ -62,6 +62,78 @@
 
 ---
 
+## L. Bakım Modu Güvenliği, Dosya Yükleme, Sürükle-Bırak & Script Ayarları
+
+### Bakım Modu Güvenliği
+- [x] **L1. Middleware + Server Layout ile tam bakım modu güvenliği**
+  - Middleware DB'den bakım durumunu kontrol eder (3sn cache, `/api/maintenance` üzerinden)
+  - Bakım modunda TÜM public sayfa istekleri self-contained HTML döner (Next.js bundle yüklenmez)
+  - Public API istekleri 503 JSON döner
+  - Admin rotaları, auth, maintenance API, static dosyalar her zaman izinli (`ALWAYS_ALLOWED` listesi)
+  - Self-contained HTML: OptWin tasarımıyla uyumlu bakım sayfası, 15sn auto-reload
+  - Root layout (`layout.tsx`) server-side Prisma sorgusu ile `serverMaintenance` prop'u PublicShell'e geçirir
+  - PublicShell `serverMaintenance` ile başlangıç state'i alır — site içeriği bakım modunda hiç render edilmez
+  - `src/lib/maintenance.ts`: Server-side cache'li bakım kontrolü fonksiyonu
+  - `x-next-pathname` header middleware'dan server component'lere pathname iletir
+  - Tersine mühendislik ile bypass imkansız — HTML, JS, CSS hiçbir site dosyası gönderilmiyor
+
+### Dosya Yükleme
+- [x] **L2. Upload API + WebP dönüşümü + FeatureIcon desteği**
+  - `POST /api/admin/upload` — multipart form data ile dosya yükleme
+  - Raster görüntüler (PNG, JPEG, GIF) 128×128 WebP'ye dönüştürülür (`sharp` ile)
+  - SVG dosyaları olduğu gibi kaydedilir
+  - Dosyalar `public/uploads/icons/` dizinine `timestamp-hash` formatıyla kaydedilir
+  - Max 5MB dosya boyutu limiti, yalnızca izin verilen MIME türleri
+  - Auth guard: sadece admin kullanıcılar yükleyebilir
+  - `AdminIconPicker` gerçek upload API kullanacak şekilde güncellendi (data URL yerine)
+  - Upload sırasında loading spinner gösterimi
+  - `FeatureIcon` bileşeni `/uploads/` ve `/assets/` path'lerini `<img>` olarak render eder
+  - `CategoryIcon` aynı mantıkla güncellendi
+
+### Özellik Düzenleme UI
+- [x] **L3. 3 slider'ı Temel Bilgiler sağ üst köşeye taşı**
+  - Yeni Badge (sarı), Risksiz (mavi), Aktif (yeşil) sağdan sola sırayla
+  - Her slider'ın solunda metin etiketi, w-9 h-[20px] kompakt boyut
+  - Hem slug editor (`edit/[slug]/page.tsx`) hem inline editor (`features/page.tsx`) güncellendi
+  - Başlık satırı `flex justify-between` ile label + toggle'lar ayrıldı
+
+### Sürükle-Bırak Sıralama
+- [x] **L4. Features sayfasında drag-to-reorder + sıra numaraları**
+  - `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities` kuruldu
+  - `SortableFeatureRow` bileşeni: GripVertical handle, sıra numarası, isim, risk badge, toggle
+  - Her kategori için ayrı `DndContext` + `SortableContext` — kategori içi sıralama
+  - Optimistic update: sürükleme sonucu anında yansır, arka planda API'ye kaydedilir
+  - `/api/admin/reorder` POST endpoint'i ile `feature` tipi sıralama
+
+### Kategori Yönetimi
+- [x] **L5. Kategori sıralama modalı + kategori oluşturma**
+  - Features sayfasına "Kategorileri Sırala" ve "Yeni Kategori" butonları eklendi
+  - **Kategori Sıralama Modalı**: AnimatePresence backdrop, drag-to-reorder `SortableCategoryRow`
+    - Kaydet/İptal butonları, sürükleyerek sıra değiştirme
+    - API'ye `type: "category"` ile toplu sıralama kaydı
+  - **Yeni Kategori Modalı**: slug (auto-lowercase), EN isim, TR isim inputları
+    - Otomatik sıra ataması (listenin sonuna)
+    - Loading state, validation (slug + EN isim zorunlu)
+  - Ana liste: Özellikler kategorilere göre gruplandı, her kategori başlık + özellik sayısı gösteriyor
+  - Boş kategoriler de listede görünür ("Bu kategoride özellik yok")
+
+- [x] **L6. Yeni özellik eklerken kategori + sıra seçimi**
+  - Inline FeatureEditor'da zaten kategori seçici (`AdminSelect`) ve sıra input'u mevcut
+  - Kategori değişikliği slug editor'da da destekleniyor
+
+### Script Ayarları İyileştirmeleri
+- [x] **L7. Sıra değişikliğinde kaydet/iptal + tüm preview düzenlenebilir + ESC çıkış**
+  - `originalKeyOrder` state eklendi — sıra değişiklikleri de `hasChanges`'e dahil
+  - `hasChanges` artık hem labels hem keyOrder karşılaştırıyor
+  - Kaydet sonrası `originalKeyOrder` senkronize, İptal'de geri alınıyor
+  - Key input'ta ESC: orijinal değeri geri yükleyip blur (düzenlemeyi iptal)
+  - Value textarea'da ESC: blur ile düzenlemeden çıkış
+  - Preview'e eksik satırlar eklendi: `adminError`, `adminHint`, `restoreFail`
+  - Tüm LABEL_DESCRIPTIONS key'leri artık preview'de düzenlenebilir
+  - Liste ve preview arasında senkronizasyon: aynı key'i düzenlemek her iki tarafta da günceller
+
+---
+
 ## K. Animasyon Düzeltmeleri, UI İyileştirmeleri & Script Ayarları Geliştirmeleri
 
 ### Bakım Ekranı

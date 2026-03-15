@@ -208,19 +208,30 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
     const CurrentIconComp = currentIcon?.icon || Cog;
     const isCustom = value && !ICON_MAP[value] && (value.startsWith("/") || value.startsWith("data:"));
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [uploading, setUploading] = useState(false);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         const allowed = ["image/png", "image/webp", "image/svg+xml", "image/jpeg", "image/gif"];
         if (!allowed.includes(file.type)) return;
 
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const dataUrl = ev.target?.result as string;
-            onChange(dataUrl);
-            setIsOpen(false);
-        };
-        reader.readAsDataURL(file);
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+            const data = await res.json();
+            if (data.success && data.url) {
+                onChange(data.url);
+                setIsOpen(false);
+            }
+        } catch {
+            /* ignore */
+        } finally {
+            setUploading(false);
+            if (e.target) e.target.value = "";
+        }
     };
 
     return (
@@ -316,10 +327,14 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
                             <button
                                 type="button"
                                 onClick={() => fileRef.current?.click()}
-                                className="w-full flex items-center justify-center gap-1.5 h-7 rounded-lg text-[11px] font-medium text-white/30 hover:text-white/60 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] transition-all"
+                                disabled={uploading}
+                                className="w-full flex items-center justify-center gap-1.5 h-7 rounded-lg text-[11px] font-medium text-white/30 hover:text-white/60 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] transition-all disabled:opacity-50"
                             >
-                                <Upload size={12} />
-                                Dosyadan Yükle (PNG, WebP, SVG)
+                                {uploading ? (
+                                    <><span className="w-3 h-3 border-2 border-white/20 border-t-[#6b5be6] rounded-full animate-spin" /> Yükleniyor...</>
+                                ) : (
+                                    <><Upload size={12} /> Dosyadan Yükle (PNG, WebP, SVG)</>
+                                )}
                             </button>
                             <input
                                 ref={fileRef}

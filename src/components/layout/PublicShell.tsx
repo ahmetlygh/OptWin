@@ -250,13 +250,13 @@ function TransitionSpinner() {
 }
 
 /* ── Public Shell ─────────────────────────────────────────────── */
-export function PublicShell({ children }: { children: React.ReactNode }) {
+export function PublicShell({ children, serverMaintenance = false }: { children: React.ReactNode; serverMaintenance?: boolean }) {
     const pathname = usePathname();
     const isAdmin = pathname.startsWith("/admin");
-    const [maintenance, setMaintenance] = useState(false);
-    const [checked, setChecked] = useState(false);
+    const [maintenance, setMaintenance] = useState(serverMaintenance);
+    const [checked, setChecked] = useState(serverMaintenance || isAdmin);
     const [transitioning, setTransitioning] = useState(false);
-    const prevMaintenance = useRef<boolean | null>(null);
+    const prevMaintenance = useRef<boolean | null>(serverMaintenance ? true : null);
 
     // Poll maintenance status for public pages
     useEffect(() => {
@@ -283,10 +283,13 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
             setChecked(true);
         };
 
-        check();
+        // If server already told us maintenance is on, don't need initial fetch
+        if (!serverMaintenance) {
+            check();
+        }
         const poll = setInterval(check, 5000);
         return () => clearInterval(poll);
-    }, [isAdmin]);
+    }, [isAdmin, serverMaintenance]);
 
     if (isAdmin) {
         return <>{children}</>;

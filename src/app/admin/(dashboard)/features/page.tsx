@@ -15,12 +15,31 @@ import {
     AlertCircle,
     X,
     Trash2,
+    GripVertical,
+    FolderPlus,
+    ArrowUpDown,
+    ChevronRight,
 } from "lucide-react";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
 import { generateScriptMessage } from "@/lib/powershell-safe";
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    verticalListSortingStrategy,
+    useSortable,
+    arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Feature = {
     id: string;
@@ -40,6 +59,8 @@ type Feature = {
 type Category = {
     id: string;
     slug: string;
+    order: number;
+    enabled: boolean;
     translations: { lang: string; name: string }[];
 };
 
@@ -56,10 +77,65 @@ const LANG_NAMES: Record<string, string> = {
     hi: "हिन्दी", de: "Deutsch", fr: "Français",
 };
 
+// ─── Sortable Feature Row ────────────────────────────────────────────
+function SortableFeatureRow({ feature, onClick, onToggle }: {
+    feature: Feature;
+    onClick: () => void;
+    onToggle: (e: React.MouseEvent) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: feature.id });
+    const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.5 : 1 };
+    const titleEn = feature.translations.find(t => t.lang === "en")?.title || feature.slug;
+    const titleTr = feature.translations.find(t => t.lang === "tr")?.title;
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            onClick={onClick}
+            className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-pointer group"
+        >
+            <button {...attributes} {...listeners} className="shrink-0 p-1 text-white/10 hover:text-white/30 cursor-grab active:cursor-grabbing touch-none" onClick={e => e.stopPropagation()}>
+                <GripVertical size={14} />
+            </button>
+            <span className="w-7 text-center text-[10px] font-mono text-white/15 shrink-0">{feature.order}</span>
+            <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-white/80 group-hover:text-white transition-colors truncate">{titleEn}</p>
+                {titleTr && <p className="text-[11px] text-white/20 truncate">{titleTr}</p>}
+            </div>
+            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border shrink-0 ${RISK_COLORS[feature.risk] || ""}`}>
+                {RISK_LABELS[feature.risk] || feature.risk}
+            </span>
+            <button
+                onClick={onToggle}
+                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative shrink-0 ${feature.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
+            >
+                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${feature.enabled ? "left-[19px]" : "left-[3px]"}`} />
+            </button>
+        </div>
+    );
+}
+
+// ─── Sortable Category Row (for category ordering modal) ─────────────
+function SortableCategoryRow({ cat, getTrName }: { cat: Category & { _count?: { features: number } }; getTrName: (c: Category) => string }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+    const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.5 : 1 };
+    return (
+        <div ref={setNodeRef} style={style} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] bg-white/[0.01]">
+            <button {...attributes} {...listeners} className="shrink-0 p-1 text-white/15 hover:text-white/40 cursor-grab active:cursor-grabbing touch-none">
+                <GripVertical size={14} />
+            </button>
+            <span className="w-6 text-center text-[10px] font-mono text-white/20">{cat.order}</span>
+            <span className="flex-1 text-sm font-semibold text-white/70">{getTrName(cat)}</span>
+            <span className="text-[10px] text-white/20">{(cat as any)._count?.features || 0} özellik</span>
+        </div>
+    );
+}
+
 export default function AdminFeaturesPage() {
     const router = useRouter();
     const [features, setFeatures] = useState<Feature[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
+    const [categories, setCategories] = useState<(Category & { _count?: { features: number } })[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [filterCategory, setFilterCategory] = useState("");
@@ -67,6 +143,17 @@ export default function AdminFeaturesPage() {
     const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+    // Category management
+    const [showCategoryOrder, setShowCategoryOrder] = useState(false);
+    const [showNewCategory, setShowNewCategory] = useState(false);
+    const [newCatSlug, setNewCatSlug] = useState("");
+    const [newCatNameTr, setNewCatNameTr] = useState("");
+    const [newCatNameEn, setNewCatNameEn] = useState("");
+    const [savingCategory, setSavingCategory] = useState(false);
+    const [orderedCategories, setOrderedCategories] = useState<(Category & { _count?: { features: number } })[]>([]);
+
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
     const fetchFeatures = useCallback(async () => {
         const res = await fetch("/api/admin/features");
@@ -101,6 +188,84 @@ export default function AdminFeaturesPage() {
         fetchFeatures();
     };
 
+    // DnD: reorder features within a category
+    const handleFeatureDragEnd = async (event: DragEndEvent, catId: string) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const catFeatures = features.filter(f => f.categoryId === catId).sort((a, b) => a.order - b.order);
+        const oldIndex = catFeatures.findIndex(f => f.id === active.id);
+        const newIndex = catFeatures.findIndex(f => f.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        const reordered = arrayMove(catFeatures, oldIndex, newIndex);
+        const updates = reordered.map((f, i) => ({ id: f.id, order: i + 1 }));
+
+        // Optimistic update
+        setFeatures(prev => {
+            const others = prev.filter(f => f.categoryId !== catId);
+            return [...others, ...reordered.map((f, i) => ({ ...f, order: i + 1 }))];
+        });
+
+        await fetch("/api/admin/reorder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "feature", items: updates }),
+        });
+    };
+
+    // DnD: reorder categories
+    const handleCategoryDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+        const oldIndex = orderedCategories.findIndex(c => c.id === active.id);
+        const newIndex = orderedCategories.findIndex(c => c.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return;
+        setOrderedCategories(arrayMove(orderedCategories, oldIndex, newIndex));
+    };
+
+    const saveCategoryOrder = async () => {
+        const updates = orderedCategories.map((c, i) => ({ id: c.id, order: i + 1 }));
+        await fetch("/api/admin/reorder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "category", items: updates }),
+        });
+        setCategories(orderedCategories.map((c, i) => ({ ...c, order: i + 1 })));
+        setShowCategoryOrder(false);
+    };
+
+    const createCategory = async () => {
+        if (!newCatSlug || !newCatNameEn) return;
+        setSavingCategory(true);
+        try {
+            const maxOrder = categories.reduce((max, c) => Math.max(max, c.order), 0);
+            const res = await fetch("/api/admin/categories", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    slug: newCatSlug,
+                    order: maxOrder + 1,
+                    enabled: true,
+                    translations: [
+                        { lang: "en", name: newCatNameEn },
+                        ...(newCatNameTr ? [{ lang: "tr", name: newCatNameTr }] : []),
+                    ],
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCategories(prev => [...prev, data.category]);
+                setShowNewCategory(false);
+                setNewCatSlug("");
+                setNewCatNameEn("");
+                setNewCatNameTr("");
+            }
+        } finally {
+            setSavingCategory(false);
+        }
+    };
+
     const filtered = useMemo(() => {
         let result = features;
         if (filterCategory) result = result.filter(f => f.categoryId === filterCategory);
@@ -117,6 +282,18 @@ export default function AdminFeaturesPage() {
 
     const getCategoryName = (cat: Feature["category"]) =>
         cat?.translations?.find(t => t.lang === "en")?.name || cat?.slug || "—";
+
+    const getCatTrName = (cat: Category) =>
+        cat.translations.find(t => t.lang === "tr")?.name || cat.translations.find(t => t.lang === "en")?.name || cat.slug;
+
+    // Group features by category
+    const groupedFeatures = useMemo(() => {
+        const sorted = [...categories].sort((a, b) => a.order - b.order);
+        return sorted.map(cat => ({
+            category: cat,
+            features: filtered.filter(f => f.categoryId === cat.id).sort((a, b) => a.order - b.order),
+        })).filter(g => g.features.length > 0 || !search);
+    }, [categories, filtered, search]);
 
     if (loading) {
         return (
@@ -170,19 +347,37 @@ export default function AdminFeaturesPage() {
                     <div>
                         <h1 className="text-2xl font-black text-white tracking-tight">Özellikler</h1>
                         <p className="text-xs text-white/30 mt-0.5">
-                            {filtered.length} / {features.length} özellik
+                            {filtered.length} / {features.length} özellik · {categories.length} kategori
                         </p>
                     </div>
                 </div>
-                <motion.button
-                    whileHover={{ y: -1 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setIsCreating(true)}
-                    className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-sm rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
-                >
-                    <Plus size={15} />
-                    Yeni Özellik
-                </motion.button>
+                <div className="flex items-center gap-2">
+                    <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }}
+                        className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"
+                    >
+                        <ArrowUpDown size={14} />
+                        Kategorileri Sırala
+                    </motion.button>
+                    <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setShowNewCategory(true)}
+                        className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"
+                    >
+                        <FolderPlus size={14} />
+                        Yeni Kategori
+                    </motion.button>
+                    <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setIsCreating(true)}
+                        className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-sm rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
+                    >
+                        <Plus size={15} />
+                        Yeni Özellik
+                    </motion.button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -213,63 +408,40 @@ export default function AdminFeaturesPage() {
                 />
             </div>
 
-            {/* Features Table */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-white/[0.04]">
-                                <th className="text-left px-5 py-3 text-[10px] font-bold text-white/20 uppercase tracking-wider">Özellik</th>
-                                <th className="text-left px-5 py-3 text-[10px] font-bold text-white/20 uppercase tracking-wider hidden lg:table-cell">Kategori</th>
-                                <th className="text-left px-5 py-3 text-[10px] font-bold text-white/20 uppercase tracking-wider hidden md:table-cell">Risk</th>
-                                <th className="text-center px-5 py-3 text-[10px] font-bold text-white/20 uppercase tracking-wider">Durum</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((f, i) => {
-                                const titleEn = f.translations.find(t => t.lang === "en")?.title || f.slug;
-                                const titleTr = f.translations.find(t => t.lang === "tr")?.title;
-                                return (
-                                    <motion.tr
-                                        key={f.id}
-                                        initial={false}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.15 }}
-                                        onClick={() => router.push(`/admin/features/edit/${f.slug}`)}
-                                        className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-pointer group"
-                                    >
-                                        <td className="px-5 py-3">
-                                            <div>
-                                                <p className="font-semibold text-white/80 group-hover:text-white transition-colors">{titleEn}</p>
-                                                {titleTr && <p className="text-[11px] text-white/20 mt-0.5">{titleTr}</p>}
-                                                <p className="text-[10px] text-white/10 font-mono mt-0.5">{f.slug}</p>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3 hidden lg:table-cell">
-                                            <span className="text-[11px] bg-white/[0.03] border border-white/[0.04] px-2 py-1 rounded-lg text-white/30">
-                                                {getCategoryName(f.category)}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3 hidden md:table-cell">
-                                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-lg border ${RISK_COLORS[f.risk] || ""}`}>
-                                                {RISK_LABELS[f.risk] || f.risk}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3 text-center">
-                                            <button
-                                                onClick={(e) => toggleEnabled(e, f)}
-                                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${f.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
-                                            >
-                                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${f.enabled ? "left-[22px]" : "left-[3px]"}`} />
-                                            </button>
-                                        </td>
-                                    </motion.tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-                {filtered.length === 0 && (
+            {/* Features grouped by category */}
+            <div className="space-y-4">
+                {groupedFeatures.map(({ category: cat, features: catFeatures }) => (
+                    <div key={cat.id} className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
+                        {/* Category header */}
+                        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+                            <ChevronRight size={14} className="text-[#6b5be6]/60" />
+                            <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider flex-1">
+                                {getCatTrName(cat)}
+                            </span>
+                            <span className="text-[10px] text-white/20">{catFeatures.length} özellik</span>
+                        </div>
+
+                        {/* Sortable feature rows */}
+                        {catFeatures.length > 0 ? (
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleFeatureDragEnd(e, cat.id)}>
+                                <SortableContext items={catFeatures.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                                    {catFeatures.map(f => (
+                                        <SortableFeatureRow
+                                            key={f.id}
+                                            feature={f}
+                                            onClick={() => router.push(`/admin/features/edit/${f.slug}`)}
+                                            onToggle={(e) => toggleEnabled(e, f)}
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </DndContext>
+                        ) : (
+                            <div className="text-center py-6 text-white/15 text-xs">Bu kategoride özellik yok</div>
+                        )}
+                    </div>
+                ))}
+
+                {groupedFeatures.length === 0 && filtered.length === 0 && (
                     <div className="text-center py-12 text-white/20">Özellik bulunamadı</div>
                 )}
             </div>
@@ -285,6 +457,115 @@ export default function AdminFeaturesPage() {
                 cancelText="İptal"
                 variant="danger"
             />
+
+            {/* Category Ordering Modal */}
+            <AnimatePresence>
+                {showCategoryOrder && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setShowCategoryOrder(false)}>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+                            transition={{ duration: 0.25 }}
+                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-md w-full mx-4 shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-white">Kategorileri Sırala</h3>
+                                <button onClick={() => setShowCategoryOrder(false)} className="p-1 text-white/30 hover:text-white/60"><X size={16} /></button>
+                            </div>
+                            <p className="text-xs text-white/30 mb-4">Sürükleyerek kategorilerin sırasını değiştirin. Kaydet&apos;e basana kadar değişiklikler uygulanmaz.</p>
+
+                            <div className="rounded-xl border border-white/[0.04] overflow-hidden mb-4 max-h-[400px] overflow-y-auto admin-scrollbar">
+                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+                                    <SortableContext items={orderedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                                        {orderedCategories.map(cat => (
+                                            <SortableCategoryRow key={cat.id} cat={cat} getTrName={getCatTrName} />
+                                        ))}
+                                    </SortableContext>
+                                </DndContext>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-9 rounded-xl text-sm font-medium text-white/40 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all">
+                                    İptal
+                                </button>
+                                <button onClick={saveCategoryOrder} className="flex-1 h-9 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shadow-lg shadow-[#6b5be6]/20">
+                                    Kaydet
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* New Category Modal */}
+            <AnimatePresence>
+                {showNewCategory && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setShowNewCategory(false)}>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+                            transition={{ duration: 0.25 }}
+                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-md w-full mx-4 shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-white">Yeni Kategori</h3>
+                                <button onClick={() => setShowNewCategory(false)} className="p-1 text-white/30 hover:text-white/60"><X size={16} /></button>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">Slug (benzersiz ID)</label>
+                                    <input
+                                        value={newCatSlug}
+                                        onChange={e => setNewCatSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                                        placeholder="computer-optimization"
+                                        className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">İsim (EN)</label>
+                                    <input
+                                        value={newCatNameEn}
+                                        onChange={e => setNewCatNameEn(e.target.value)}
+                                        placeholder="Computer Optimization"
+                                        className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">İsim (TR)</label>
+                                    <input
+                                        value={newCatNameTr}
+                                        onChange={e => setNewCatNameTr(e.target.value)}
+                                        placeholder="Bilgisayar Optimizasyonu"
+                                        className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-white/20">Sıra: #{categories.length + 1} (listenin sonuna eklenir)</p>
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                                <button onClick={() => setShowNewCategory(false)} className="flex-1 h-9 rounded-xl text-sm font-medium text-white/40 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all">
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={createCategory}
+                                    disabled={!newCatSlug || !newCatNameEn || savingCategory}
+                                    className="flex-1 h-9 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all shadow-lg shadow-[#6b5be6]/20 flex items-center justify-center gap-2"
+                                >
+                                    {savingCategory ? <Loader2 size={14} className="animate-spin" /> : <FolderPlus size={14} />}
+                                    {savingCategory ? "Oluşturuluyor..." : "Oluştur"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
@@ -523,7 +804,41 @@ function FeatureEditor({
 
             {/* Basic Information */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Temel Bilgiler</h3>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Temel Bilgiler</h3>
+                    <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-[10px] text-white/30 font-medium">Yeni Badge</span>
+                            <button
+                                type="button"
+                                onClick={() => updateField("newBadge", !form.newBadge)}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[19px]" : "left-[3px]"}`} />
+                            </button>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-[10px] text-white/30 font-medium">Risksiz</span>
+                            <button
+                                type="button"
+                                onClick={() => updateField("noRisk", !form.noRisk)}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.noRisk ? "bg-blue-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.noRisk ? "left-[19px]" : "left-[3px]"}`} />
+                            </button>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-[10px] text-white/30 font-medium">Aktif</span>
+                            <button
+                                type="button"
+                                onClick={() => updateField("enabled", !form.enabled)}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.enabled ? "left-[19px]" : "left-[3px]"}`} />
+                            </button>
+                        </label>
+                    </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label className={labelCls}>Slug (benzersiz ID)</label>
@@ -563,38 +878,6 @@ function FeatureEditor({
                             onChange={e => updateField("order", parseInt(e.target.value) || 0)}
                             className={inputCls}
                         />
-                    </div>
-                    <div className="flex items-end gap-4 pb-1">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <button
-                                type="button"
-                                onClick={() => updateField("enabled", !form.enabled)}
-                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.enabled ? "left-[22px]" : "left-[3px]"}`} />
-                            </button>
-                            <span className="text-xs text-white/50">Aktif</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <button
-                                type="button"
-                                onClick={() => updateField("noRisk", !form.noRisk)}
-                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.noRisk ? "bg-blue-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.noRisk ? "left-[22px]" : "left-[3px]"}`} />
-                            </button>
-                            <span className="text-xs text-white/50">Risksiz</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <button
-                                type="button"
-                                onClick={() => updateField("newBadge", !form.newBadge)}
-                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[22px]" : "left-[3px]"}`} />
-                            </button>
-                            <span className="text-xs text-white/50">Yeni Badge</span>
-                        </label>
                     </div>
                     {/* K8: Badge alanı animasyonlu açılıp kapanır */}
                     <AnimatePresence initial={false}>

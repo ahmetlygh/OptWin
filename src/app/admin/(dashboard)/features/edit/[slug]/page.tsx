@@ -447,7 +447,41 @@ function SlugFeatureEditor({
 
             {/* Basic Information */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Temel Bilgiler</h3>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Temel Bilgiler</h3>
+                    <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-[10px] text-white/30 font-medium">Yeni Badge</span>
+                            <button
+                                type="button"
+                                onClick={() => updateField("newBadge", !form.newBadge)}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[19px]" : "left-[3px]"}`} />
+                            </button>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-[10px] text-white/30 font-medium">Risksiz</span>
+                            <button
+                                type="button"
+                                onClick={() => updateField("noRisk", !form.noRisk)}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.noRisk ? "bg-blue-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.noRisk ? "left-[19px]" : "left-[3px]"}`} />
+                            </button>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-[10px] text-white/30 font-medium">Aktif</span>
+                            <button
+                                type="button"
+                                onClick={() => updateField("enabled", !form.enabled)}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.enabled ? "left-[19px]" : "left-[3px]"}`} />
+                            </button>
+                        </label>
+                    </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label className={labelCls}>Slug (benzersiz ID)</label>
@@ -487,38 +521,6 @@ function SlugFeatureEditor({
                             onChange={e => updateField("order", parseInt(e.target.value) || 0)}
                             className={inputCls}
                         />
-                    </div>
-                    <div className="flex items-end gap-4 pb-1">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <button
-                                type="button"
-                                onClick={() => updateField("enabled", !form.enabled)}
-                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.enabled ? "left-[22px]" : "left-[3px]"}`} />
-                            </button>
-                            <span className="text-xs text-white/50">Aktif</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <button
-                                type="button"
-                                onClick={() => updateField("noRisk", !form.noRisk)}
-                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.noRisk ? "bg-blue-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.noRisk ? "left-[22px]" : "left-[3px]"}`} />
-                            </button>
-                            <span className="text-xs text-white/50">Risksiz</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <button
-                                type="button"
-                                onClick={() => updateField("newBadge", !form.newBadge)}
-                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[22px]" : "left-[3px]"}`} />
-                            </button>
-                            <span className="text-xs text-white/50">Yeni Badge</span>
-                        </label>
                     </div>
                     {/* K8: Badge alanı animasyonlu açılıp kapanır */}
                     <AnimatePresence initial={false}>
