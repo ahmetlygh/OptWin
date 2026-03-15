@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     FileCode2,
     Save,
@@ -14,10 +14,13 @@ import {
     Download,
     MonitorPlay,
     Pencil,
+    Code2,
+    List,
 } from "lucide-react";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 
 type LabelsMap = Record<string, Record<string, string>>;
+type PreviewLine = { text: string; key: string | null };
 
 const LABEL_DESCRIPTIONS: Record<string, string> = {
     scriptTitle: "Script başlığı (header yorumunda görünür)",
@@ -46,6 +49,14 @@ const LABEL_DESCRIPTIONS: Record<string, string> = {
     githubUrl: "Script başlığında kullanılan GitHub URL'i",
 };
 
+const getLineClass = (text: string) => {
+    if (!text) return "text-white/20";
+    if (text.startsWith("#")) return "text-emerald-400/60";
+    if (text.includes("Write-Host")) return "text-purple-300";
+    if (text.startsWith("$")) return "text-cyan-300/70";
+    return "text-white/40";
+};
+
 export default function ScriptDefaultsPage() {
     const [labels, setLabels] = useState<LabelsMap>({});
     const [originalLabels, setOriginalLabels] = useState<LabelsMap>({});
@@ -58,8 +69,8 @@ export default function ScriptDefaultsPage() {
     const [newKey, setNewKey] = useState("");
     const [newValue, setNewValue] = useState("");
     const [showNewRow, setShowNewRow] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
-    const [editingPreviewKey, setEditingPreviewKey] = useState<string | null>(null);
+    const [editMode, setEditMode] = useState<"off" | "line" | "full">("off");
+    const [editingLineKey, setEditingLineKey] = useState<string | null>(null);
     const newKeyRef = useRef<HTMLInputElement>(null);
 
     const fetchLabels = useCallback(async () => {
@@ -80,6 +91,19 @@ export default function ScriptDefaultsPage() {
 
     useEffect(() => { fetchLabels(); }, [fetchLabels]);
 
+    // ESC to exit edit mode (preserve changes)
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                if (editingLineKey) { setEditingLineKey(null); return; }
+                if (editMode !== "off") { setEditMode("off"); }
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [editMode, editingLineKey]);
+
+    const currentLabels = labels[activeLang] || {};
     const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels);
 
     const handleValueChange = (key: string, value: string) => {
@@ -127,6 +151,8 @@ export default function ScriptDefaultsPage() {
 
     const handleCancel = () => {
         setLabels(JSON.parse(JSON.stringify(originalLabels)));
+        setEditMode("off");
+        setEditingLineKey(null);
     };
 
     const handleAddRow = () => {
@@ -168,7 +194,6 @@ export default function ScriptDefaultsPage() {
         });
     };
 
-    const currentLabels = labels[activeLang] || {};
     const keys = Object.keys(currentLabels).sort((a, b) => {
         const aIdx = Object.keys(LABEL_DESCRIPTIONS).indexOf(a);
         const bIdx = Object.keys(LABEL_DESCRIPTIONS).indexOf(b);
@@ -178,54 +203,56 @@ export default function ScriptDefaultsPage() {
         return aIdx - bIdx;
     });
 
-    // Generate terminal preview script
-    const previewScript = useMemo(() => {
+    // Structured preview lines with key mappings
+    const previewLines = useMemo<PreviewLine[]>(() => {
         const L = currentLabels;
         const today = new Date().toISOString().split("T")[0];
-        const lines: string[] = [
-            `# ============================================`,
-            `# ${L.scriptTitle || "OptWin - Windows System Optimizer"}`,
-            `# ${L.version || "Version"}: 1.3`,
-            `# ${L.date || "Date"}: ${today}`,
-            `# ${L.developer || "Developer"}: ${L.developerName || "OptWin"}`,
-            `# ${L.website || "Website"}: ${L.websiteUrl || "https://optwin.tech"}`,
-            `# ${L.openSource || "Open Source"}`,
-            `# ============================================`,
-            ``,
-            `Write-Host ""`,
-            `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Cyan`,
-            `Write-Host "  ║  ${(L.bannerTitle || "OPTWIN").padEnd(36)}║" -ForegroundColor Cyan`,
-            `Write-Host "  ║  ${(L.openSourceShort || "Open Source Optimizer").padEnd(36)}║" -ForegroundColor DarkCyan`,
-            `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Cyan`,
-            `Write-Host ""`,
-            ``,
-            `# ${L.adminRequest || "Requesting admin privileges..."}`,
-            `# ${L.adminPrompt || "Please click Yes on the UAC prompt"}`,
-            ``,
-            `Write-Host "[*] ${L.restorePoint || "Creating restore point..."}" -ForegroundColor Yellow`,
-            `Write-Host "[+] ${L.restoreSuccess || "Restore point created"}" -ForegroundColor Green`,
-            ``,
-            `# --- Optimizations ---`,
-            `Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White`,
-            `Write-Host "  [${L.done || "DONE"}]" -ForegroundColor Green`,
-            ``,
-            `Write-Host ""`,
-            `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Green`,
-            `Write-Host "  ║  ${(L.complete || "Optimization Complete!").padEnd(36)}║" -ForegroundColor Green`,
-            `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Green`,
-            `Write-Host ""`,
-            `Write-Host "${L.success || "Please restart your computer."}" -ForegroundColor Yellow`,
-            `Write-Host "${L.thankYou || "Thank you for using OptWin!"}" -ForegroundColor Cyan`,
-            `Write-Host "${L.author || "by OptWin Team"}" -ForegroundColor DarkGray`,
-            `Write-Host ""`,
-            `Write-Host "${L.pressAnyKey || "Press any key to exit..."}" -ForegroundColor Gray`,
-            `$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`,
+        return [
+            { text: `# ============================================`, key: null },
+            { text: `# ${L.scriptTitle || "OptWin - Windows System Optimizer"}`, key: "scriptTitle" },
+            { text: `# ${L.version || "Version"}: 1.3`, key: "version" },
+            { text: `# ${L.date || "Date"}: ${today}`, key: "date" },
+            { text: `# ${L.developer || "Developer"}: ${L.developerName || "OptWin"}`, key: "developer" },
+            { text: `# ${L.website || "Website"}: ${L.websiteUrl || "https://optwin.tech"}`, key: "website" },
+            { text: `# ${L.openSource || "Open Source"}`, key: "openSource" },
+            { text: `# ============================================`, key: null },
+            { text: ``, key: null },
+            { text: `Write-Host ""`, key: null },
+            { text: `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Cyan`, key: null },
+            { text: `Write-Host "  ║  ${(L.bannerTitle || "OPTWIN").padEnd(36)}║" -ForegroundColor Cyan`, key: "bannerTitle" },
+            { text: `Write-Host "  ║  ${(L.openSourceShort || "Open Source Optimizer").padEnd(36)}║" -ForegroundColor DarkCyan`, key: "openSourceShort" },
+            { text: `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Cyan`, key: null },
+            { text: `Write-Host ""`, key: null },
+            { text: ``, key: null },
+            { text: `# ${L.adminRequest || "Requesting admin privileges..."}`, key: "adminRequest" },
+            { text: `# ${L.adminPrompt || "Please click Yes on the UAC prompt"}`, key: "adminPrompt" },
+            { text: ``, key: null },
+            { text: `Write-Host "[*] ${L.restorePoint || "Creating restore point..."}" -ForegroundColor Yellow`, key: "restorePoint" },
+            { text: `Write-Host "[+] ${L.restoreSuccess || "Restore point created"}" -ForegroundColor Green`, key: "restoreSuccess" },
+            { text: ``, key: null },
+            { text: `# --- Optimizations ---`, key: null },
+            { text: `Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White`, key: null },
+            { text: `Write-Host "  [${L.done || "DONE"}]" -ForegroundColor Green`, key: "done" },
+            { text: ``, key: null },
+            { text: `Write-Host ""`, key: null },
+            { text: `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Green`, key: null },
+            { text: `Write-Host "  ║  ${(L.complete || "Optimization Complete!").padEnd(36)}║" -ForegroundColor Green`, key: "complete" },
+            { text: `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Green`, key: null },
+            { text: `Write-Host ""`, key: null },
+            { text: `Write-Host "${L.success || "Please restart your computer."}" -ForegroundColor Yellow`, key: "success" },
+            { text: `Write-Host "${L.thankYou || "Thank you for using OptWin!"}" -ForegroundColor Cyan`, key: "thankYou" },
+            { text: `Write-Host "${L.author || "by OptWin Team"}" -ForegroundColor DarkGray`, key: "author" },
+            { text: `Write-Host ""`, key: null },
+            { text: `Write-Host "${L.pressAnyKey || "Press any key to exit..."}" -ForegroundColor Gray`, key: "pressAnyKey" },
+            { text: `$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`, key: null },
         ];
-        return lines.join("\n");
     }, [currentLabels]);
 
+    const previewText = previewLines.map(l => l.text).join("\n");
+
     const handleDownloadPreview = () => {
-        const blob = new Blob([previewScript], { type: "text/plain;charset=utf-8" });
+        const bom = "\uFEFF";
+        const blob = new Blob([bom + previewText], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -266,30 +293,34 @@ export default function ScriptDefaultsPage() {
                 <div className="flex items-center gap-2">
                     <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages} />
 
-                    {hasChanges && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex items-center gap-2"
-                        >
-                            <button
-                                onClick={handleCancel}
-                                className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
+                    <AnimatePresence>
+                        {hasChanges && (
+                            <motion.div
+                                key="save-cancel"
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center gap-2"
                             >
-                                <RotateCcw size={14} />
-                                İptal
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
-                            >
-                                {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                                {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Kaydet"}
-                            </button>
-                        </motion.div>
-                    )}
+                                <button
+                                    onClick={handleCancel}
+                                    className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
+                                >
+                                    <RotateCcw size={14} />
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
+                                >
+                                    {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
+                                    {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Kaydet"}
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
@@ -300,14 +331,14 @@ export default function ScriptDefaultsPage() {
                 </div>
             )}
 
-            {/* Two-column layout: Table + Preview */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            {/* Two-column layout — fills available space */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5" style={{ minHeight: "calc(100vh - 220px)" }}>
                 {/* Labels Table */}
-                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
-                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
+                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden flex flex-col">
+                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between shrink-0">
                         <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Anahtar — Değer</h3>
                     </div>
-                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
+                    <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
                         <table className="w-full text-sm">
                             <tbody>
                                 {keys.map((key, i) => {
@@ -392,7 +423,7 @@ export default function ScriptDefaultsPage() {
                         </table>
                     </div>
 
-                    <div className="px-4 py-2.5 border-t border-white/[0.03]">
+                    <div className="px-4 py-2.5 border-t border-white/[0.03] shrink-0">
                         <button
                             onClick={() => {
                                 setShowNewRow(true);
@@ -408,26 +439,43 @@ export default function ScriptDefaultsPage() {
 
                 {/* Terminal Preview */}
                 <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden flex flex-col">
-                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
+                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2">
                             <MonitorPlay size={13} className="text-emerald-400" />
                             <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Terminal Önizleme</h3>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                             <button
-                                onClick={() => setShowPreview(!showPreview)}
-                                className={`h-7 px-3 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1.5 ${
-                                    showPreview
+                                onClick={() => {
+                                    if (editMode === "line") { setEditMode("off"); setEditingLineKey(null); }
+                                    else { setEditMode("line"); setEditingLineKey(null); }
+                                }}
+                                className={`h-7 px-2.5 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1.5 ${
+                                    editMode === "line"
                                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15"
                                         : "bg-white/[0.03] text-white/30 border-white/[0.04] hover:text-white/50"
                                 }`}
                             >
-                                <Pencil size={10} />
-                                {showPreview ? "Düzenleniyor" : "Düzenle"}
+                                <List size={10} />
+                                Satır
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (editMode === "full") { setEditMode("off"); setEditingLineKey(null); }
+                                    else { setEditMode("full"); setEditingLineKey(null); }
+                                }}
+                                className={`h-7 px-2.5 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1.5 ${
+                                    editMode === "full"
+                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/15"
+                                        : "bg-white/[0.03] text-white/30 border-white/[0.04] hover:text-white/50"
+                                }`}
+                            >
+                                <Code2 size={10} />
+                                Komple
                             </button>
                             <button
                                 onClick={handleDownloadPreview}
-                                className="h-7 px-3 rounded-lg text-[10px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all flex items-center gap-1.5"
+                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all flex items-center gap-1.5"
                             >
                                 <Download size={10} />
                                 İndir
@@ -435,26 +483,51 @@ export default function ScriptDefaultsPage() {
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-[#0a0a0f] overflow-auto max-h-[600px] custom-scrollbar">
-                        {showPreview ? (
+                    <div className="flex-1 bg-[#0a0a0f] overflow-auto custom-scrollbar">
+                        {editMode === "full" ? (
+                            /* Full edit: all editable lines become inputs at once */
                             <div className="p-4 space-y-0.5">
-                                {previewScript.split("\n").map((line, idx) => {
-                                    // Find which label key this line corresponds to
-                                    const matchedKey = Object.entries(currentLabels).find(([, val]) =>
-                                        val && line.includes(val) && val.length > 3
-                                    );
-                                    const labelKey = matchedKey?.[0] || null;
-
-                                    if (editingPreviewKey === labelKey && labelKey) {
+                                {previewLines.map((line, idx) => {
+                                    if (line.key) {
                                         return (
                                             <div key={idx} className="flex items-center gap-1">
+                                                <span className="text-[9px] font-mono text-amber-400/30 w-28 text-right shrink-0 pr-2 truncate" title={line.key}>{line.key}</span>
+                                                <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0">{idx + 1}</span>
+                                                <input
+                                                    value={currentLabels[line.key] || ""}
+                                                    onChange={e => handleValueChange(line.key!, e.target.value)}
+                                                    className="flex-1 bg-amber-500/[0.05] border border-amber-500/15 hover:border-amber-500/30 focus:border-amber-500/40 rounded px-2 py-0.5 text-[12px] font-mono text-amber-200/80 focus:outline-none transition-all"
+                                                />
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div key={idx} className="flex items-start gap-1">
+                                            <span className="text-transparent text-[9px] font-mono w-28 shrink-0 pr-2">&nbsp;</span>
+                                            <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0 pt-px">{idx + 1}</span>
+                                            <code className={`text-[12px] font-mono whitespace-pre ${getLineClass(line.text)}`}>{line.text || " "}</code>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : editMode === "line" ? (
+                            /* Line edit: click individual lines to edit */
+                            <div className="p-4 space-y-0.5">
+                                {previewLines.map((line, idx) => {
+                                    const isEditing = editingLineKey === line.key && line.key;
+
+                                    if (isEditing && line.key) {
+                                        return (
+                                            <div key={idx} className="flex items-center gap-1">
+                                                <span className="text-[9px] font-mono text-[#6b5be6]/40 w-28 text-right shrink-0 pr-2 truncate" title={line.key}>{line.key}</span>
                                                 <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0">{idx + 1}</span>
                                                 <input
                                                     autoFocus
-                                                    value={currentLabels[labelKey] || ""}
-                                                    onChange={e => handleValueChange(labelKey, e.target.value)}
-                                                    onBlur={() => setEditingPreviewKey(null)}
-                                                    onKeyDown={e => e.key === "Enter" && setEditingPreviewKey(null)}
+                                                    value={currentLabels[line.key] || ""}
+                                                    onChange={e => handleValueChange(line.key!, e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === "Enter" || e.key === "Escape") setEditingLineKey(null);
+                                                    }}
                                                     className="flex-1 bg-[#6b5be6]/10 border border-[#6b5be6]/30 rounded px-2 py-0.5 text-[12px] font-mono text-purple-300 focus:outline-none"
                                                 />
                                             </div>
@@ -464,19 +537,19 @@ export default function ScriptDefaultsPage() {
                                     return (
                                         <div
                                             key={idx}
-                                            className={`flex items-start gap-1 group ${labelKey ? "cursor-pointer hover:bg-white/[0.03] rounded" : ""}`}
-                                            onClick={() => labelKey && setEditingPreviewKey(labelKey)}
+                                            className={`flex items-start gap-1 group ${line.key ? "cursor-pointer hover:bg-white/[0.03] rounded" : ""}`}
+                                            onClick={() => line.key && setEditingLineKey(line.key)}
                                         >
+                                            <span className={`text-[9px] font-mono w-28 text-right shrink-0 pr-2 pt-px truncate ${
+                                                line.key ? "text-[#6b5be6]/25" : "text-transparent"
+                                            }`} title={line.key || ""}>
+                                                {line.key || ""}
+                                            </span>
                                             <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0 pt-px">{idx + 1}</span>
-                                            <code className={`text-[12px] font-mono whitespace-pre ${
-                                                line.startsWith("#") ? "text-emerald-400/60" :
-                                                line.includes("Write-Host") ? "text-purple-300" :
-                                                line.includes("-ForegroundColor") ? "text-cyan-300/70" :
-                                                "text-white/40"
-                                            }`}>
-                                                {line}
+                                            <code className={`text-[12px] font-mono whitespace-pre ${getLineClass(line.text)}`}>
+                                                {line.text || " "}
                                             </code>
-                                            {labelKey && (
+                                            {line.key && (
                                                 <Pencil size={9} className="text-white/0 group-hover:text-white/30 transition-colors mt-1 shrink-0" />
                                             )}
                                         </div>
@@ -484,8 +557,9 @@ export default function ScriptDefaultsPage() {
                                 })}
                             </div>
                         ) : (
+                            /* View mode: plain preview */
                             <pre className="p-4 m-0">
-                                <code className="text-purple-300 font-mono text-[12px] whitespace-pre leading-relaxed">{previewScript}</code>
+                                <code className="text-purple-300 font-mono text-[12px] whitespace-pre leading-relaxed">{previewText}</code>
                             </pre>
                         )}
                     </div>

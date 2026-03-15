@@ -279,7 +279,7 @@ function SlugFeatureEditor({
     }), [feature, categories, availableLangs]);
 
     const [form, setForm] = useState(buildInitialState);
-    const [original] = useState(buildInitialState);
+    const [original, setOriginal] = useState(buildInitialState);
     const hasChanges = JSON.stringify(form) !== JSON.stringify(original);
 
     const tryNavigate = (navFn: () => void) => {
@@ -303,10 +303,18 @@ function SlugFeatureEditor({
     };
 
     const updateCommand = (lang: string, field: "command" | "scriptMessage", value: string) => {
-        setForm(prev => ({
-            ...prev,
-            commands: { ...prev.commands, [lang]: { ...prev.commands[lang], [field]: value } },
-        }));
+        setForm(prev => {
+            const updated = { ...prev.commands };
+            if (field === "command") {
+                // Command is language-independent — sync to all languages
+                for (const l of availableLangs) {
+                    updated[l] = { ...updated[l], command: value };
+                }
+            } else {
+                updated[lang] = { ...updated[lang], [field]: value };
+            }
+            return { ...prev, commands: updated };
+        });
     };
 
     const handleSubmit = async () => {
@@ -329,8 +337,8 @@ function SlugFeatureEditor({
             const result = await res.json();
             if (result.success) {
                 setSaved(true);
-                onSave();
-                setTimeout(() => setSaved(false), 2000);
+                setOriginal(JSON.parse(JSON.stringify(form)));
+                setTimeout(() => { setSaved(false); onSave(); }, 1200);
             } else {
                 setError(result.error || "Kaydetme başarısız");
             }
@@ -622,12 +630,26 @@ function SlugFeatureEditor({
 
             {/* Commands */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
-                    <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
-                </div>
+                <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
+
+                {/* Command — language-independent (same for all languages) */}
                 <div>
-                    <label className={labelCls}>Script Mesajı</label>
+                    <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
+                    <textarea
+                        value={form.commands[activeLang]?.command || ""}
+                        onChange={e => updateCommand(activeLang, "command", e.target.value)}
+                        rows={6}
+                        placeholder="PowerShell komutu..."
+                        className={`${textareaCls} font-mono text-xs`}
+                    />
+                </div>
+
+                {/* Script Message — per-language */}
+                <div className="border-t border-white/[0.04] pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className={labelCls}>Script Mesajı <span className="text-white/15 font-normal">(dile göre değişir)</span></label>
+                        <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
+                    </div>
                     <div className="flex gap-2">
                         <input
                             value={form.commands[activeLang]?.scriptMessage || ""}
@@ -659,16 +681,6 @@ function SlugFeatureEditor({
                             Otomatik
                         </button>
                     </div>
-                </div>
-                <div>
-                    <label className={labelCls}>Komut</label>
-                    <textarea
-                        value={form.commands[activeLang]?.command || ""}
-                        onChange={e => updateCommand(activeLang, "command", e.target.value)}
-                        rows={6}
-                        placeholder="PowerShell komutu..."
-                        className={`${textareaCls} font-mono text-xs`}
-                    />
                 </div>
             </div>
 

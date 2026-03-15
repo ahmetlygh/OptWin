@@ -110,7 +110,7 @@ export function Header() {
                         </Link>
                         <button
                             onClick={() => setSupportModalOpen(true)}
-                            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200 flex items-center gap-1.5"
+                            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200 flex items-center gap-1.5 cursor-pointer hover:underline underline-offset-2"
                         >
                             <HeartIcon size={14} className="text-pink-500" style={{ position: 'relative', top: '0.5px' }} />
                             {mounted ? t["nav.support"] : "Support"}

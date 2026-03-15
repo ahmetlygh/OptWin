@@ -118,18 +118,20 @@ export function AdminHeader({ user }: AdminHeaderProps) {
 
                 {/* Right: Actions + User */}
                 <div className="flex items-center gap-3">
-                    {/* Maintenance Toggle */}
+                    {/* Site Active Toggle — ON = site open, OFF = maintenance */}
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-medium text-white/25 hidden sm:inline">Bakım</span>
+                        <span className={`text-[10px] font-medium hidden sm:inline transition-colors duration-300 ${maintenance ? "text-amber-400/50" : "text-emerald-400/50"}`}>
+                            {maintenance ? "Bakımda" : "Aktif"}
+                        </span>
                         <button
                             onClick={() => maintenance ? setShowMaintenanceOff(true) : setShowMaintenanceOn(true)}
                             disabled={maintenanceLoading}
-                            className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${maintenance ? "bg-amber-500/80" : "bg-white/[0.06]"} ${maintenanceLoading ? "opacity-50" : ""}`}
+                            className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${!maintenance ? "bg-emerald-500/80" : "bg-white/[0.06]"} ${maintenanceLoading ? "opacity-50" : ""}`}
                         >
                             {maintenanceLoading ? (
                                 <Loader2 size={10} className="absolute top-[5px] left-1/2 -translate-x-1/2 text-white/50 animate-spin" />
                             ) : (
-                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${maintenance ? "left-[19px]" : "left-[3px]"}`} />
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${!maintenance ? "left-[19px]" : "left-[3px]"}`} />
                             )}
                         </button>
                     </div>

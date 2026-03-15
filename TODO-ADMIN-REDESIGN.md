@@ -2,6 +2,53 @@
 
 > Aşağıdaki maddeler öncelik sırasına göre düzenlenmiştir.
 
+## I. Bakım Ekranı, İkon Düzeltmeleri ve Kaydetme Mantığı
+
+- [x] **I1. Bakım yazısı paragraflaması düzelt**
+  - Uzun tek paragraf yerine 3 kısa paragraf (desc1, desc2, desc3)
+  - line-height 1.7, max-w-sm, azalan opaklık ile nefes alan format
+
+- [x] **I2. Dil seçici: bayraklar + Globe ikonu**
+  - Her dilin yanına ülke bayrağı emoji (🇹🇷 🇬🇧 🇩🇪 🇫🇷 🇪🇸)
+  - Dropdown butonunda Globe ikonu + bayrak + label
+  - Dropdown listesinde bayrak + label her satırda
+
+- [x] **I3. Dile göre saat dilimi gösterimi**
+  - TR=UTC+3, EN=UTC±0, DE=UTC+1, FR=UTC+1, ES=UTC+1
+  - `getDateTimeForOffset()` ile her dilin kendi offset'i hesaplanıyor
+  - UTC label dinamik: `formatUtcLabel(offset)`
+
+- [x] **I4. Bakım geçiş animasyonu: dönen çark + fade**
+  - `TransitionSpinner` bileşeni: dönen Settings ikonu + karanlık arka plan
+  - Durum değişikliğinde: fade-out → spinner 600ms → yeni durum fade-in
+  - İlk yüklemede spinner gösterilmiyor (sadece geçişlerde)
+
+- [x] **I5. "Destekle" linki pointer cursor**
+  - `cursor-pointer` + `hover:underline underline-offset-2` eklendi
+  - Tıklanabilir olduğu hem cursor hem underline ile anlaşılıyor
+
+- [x] **I6. Kaydet sonrası butonlar animasyonla kaybolsun**
+  - Kaydetme sonrası `setOriginal(form)` → hasChanges=false → AnimatePresence exit
+  - Slug editor + inline editor her ikisinde de düzeltildi
+  - 1.2s sonra "Kaydedildi!" gösterimi + onSave callback
+
+- [x] **I7. İkon picker: seçilen ikon sitede doğru görünsün**
+  - `Icons.tsx`'e 90+ eksik Lucide ikon import + FA_ICON_MAP entry eklendi
+  - Admin ICON_MAP ile public FA_ICON_MAP tamamen senkronize
+  - Yeni ikonlar: shield, settings, monitor, hard-drive, battery, camera, vb.
+
+- [x] **I8. Kaydetme/İptal mantığını gözden geçir**
+  - `[original, setOriginal]` → güncellenebilir state (önceden readonly idi)
+  - İptal → `setForm(buildInitialState())` + `setOriginal(buildInitialState())`
+  - Kaydet → API → `setOriginal(form)` → butonlar kaybolur
+
+- [x] **I9. Bakım slider'ı ters çevir**
+  - ON (yeşil) = Site Aktif, normal çalışıyor
+  - OFF (gri) = Site Bakımda
+  - Label dinamik: "Aktif" / "Bakımda" + renk geçişi
+
+---
+
 ## F. UI/UX İyileştirmeleri ve Genişlik Düzenlemeleri
 
 - [x] **F1. Badge bitiş zamanı UI yeniden tasarla**

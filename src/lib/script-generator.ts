@@ -37,7 +37,8 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const settings = settingsArr.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {} as Record<string, string>);
     const version = settings.site_version || "1.3.0";
 
-    let script = '<#\n';
+    // UTF-8 BOM for PowerShell compatibility
+    let script = '\uFEFF<#\n';
     script += '    ' + labels.scriptTitle + '\n';
     script += '    ' + labels.version + '   : ' + version + '\n';
     script += '    ' + labels.date + '      : ' + dateStr + '\n';

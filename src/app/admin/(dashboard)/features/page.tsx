@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     Puzzle,
     Search,
@@ -347,7 +347,7 @@ function FeatureEditor({
     }), [feature, categories, availableLangs]);
 
     const [form, setForm] = useState(buildInitialState);
-    const [original] = useState(buildInitialState);
+    const [original, setOriginal] = useState(buildInitialState);
 
     const hasChanges = JSON.stringify(form) !== JSON.stringify(original);
 
@@ -363,10 +363,18 @@ function FeatureEditor({
     };
 
     const updateCommand = (lang: string, field: "command" | "scriptMessage", value: string) => {
-        setForm(prev => ({
-            ...prev,
-            commands: { ...prev.commands, [lang]: { ...prev.commands[lang], [field]: value } },
-        }));
+        setForm(prev => {
+            const updated = { ...prev.commands };
+            if (field === "command") {
+                // Command is language-independent — sync to all languages
+                for (const l of availableLangs) {
+                    updated[l] = { ...updated[l], command: value };
+                }
+            } else {
+                updated[lang] = { ...updated[lang], [field]: value };
+            }
+            return { ...prev, commands: updated };
+        });
     };
 
     const handleSubmit = async () => {
@@ -391,7 +399,8 @@ function FeatureEditor({
             const result = await res.json();
             if (result.success) {
                 setSaved(true);
-                setTimeout(() => onSave(), 400);
+                setOriginal(JSON.parse(JSON.stringify(form)));
+                setTimeout(() => onSave(), 1200);
             } else {
                 setError(result.error || "Kaydetme başarısız");
             }
@@ -461,37 +470,45 @@ function FeatureEditor({
                         </motion.button>
                     )}
 
-                    {hasChanges && !isCreating && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <button
-                                onClick={() => setForm(buildInitialState())}
-                                className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
+                    <AnimatePresence>
+                        {hasChanges && !isCreating && (
+                            <motion.div
+                                key="cancel-btn"
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
                             >
-                                <RotateCcw size={13} />
-                                İptal
-                            </button>
-                        </motion.div>
-                    )}
-                    {(hasChanges || isCreating) && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <button
-                                onClick={handleSubmit}
-                                disabled={saving || !form.slug || !form.translations.en?.title}
-                                className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
+                                <button
+                                    onClick={() => { setForm(buildInitialState()); setOriginal(buildInitialState()); }}
+                                    className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
+                                >
+                                    <RotateCcw size={13} />
+                                    İptal
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    <AnimatePresence>
+                        {(hasChanges || isCreating) && (
+                            <motion.div
+                                key="save-btn"
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
                             >
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={saving || !form.slug || !form.translations.en?.title}
+                                    className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
+                                >
                                 {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
                                 {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : isCreating ? "Oluştur" : "Kaydet"}
                             </button>
                         </motion.div>
                     )}
+                    </AnimatePresence>
                 </div>
             </div>
 
@@ -665,14 +682,26 @@ function FeatureEditor({
 
             {/* Commands */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">
-                        PowerShell Komut
-                    </h3>
-                    <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
-                </div>
+                <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
+
+                {/* Command — language-independent */}
                 <div>
-                    <label className={labelCls}>Script Mesajı</label>
+                    <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
+                    <textarea
+                        value={form.commands[activeLang]?.command || ""}
+                        onChange={e => updateCommand(activeLang, "command", e.target.value)}
+                        rows={6}
+                        placeholder="PowerShell komutu..."
+                        className={`${textareaCls} font-mono text-xs`}
+                    />
+                </div>
+
+                {/* Script Message — per-language */}
+                <div className="border-t border-white/[0.04] pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className={labelCls}>Script Mesajı <span className="text-white/15 font-normal">(dile göre değişir)</span></label>
+                        <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
+                    </div>
                     <div className="flex gap-2">
                         <input
                             value={form.commands[activeLang]?.scriptMessage || ""}
@@ -694,16 +723,6 @@ function FeatureEditor({
                             Otomatik
                         </button>
                     </div>
-                </div>
-                <div>
-                    <label className={labelCls}>Komut</label>
-                    <textarea
-                        value={form.commands[activeLang]?.command || ""}
-                        onChange={e => updateCommand(activeLang, "command", e.target.value)}
-                        rows={6}
-                        placeholder="PowerShell komutu..."
-                        className={`${textareaCls} font-mono text-xs`}
-                    />
                 </div>
             </div>
 
