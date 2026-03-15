@@ -53,6 +53,7 @@ model Feature {
   noRisk       Boolean              @default(false)
   order        Int                  @default(0)
   enabled      Boolean              @default(true)
+  selectCount  Int                  @default(0)
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   commands     FeatureCommand[]
@@ -171,6 +172,16 @@ model UiTranslation {
 
   @@unique([key, lang])
   @@map("ui_translations")
+}
+
+model ScriptLabel {
+  id    String @id @default(cuid())
+  lang  String
+  key   String
+  value String
+
+  @@unique([lang, key])
+  @@map("script_labels")
 }
 
 enum RiskLevel {

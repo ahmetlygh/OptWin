@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateScript } from "@/lib/script-generator";
+import { prisma } from "@/lib/db";
 
 export async function POST(req: Request) {
     try {
@@ -16,6 +17,14 @@ export async function POST(req: Request) {
             lang: lang || "en",
             createRestorePoint: !!createRestorePoint
         });
+
+        // Increment selectCount for each selected feature (fire and forget)
+        if (features.length > 0) {
+            prisma.feature.updateMany({
+                where: { slug: { in: features } },
+                data: { selectCount: { increment: 1 } },
+            }).catch(() => {});
+        }
 
         return NextResponse.json({ script: scriptString });
     } catch (error: any) {

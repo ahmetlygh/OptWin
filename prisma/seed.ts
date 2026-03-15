@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { categories } from "./seed-data/categories";
 import { defaultSettings, defaultDnsProviders, defaultUiTranslations } from "./seed-data/settings";
+import { scriptLabels } from "./seed-data/script-labels";
 import { featuresP1 } from "./seed-data/features-p1";
 import { featuresP2 } from "./seed-data/features-p2";
 import * as fs from 'fs';
@@ -141,7 +142,18 @@ async function main() {
     });
     console.log("📊 Stats initialized\n");
 
-    // 7. Presets
+    // 7. Script Labels
+    console.log("🏷️ Creating script labels...");
+    for (const label of scriptLabels) {
+        await prisma.scriptLabel.upsert({
+            where: { lang_key: { lang: label.lang, key: label.key } },
+            update: { value: label.value },
+            create: { lang: label.lang, key: label.key, value: label.value },
+        });
+    }
+    console.log(`  ✅ ${scriptLabels.length} script labels created\n`);
+
+    // 8. Presets
     console.log("🎯 Creating presets...");
     const recommendedSlugs = ["cleanTemp", "cleanPrefetch", "recycleBin", "cleanEventLog", "clearIconCache", "clearThumbsCache", "systemFileCheck", "dismCheck", "highPerformance", "disableGameDVR", "disableStartupDelay", "disableSuperfetch", "showExtensions", "showHiddenFiles", "disableWallet", "disableMaps", "disableFax", "disableWer", "disableXbox", "disableRemoteAssistance", "disableDeliveryOptimization", "disableLocation", "disableClipboardHistory", "disableActivityHistory", "disableTimeline", "disableAdvertisingId", "flushDNS", "networkReset", "clearArpCache"];
     const gamerSlugs = ["highPerformance", "disableGameDVR", "disableGameBar", "disableStartupDelay", "disableSuperfetch", "disableAnimations", "disableTransparency", "disableWindowsTips", "disableLockScreenTips", "flushDNS", "disableThrottling", "clearArpCache", "enableQoS", "disableP2PUpdate", "networkReset", "disableNotifications", "disableNewsInterests", "disableMouseAccel", "disableSticky", "cleanTemp", "cleanPrefetch"];
