@@ -14,47 +14,56 @@ import { ScrollRestorer } from "@/components/shared/ScrollRestorer";
 /* ── Maintenance i18n with flags, timezones, better text ──────── */
 const MAINTENANCE_LANGS: Record<string, {
     label: string; flag: string; utcOffset: number;
-    title: string; desc1: string; desc2: string; desc3: string; working: string;
+    title: string; desc1: string; desc2: string; working: string;
 }> = {
     tr: {
         label: "Türkçe", flag: "🇹🇷", utcOffset: 3,
         title: "Bakım Çalışması",
-        desc1: "Sitemiz şu anda planlı bakım çalışması nedeniyle geçici olarak hizmet verememektedir.",
-        desc2: "Ekibimiz sizlere en iyi deneyimi sunmak için çalışmalarına devam etmektedir.",
-        desc3: "Verdiğimiz rahatsızlık için özür dileriz. Kısa süre içinde tekrar hizmetinizde olacağız.",
+        desc1: "Sitemiz şu anda planlı bakım nedeniyle geçici olarak hizmet dışıdır. Ekibimiz en iyi deneyimi sunmak için çalışmaya devam ediyor.",
+        desc2: "Verdiğimiz rahatsızlık için özür dileriz, kısa süre içinde tekrar hizmetinizde olacağız.",
         working: "Çalışma devam ediyor",
     },
     en: {
         label: "English", flag: "🇬🇧", utcOffset: 0,
         title: "Under Maintenance",
-        desc1: "Our website is temporarily unavailable due to scheduled maintenance.",
-        desc2: "Our team is working hard to bring you the best experience possible.",
-        desc3: "We apologize for the inconvenience and will be back online shortly.",
+        desc1: "Our website is temporarily unavailable due to scheduled maintenance. Our team is working hard to bring you the best experience.",
+        desc2: "We apologize for the inconvenience and will be back online shortly.",
         working: "Work in progress",
     },
     de: {
         label: "Deutsch", flag: "🇩🇪", utcOffset: 1,
         title: "Wartungsarbeiten",
-        desc1: "Unsere Website ist aufgrund geplanter Wartungsarbeiten vorübergehend nicht verfügbar.",
-        desc2: "Unser Team arbeitet daran, Ihnen das beste Erlebnis zu bieten.",
-        desc3: "Wir entschuldigen uns für die Unannehmlichkeiten und sind bald wieder online.",
+        desc1: "Unsere Website ist aufgrund geplanter Wartungsarbeiten vorübergehend nicht verfügbar. Unser Team arbeitet daran, Ihnen das beste Erlebnis zu bieten.",
+        desc2: "Wir entschuldigen uns für die Unannehmlichkeiten und sind in Kürze wieder online.",
         working: "Arbeiten laufen",
     },
     fr: {
         label: "Français", flag: "🇫🇷", utcOffset: 1,
         title: "Maintenance en cours",
-        desc1: "Notre site est temporairement indisponible pour cause de maintenance planifiée.",
-        desc2: "Notre équipe travaille pour vous offrir la meilleure expérience possible.",
-        desc3: "Nous nous excusons pour la gêne occasionnée et serons bientôt de retour.",
+        desc1: "Notre site est temporairement indisponible pour cause de maintenance planifiée. Notre équipe travaille pour vous offrir la meilleure expérience.",
+        desc2: "Nous nous excusons pour la gêne occasionnée et serons bientôt de retour.",
         working: "Travaux en cours",
     },
     es: {
         label: "Español", flag: "🇪🇸", utcOffset: 1,
         title: "En mantenimiento",
-        desc1: "Nuestro sitio no está disponible temporalmente debido a mantenimiento programado.",
-        desc2: "Nuestro equipo está trabajando para ofrecerle la mejor experiencia posible.",
-        desc3: "Pedimos disculpas por las molestias y volveremos pronto.",
+        desc1: "Nuestro sitio no está disponible temporalmente debido a mantenimiento programado. Nuestro equipo trabaja para ofrecerle la mejor experiencia.",
+        desc2: "Pedimos disculpas por las molestias y volveremos en breve.",
         working: "Trabajo en curso",
+    },
+    zh: {
+        label: "中文", flag: "🇨🇳", utcOffset: 8,
+        title: "维护中",
+        desc1: "我们的网站正在进行计划维护，暂时无法访问。我们的团队正在努力为您提供最佳体验。",
+        desc2: "对此给您带来的不便，我们深表歉意，网站将很快恢复上线。",
+        working: "维护进行中",
+    },
+    hi: {
+        label: "हिन्दी", flag: "🇮🇳", utcOffset: 5.5,
+        title: "रखरखाव जारी",
+        desc1: "हमारी वेबसाइट नियोजित रखरखाव के कारण अस्थायी रूप से अनुपलब्ध है। हमारी टीम आपको सर्वोत्तम अनुभव देने के लिए काम कर रही है।",
+        desc2: "असुविधा के लिए हम क्षमा चाहते हैं, जल्द ही वापस आएँगे।",
+        working: "कार्य प्रगति पर है",
     },
 };
 const LANG_KEYS = Object.keys(MAINTENANCE_LANGS);
@@ -188,11 +197,10 @@ function MaintenanceOverlay() {
                 {/* Title */}
                 <h2 className="text-2xl font-bold text-white mb-5">{t.title}</h2>
 
-                {/* Description — split into short paragraphs for readability */}
+                {/* Description — two compact paragraphs */}
                 <div className="space-y-2.5 mb-8 max-w-sm">
                     <p className="text-white/35 text-[13px] leading-[1.7]">{t.desc1}</p>
-                    <p className="text-white/30 text-[13px] leading-[1.7]">{t.desc2}</p>
-                    <p className="text-white/25 text-[13px] leading-[1.7]">{t.desc3}</p>
+                    <p className="text-white/25 text-[13px] leading-[1.7]">{t.desc2}</p>
                 </div>
 
                 {/* Progress bar */}
@@ -292,19 +300,15 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
             </AnimatePresence>
 
             {/* Maintenance overlay */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
                 {maintenance && checked && !transitioning && <MaintenanceOverlay key="maintenance" />}
             </AnimatePresence>
 
-            {/* Normal site */}
-            <AnimatePresence mode="wait">
-                {(!maintenance && checked && !transitioning) && (
-                    <motion.div
-                        key="site"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
+            {/* Normal site — CSS transition to avoid Framer re-render flicker */}
+            {checked && !transitioning && !maintenance && (
+                    <div
+                        className="animate-fade-in-up"
+                        style={{ animationDuration: "0.5s" }}
                     >
                         {/* Performant Ambient Background Effects */}
                         <div className="fixed inset-0 pointer-events-none z-[-1] bg-[var(--bg-color)]">
@@ -324,9 +328,8 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
                         <SupportModal />
                         <ScrollToTop />
                         <ScrollRestorer />
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
 
             {/* Initial loading */}
             {!checked && (

@@ -136,7 +136,8 @@ function SlugFeatureEditor({
         return Array.from(langs).sort();
     }, [feature]);
 
-    const [activeLang, setActiveLang] = useState("en");
+    const [translationLang, setTranslationLang] = useState("en");
+    const [commandLang, setCommandLang] = useState("en");
     const [saving, setSaving] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [translateToast, setTranslateToast] = useState("");
@@ -147,12 +148,12 @@ function SlugFeatureEditor({
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
 
     const handleAutoTranslate = async () => {
-        const title = form.translations[activeLang]?.title;
-        const desc = form.translations[activeLang]?.desc;
+        const title = form.translations[translationLang]?.title;
+        const desc = form.translations[translationLang]?.desc;
         if (!title && !desc) return;
 
         setTranslating(true);
-        const otherLangs = availableLangs.filter(l => l !== activeLang);
+        const otherLangs = availableLangs.filter(l => l !== translationLang);
         const translatedLangNames: string[] = [];
 
         const LANG_DISPLAY: Record<string, string> = {
@@ -165,7 +166,7 @@ function SlugFeatureEditor({
                 const res = await fetch("/api/admin/translate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: title, sourceLang: activeLang, targetLangs: otherLangs }),
+                    body: JSON.stringify({ text: title, sourceLang: translationLang, targetLangs: otherLangs }),
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -190,7 +191,7 @@ function SlugFeatureEditor({
                 const res = await fetch("/api/admin/translate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: desc, sourceLang: activeLang, targetLangs: otherLangs }),
+                    body: JSON.stringify({ text: desc, sourceLang: translationLang, targetLangs: otherLangs }),
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -221,17 +222,18 @@ function SlugFeatureEditor({
         }
     };
 
+    const [autoScriptMsg, setAutoScriptMsg] = useState(false);
     const [translatingScript, setTranslatingScript] = useState(false);
     const handleTranslateScriptMsg = async () => {
-        const msg = form.commands[activeLang]?.scriptMessage;
+        const msg = form.commands[commandLang]?.scriptMessage;
         if (!msg) return;
         setTranslatingScript(true);
-        const otherLangs = availableLangs.filter(l => l !== activeLang);
+        const otherLangs = availableLangs.filter(l => l !== commandLang);
         try {
             const res = await fetch("/api/admin/translate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: msg, sourceLang: activeLang, targetLangs: otherLangs }),
+                body: JSON.stringify({ text: msg, sourceLang: commandLang, targetLangs: otherLangs }),
             });
             const data = await res.json();
             if (data.success) {
@@ -395,22 +397,12 @@ function SlugFeatureEditor({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <motion.button
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        onClick={() => setShowDeleteModal(true)}
-                        className="h-9 px-3 rounded-xl text-sm font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
-                    >
-                        <Trash2 size={13} />
-                        Sil
-                    </motion.button>
-
                     <AnimatePresence>
                         {hasChanges && (
                             <motion.div
-                                initial={{ opacity: 0, x: 8, scale: 0.95 }}
+                                initial={{ opacity: 0, x: -8, scale: 0.95 }}
                                 animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
                                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                                 className="flex items-center gap-2"
                             >
@@ -432,6 +424,16 @@ function SlugFeatureEditor({
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        onClick={() => setShowDeleteModal(true)}
+                        className="h-9 px-3 rounded-xl text-sm font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
+                    >
+                        <Trash2 size={13} />
+                        Sil
+                    </motion.button>
                 </div>
             </div>
 
@@ -459,10 +461,22 @@ function SlugFeatureEditor({
                         <label className={labelCls}>İkon</label>
                         <AdminIconPicker value={form.icon} onChange={v => updateField("icon", v)} />
                     </div>
-                    <div>
-                        <label className={labelCls}>Risk Seviyesi</label>
-                        <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />
-                    </div>
+                    {/* K7: Risk seviyesi — noRisk true iken gizlenir */}
+                    <AnimatePresence initial={false}>
+                        {!form.noRisk && (
+                            <motion.div
+                                key="risk-field"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                                className="overflow-hidden"
+                            >
+                                <label className={labelCls}>Risk Seviyesi</label>
+                                <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     <div>
                         <label className={labelCls}>Sıra</label>
                         <input
@@ -506,73 +520,85 @@ function SlugFeatureEditor({
                             <span className="text-xs text-white/50">Yeni Badge</span>
                         </label>
                     </div>
-                    {form.newBadge && (
-                        <div className="col-span-full mt-1 space-y-3">
-                            <label className={labelCls}>Badge Bitiş Zamanı (opsiyonel)</label>
-                            {/* Quick hour presets */}
-                            <div className="flex flex-wrap gap-1.5">
-                                {[3, 6, 12, 24, 48, 72].map(h => (
-                                    <button
-                                        key={h}
-                                        type="button"
-                                        onClick={() => {
-                                            const d = new Date(Date.now() + h * 3600000);
-                                            updateField("newBadgeExpiry", d.toISOString());
-                                        }}
-                                        className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
-                                    >
-                                        {h} saat
-                                    </button>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => updateField("newBadgeExpiry", "")}
-                                    className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
-                                >
-                                    Temizle
-                                </button>
-                            </div>
-                            {/* Separate date and time inputs */}
-                            <div className="flex gap-2 items-end">
-                                <div className="flex-1 max-w-[180px]">
-                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Tarih</label>
-                                    <input
-                                        type="date"
-                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 10) : ""}
-                                        onChange={e => {
-                                            if (!e.target.value) { updateField("newBadgeExpiry", ""); return; }
-                                            const existing = form.newBadgeExpiry ? new Date(form.newBadgeExpiry) : new Date();
-                                            const [y, m, d] = e.target.value.split("-").map(Number);
-                                            existing.setFullYear(y, m - 1, d);
-                                            updateField("newBadgeExpiry", existing.toISOString());
-                                        }}
-                                        className={`${inputCls} [color-scheme:dark]`}
-                                    />
+                    {/* K8: Badge alanı animasyonlu açılıp kapanır */}
+                    <AnimatePresence initial={false}>
+                        {form.newBadge && (
+                            <motion.div
+                                key="badge-section"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                className="col-span-full overflow-hidden"
+                            >
+                                <div className="mt-1 space-y-3">
+                                    <label className={labelCls}>Badge Bitiş Zamanı (opsiyonel)</label>
+                                    {/* Quick hour presets */}
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {[3, 6, 12, 24, 48, 72].map(h => (
+                                            <button
+                                                key={h}
+                                                type="button"
+                                                onClick={() => {
+                                                    const d = new Date(Date.now() + h * 3600000);
+                                                    updateField("newBadgeExpiry", d.toISOString());
+                                                }}
+                                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
+                                            >
+                                                {h} saat
+                                            </button>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => updateField("newBadgeExpiry", "")}
+                                            className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
+                                        >
+                                            Temizle
+                                        </button>
+                                    </div>
+                                    {/* Separate date and time inputs */}
+                                    <div className="flex gap-2 items-end">
+                                        <div className="flex-1 max-w-[180px]">
+                                            <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Tarih</label>
+                                            <input
+                                                type="date"
+                                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 10) : ""}
+                                                onChange={e => {
+                                                    if (!e.target.value) { updateField("newBadgeExpiry", ""); return; }
+                                                    const existing = form.newBadgeExpiry ? new Date(form.newBadgeExpiry) : new Date();
+                                                    const [y, m, d] = e.target.value.split("-").map(Number);
+                                                    existing.setFullYear(y, m - 1, d);
+                                                    updateField("newBadgeExpiry", existing.toISOString());
+                                                }}
+                                                className={`${inputCls} [color-scheme:dark]`}
+                                            />
+                                        </div>
+                                        <div className="flex-1 max-w-[140px]">
+                                            <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Saat</label>
+                                            <input
+                                                type="time"
+                                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toTimeString().slice(0, 5) : ""}
+                                                onChange={e => {
+                                                    if (!e.target.value || !form.newBadgeExpiry) return;
+                                                    const existing = new Date(form.newBadgeExpiry);
+                                                    const [h, m] = e.target.value.split(":").map(Number);
+                                                    existing.setHours(h, m, 0, 0);
+                                                    updateField("newBadgeExpiry", existing.toISOString());
+                                                }}
+                                                className={`${inputCls} [color-scheme:dark]`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {form.newBadgeExpiry && (
+                                        <p className="text-[10px] text-amber-400/50">
+                                            Bitiş: {new Date(form.newBadgeExpiry).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
+                                        </p>
+                                    )}
+                                    <p className="text-[9px] text-white/15">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
                                 </div>
-                                <div className="flex-1 max-w-[140px]">
-                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Saat</label>
-                                    <input
-                                        type="time"
-                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toTimeString().slice(0, 5) : ""}
-                                        onChange={e => {
-                                            if (!e.target.value || !form.newBadgeExpiry) return;
-                                            const existing = new Date(form.newBadgeExpiry);
-                                            const [h, m] = e.target.value.split(":").map(Number);
-                                            existing.setHours(h, m, 0, 0);
-                                            updateField("newBadgeExpiry", existing.toISOString());
-                                        }}
-                                        className={`${inputCls} [color-scheme:dark]`}
-                                    />
-                                </div>
-                            </div>
-                            {form.newBadgeExpiry && (
-                                <p className="text-[10px] text-amber-400/50">
-                                    Bitiş: {new Date(form.newBadgeExpiry).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
-                                </p>
-                            )}
-                            <p className="text-[9px] text-white/15">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
-                        </div>
-                    )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
@@ -596,21 +622,21 @@ function SlugFeatureEditor({
                         <button
                             type="button"
                             onClick={handleAutoTranslate}
-                            disabled={translating || (!form.translations[activeLang]?.title && !form.translations[activeLang]?.desc)}
+                            disabled={translating || (!form.translations[translationLang]?.title && !form.translations[translationLang]?.desc)}
                             className="h-7 px-3 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
                         >
                             {translating ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
                             {translating ? "Çevriliyor..." : "Diğer Dillere Çevir"}
                         </button>
                     </div>
-                    <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
+                    <AdminLangPicker value={translationLang} onChange={setTranslationLang} availableLangs={availableLangs} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label className={labelCls}>Başlık</label>
                         <input
-                            value={form.translations[activeLang]?.title || ""}
-                            onChange={e => updateTranslation(activeLang, "title", e.target.value)}
+                            value={form.translations[translationLang]?.title || ""}
+                            onChange={e => updateTranslation(translationLang, "title", e.target.value)}
                             placeholder="Özellik başlığı..."
                             className={inputCls}
                         />
@@ -618,8 +644,8 @@ function SlugFeatureEditor({
                     <div>
                         <label className={labelCls}>Açıklama</label>
                         <textarea
-                            value={form.translations[activeLang]?.desc || ""}
-                            onChange={e => updateTranslation(activeLang, "desc", e.target.value)}
+                            value={form.translations[translationLang]?.desc || ""}
+                            onChange={e => updateTranslation(translationLang, "desc", e.target.value)}
                             rows={2}
                             placeholder="Özellik açıklaması..."
                             className={textareaCls}
@@ -630,37 +656,25 @@ function SlugFeatureEditor({
 
             {/* Commands */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
-
-                {/* Command — language-independent (same for all languages) */}
-                <div>
-                    <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
-                    <textarea
-                        value={form.commands[activeLang]?.command || ""}
-                        onChange={e => updateCommand(activeLang, "command", e.target.value)}
-                        rows={6}
-                        placeholder="PowerShell komutu..."
-                        className={`${textareaCls} font-mono text-xs`}
-                    />
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
+                    <AdminLangPicker value={commandLang} onChange={setCommandLang} availableLangs={availableLangs} />
                 </div>
 
-                {/* Script Message — per-language */}
-                <div className="border-t border-white/[0.04] pt-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <label className={labelCls}>Script Mesajı <span className="text-white/15 font-normal">(dile göre değişir)</span></label>
-                        <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
-                    </div>
+                {/* Script Message — per-language (moved above command) */}
+                <div>
+                    <label className={labelCls}>Script Mesajı <span className="text-white/15 font-normal">(dile göre değişir)</span></label>
                     <div className="flex gap-2">
                         <input
-                            value={form.commands[activeLang]?.scriptMessage || ""}
-                            onChange={e => updateCommand(activeLang, "scriptMessage", e.target.value)}
+                            value={form.commands[commandLang]?.scriptMessage || ""}
+                            onChange={e => updateCommand(commandLang, "scriptMessage", e.target.value)}
                             placeholder="Optimizasyon uygulanıyor..."
                             className={`${inputCls} flex-1`}
                         />
                         <button
                             type="button"
                             onClick={handleTranslateScriptMsg}
-                            disabled={translatingScript || !form.commands[activeLang]?.scriptMessage}
+                            disabled={translatingScript || !form.commands[commandLang]?.scriptMessage}
                             className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
                             title="Script mesajını diğer dillere çevir"
                         >
@@ -670,17 +684,46 @@ function SlugFeatureEditor({
                         <button
                             type="button"
                             onClick={() => {
-                                const title = form.translations[activeLang]?.title || "";
-                                if (title) {
-                                    updateCommand(activeLang, "scriptMessage", generateScriptMessage(title, activeLang));
+                                const next = !autoScriptMsg;
+                                setAutoScriptMsg(next);
+                                if (next) {
+                                    // K6: Generate script message for ALL languages from their own title
+                                    for (const lang of availableLangs) {
+                                        const title = form.translations[lang]?.title || "";
+                                        if (title) {
+                                            updateCommand(lang, "scriptMessage", generateScriptMessage(title, lang));
+                                        }
+                                    }
+                                } else {
+                                    // K6: Clear all script messages
+                                    for (const lang of availableLangs) {
+                                        updateCommand(lang, "scriptMessage", "");
+                                    }
                                 }
                             }}
-                            className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all"
-                            title="Başlıktan otomatik oluştur"
+                            className={`shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                                autoScriptMsg
+                                    ? "bg-[#6b5be6]/20 text-[#6b5be6] border-[#6b5be6]/30"
+                                    : "bg-[#6b5be6]/10 text-[#6b5be6]/70 border-[#6b5be6]/15 hover:bg-[#6b5be6]/20"
+                            }`}
+                            title={autoScriptMsg ? "Otomatik mesajları kaldır" : "Tüm diller için başlıktan otomatik oluştur"}
                         >
+                            {autoScriptMsg ? <Check size={11} /> : null}
                             Otomatik
                         </button>
                     </div>
+                </div>
+
+                {/* Command — language-independent (same for all languages) */}
+                <div className="border-t border-white/[0.04] pt-4">
+                    <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
+                    <textarea
+                        value={form.commands[commandLang]?.command || ""}
+                        onChange={e => updateCommand(commandLang, "command", e.target.value)}
+                        rows={6}
+                        placeholder="PowerShell komutu..."
+                        className={`${textareaCls} font-mono text-xs`}
+                    />
                 </div>
             </div>
 

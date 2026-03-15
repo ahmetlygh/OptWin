@@ -232,9 +232,9 @@ export default function AdminFeaturesPage() {
                                 return (
                                     <motion.tr
                                         key={f.id}
-                                        initial={{ opacity: 0 }}
+                                        initial={false}
                                         animate={{ opacity: 1 }}
-                                        transition={{ delay: i * 0.01 }}
+                                        transition={{ duration: 0.15 }}
                                         onClick={() => router.push(`/admin/features/edit/${f.slug}`)}
                                         className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-pointer group"
                                     >
@@ -315,7 +315,8 @@ function FeatureEditor({
         return Array.from(langs).sort();
     }, [feature]);
 
-    const [activeLang, setActiveLang] = useState("en");
+    const [translationLang, setTranslationLang] = useState("en");
+    const [commandLang, setCommandLang] = useState("en");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [saved, setSaved] = useState(false);
@@ -457,26 +458,13 @@ function FeatureEditor({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Delete button — only when editing */}
-                    {!isCreating && feature && (
-                        <motion.button
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            onClick={() => setShowDeleteModal(true)}
-                            className="h-9 px-3 rounded-xl text-sm font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
-                        >
-                            <Trash2 size={13} />
-                            Sil
-                        </motion.button>
-                    )}
-
                     <AnimatePresence>
                         {hasChanges && !isCreating && (
                             <motion.div
                                 key="cancel-btn"
-                                initial={{ opacity: 0, x: 8 }}
+                                initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
                                 transition={{ duration: 0.2 }}
                             >
                                 <button
@@ -493,9 +481,9 @@ function FeatureEditor({
                         {(hasChanges || isCreating) && (
                             <motion.div
                                 key="save-btn"
-                                initial={{ opacity: 0, x: 8 }}
+                                initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
                                 transition={{ duration: 0.2 }}
                             >
                                 <button
@@ -509,6 +497,19 @@ function FeatureEditor({
                         </motion.div>
                     )}
                     </AnimatePresence>
+
+                    {/* Delete button — only when editing, now on the right */}
+                    {!isCreating && feature && (
+                        <motion.button
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            onClick={() => setShowDeleteModal(true)}
+                            className="h-9 px-3 rounded-xl text-sm font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
+                        >
+                            <Trash2 size={13} />
+                            Sil
+                        </motion.button>
+                    )}
                 </div>
             </div>
 
@@ -536,10 +537,22 @@ function FeatureEditor({
                         <label className={labelCls}>İkon</label>
                         <AdminIconPicker value={form.icon} onChange={v => updateField("icon", v)} />
                     </div>
-                    <div>
-                        <label className={labelCls}>Risk Seviyesi</label>
-                        <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />
-                    </div>
+                    {/* K7: Risk seviyesi — noRisk true iken gizlenir */}
+                    <AnimatePresence initial={false}>
+                        {!form.noRisk && (
+                            <motion.div
+                                key="risk-field"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                                className="overflow-hidden"
+                            >
+                                <label className={labelCls}>Risk Seviyesi</label>
+                                <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     <div>
                         <label className={labelCls}>Sıra</label>
                         <input
@@ -583,71 +596,83 @@ function FeatureEditor({
                             <span className="text-xs text-white/50">Yeni Badge</span>
                         </label>
                     </div>
-                    {form.newBadge && (
-                        <div className="col-span-full mt-1 space-y-3">
-                            <label className={labelCls}>Badge Bitiş Zamanı (opsiyonel)</label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {[3, 6, 12, 24, 48, 72].map(h => (
-                                    <button
-                                        key={h}
-                                        type="button"
-                                        onClick={() => {
-                                            const d = new Date(Date.now() + h * 3600000);
-                                            updateField("newBadgeExpiry", d.toISOString());
-                                        }}
-                                        className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
-                                    >
-                                        {h} saat
-                                    </button>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => updateField("newBadgeExpiry", "")}
-                                    className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
-                                >
-                                    Temizle
-                                </button>
-                            </div>
-                            <div className="flex gap-2 items-end">
-                                <div className="flex-1 max-w-[180px]">
-                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Tarih</label>
-                                    <input
-                                        type="date"
-                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 10) : ""}
-                                        onChange={e => {
-                                            if (!e.target.value) { updateField("newBadgeExpiry", ""); return; }
-                                            const existing = form.newBadgeExpiry ? new Date(form.newBadgeExpiry) : new Date();
-                                            const [y, m, d] = e.target.value.split("-").map(Number);
-                                            existing.setFullYear(y, m - 1, d);
-                                            updateField("newBadgeExpiry", existing.toISOString());
-                                        }}
-                                        className={`${inputCls} [color-scheme:dark]`}
-                                    />
+                    {/* K8: Badge alanı animasyonlu açılıp kapanır */}
+                    <AnimatePresence initial={false}>
+                        {form.newBadge && (
+                            <motion.div
+                                key="badge-section"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                className="col-span-full overflow-hidden"
+                            >
+                                <div className="mt-1 space-y-3">
+                                    <label className={labelCls}>Badge Bitiş Zamanı (opsiyonel)</label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {[3, 6, 12, 24, 48, 72].map(h => (
+                                            <button
+                                                key={h}
+                                                type="button"
+                                                onClick={() => {
+                                                    const d = new Date(Date.now() + h * 3600000);
+                                                    updateField("newBadgeExpiry", d.toISOString());
+                                                }}
+                                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
+                                            >
+                                                {h} saat
+                                            </button>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => updateField("newBadgeExpiry", "")}
+                                            className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
+                                        >
+                                            Temizle
+                                        </button>
+                                    </div>
+                                    <div className="flex gap-2 items-end">
+                                        <div className="flex-1 max-w-[180px]">
+                                            <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Tarih</label>
+                                            <input
+                                                type="date"
+                                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 10) : ""}
+                                                onChange={e => {
+                                                    if (!e.target.value) { updateField("newBadgeExpiry", ""); return; }
+                                                    const existing = form.newBadgeExpiry ? new Date(form.newBadgeExpiry) : new Date();
+                                                    const [y, m, d] = e.target.value.split("-").map(Number);
+                                                    existing.setFullYear(y, m - 1, d);
+                                                    updateField("newBadgeExpiry", existing.toISOString());
+                                                }}
+                                                className={`${inputCls} [color-scheme:dark]`}
+                                            />
+                                        </div>
+                                        <div className="flex-1 max-w-[140px]">
+                                            <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Saat</label>
+                                            <input
+                                                type="time"
+                                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toTimeString().slice(0, 5) : ""}
+                                                onChange={e => {
+                                                    if (!e.target.value || !form.newBadgeExpiry) return;
+                                                    const existing = new Date(form.newBadgeExpiry);
+                                                    const [h, m] = e.target.value.split(":").map(Number);
+                                                    existing.setHours(h, m, 0, 0);
+                                                    updateField("newBadgeExpiry", existing.toISOString());
+                                                }}
+                                                className={`${inputCls} [color-scheme:dark]`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {form.newBadgeExpiry && (
+                                        <p className="text-[10px] text-amber-400/50">
+                                            Bitiş: {new Date(form.newBadgeExpiry).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
+                                        </p>
+                                    )}
+                                    <p className="text-[9px] text-white/15">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
                                 </div>
-                                <div className="flex-1 max-w-[140px]">
-                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Saat</label>
-                                    <input
-                                        type="time"
-                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toTimeString().slice(0, 5) : ""}
-                                        onChange={e => {
-                                            if (!e.target.value || !form.newBadgeExpiry) return;
-                                            const existing = new Date(form.newBadgeExpiry);
-                                            const [h, m] = e.target.value.split(":").map(Number);
-                                            existing.setHours(h, m, 0, 0);
-                                            updateField("newBadgeExpiry", existing.toISOString());
-                                        }}
-                                        className={`${inputCls} [color-scheme:dark]`}
-                                    />
-                                </div>
-                            </div>
-                            {form.newBadgeExpiry && (
-                                <p className="text-[10px] text-amber-400/50">
-                                    Bitiş: {new Date(form.newBadgeExpiry).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
-                                </p>
-                            )}
-                            <p className="text-[9px] text-white/15">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
-                        </div>
-                    )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
@@ -655,14 +680,14 @@ function FeatureEditor({
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
-                    <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
+                    <AdminLangPicker value={translationLang} onChange={setTranslationLang} availableLangs={availableLangs} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label className={labelCls}>Başlık</label>
                         <input
-                            value={form.translations[activeLang]?.title || ""}
-                            onChange={e => updateTranslation(activeLang, "title", e.target.value)}
+                            value={form.translations[translationLang]?.title || ""}
+                            onChange={e => updateTranslation(translationLang, "title", e.target.value)}
                             placeholder="Özellik başlığı..."
                             className={inputCls}
                         />
@@ -670,8 +695,8 @@ function FeatureEditor({
                     <div>
                         <label className={labelCls}>Açıklama</label>
                         <textarea
-                            value={form.translations[activeLang]?.desc || ""}
-                            onChange={e => updateTranslation(activeLang, "desc", e.target.value)}
+                            value={form.translations[translationLang]?.desc || ""}
+                            onChange={e => updateTranslation(translationLang, "desc", e.target.value)}
                             rows={2}
                             placeholder="Özellik açıklaması..."
                             className={textareaCls}
@@ -682,47 +707,50 @@ function FeatureEditor({
 
             {/* Commands */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
-
-                {/* Command — language-independent */}
-                <div>
-                    <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
-                    <textarea
-                        value={form.commands[activeLang]?.command || ""}
-                        onChange={e => updateCommand(activeLang, "command", e.target.value)}
-                        rows={6}
-                        placeholder="PowerShell komutu..."
-                        className={`${textareaCls} font-mono text-xs`}
-                    />
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
+                    <AdminLangPicker value={commandLang} onChange={setCommandLang} availableLangs={availableLangs} />
                 </div>
 
-                {/* Script Message — per-language */}
-                <div className="border-t border-white/[0.04] pt-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <label className={labelCls}>Script Mesajı <span className="text-white/15 font-normal">(dile göre değişir)</span></label>
-                        <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
-                    </div>
+                {/* Script Message — per-language (above command) */}
+                <div>
+                    <label className={labelCls}>Script Mesajı <span className="text-white/15 font-normal">(dile göre değişir)</span></label>
                     <div className="flex gap-2">
                         <input
-                            value={form.commands[activeLang]?.scriptMessage || ""}
-                            onChange={e => updateCommand(activeLang, "scriptMessage", e.target.value)}
+                            value={form.commands[commandLang]?.scriptMessage || ""}
+                            onChange={e => updateCommand(commandLang, "scriptMessage", e.target.value)}
                             placeholder="Optimizasyon uygulanıyor..."
                             className={`${inputCls} flex-1`}
                         />
                         <button
                             type="button"
                             onClick={() => {
-                                const title = form.translations[activeLang]?.title || "";
-                                if (title) {
-                                    updateCommand(activeLang, "scriptMessage", generateScriptMessage(title, activeLang));
+                                // J3: Generate script message for ALL languages from their own title
+                                for (const lang of availableLangs) {
+                                    const title = form.translations[lang]?.title || "";
+                                    if (title) {
+                                        updateCommand(lang, "scriptMessage", generateScriptMessage(title, lang));
+                                    }
                                 }
                             }}
                             className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all"
-                            title="Başlıktan otomatik oluştur"
+                            title="Tüm diller için başlıktan otomatik oluştur"
                         >
                             Otomatik
                         </button>
                     </div>
+                </div>
+
+                {/* Command — language-independent */}
+                <div className="border-t border-white/[0.04] pt-4">
+                    <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
+                    <textarea
+                        value={form.commands[commandLang]?.command || ""}
+                        onChange={e => updateCommand(commandLang, "command", e.target.value)}
+                        rows={6}
+                        placeholder="PowerShell komutu..."
+                        className={`${textareaCls} font-mono text-xs`}
+                    />
                 </div>
             </div>
 

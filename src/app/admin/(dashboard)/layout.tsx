@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { UnsavedChangesProvider } from "@/components/admin/UnsavedChangesContext";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
@@ -21,6 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     });
 
     return (
+        <UnsavedChangesProvider>
         <div className="flex h-screen relative overflow-hidden">
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none z-0 bg-[#08080d]">
@@ -45,5 +47,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 </main>
             </div>
         </div>
+        </UnsavedChangesProvider>
     );
 }

@@ -511,3 +511,34 @@ body.theme-ready nav {
   scrollbar-width: thin;
   scrollbar-color: rgba(107, 91, 230, 0.35) rgba(107, 91, 230, 0.05);
 }
+
+/* ============================================================
+   ADMIN SCROLLBAR — sleek thin scrollbar for admin panels
+   ============================================================ */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 91, 230, 0.4);
+}
+
+.admin-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+.admin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+}

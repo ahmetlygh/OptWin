@@ -2,6 +2,129 @@
 
 > Aşağıdaki maddeler öncelik sırasına göre düzenlenmiştir.
 
+## J. Özellik Düzenleme & Script Ayarları Geliştirmeleri
+
+### Özellik Düzenleme Sayfası
+
+- [x] **J1. Çeviriler ve Komut dil seçicileri bağımsız olsun**
+  - `translationLang` + `commandLang` ayrı state'ler (slug edit + inline edit)
+  - Birini değiştirmek diğerini etkilemiyor
+
+- [x] **J2. Script mesajını komutun üstüne al**
+  - Script Message textarea'sı PowerShell Command'ın üstünde
+  - Her iki editor'da da uygulandı
+
+- [x] **J3. Oto çeviri butonu TÜM dilleri çevirsin**
+  - "Otomatik" butonu her dilin kendi title'ından scriptMessage üretir
+  - `availableLangs` üzerinde for döngüsü ile tüm diller
+
+### Script Ayarları Sayfası
+
+- [x] **J4. Liste ekran sonuna kadar uzasın + özel scrollbar**
+  - `height: calc(100vh - 220px)` + `min-h-0` + `admin-scrollbar` CSS
+  - `globals.css`'e yeni `admin-scrollbar` sınıfı: 5px, koyu tema, hover reveal
+
+- [x] **J5. githubUrl değerini kullan**
+  - Preview'de `# GitHub: {githubUrl}` satırı eklendi
+  - Header'da GitHub ikonu + tıklanabilir URL gösteriliyor
+
+- [x] **J6. Anahtar-değer açıklamalarını düzenleme modu dışında da göster**
+  - View modda key label'ları `text-white/10` ile her satırda görünüyor
+  - Sol panelde LABEL_DESCRIPTIONS her zaman key altında
+
+- [x] **J7. Preview'de Enter ile yeni satır oluşturma**
+  - `handlePreviewKeyDown` — Enter'a basınca `yeniDeger1`, `yeniDeger2`... key oluşturur
+  - Yeni key sol listeye otomatik eklenir, focus edilir
+
+- [x] **J8. Hardcoded preview satırları da düzenlenebilir olsun**
+  - `PreviewLine` tipine `editable: boolean` eklendi
+  - Dekoratif çizgiler (`editable: false`), metin satırları (`editable: true`)
+  - Satır/Komple modda sadece `editable: true` olanlar input olur
+
+- [x] **J9. Anahtar eklerken autocomplete + otomatik değer doldurma**
+  - `handleNewKeyChange` ile yazarken LABEL_DESCRIPTIONS'tan öneriler
+  - Dropdown'dan seçince key otomatik dolar
+  - Listede olmayan ama bilinen key'ler önerilir
+
+- [x] **J10. Satır sıralama: listeden veya preview'den konum yönetimi**
+  - `keyOrder` state ile her key'e sıra numarası atanıyor
+  - Sol listede editlenebilir order input + yukarı/aşağı ok butonları (hover'da görünür)
+  - `handleMoveUp` / `handleMoveDown` — komşu key'lerle swap
+  - `handleSetOrder` — belirli sıraya koyma, dolu ise shift-down mantığı
+  - Preview'de her 3 modda (view/line/full) key yanında order badge gösteriliyor
+  - Framer Motion `layout` animasyonu ile sıra değiştiğinde smooth geçiş
+  - Yeni eklenen key'ler otomatik en sona ekleniyor, silinen key'ler order'dan kaldırılıyor
+
+- [x] **J11. Kaydedilmemiş değişiklik navigasyon guard modal**
+  - `beforeunload` event'i ile tarayıcı kapatma/yenileme yakalanıyor
+  - `UnsavedChangesModal` ile "Kaydet ve Çık" / "Kaydetmeden Çık" / "İptal"
+  - `tryNavigate()` fonksiyonu sidebar entegrasyonu için hazır
+
+---
+
+## K. Animasyon Düzeltmeleri, UI İyileştirmeleri & Script Ayarları Geliştirmeleri
+
+### Bakım Ekranı
+- [x] **K1. Bakım ekranı fade titremesi düzelt**
+  - Framer Motion `AnimatePresence mode="wait"` yerine basit `AnimatePresence` kullanıldı
+  - Ana site wrapper CSS `animate-fade-in-up` ile değiştirildi (Framer re-render flicker yok)
+
+- [x] **K2. Bakım yazıları 3→2 satıra düşürüldü**
+  - `desc3` kaldırıldı, `desc1` ve `desc2` birleştirilerek aynı anlam korundu
+  - Tüm 7 dilde güncellendi
+
+- [x] **K3. Bakım sayfasına eksik diller eklendi**
+  - ZH (中文 🇨🇳 UTC+8) ve HI (हिन्दी 🇮🇳 UTC+5.5) eklendi
+  - Ana sitedeki tüm diller artık bakım ekranında da mevcut
+
+### Özellik Düzenleme Sayfası
+- [x] **K4. Fade animasyon titremesi düzeltildi**
+  - PublicShell: CSS transition'a geçildi (Framer Motion kaldırıldı)
+  - Features tablo satırları: `initial={false}` ile re-render titremesi engellendi
+
+- [x] **K5. Sil/İptal/Kaydet buton yerleri değiştirildi**
+  - İptal ve Kaydet butonları sola taşındı (animasyon `x: -8` yönüne güncellendi)
+  - Sil butonu en sağa taşındı
+  - Hem slug editor hem inline editor'da uygulandı
+
+- [x] **K6. Otomatik buton toggle oldu**
+  - Tıklanınca tüm dillere script mesajı oluşturur (ON)
+  - Tekrar tıklanınca tüm dillerdeki mesajları temizler (OFF)
+  - Seçili durumda check ikonu gösterir
+
+- [x] **K7. Risksiz seçiliyken risk seviyesi gizlenir**
+  - `AnimatePresence initial={false}` ile animasyonlu açılıp kapanır
+  - `noRisk=true` iken Risk Seviyesi alanı slide-up ile kaybolur
+  - Hem slug editor hem inline editor'da uygulandı
+
+- [x] **K8. Yeni Badge alanı animasyonlu açılıp kapanır**
+  - `AnimatePresence` ile `height: 0 → auto` + opacity animasyonu
+  - Hem slug editor hem inline editor'da uygulandı
+
+### Script Ayarları Sayfası
+- [x] **K9. Anahtar adları düzenlenebilir**
+  - Sol listede key name input'a dönüştürüldü (onBlur ile rename)
+  - `handleRenameKey` — tüm dillerde + keyOrder'da key adını günceller
+  - Enter ile blur, Escape ile iptal
+
+- [x] **K10. Yeni etiket ekleme iyileştirmeleri**
+  - `AnimatePresence` ile animasyonlu satır açılıp kapanır
+  - Çarpı (X) butonu ile eklemeyi iptal etme
+  - Order input genişletildi (w-8 → w-10), arka plan + border eklendi
+  - Anahtar ve değer inputlarına placeholder + arka plan + border eklendi
+
+- [x] **K11. developerName ve websiteUrl düzenlenebilir**
+  - Preview'de ayrı `→` satırları olarak gösteriliyor
+  - Sol listede de düzenlenebilir (zaten LABEL_DESCRIPTIONS'ta var)
+
+- [x] **K12. Sidebar unsaved changes modal doğrulandı**
+  - ESC = sayfada kal (onClose)
+  - "Kaydet ve Çık" = kaydet + hedefe git
+  - "Kaydetmeden Çık" = değişiklikleri geri al + hedefe git
+  - "İptal" = sayfada kal
+
+---
+
 ## I. Bakım Ekranı, İkon Düzeltmeleri ve Kaydetme Mantığı
 
 - [x] **I1. Bakım yazısı paragraflaması düzelt**
