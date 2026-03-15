@@ -33,6 +33,8 @@ const zh = {
     "preset.recommended": "推荐设置",
     "preset.gamer": "玩家设置",
     "preset.selectAllWarning": "所有设置可能会导致不需要的更改。请在运行前检查。",
+    "preset.showPresets": "显示预设",
+    "preset.hidePresets": "隐藏预设",
 
     "action.selected": "已选择",
     "action.createScript": "创建脚本",

@@ -39,6 +39,8 @@ const en = {
     "preset.recommended": "Recommended Settings",
     "preset.gamer": "Gaming Settings",
     "preset.selectAllWarning": "All settings may cause unwanted changes. Please review before running.",
+    "preset.showPresets": "Show Presets",
+    "preset.hidePresets": "Hide Presets",
 
     // Action Area
     "action.selected": "Selected",

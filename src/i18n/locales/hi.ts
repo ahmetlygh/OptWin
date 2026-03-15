@@ -33,6 +33,8 @@ const hi = {
     "preset.recommended": "अनुशंसित सेटिंग्स",
     "preset.gamer": "गेमिंग सेटिंग्स",
     "preset.selectAllWarning": "सभी सेटिंग्स अवांछित परिवर्तन कर सकती हैं। कृपया चलाने से पहले समीक्षा करें।",
+    "preset.showPresets": "प्रीसेट दिखाएं",
+    "preset.hidePresets": "प्रीसेट छुपाएं",
 
     "action.selected": "चयनित",
     "action.createScript": "स्क्रिप्ट बनाएं",

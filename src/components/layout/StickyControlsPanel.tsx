@@ -5,6 +5,7 @@ import { SearchBar } from "../features/SearchBar";
 import { ChevronDownIcon } from "../shared/Icons";
 import { DnsProvider } from "@/types/feature";
 import { PresetControls } from "./PresetControls";
+import { useTranslation } from "@/i18n/useTranslation";
 
 type PresetDef = {
     id: string;
@@ -25,6 +26,8 @@ export function StickyControlsPanel({
     const [isExpanded, setIsExpanded] = useState(true);
     const [isStuck, setIsStuck] = useState(false);
     const sentinelRef = useRef<HTMLDivElement>(null);
+    const prevIsStuckRef = useRef(false);
+    const { t } = useTranslation();
 
     // Detect when the panel becomes sticky via a sentinel element
     useEffect(() => {
@@ -37,6 +40,14 @@ export function StickyControlsPanel({
         observer.observe(sentinel);
         return () => observer.disconnect();
     }, []);
+
+    // Auto-open presets on mobile when user scrolls back to top (isStuck goes from true → false)
+    useEffect(() => {
+        if (prevIsStuckRef.current && !isStuck) {
+            setIsExpanded(true);
+        }
+        prevIsStuckRef.current = isStuck;
+    }, [isStuck]);
 
     return (
         <>
@@ -52,13 +63,18 @@ export function StickyControlsPanel({
                     <button
                         type="button"
                         onClick={() => setIsExpanded((prev) => !prev)}
-                        className="size-8 flex items-center justify-center rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:border-[var(--accent-color)]/40 transition-colors"
-                        title={isExpanded ? "Hide controls" : "Show controls"}
-                        aria-label={isExpanded ? "Hide controls" : "Show controls"}
+                        className={`flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-secondary)] hover:text-[var(--accent-color)] hover:border-[var(--accent-color)]/40 transition-all duration-200 ${
+                            isExpanded ? "size-8 justify-center" : "h-8 px-3"
+                        }`}
+                        title={isExpanded ? t["preset.hidePresets"] : t["preset.showPresets"]}
+                        aria-label={isExpanded ? t["preset.hidePresets"] : t["preset.showPresets"]}
                     >
+                        {!isExpanded && (
+                            <span className="text-xs font-semibold whitespace-nowrap">{t["preset.showPresets"]}</span>
+                        )}
                         <ChevronDownIcon
                             size={16}
-                            className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : "rotate-0"}`}
+                            className={`shrink-0 transition-transform duration-300 ${isExpanded ? "rotate-180" : "rotate-0"}`}
                         />
                     </button>
                 </div>

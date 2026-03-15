@@ -33,6 +33,8 @@ const de = {
     "preset.recommended": "Empfohlene Einstellungen",
     "preset.gamer": "Spieleinstellungen",
     "preset.selectAllWarning": "Alle Einstellungen können unerwünschte Änderungen verursachen. Bitte überprüfen Sie vor dem Ausführen.",
+    "preset.showPresets": "Voreinstellungen anzeigen",
+    "preset.hidePresets": "Voreinstellungen ausblenden",
 
     "action.selected": "Ausgewählt",
     "action.createScript": "Skript erstellen",

@@ -33,6 +33,8 @@ const tr = {
     "preset.recommended": "Önerilen Ayarlar",
     "preset.gamer": "Oyuncu Ayarları",
     "preset.selectAllWarning": "Tüm ayarlar sisteminizde istenmeyen değişiklikler yapabilir. Lütfen çalıştırmadan önce inceleyin.",
+    "preset.showPresets": "Ön Ayarları Göster",
+    "preset.hidePresets": "Ön Ayarları Gizle",
 
     "action.selected": "Seçildi",
     "action.createScript": "Scripti Oluştur",

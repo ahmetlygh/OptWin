@@ -33,6 +33,8 @@ const es = {
     "preset.recommended": "Ajustes Recomendados",
     "preset.gamer": "Ajustes de Juego",
     "preset.selectAllWarning": "Todos los ajustes pueden causar cambios no deseados. Revisa antes de ejecutar.",
+    "preset.showPresets": "Mostrar Ajustes",
+    "preset.hidePresets": "Ocultar Ajustes",
 
     "action.selected": "Seleccionados",
     "action.createScript": "Crear Script",

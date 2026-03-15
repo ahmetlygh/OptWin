@@ -33,6 +33,8 @@ const fr = {
     "preset.recommended": "Paramètres recommandés",
     "preset.gamer": "Paramètres de jeu",
     "preset.selectAllWarning": "Tous les paramètres peuvent causer des modifications indésirables. Veuillez vérifier avant d'exécuter.",
+    "preset.showPresets": "Afficher les préréglages",
+    "preset.hidePresets": "Masquer les préréglages",
 
     "action.selected": "Sélectionnés",
     "action.createScript": "Créer le Script",
