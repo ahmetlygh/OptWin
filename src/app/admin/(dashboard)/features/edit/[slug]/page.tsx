@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     ChevronLeft,
     Save,
@@ -367,7 +367,7 @@ function SlugFeatureEditor({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="space-y-5 max-w-5xl"
+            className="space-y-5"
         >
             {/* Header */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -397,30 +397,33 @@ function SlugFeatureEditor({
                         Sil
                     </motion.button>
 
-                    {hasChanges && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="flex items-center gap-2"
-                        >
-                            <button
-                                onClick={() => setForm(buildInitialState())}
-                                className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
+                    <AnimatePresence>
+                        {hasChanges && (
+                            <motion.div
+                                initial={{ opacity: 0, x: 8, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                                className="flex items-center gap-2"
                             >
-                                <RotateCcw size={13} />
-                                İptal
-                            </button>
-                            <button
-                                onClick={handleSubmit}
-                                disabled={saving || !form.slug || !form.translations.en?.title}
-                                className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
-                            >
-                                {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                                {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Kaydet"}
-                            </button>
-                        </motion.div>
-                    )}
+                                <button
+                                    onClick={() => setForm(buildInitialState())}
+                                    className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
+                                >
+                                    <RotateCcw size={13} />
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={saving || !form.slug || !form.translations.en?.title}
+                                    className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
+                                >
+                                    {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
+                                    {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Kaydet"}
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
@@ -496,15 +499,70 @@ function SlugFeatureEditor({
                         </label>
                     </div>
                     {form.newBadge && (
-                        <div className="mt-3">
-                            <label className={labelCls}>Badge Bitiş Tarihi (opsiyonel)</label>
-                            <input
-                                type="datetime-local"
-                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 16) : ""}
-                                onChange={e => updateField("newBadgeExpiry", e.target.value ? new Date(e.target.value).toISOString() : "")}
-                                className={`${inputCls} max-w-[260px] [color-scheme:dark]`}
-                            />
-                            <p className="text-[9px] text-white/15 mt-1">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
+                        <div className="col-span-full mt-1 space-y-3">
+                            <label className={labelCls}>Badge Bitiş Zamanı (opsiyonel)</label>
+                            {/* Quick hour presets */}
+                            <div className="flex flex-wrap gap-1.5">
+                                {[3, 6, 12, 24, 48, 72].map(h => (
+                                    <button
+                                        key={h}
+                                        type="button"
+                                        onClick={() => {
+                                            const d = new Date(Date.now() + h * 3600000);
+                                            updateField("newBadgeExpiry", d.toISOString());
+                                        }}
+                                        className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
+                                    >
+                                        {h} saat
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => updateField("newBadgeExpiry", "")}
+                                    className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
+                                >
+                                    Temizle
+                                </button>
+                            </div>
+                            {/* Separate date and time inputs */}
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1 max-w-[180px]">
+                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Tarih</label>
+                                    <input
+                                        type="date"
+                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 10) : ""}
+                                        onChange={e => {
+                                            if (!e.target.value) { updateField("newBadgeExpiry", ""); return; }
+                                            const existing = form.newBadgeExpiry ? new Date(form.newBadgeExpiry) : new Date();
+                                            const [y, m, d] = e.target.value.split("-").map(Number);
+                                            existing.setFullYear(y, m - 1, d);
+                                            updateField("newBadgeExpiry", existing.toISOString());
+                                        }}
+                                        className={`${inputCls} [color-scheme:dark]`}
+                                    />
+                                </div>
+                                <div className="flex-1 max-w-[140px]">
+                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Saat</label>
+                                    <input
+                                        type="time"
+                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toTimeString().slice(0, 5) : ""}
+                                        onChange={e => {
+                                            if (!e.target.value || !form.newBadgeExpiry) return;
+                                            const existing = new Date(form.newBadgeExpiry);
+                                            const [h, m] = e.target.value.split(":").map(Number);
+                                            existing.setHours(h, m, 0, 0);
+                                            updateField("newBadgeExpiry", existing.toISOString());
+                                        }}
+                                        className={`${inputCls} [color-scheme:dark]`}
+                                    />
+                                </div>
+                            </div>
+                            {form.newBadgeExpiry && (
+                                <p className="text-[10px] text-amber-400/50">
+                                    Bitiş: {new Date(form.newBadgeExpiry).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
+                                </p>
+                            )}
+                            <p className="text-[9px] text-white/15">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
                         </div>
                     )}
                 </div>

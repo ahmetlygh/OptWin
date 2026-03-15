@@ -159,7 +159,7 @@ export default function AdminFeaturesPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="space-y-5 max-w-6xl"
+            className="space-y-5"
         >
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -330,6 +330,8 @@ function FeatureEditor({
         noRisk: feature?.noRisk || false,
         order: feature?.order || 0,
         enabled: feature?.enabled !== false,
+        newBadge: (feature as any)?.newBadge ?? false,
+        newBadgeExpiry: (feature as any)?.newBadgeExpiry || "",
         translations: Object.fromEntries(
             availableLangs.map(lang => [lang, {
                 title: feature?.translations.find(t => t.lang === lang)?.title || "",
@@ -375,6 +377,7 @@ function FeatureEditor({
             const data: any = {
                 slug: form.slug, categoryId: form.categoryId, icon: form.icon, iconType: form.iconType,
                 risk: form.risk, noRisk: form.noRisk, order: form.order, enabled: form.enabled,
+                newBadge: form.newBadge, newBadgeExpiry: form.newBadgeExpiry || null,
                 translations: Object.entries(form.translations).map(([lang, t]) => ({ lang, title: t.title, desc: t.desc })),
                 commands: Object.entries(form.commands).map(([lang, c]) => ({ lang, command: c.command, scriptMessage: c.scriptMessage })),
             };
@@ -426,7 +429,7 @@ function FeatureEditor({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="space-y-5 max-w-5xl"
+            className="space-y-5"
         >
             {/* Header */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -552,7 +555,82 @@ function FeatureEditor({
                             </button>
                             <span className="text-xs text-white/50">Risksiz</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <button
+                                type="button"
+                                onClick={() => updateField("newBadge", !form.newBadge)}
+                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[22px]" : "left-[3px]"}`} />
+                            </button>
+                            <span className="text-xs text-white/50">Yeni Badge</span>
+                        </label>
                     </div>
+                    {form.newBadge && (
+                        <div className="col-span-full mt-1 space-y-3">
+                            <label className={labelCls}>Badge Bitiş Zamanı (opsiyonel)</label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {[3, 6, 12, 24, 48, 72].map(h => (
+                                    <button
+                                        key={h}
+                                        type="button"
+                                        onClick={() => {
+                                            const d = new Date(Date.now() + h * 3600000);
+                                            updateField("newBadgeExpiry", d.toISOString());
+                                        }}
+                                        className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
+                                    >
+                                        {h} saat
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => updateField("newBadgeExpiry", "")}
+                                    className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
+                                >
+                                    Temizle
+                                </button>
+                            </div>
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1 max-w-[180px]">
+                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Tarih</label>
+                                    <input
+                                        type="date"
+                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 10) : ""}
+                                        onChange={e => {
+                                            if (!e.target.value) { updateField("newBadgeExpiry", ""); return; }
+                                            const existing = form.newBadgeExpiry ? new Date(form.newBadgeExpiry) : new Date();
+                                            const [y, m, d] = e.target.value.split("-").map(Number);
+                                            existing.setFullYear(y, m - 1, d);
+                                            updateField("newBadgeExpiry", existing.toISOString());
+                                        }}
+                                        className={`${inputCls} [color-scheme:dark]`}
+                                    />
+                                </div>
+                                <div className="flex-1 max-w-[140px]">
+                                    <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Saat</label>
+                                    <input
+                                        type="time"
+                                        value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toTimeString().slice(0, 5) : ""}
+                                        onChange={e => {
+                                            if (!e.target.value || !form.newBadgeExpiry) return;
+                                            const existing = new Date(form.newBadgeExpiry);
+                                            const [h, m] = e.target.value.split(":").map(Number);
+                                            existing.setHours(h, m, 0, 0);
+                                            updateField("newBadgeExpiry", existing.toISOString());
+                                        }}
+                                        className={`${inputCls} [color-scheme:dark]`}
+                                    />
+                                </div>
+                            </div>
+                            {form.newBadgeExpiry && (
+                                <p className="text-[10px] text-amber-400/50">
+                                    Bitiş: {new Date(form.newBadgeExpiry).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
+                                </p>
+                            )}
+                            <p className="text-[9px] text-white/15">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
+                        </div>
+                    )}
                 </div>
             </div>
 

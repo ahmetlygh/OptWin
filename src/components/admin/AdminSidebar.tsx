@@ -56,7 +56,7 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
     };
 
     const sidebarContent = (
-        <aside className="flex flex-col h-screen w-[260px] relative overflow-hidden shrink-0">
+        <aside className="flex flex-col h-screen w-[260px] xl:w-[280px] 2xl:w-[300px] relative overflow-hidden shrink-0 transition-all duration-300">
             {/* Background */}
             <div className="absolute inset-0 bg-[#0a0a10]/95 backdrop-blur-2xl" />
             <div className="absolute inset-0 border-r border-white/[0.05]" />
@@ -87,7 +87,7 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
             </div>
 
             {/* Navigation */}
-            <nav className="relative z-10 flex-1 px-3 py-3 space-y-0.5 overflow-y-auto custom-scrollbar">
+            <nav className="relative z-10 flex-1 px-3 xl:px-4 py-3 space-y-0.5 overflow-y-auto custom-scrollbar">
                 <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/15 px-2.5 mb-1.5">
                     Menü
                 </p>

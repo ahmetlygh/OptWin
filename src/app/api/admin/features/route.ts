@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { slug, categoryId, icon, iconType, risk, noRisk, order, enabled, translations, commands } = body;
+        const { slug, categoryId, icon, iconType, risk, noRisk, order, enabled, newBadge, newBadgeExpiry, translations, commands } = body;
 
         if (!slug || !categoryId) {
             return NextResponse.json({ error: "slug and categoryId are required" }, { status: 400 });
@@ -66,6 +66,8 @@ export async function POST(req: NextRequest) {
                 noRisk: noRisk || false,
                 order: order || 0,
                 enabled: enabled !== false,
+                newBadge: newBadge || false,
+                newBadgeExpiry: newBadgeExpiry ? new Date(newBadgeExpiry) : null,
                 translations: {
                     create: (translations || []).map((t: any) => ({
                         lang: t.lang,

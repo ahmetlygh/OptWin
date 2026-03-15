@@ -220,7 +220,7 @@ function CategoryForm({ category, isCreating, saving, onSave, onCancel }: {
     const labelClass = "block text-xs font-bold text-[#a19eb7] uppercase tracking-wider mb-1.5";
 
     return (
-        <div className="space-y-6 animate-fade-in-up max-w-2xl">
+        <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <button onClick={onCancel} className="size-9 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all">

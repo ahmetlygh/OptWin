@@ -247,7 +247,7 @@ export default function ScriptDefaultsPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="space-y-6 max-w-6xl"
+            className="space-y-6"
         >
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

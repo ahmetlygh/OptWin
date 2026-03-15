@@ -2,6 +2,36 @@
 
 > Aşağıdaki maddeler öncelik sırasına göre düzenlenmiştir.
 
+## F. UI/UX İyileştirmeleri ve Genişlik Düzenlemeleri
+
+- [x] **F1. Badge bitiş zamanı UI yeniden tasarla**
+  - Ayrı tarih ve saat input'ları (datetime-local yerine)
+  - Hızlı saat presetleri: 3, 6, 12, 24, 48, 72 saat
+  - Temizle butonu, bitiş zamanı önizlemesi
+
+- [x] **F2. İkon seçiciye daha fazla ikon ekle**
+  - ~85 yeni Lucide ikon eklendi (toplam ~150+)
+  - Grid 7 sütuna, max yükseklik 280px'e çıkarıldı
+
+- [x] **F3. Kaydet/İptal butonları animasyonlu kaybolsun**
+  - AnimatePresence ile exit animasyonu eklendi (scale + opacity + x)
+
+- [x] **F4. Header: breadcrumbs + saat yeniden konumlandırma**
+  - Sol tarafta breadcrumbs navigasyonu (Admin > Özellikler > Düzenle gibi)
+  - Saat kullanıcı isminin altına taşındı
+  - E-posta adresi kaldırıldı
+
+- [x] **F5. Yeni özellik eklerken newBadge + expiry desteği**
+  - FeatureEditor'a newBadge toggle + expiry UI eklendi
+  - POST API'da newBadge ve newBadgeExpiry desteği eklendi
+
+- [x] **F6. Tam genişlik responsive layout**
+  - Tüm sayfalardan max-w-5xl/6xl/2xl sınırlamaları kaldırıldı
+  - Sidebar: 260px / xl:280px / 2xl:300px responsive genişlik
+  - İçerik alanı ekranın tamamını kullanıyor
+
+---
+
 ## E. Yeni Düzeltmeler ve Özellikler
 
 - [x] **E1. Sidebar genişlet + logo/glow'u sol üste taşı**
