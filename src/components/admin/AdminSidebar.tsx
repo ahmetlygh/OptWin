@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -18,7 +19,6 @@ import {
     Menu,
     X,
     Lock,
-    Shield,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -56,36 +56,38 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
     };
 
     const sidebarContent = (
-        <aside className="flex flex-col h-full w-[220px] relative overflow-hidden shrink-0">
+        <aside className="flex flex-col h-screen w-[260px] relative overflow-hidden shrink-0">
             {/* Background */}
             <div className="absolute inset-0 bg-[#0a0a10]/95 backdrop-blur-2xl" />
             <div className="absolute inset-0 border-r border-white/[0.05]" />
-            <div className="absolute top-0 left-0 w-full h-40 bg-[radial-gradient(ellipse_at_top_left,rgba(107,91,230,0.06),transparent_70%)] pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-40 bg-[radial-gradient(ellipse_at_top_left,rgba(107,91,230,0.08),transparent_70%)] pointer-events-none" />
 
-            {/* Logo */}
+            {/* Header — OptWin Logo + Glow */}
             <div className="relative z-10 px-4 py-4 border-b border-white/[0.05]">
-                <Link href="/admin" className="flex items-center gap-2.5 group">
-                    <motion.div
-                        whileHover={{ scale: 1.05, rotate: 3 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6b5be6] to-[#9333ea] flex items-center justify-center shadow-lg shadow-[#6b5be6]/25"
-                    >
-                        <Shield size={16} className="text-white" />
-                    </motion.div>
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-white font-black text-[15px] tracking-tight">OptWin</span>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#6b5be6] bg-[#6b5be6]/10 px-1.5 py-0.5 rounded-md">
+                <Link href="/admin" className="flex items-center gap-3 group">
+                    <div className="h-9 w-9 flex items-center justify-center shrink-0">
+                        <Image
+                            src="/optwin.png"
+                            alt="OptWin"
+                            width={36}
+                            height={36}
+                            className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300"
+                        />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6]">OptWin</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-[#6b5be6] bg-[#6b5be6]/10 px-1.5 py-0.5 rounded-md">
                                 Admin
                             </span>
                         </div>
-                        <span className="text-[9px] text-white/25 font-medium">Yönetim Paneli</span>
+                        <span className="text-[10px] text-white/25 font-medium">Yönetim Paneli</span>
                     </div>
                 </Link>
             </div>
 
             {/* Navigation */}
-            <nav className="relative z-10 flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto custom-scrollbar">
+            <nav className="relative z-10 flex-1 px-3 py-3 space-y-0.5 overflow-y-auto custom-scrollbar">
                 <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/15 px-2.5 mb-1.5">
                     Menü
                 </p>
@@ -146,13 +148,18 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
                     );
                 })}
             </nav>
+
+            {/* Footer — Version */}
+            <div className="relative z-10 px-4 py-3 border-t border-white/[0.05]">
+                <p className="text-[10px] text-white/15 font-medium text-center">OptWin Admin v1.3</p>
+            </div>
         </aside>
     );
 
     return (
         <>
             {/* Desktop sidebar */}
-            <div className="hidden md:flex h-screen sticky top-0">
+            <div className="hidden md:block shrink-0">
                 {sidebarContent}
             </div>
 

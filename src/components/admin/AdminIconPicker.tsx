@@ -83,6 +83,7 @@ interface AdminIconPickerProps {
 export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const ref = useRef<HTMLDivElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -132,7 +133,15 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
         <div ref={ref} className="relative">
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    if (!isOpen && ref.current) {
+                        const rect = ref.current.getBoundingClientRect();
+                        const spaceAbove = rect.top;
+                        const spaceBelow = window.innerHeight - rect.bottom;
+                        setOpenDirection(spaceBelow > 340 ? "down" : spaceAbove > 340 ? "up" : spaceBelow >= spaceAbove ? "down" : "up");
+                    }
+                    setIsOpen(!isOpen);
+                }}
                 className={`w-full h-9 px-3 flex items-center gap-2 rounded-xl text-sm transition-all border ${
                     isOpen
                         ? "bg-white/[0.04] border-[#6b5be6]/30 text-white/80"
@@ -159,7 +168,7 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -4, scale: 0.98 }}
                         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-                        className="absolute z-[100] left-0 right-0 bottom-full mb-1 rounded-xl border border-white/[0.06] bg-[#0f0f18]/95 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden"
+                        className={`absolute z-[100] left-0 right-0 rounded-xl border border-white/[0.06] bg-[#0f0f18]/95 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden ${openDirection === "up" ? "bottom-full mb-1" : "top-full mt-1"}`}
                     >
                         {/* Search */}
                         <div className="p-2 border-b border-white/[0.04]">

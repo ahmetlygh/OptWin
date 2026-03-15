@@ -12,11 +12,14 @@ import {
     AlertCircle,
     X,
     Trash2,
+    Languages,
 } from "lucide-react";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
+import { generateScriptMessage } from "@/lib/powershell-safe";
+import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 
 type Feature = {
     id: string;
@@ -28,6 +31,8 @@ type Feature = {
     noRisk: boolean;
     order: number;
     enabled: boolean;
+    newBadge: boolean;
+    newBadgeExpiry: string | null;
     translations: { id: string; lang: string; title: string; desc: string }[];
     commands: { id: string; lang: string; command: string; scriptMessage: string }[];
     category: { id: string; slug: string; translations: { lang: string; name: string }[] };
@@ -89,11 +94,20 @@ export default function FeatureEditBySlugPage() {
         );
     }
 
+    const reloadFeature = () => {
+        fetch("/api/admin/features").then(r => r.json()).then(fData => {
+            if (fData.success) {
+                const found = fData.features.find((f: Feature) => f.slug.toLowerCase() === slug.toLowerCase());
+                if (found) setFeature(found);
+            }
+        });
+    };
+
     return (
         <SlugFeatureEditor
             feature={feature!}
             categories={categories}
-            onSave={() => router.push("/admin/features")}
+            onSave={reloadFeature}
             onCancel={() => router.push("/admin/features")}
             onDelete={() => router.push("/admin/features")}
         />
@@ -124,9 +138,120 @@ function SlugFeatureEditor({
 
     const [activeLang, setActiveLang] = useState("en");
     const [saving, setSaving] = useState(false);
+    const [translating, setTranslating] = useState(false);
+    const [translateToast, setTranslateToast] = useState("");
     const [error, setError] = useState("");
     const [saved, setSaved] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
+
+    const handleAutoTranslate = async () => {
+        const title = form.translations[activeLang]?.title;
+        const desc = form.translations[activeLang]?.desc;
+        if (!title && !desc) return;
+
+        setTranslating(true);
+        const otherLangs = availableLangs.filter(l => l !== activeLang);
+        const translatedLangNames: string[] = [];
+
+        const LANG_DISPLAY: Record<string, string> = {
+            en: "EN", tr: "TR", zh: "ZH", es: "ES", hi: "HI", de: "DE", fr: "FR",
+        };
+
+        try {
+            // Translate title
+            if (title) {
+                const res = await fetch("/api/admin/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: title, sourceLang: activeLang, targetLangs: otherLangs }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => {
+                        setForm(prev => ({
+                            ...prev,
+                            translations: {
+                                ...prev.translations,
+                                [lang]: { ...prev.translations[lang], title: translated },
+                            },
+                        }));
+                    });
+                    data.translatedLangs?.forEach((l: string) => {
+                        if (!translatedLangNames.includes(LANG_DISPLAY[l] || l)) {
+                            translatedLangNames.push(LANG_DISPLAY[l] || l);
+                        }
+                    });
+                }
+            }
+            // Translate description
+            if (desc) {
+                const res = await fetch("/api/admin/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: desc, sourceLang: activeLang, targetLangs: otherLangs }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => {
+                        setForm(prev => ({
+                            ...prev,
+                            translations: {
+                                ...prev.translations,
+                                [lang]: { ...prev.translations[lang], desc: translated },
+                            },
+                        }));
+                    });
+                    data.translatedLangs?.forEach((l: string) => {
+                        if (!translatedLangNames.includes(LANG_DISPLAY[l] || l)) {
+                            translatedLangNames.push(LANG_DISPLAY[l] || l);
+                        }
+                    });
+                }
+            }
+            if (translatedLangNames.length > 0) {
+                setTranslateToast(`${translatedLangNames.join(", ")} dillerine çeviriler eklendi`);
+                setTimeout(() => setTranslateToast(""), 3000);
+            }
+        } catch {
+            setError("Çeviri başarısız oldu");
+        } finally {
+            setTranslating(false);
+        }
+    };
+
+    const [translatingScript, setTranslatingScript] = useState(false);
+    const handleTranslateScriptMsg = async () => {
+        const msg = form.commands[activeLang]?.scriptMessage;
+        if (!msg) return;
+        setTranslatingScript(true);
+        const otherLangs = availableLangs.filter(l => l !== activeLang);
+        try {
+            const res = await fetch("/api/admin/translate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: msg, sourceLang: activeLang, targetLangs: otherLangs }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => {
+                    setForm(prev => ({
+                        ...prev,
+                        commands: { ...prev.commands, [lang]: { ...prev.commands[lang], scriptMessage: translated } },
+                    }));
+                });
+                const LANG_DISPLAY: Record<string, string> = { en: "EN", tr: "TR", zh: "ZH", es: "ES", hi: "HI", de: "DE", fr: "FR" };
+                const names = (data.translatedLangs || otherLangs).map((l: string) => LANG_DISPLAY[l] || l);
+                setTranslateToast(`Script mesajı ${names.join(", ")} dillerine çevrildi`);
+                setTimeout(() => setTranslateToast(""), 3000);
+            }
+        } catch {
+            setError("Script mesajı çevirisi başarısız");
+        } finally {
+            setTranslatingScript(false);
+        }
+    };
 
     const buildInitialState = useCallback(() => ({
         slug: feature.slug,
@@ -137,6 +262,8 @@ function SlugFeatureEditor({
         noRisk: feature.noRisk || false,
         order: feature.order || 0,
         enabled: feature.enabled !== false,
+        newBadge: feature.newBadge ?? false,
+        newBadgeExpiry: feature.newBadgeExpiry || "",
         translations: Object.fromEntries(
             availableLangs.map(lang => [lang, {
                 title: feature.translations.find(t => t.lang === lang)?.title || "",
@@ -154,6 +281,15 @@ function SlugFeatureEditor({
     const [form, setForm] = useState(buildInitialState);
     const [original] = useState(buildInitialState);
     const hasChanges = JSON.stringify(form) !== JSON.stringify(original);
+
+    const tryNavigate = (navFn: () => void) => {
+        if (hasChanges) {
+            setPendingNav(() => navFn);
+            setShowUnsavedModal(true);
+        } else {
+            navFn();
+        }
+    };
 
     const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
         setForm(prev => ({ ...prev, [key]: value }));
@@ -181,6 +317,7 @@ function SlugFeatureEditor({
                 id: feature.id,
                 slug: form.slug, categoryId: form.categoryId, icon: form.icon, iconType: form.iconType,
                 risk: form.risk, noRisk: form.noRisk, order: form.order, enabled: form.enabled,
+                newBadge: form.newBadge, newBadgeExpiry: form.newBadgeExpiry || null,
                 translations: Object.entries(form.translations).map(([lang, t]) => ({ lang, title: t.title, desc: t.desc })),
                 commands: Object.entries(form.commands).map(([lang, c]) => ({ lang, command: c.command, scriptMessage: c.scriptMessage })),
             };
@@ -192,7 +329,8 @@ function SlugFeatureEditor({
             const result = await res.json();
             if (result.success) {
                 setSaved(true);
-                setTimeout(() => onSave(), 400);
+                onSave();
+                setTimeout(() => setSaved(false), 2000);
             } else {
                 setError(result.error || "Kaydetme başarısız");
             }
@@ -237,7 +375,7 @@ function SlugFeatureEditor({
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={onCancel}
+                        onClick={() => tryNavigate(onCancel)}
                         className="size-9 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-all border border-white/[0.04]"
                     >
                         <ChevronLeft size={16} />
@@ -346,14 +484,59 @@ function SlugFeatureEditor({
                             </button>
                             <span className="text-xs text-white/50">Risksiz</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <button
+                                type="button"
+                                onClick={() => updateField("newBadge", !form.newBadge)}
+                                className={`w-10 h-[22px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[22px]" : "left-[3px]"}`} />
+                            </button>
+                            <span className="text-xs text-white/50">Yeni Badge</span>
+                        </label>
                     </div>
+                    {form.newBadge && (
+                        <div className="mt-3">
+                            <label className={labelCls}>Badge Bitiş Tarihi (opsiyonel)</label>
+                            <input
+                                type="datetime-local"
+                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 16) : ""}
+                                onChange={e => updateField("newBadgeExpiry", e.target.value ? new Date(e.target.value).toISOString() : "")}
+                                className={`${inputCls} max-w-[260px] [color-scheme:dark]`}
+                            />
+                            <p className="text-[9px] text-white/15 mt-1">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Translate Toast */}
+            {translateToast && (
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="fixed top-4 right-4 z-[999] px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-sm font-medium shadow-lg backdrop-blur-xl"
+                >
+                    ✓ {translateToast}
+                </motion.div>
+            )}
 
             {/* Translations */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
+                        <button
+                            type="button"
+                            onClick={handleAutoTranslate}
+                            disabled={translating || (!form.translations[activeLang]?.title && !form.translations[activeLang]?.desc)}
+                            className="h-7 px-3 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                        >
+                            {translating ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
+                            {translating ? "Çevriliyor..." : "Diğer Dillere Çevir"}
+                        </button>
+                    </div>
                     <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={availableLangs} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -387,12 +570,37 @@ function SlugFeatureEditor({
                 </div>
                 <div>
                     <label className={labelCls}>Script Mesajı</label>
-                    <input
-                        value={form.commands[activeLang]?.scriptMessage || ""}
-                        onChange={e => updateCommand(activeLang, "scriptMessage", e.target.value)}
-                        placeholder="Optimizasyon uygulanıyor..."
-                        className={inputCls}
-                    />
+                    <div className="flex gap-2">
+                        <input
+                            value={form.commands[activeLang]?.scriptMessage || ""}
+                            onChange={e => updateCommand(activeLang, "scriptMessage", e.target.value)}
+                            placeholder="Optimizasyon uygulanıyor..."
+                            className={`${inputCls} flex-1`}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleTranslateScriptMsg}
+                            disabled={translatingScript || !form.commands[activeLang]?.scriptMessage}
+                            className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                            title="Script mesajını diğer dillere çevir"
+                        >
+                            {translatingScript ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
+                            Çevir
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const title = form.translations[activeLang]?.title || "";
+                                if (title) {
+                                    updateCommand(activeLang, "scriptMessage", generateScriptMessage(title, activeLang));
+                                }
+                            }}
+                            className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all"
+                            title="Başlıktan otomatik oluştur"
+                        >
+                            Otomatik
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label className={labelCls}>Komut</label>
@@ -416,6 +624,23 @@ function SlugFeatureEditor({
                 confirmText="Evet, Sil"
                 cancelText="İptal"
                 variant="danger"
+            />
+
+            {/* Unsaved Changes Modal */}
+            <UnsavedChangesModal
+                open={showUnsavedModal}
+                onClose={() => { setShowUnsavedModal(false); setPendingNav(null); }}
+                onSaveAndLeave={async () => {
+                    setShowUnsavedModal(false);
+                    await handleSubmit();
+                    pendingNav?.();
+                    setPendingNav(null);
+                }}
+                onDiscardAndLeave={() => {
+                    setShowUnsavedModal(false);
+                    pendingNav?.();
+                    setPendingNav(null);
+                }}
             />
         </motion.div>
     );

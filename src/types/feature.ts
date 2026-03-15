@@ -22,6 +22,8 @@ export interface Feature {
     noRisk: boolean;
     order: number;
     enabled: boolean;
+    newBadge?: boolean;
+    newBadgeExpiry?: string | null;
     translations: FeatureTranslation[];
     commands: FeatureCommand[];
 }

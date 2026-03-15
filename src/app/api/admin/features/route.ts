@@ -100,7 +100,7 @@ export async function PUT(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { id, slug, categoryId, icon, iconType, risk, noRisk, order, enabled, translations, commands } = body;
+        const { id, slug, categoryId, icon, iconType, risk, noRisk, order, enabled, newBadge, newBadgeExpiry, translations, commands } = body;
 
         if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
@@ -113,6 +113,8 @@ export async function PUT(req: NextRequest) {
         if (noRisk !== undefined) data.noRisk = noRisk;
         if (order !== undefined) data.order = order;
         if (enabled !== undefined) data.enabled = enabled;
+        if (newBadge !== undefined) data.newBadge = newBadge;
+        if (newBadgeExpiry !== undefined) data.newBadgeExpiry = newBadgeExpiry ? new Date(newBadgeExpiry) : null;
 
         const feature = await prisma.feature.update({
             where: { id },

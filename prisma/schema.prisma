@@ -51,10 +51,12 @@ model Feature {
   iconType     String               @default("solid")
   risk         RiskLevel            @default(low)
   noRisk       Boolean              @default(false)
-  order        Int                  @default(0)
-  enabled      Boolean              @default(true)
-  selectCount  Int                  @default(0)
-  createdAt    DateTime             @default(now())
+  order            Int                  @default(0)
+  enabled          Boolean              @default(true)
+  selectCount      Int                  @default(0)
+  newBadge         Boolean              @default(false)
+  newBadgeExpiry   DateTime?
+  createdAt        DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   commands     FeatureCommand[]
   translations FeatureTranslation[]

@@ -71,7 +71,7 @@ function timeAgo(dateStr: string): string {
     return `${days}g önce`;
 }
 
-export function AdminDashboardClient({ data }: { data: DashboardData }) {
+export function AdminDashboardClient({ data, userName = "Admin" }: { data: DashboardData; userName?: string }) {
     const stats = [
         {
             label: "Toplam Ziyaret",
@@ -130,16 +130,27 @@ export function AdminDashboardClient({ data }: { data: DashboardData }) {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-8 max-w-6xl"
+            className="space-y-8"
         >
             {/* Welcome Header */}
-            <motion.div variants={itemVariants} className="space-y-1">
-                <h1 className="text-3xl font-black text-white tracking-tight">
-                    {getGreeting()} <span className="text-gradient">Admin</span>
-                </h1>
-                <p className="text-sm text-white/30">
-                    OptWin uygulamanızın genel durumu
-                </p>
+            <motion.div variants={itemVariants}>
+                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(circle,rgba(107,91,230,0.06),transparent_70%)] pointer-events-none" />
+                    <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h1 className="text-3xl font-black text-white tracking-tight">
+                                {getGreeting()} <span className="text-gradient">{userName.split(" ")[0]}</span>
+                            </h1>
+                            <p className="text-sm text-white/30 mt-1">
+                                OptWin yönetim paneline hoş geldiniz. Uygulamanızın genel durumunu buradan takip edebilirsiniz.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/10">
+                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-[11px] font-semibold text-emerald-400/80">Sistem Aktif</span>
+                        </div>
+                    </div>
+                </div>
             </motion.div>
 
             {/* Unread Messages Alert */}
@@ -170,7 +181,7 @@ export function AdminDashboardClient({ data }: { data: DashboardData }) {
             {/* Stats Grid */}
             <motion.div
                 variants={itemVariants}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
             >
                 {stats.map((stat, i) => (
                     <motion.div
@@ -179,7 +190,7 @@ export function AdminDashboardClient({ data }: { data: DashboardData }) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
                         whileHover={{ y: -2, transition: { duration: 0.2 } }}
-                        className="relative group rounded-2xl border border-white/[0.04] bg-white/[0.02] p-5 overflow-hidden"
+                        className="relative group rounded-2xl border border-white/[0.04] bg-white/[0.02] p-6 overflow-hidden"
                     >
                         {/* Hover glow */}
                         <div
@@ -192,7 +203,7 @@ export function AdminDashboardClient({ data }: { data: DashboardData }) {
                                 <p className="text-[11px] font-semibold uppercase tracking-wider text-white/25 mb-2">
                                     {stat.label}
                                 </p>
-                                <p className="text-2xl font-black text-white tracking-tight">
+                                <p className="text-3xl font-black text-white tracking-tight">
                                     {stat.value}
                                 </p>
                                 {stat.subtext && (
@@ -229,7 +240,7 @@ export function AdminDashboardClient({ data }: { data: DashboardData }) {
                                 Tümünü gör
                             </Link>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {data.topFeatures.map((f, i) => {
                                 const maxCount = data.topFeatures[0]?.selectCount || 1;
                                 const pct = maxCount > 0 ? (f.selectCount / maxCount) * 100 : 0;

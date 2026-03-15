@@ -3,21 +3,22 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { TRFlag, USFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "@/components/shared/Flags";
 
 type LangOption = {
     code: string;
-    flag: string;
+    flag: React.ReactNode;
     name: string;
 };
 
 const LANGUAGES: LangOption[] = [
-    { code: "en", flag: "🇬🇧", name: "English" },
-    { code: "tr", flag: "🇹🇷", name: "Türkçe" },
-    { code: "zh", flag: "🇨🇳", name: "中文" },
-    { code: "es", flag: "🇪🇸", name: "Español" },
-    { code: "hi", flag: "🇮🇳", name: "हिन्दी" },
-    { code: "de", flag: "🇩🇪", name: "Deutsch" },
-    { code: "fr", flag: "🇫🇷", name: "Français" },
+    { code: "tr", flag: <TRFlag className="w-4 h-3 rounded-sm" />, name: "Türkçe" },
+    { code: "en", flag: <USFlag className="w-4 h-3 rounded-sm" />, name: "English" },
+    { code: "zh", flag: <CNFlag className="w-4 h-3 rounded-sm" />, name: "中文" },
+    { code: "es", flag: <ESFlag className="w-4 h-3 rounded-sm" />, name: "Español" },
+    { code: "hi", flag: <INFlag className="w-4 h-3 rounded-sm" />, name: "हिन्दी" },
+    { code: "de", flag: <DEFlag className="w-4 h-3 rounded-sm" />, name: "Deutsch" },
+    { code: "fr", flag: <FRFlag className="w-4 h-3 rounded-sm" />, name: "Français" },
 ];
 
 interface AdminLangPickerProps {
@@ -62,7 +63,7 @@ export function AdminLangPicker({ value, onChange, availableLangs }: AdminLangPi
                         : "bg-white/[0.02] border-white/[0.04] text-white/40 hover:text-white/60 hover:border-white/[0.08]"
                 }`}
             >
-                <span className="text-sm leading-none">{selected?.flag}</span>
+                <span className="flex items-center leading-none">{selected?.flag}</span>
                 <span className="uppercase tracking-wider">{selected?.code}</span>
                 <motion.div
                     animate={{ rotate: isOpen ? 180 : 0 }}
@@ -98,7 +99,7 @@ export function AdminLangPicker({ value, onChange, availableLangs }: AdminLangPi
                                                 : "text-white/50 hover:text-white/80 hover:bg-white/[0.04]"
                                         }`}
                                     >
-                                        <span className="text-sm leading-none">{lang.flag}</span>
+                                        <span className="flex items-center leading-none">{lang.flag}</span>
                                         <span className="flex-1 text-left">{lang.name}</span>
                                         <span className="text-[10px] uppercase tracking-wider text-white/20">{lang.code}</span>
                                     </button>

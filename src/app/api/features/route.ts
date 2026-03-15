@@ -21,6 +21,8 @@ export async function GET() {
             iconType: f.iconType,
             risk: f.risk,
             noRisk: f.noRisk,
+            newBadge: f.newBadge,
+            newBadgeExpiry: f.newBadgeExpiry?.toISOString() || null,
             translations: f.translations.reduce((acc, current) => ({
                 ...acc,
                 [current.lang]: {

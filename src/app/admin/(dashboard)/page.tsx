@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { AdminDashboardClient } from "@/components/admin/AdminDashboardClient";
 
 export default async function AdminDashboard() {
+    const session = await auth();
     const [
         stats,
         featuresCount,
@@ -40,8 +42,11 @@ export default async function AdminDashboard() {
         }),
     ]);
 
+    const userName = session?.user?.name || "Admin";
+
     return (
         <AdminDashboardClient
+            userName={userName}
             data={{
                 totalVisits: stats?.totalVisits || 0,
                 totalScripts: stats?.totalScripts || 0,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
     Puzzle,
@@ -19,6 +20,7 @@ import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
+import { generateScriptMessage } from "@/lib/powershell-safe";
 
 type Feature = {
     id: string;
@@ -55,6 +57,7 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 export default function AdminFeaturesPage() {
+    const router = useRouter();
     const [features, setFeatures] = useState<Feature[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -232,7 +235,7 @@ export default function AdminFeaturesPage() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: i * 0.01 }}
-                                        onClick={() => setEditingFeature(f)}
+                                        onClick={() => router.push(`/admin/features/edit/${f.slug}`)}
                                         className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-pointer group"
                                     >
                                         <td className="px-5 py-3">
@@ -592,12 +595,27 @@ function FeatureEditor({
                 </div>
                 <div>
                     <label className={labelCls}>Script Mesajı</label>
-                    <input
-                        value={form.commands[activeLang]?.scriptMessage || ""}
-                        onChange={e => updateCommand(activeLang, "scriptMessage", e.target.value)}
-                        placeholder="Optimizasyon uygulanıyor..."
-                        className={inputCls}
-                    />
+                    <div className="flex gap-2">
+                        <input
+                            value={form.commands[activeLang]?.scriptMessage || ""}
+                            onChange={e => updateCommand(activeLang, "scriptMessage", e.target.value)}
+                            placeholder="Optimizasyon uygulanıyor..."
+                            className={`${inputCls} flex-1`}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const title = form.translations[activeLang]?.title || "";
+                                if (title) {
+                                    updateCommand(activeLang, "scriptMessage", generateScriptMessage(title, activeLang));
+                                }
+                            }}
+                            className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all"
+                            title="Başlıktan otomatik oluştur"
+                        >
+                            Otomatik
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label className={labelCls}>Komut</label>

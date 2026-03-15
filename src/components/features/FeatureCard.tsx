@@ -47,6 +47,14 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
         low: { en: "Safe", tr: "Güvenli", de: "Sicher", fr: "Sûr", zh: "安全", es: "Seguro", hi: "सुरक्षित" },
     };
 
+    // New badge logic
+    const newBadgeLabels: Record<string, string> = {
+        en: "New", tr: "Yeni", de: "Neu", fr: "Nouveau", zh: "新", es: "Nuevo", hi: "नया",
+    };
+    const isNewBadgeVisible = feature.newBadge && (
+        !feature.newBadgeExpiry || new Date(feature.newBadgeExpiry) > new Date()
+    );
+
     let riskBadgeColor = "";
     let riskBadgeBg = "";
     let riskBadgeText = "";
@@ -117,6 +125,11 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                         <h4 className="text-[var(--text-primary)] font-semibold tracking-tight pointer-events-none">
                             <HighlightText text={title} />
                         </h4>
+                        {isNewBadgeVisible && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[var(--accent-color)]/15 border-[var(--accent-color)]/30 text-[var(--accent-color)] pointer-events-none animate-pulse">
+                                {newBadgeLabels[lang] || newBadgeLabels.en}
+                            </span>
+                        )}
                         {!feature.noRisk && (
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${riskBadgeBg} ${riskBadgeColor} pointer-events-none`}>
                                 {riskBadgeText}

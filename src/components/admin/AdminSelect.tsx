@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check } from "lucide-react";
 
@@ -30,8 +30,18 @@ export function AdminSelect({
     id,
 }: AdminSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [openAbove, setOpenAbove] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const selectedOption = options.find(o => o.value === value);
+
+    const measurePosition = useCallback(() => {
+        if (!ref.current) return;
+        const rect = ref.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const dropdownHeight = Math.min(options.length * 36 + 8, 248);
+        setOpenAbove(spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
+    }, [options.length]);
 
     useEffect(() => {
         const closeFn = () => setIsOpen(false);
@@ -60,8 +70,8 @@ export function AdminSelect({
 
     const toggle = () => {
         if (!isOpen) {
-            // Close all other selects first
             globalCloseAll.forEach(fn => fn());
+            measurePosition();
             setTimeout(() => setIsOpen(true), 0);
         } else {
             setIsOpen(false);
@@ -72,6 +82,12 @@ export function AdminSelect({
         onChange(val);
         setIsOpen(false);
     };
+
+    const positionCls = openAbove
+        ? "bottom-full mb-1"
+        : "top-full mt-1";
+
+    const animY = openAbove ? 4 : -4;
 
     return (
         <div ref={ref} className={`relative ${className}`} id={id}>
@@ -98,11 +114,11 @@ export function AdminSelect({
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                        initial={{ opacity: 0, y: animY, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                        exit={{ opacity: 0, y: animY, scale: 0.98 }}
                         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-                        className="absolute z-[100] left-0 right-0 bottom-full mb-1 rounded-xl border border-white/[0.06] bg-[#0f0f18]/95 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden"
+                        className={`absolute z-[100] left-0 right-0 ${positionCls} rounded-xl border border-white/[0.06] bg-[#0f0f18]/95 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden`}
                     >
                         <div className="max-h-[240px] overflow-y-auto py-1 custom-scrollbar">
                             {options.map((opt) => {

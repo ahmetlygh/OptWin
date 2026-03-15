@@ -5,7 +5,7 @@ import { TranslatableText } from "@/components/shared/TranslatableText";
 
 export default function AdminLoginPage() {
     return (
-        <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center p-4 dark" data-theme="dark">
             {/* Background effects */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(107,91,230,0.08)_0%,transparent_70%)]"></div>

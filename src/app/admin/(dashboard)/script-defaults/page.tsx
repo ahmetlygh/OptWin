@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     FileCode2,
@@ -11,7 +11,11 @@ import {
     Check,
     Loader2,
     AlertCircle,
+    Download,
+    MonitorPlay,
+    Pencil,
 } from "lucide-react";
+import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 
 type LabelsMap = Record<string, Record<string, string>>;
 
@@ -42,16 +46,6 @@ const LABEL_DESCRIPTIONS: Record<string, string> = {
     githubUrl: "Script başlığında kullanılan GitHub URL'i",
 };
 
-const LANG_NAMES: Record<string, string> = {
-    en: "English",
-    tr: "Türkçe",
-    zh: "中文",
-    es: "Español",
-    hi: "हिन्दी",
-    de: "Deutsch",
-    fr: "Français",
-};
-
 export default function ScriptDefaultsPage() {
     const [labels, setLabels] = useState<LabelsMap>({});
     const [originalLabels, setOriginalLabels] = useState<LabelsMap>({});
@@ -64,6 +58,8 @@ export default function ScriptDefaultsPage() {
     const [newKey, setNewKey] = useState("");
     const [newValue, setNewValue] = useState("");
     const [showNewRow, setShowNewRow] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [editingPreviewKey, setEditingPreviewKey] = useState<string | null>(null);
     const newKeyRef = useRef<HTMLInputElement>(null);
 
     const fetchLabels = useCallback(async () => {
@@ -158,7 +154,6 @@ export default function ScriptDefaultsPage() {
             }
             return updated;
         });
-        // Also delete from DB for all languages
         for (const lang of languages) {
             await fetch(`/api/admin/script-labels?lang=${lang}&key=${key}`, { method: "DELETE" });
         }
@@ -183,6 +178,62 @@ export default function ScriptDefaultsPage() {
         return aIdx - bIdx;
     });
 
+    // Generate terminal preview script
+    const previewScript = useMemo(() => {
+        const L = currentLabels;
+        const today = new Date().toISOString().split("T")[0];
+        const lines: string[] = [
+            `# ============================================`,
+            `# ${L.scriptTitle || "OptWin - Windows System Optimizer"}`,
+            `# ${L.version || "Version"}: 1.3`,
+            `# ${L.date || "Date"}: ${today}`,
+            `# ${L.developer || "Developer"}: ${L.developerName || "OptWin"}`,
+            `# ${L.website || "Website"}: ${L.websiteUrl || "https://optwin.tech"}`,
+            `# ${L.openSource || "Open Source"}`,
+            `# ============================================`,
+            ``,
+            `Write-Host ""`,
+            `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Cyan`,
+            `Write-Host "  ║  ${(L.bannerTitle || "OPTWIN").padEnd(36)}║" -ForegroundColor Cyan`,
+            `Write-Host "  ║  ${(L.openSourceShort || "Open Source Optimizer").padEnd(36)}║" -ForegroundColor DarkCyan`,
+            `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Cyan`,
+            `Write-Host ""`,
+            ``,
+            `# ${L.adminRequest || "Requesting admin privileges..."}`,
+            `# ${L.adminPrompt || "Please click Yes on the UAC prompt"}`,
+            ``,
+            `Write-Host "[*] ${L.restorePoint || "Creating restore point..."}" -ForegroundColor Yellow`,
+            `Write-Host "[+] ${L.restoreSuccess || "Restore point created"}" -ForegroundColor Green`,
+            ``,
+            `# --- Optimizations ---`,
+            `Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White`,
+            `Write-Host "  [${L.done || "DONE"}]" -ForegroundColor Green`,
+            ``,
+            `Write-Host ""`,
+            `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Green`,
+            `Write-Host "  ║  ${(L.complete || "Optimization Complete!").padEnd(36)}║" -ForegroundColor Green`,
+            `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Green`,
+            `Write-Host ""`,
+            `Write-Host "${L.success || "Please restart your computer."}" -ForegroundColor Yellow`,
+            `Write-Host "${L.thankYou || "Thank you for using OptWin!"}" -ForegroundColor Cyan`,
+            `Write-Host "${L.author || "by OptWin Team"}" -ForegroundColor DarkGray`,
+            `Write-Host ""`,
+            `Write-Host "${L.pressAnyKey || "Press any key to exit..."}" -ForegroundColor Gray`,
+            `$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`,
+        ];
+        return lines.join("\n");
+    }, [currentLabels]);
+
+    const handleDownloadPreview = () => {
+        const blob = new Blob([previewScript], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `OptWin-Preview-${activeLang}.ps1`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -196,7 +247,7 @@ export default function ScriptDefaultsPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="space-y-6 max-w-5xl"
+            className="space-y-6 max-w-6xl"
         >
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -212,8 +263,9 @@ export default function ScriptDefaultsPage() {
                     </div>
                 </div>
 
-                {/* Save / Cancel */}
                 <div className="flex items-center gap-2">
+                    <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages} />
+
                     {hasChanges && (
                         <motion.div
                             initial={{ opacity: 0, x: 8 }}
@@ -234,7 +286,7 @@ export default function ScriptDefaultsPage() {
                                 className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
                             >
                                 {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                                {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Değişiklikleri Kaydet"}
+                                {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Kaydet"}
                             </button>
                         </motion.div>
                     )}
@@ -248,139 +300,195 @@ export default function ScriptDefaultsPage() {
                 </div>
             )}
 
-            {/* Language Tabs */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.02] border border-white/[0.04] overflow-x-auto">
-                {languages.map(lang => (
-                    <button
-                        key={lang}
-                        onClick={() => setActiveLang(lang)}
-                        className={`relative px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${
-                            activeLang === lang
-                                ? "text-white"
-                                : "text-white/25 hover:text-white/50"
-                        }`}
-                    >
-                        {activeLang === lang && (
-                            <motion.div
-                                layoutId="langTab"
-                                className="absolute inset-0 rounded-lg bg-[#6b5be6]/15 border border-[#6b5be6]/20"
-                                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                            />
-                        )}
-                        <span className="relative z-10">
-                            {lang.toUpperCase()} {LANG_NAMES[lang] ? `\u2014 ${LANG_NAMES[lang]}` : ""}
-                        </span>
-                    </button>
-                ))}
-            </div>
+            {/* Two-column layout: Table + Preview */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {/* Labels Table */}
+                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
+                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
+                        <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Anahtar — Değer</h3>
+                    </div>
+                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
+                        <table className="w-full text-sm">
+                            <tbody>
+                                {keys.map((key, i) => {
+                                    const original = originalLabels[activeLang]?.[key];
+                                    const current = currentLabels[key];
+                                    const changed = original !== undefined && original !== current;
 
-            {/* Labels Table */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-white/[0.04]">
-                                <th className="text-left px-5 py-3 text-[10px] font-bold text-white/20 uppercase tracking-wider w-[200px]">Anahtar</th>
-                                <th className="text-left px-5 py-3 text-[10px] font-bold text-white/20 uppercase tracking-wider">Değer</th>
-                                <th className="w-12" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {keys.map((key, i) => {
-                                const original = originalLabels[activeLang]?.[key];
-                                const current = currentLabels[key];
-                                const changed = original !== undefined && original !== current;
+                                    return (
+                                        <motion.tr
+                                            key={key}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: i * 0.01 }}
+                                            className={`border-b border-white/[0.03] hover:bg-white/[0.015] transition-colors ${changed ? "bg-[#6b5be6]/[0.03]" : ""}`}
+                                        >
+                                            <td className="px-4 py-2.5 align-top w-[160px]">
+                                                <p className="text-[11px] font-mono font-bold text-white/50">{key}</p>
+                                                {LABEL_DESCRIPTIONS[key] && (
+                                                    <p className="text-[9px] text-white/15 mt-0.5 leading-tight">{LABEL_DESCRIPTIONS[key]}</p>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-1.5">
+                                                <textarea
+                                                    value={current || ""}
+                                                    onChange={e => handleValueChange(key, e.target.value)}
+                                                    rows={1}
+                                                    className="w-full bg-transparent border border-transparent hover:border-white/[0.06] focus:border-[#6b5be6]/30 rounded-lg px-2.5 py-1.5 text-[13px] text-white/80 placeholder-white/15 focus:outline-none transition-all resize-none"
+                                                    style={{ minHeight: "32px" }}
+                                                    onInput={(e) => {
+                                                        const t = e.target as HTMLTextAreaElement;
+                                                        t.style.height = "auto";
+                                                        t.style.height = t.scrollHeight + "px";
+                                                    }}
+                                                />
+                                            </td>
+                                            <td className="px-1 py-1.5 w-8">
+                                                {!Object.keys(LABEL_DESCRIPTIONS).includes(key) && (
+                                                    <button
+                                                        onClick={() => handleDeleteKey(key)}
+                                                        className="size-6 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/10 hover:text-red-400 transition-all"
+                                                        title="Anahtarı sil"
+                                                    >
+                                                        <Trash2 size={11} />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </motion.tr>
+                                    );
+                                })}
 
-                                return (
-                                    <motion.tr
-                                        key={key}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: i * 0.015 }}
-                                        className={`border-b border-white/[0.03] hover:bg-white/[0.015] transition-colors ${changed ? "bg-[#6b5be6]/[0.03]" : ""}`}
-                                    >
-                                        <td className="px-5 py-3 align-top">
-                                            <p className="text-xs font-mono font-bold text-white/50">{key}</p>
-                                            {LABEL_DESCRIPTIONS[key] && (
-                                                <p className="text-[10px] text-white/15 mt-0.5">{LABEL_DESCRIPTIONS[key]}</p>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-2">
-                                            <textarea
-                                                value={current || ""}
-                                                onChange={e => handleValueChange(key, e.target.value)}
-                                                rows={1}
-                                                className="w-full bg-transparent border border-transparent hover:border-white/[0.06] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-sm text-white/80 placeholder-white/15 focus:outline-none transition-all resize-none"
-                                                style={{ minHeight: "36px" }}
-                                                onInput={(e) => {
-                                                    const t = e.target as HTMLTextAreaElement;
-                                                    t.style.height = "auto";
-                                                    t.style.height = t.scrollHeight + "px";
-                                                }}
+                                {showNewRow && (
+                                    <tr className="border-b border-white/[0.03] bg-[#6b5be6]/[0.02]">
+                                        <td className="px-4 py-2">
+                                            <input
+                                                ref={newKeyRef}
+                                                value={newKey}
+                                                onChange={e => setNewKey(e.target.value)}
+                                                placeholder="yeniAnahtar"
+                                                className="w-full bg-transparent border border-white/[0.06] focus:border-[#6b5be6]/30 rounded-lg px-2.5 py-1.5 text-[13px] font-mono text-white/80 placeholder-white/15 focus:outline-none"
                                             />
                                         </td>
-                                        <td className="px-2 py-2">
-                                            {!Object.keys(LABEL_DESCRIPTIONS).includes(key) && (
-                                                <button
-                                                    onClick={() => handleDeleteKey(key)}
-                                                    className="size-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/10 hover:text-red-400 transition-all"
-                                                    title="Anahtarı sil"
-                                                >
-                                                    <Trash2 size={13} />
-                                                </button>
-                                            )}
+                                        <td className="px-3 py-2">
+                                            <input
+                                                value={newValue}
+                                                onChange={e => setNewValue(e.target.value)}
+                                                placeholder="Değer..."
+                                                className="w-full bg-transparent border border-white/[0.06] focus:border-[#6b5be6]/30 rounded-lg px-2.5 py-1.5 text-[13px] text-white/80 placeholder-white/15 focus:outline-none"
+                                                onKeyDown={e => e.key === "Enter" && handleAddRow()}
+                                            />
                                         </td>
-                                    </motion.tr>
-                                );
-                            })}
+                                        <td className="px-1 py-2">
+                                            <button
+                                                onClick={handleAddRow}
+                                                className="size-6 flex items-center justify-center rounded-lg bg-[#6b5be6]/15 text-[#6b5be6] hover:bg-[#6b5be6]/25 transition-all"
+                                            >
+                                                <Check size={11} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-                            {/* Add new row */}
-                            {showNewRow && (
-                                <tr className="border-b border-white/[0.03] bg-[#6b5be6]/[0.02]">
-                                    <td className="px-5 py-2">
-                                        <input
-                                            ref={newKeyRef}
-                                            value={newKey}
-                                            onChange={e => setNewKey(e.target.value)}
-                                            placeholder="yeniAnahtar"
-                                            className="w-full bg-transparent border border-white/[0.06] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-sm font-mono text-white/80 placeholder-white/15 focus:outline-none"
-                                        />
-                                    </td>
-                                    <td className="px-5 py-2">
-                                        <input
-                                            value={newValue}
-                                            onChange={e => setNewValue(e.target.value)}
-                                            placeholder="Bu anahtar için değer..."
-                                            className="w-full bg-transparent border border-white/[0.06] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-sm text-white/80 placeholder-white/15 focus:outline-none"
-                                            onKeyDown={e => e.key === "Enter" && handleAddRow()}
-                                        />
-                                    </td>
-                                    <td className="px-2 py-2">
-                                        <button
-                                            onClick={handleAddRow}
-                                            className="size-7 flex items-center justify-center rounded-lg bg-[#6b5be6]/15 text-[#6b5be6] hover:bg-[#6b5be6]/25 transition-all"
-                                        >
-                                            <Check size={13} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                    <div className="px-4 py-2.5 border-t border-white/[0.03]">
+                        <button
+                            onClick={() => {
+                                setShowNewRow(true);
+                                setTimeout(() => newKeyRef.current?.focus(), 100);
+                            }}
+                            className="flex items-center gap-2 text-xs font-medium text-white/20 hover:text-white/50 transition-colors"
+                        >
+                            <Plus size={13} />
+                            Yeni etiket ekle
+                        </button>
+                    </div>
                 </div>
 
-                {/* Add Row Button */}
-                <div className="px-5 py-3 border-t border-white/[0.03]">
-                    <button
-                        onClick={() => {
-                            setShowNewRow(true);
-                            setTimeout(() => newKeyRef.current?.focus(), 100);
-                        }}
-                        className="flex items-center gap-2 text-xs font-medium text-white/20 hover:text-white/50 transition-colors"
-                    >
-                        <Plus size={14} />
-                        Yeni etiket ekle
-                    </button>
+                {/* Terminal Preview */}
+                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden flex flex-col">
+                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <MonitorPlay size={13} className="text-emerald-400" />
+                            <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Terminal Önizleme</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowPreview(!showPreview)}
+                                className={`h-7 px-3 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1.5 ${
+                                    showPreview
+                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15"
+                                        : "bg-white/[0.03] text-white/30 border-white/[0.04] hover:text-white/50"
+                                }`}
+                            >
+                                <Pencil size={10} />
+                                {showPreview ? "Düzenleniyor" : "Düzenle"}
+                            </button>
+                            <button
+                                onClick={handleDownloadPreview}
+                                className="h-7 px-3 rounded-lg text-[10px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all flex items-center gap-1.5"
+                            >
+                                <Download size={10} />
+                                İndir
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 bg-[#0a0a0f] overflow-auto max-h-[600px] custom-scrollbar">
+                        {showPreview ? (
+                            <div className="p-4 space-y-0.5">
+                                {previewScript.split("\n").map((line, idx) => {
+                                    // Find which label key this line corresponds to
+                                    const matchedKey = Object.entries(currentLabels).find(([, val]) =>
+                                        val && line.includes(val) && val.length > 3
+                                    );
+                                    const labelKey = matchedKey?.[0] || null;
+
+                                    if (editingPreviewKey === labelKey && labelKey) {
+                                        return (
+                                            <div key={idx} className="flex items-center gap-1">
+                                                <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0">{idx + 1}</span>
+                                                <input
+                                                    autoFocus
+                                                    value={currentLabels[labelKey] || ""}
+                                                    onChange={e => handleValueChange(labelKey, e.target.value)}
+                                                    onBlur={() => setEditingPreviewKey(null)}
+                                                    onKeyDown={e => e.key === "Enter" && setEditingPreviewKey(null)}
+                                                    className="flex-1 bg-[#6b5be6]/10 border border-[#6b5be6]/30 rounded px-2 py-0.5 text-[12px] font-mono text-purple-300 focus:outline-none"
+                                                />
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className={`flex items-start gap-1 group ${labelKey ? "cursor-pointer hover:bg-white/[0.03] rounded" : ""}`}
+                                            onClick={() => labelKey && setEditingPreviewKey(labelKey)}
+                                        >
+                                            <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0 pt-px">{idx + 1}</span>
+                                            <code className={`text-[12px] font-mono whitespace-pre ${
+                                                line.startsWith("#") ? "text-emerald-400/60" :
+                                                line.includes("Write-Host") ? "text-purple-300" :
+                                                line.includes("-ForegroundColor") ? "text-cyan-300/70" :
+                                                "text-white/40"
+                                            }`}>
+                                                {line}
+                                            </code>
+                                            {labelKey && (
+                                                <Pencil size={9} className="text-white/0 group-hover:text-white/30 transition-colors mt-1 shrink-0" />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <pre className="p-4 m-0">
+                                <code className="text-purple-300 font-mono text-[12px] whitespace-pre leading-relaxed">{previewScript}</code>
+                            </pre>
+                        )}
+                    </div>
                 </div>
             </div>
         </motion.div>
