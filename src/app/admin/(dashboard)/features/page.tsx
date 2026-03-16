@@ -183,6 +183,7 @@ export default function AdminFeaturesPage() {
     const [catNameDirty, setCatNameDirty] = useState(false);
     const [translateToast, setTranslateToast] = useState("");
     const [deleteCatId, setDeleteCatId] = useState<string | null>(null);
+    const [moveCatTarget, setMoveCatTarget] = useState("");
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -727,7 +728,7 @@ export default function AdminFeaturesPage() {
 
                             {/* P9: Delete category button — always visible + hover animation */}
                             <button
-                                onClick={(e) => { e.stopPropagation(); setDeleteCatId(cat.id); }}
+                                onClick={(e) => { e.stopPropagation(); setMoveCatTarget(""); setDeleteCatId(cat.id); }}
                                 className="size-6 flex items-center justify-center rounded-md text-white/15 hover:text-red-400 hover:bg-red-500/10 hover:scale-110 active:scale-95 transition-all duration-200 shrink-0"
                                 title="Kategoriyi Sil"
                             >
@@ -948,27 +949,37 @@ export default function AdminFeaturesPage() {
                                         <div className="space-y-2">
                                             {otherCats.length > 0 && (
                                                 <div className="flex items-center gap-2">
-                                                    <select
-                                                        id="moveCatTarget"
-                                                        className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
-                                                        defaultValue=""
-                                                    >
-                                                        <option value="" disabled>Hedef kategori seç...</option>
-                                                        {otherCats.map(oc => <option key={oc.id} value={oc.id}>{getCatDisplayName(oc)}</option>)}
-                                                    </select>
+                                                    <AdminSelect
+                                                        options={otherCats.map(oc => ({ value: oc.id, label: getCatDisplayName(oc) }))}
+                                                        value={moveCatTarget}
+                                                        onChange={setMoveCatTarget}
+                                                        placeholder="Hedef kategori seç..."
+                                                        className="flex-1"
+                                                    />
                                                     <button
                                                         onClick={async () => {
-                                                            const sel = (document.getElementById('moveCatTarget') as HTMLSelectElement)?.value;
-                                                            if (!sel) return;
-                                                            await fetch("/api/admin/features", {
+                                                            if (!moveCatTarget) return;
+                                                            const res = await fetch("/api/admin/features", {
                                                                 method: "PATCH",
                                                                 headers: { "Content-Type": "application/json" },
-                                                                body: JSON.stringify({ categoryId: deleteCatId, newCategoryId: sel }),
+                                                                body: JSON.stringify({ categoryId: deleteCatId, newCategoryId: moveCatTarget }),
                                                             });
-                                                            setFeatures(prev => prev.map(f => f.categoryId === deleteCatId ? { ...f, categoryId: sel } : f));
+                                                            const data = await res.json();
+                                                            const startOrder = data.startOrder ?? 1;
+                                                            setFeatures(prev => {
+                                                                let idx = 0;
+                                                                return prev.map(f => {
+                                                                    if (f.categoryId === deleteCatId) {
+                                                                        return { ...f, categoryId: moveCatTarget, order: startOrder + idx++ };
+                                                                    }
+                                                                    return f;
+                                                                });
+                                                            });
                                                             await deleteCategory(deleteCatId);
+                                                            setMoveCatTarget("");
                                                         }}
-                                                        className="h-9 px-4 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shrink-0"
+                                                        disabled={!moveCatTarget}
+                                                        className="h-9 px-4 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
                                                     >
                                                         Taşı & Sil
                                                     </button>

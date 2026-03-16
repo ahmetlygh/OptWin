@@ -166,11 +166,30 @@ export async function PATCH(req: NextRequest) {
         if (!categoryId || !newCategoryId) {
             return NextResponse.json({ error: "categoryId and newCategoryId are required" }, { status: 400 });
         }
-        const result = await prisma.feature.updateMany({
-            where: { categoryId },
-            data: { categoryId: newCategoryId },
+        // Find the highest order in the target category
+        const maxOrderFeature = await prisma.feature.findFirst({
+            where: { categoryId: newCategoryId },
+            orderBy: { order: "desc" },
+            select: { order: true },
         });
-        return NextResponse.json({ success: true, moved: result.count });
+        const startOrder = (maxOrderFeature?.order ?? 0) + 1;
+
+        // Get features to move, sorted by their current order
+        const toMove = await prisma.feature.findMany({
+            where: { categoryId },
+            orderBy: { order: "asc" },
+            select: { id: true },
+        });
+
+        // Move each feature with incremental order at the end
+        for (let i = 0; i < toMove.length; i++) {
+            await prisma.feature.update({
+                where: { id: toMove[i].id },
+                data: { categoryId: newCategoryId, order: startOrder + i },
+            });
+        }
+
+        return NextResponse.json({ success: true, moved: toMove.length, startOrder });
     } catch (error) {
         console.error("Move features error:", error);
         return NextResponse.json({ error: "Failed to move features" }, { status: 500 });
