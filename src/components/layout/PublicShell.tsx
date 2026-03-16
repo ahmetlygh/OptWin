@@ -70,11 +70,30 @@ function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; 
     };
     const hasCountdown = !!estimatedEnd && diff > 0;
 
-    // Format end date in user's locale
+    // Format end date using the selected language's UTC offset
     let endDateStr = "";
     if (estimatedEnd) {
         try {
-            endDateStr = new Date(estimatedEnd).toLocaleString(LOCALE_MAP[lang] || "en-GB", { dateStyle: "long", timeStyle: "short" });
+            const dateObj = new Date(estimatedEnd);
+            const offset = UTC_OFFSET[lang] ?? 0;
+            // Get UTC time in ms, add offset in ms
+            const targetTime = dateObj.getTime() + (offset * 3600000);
+            const targetDate = new Date(targetTime);
+            
+            // Format manually: DD.MM.YYYY HH:MM
+            const d = targetDate.getUTCDate().toString().padStart(2, '0');
+            const m = (targetDate.getUTCMonth() + 1).toString().padStart(2, '0');
+            const y = targetDate.getUTCFullYear();
+            const hh = targetDate.getUTCHours().toString().padStart(2, '0');
+            const mm = targetDate.getUTCMinutes().toString().padStart(2, '0');
+            
+            // Use different formats based on lang if needed, or stick to a universal clear format
+            if (lang === 'en') {
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                endDateStr = `${d} ${monthNames[targetDate.getUTCMonth()]} ${y}, ${hh}:${mm}`;
+            } else {
+                endDateStr = `${d}.${m}.${y} ${hh}:${mm}`;
+            }
         } catch { endDateStr = new Date(estimatedEnd).toLocaleString(); }
     }
 
@@ -119,9 +138,9 @@ function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; 
             {/* Main content */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative z-10 flex flex-col items-center text-center px-6 max-w-lg">
                 {/* Logo */}
-                <div className="flex items-center gap-4 mb-10">
-                    <Image src="/optwin.png" alt="OptWin" width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain" />
-                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none">OptWin</h1>
+                <div className="flex items-center gap-4 mb-10 select-none">
+                    <Image src="/optwin.png" alt="OptWin" width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
+                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">OptWin</h1>
                 </div>
 
                 {/* Spinning gear */}

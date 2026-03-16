@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, ExternalLink, Clock, Loader2, ChevronRight, X, AlertTriangle } from "lucide-react";
+import { LogOut, ExternalLink, Clock, Loader2, ChevronRight, X, AlertTriangle, Languages } from "lucide-react";
 import { AdminConfirmModal } from "./AdminConfirmModal";
 
 interface AdminHeaderProps {
@@ -47,6 +47,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     const REASON_LANG_LABELS: Record<string, string> = { tr: "TR", en: "EN", de: "DE", fr: "FR", es: "ES", zh: "ZH", hi: "HI" };
     const [mReasons, setMReasons] = useState<Record<string, string>>(Object.fromEntries(REASON_LANGS.map(l => [l, ""])));
     const [mReasonLang, setMReasonLang] = useState("tr");
+    const [mTranslating, setMTranslating] = useState(false);
     const [mTimeMode, setMTimeMode] = useState<"duration" | "datetime">("duration");
     const [mMinutes, setMMinutes] = useState<number | null>(null);
     const [mCustom, setMCustom] = useState(false);
@@ -323,6 +324,40 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                     rows={2}
                                     className="w-full bg-white/[0.02] border border-white/[0.04] rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors resize-none"
                                 />
+                                {mReasons[mReasonLang]?.trim() && (
+                                    <button
+                                        type="button"
+                                        disabled={mTranslating}
+                                        onClick={async () => {
+                                            const text = mReasons[mReasonLang];
+                                            if (!text?.trim()) return;
+                                            setMTranslating(true);
+                                            try {
+                                                const otherLangs = REASON_LANGS.filter(l => l !== mReasonLang);
+                                                const res = await fetch("/api/admin/translate", {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ text, sourceLang: mReasonLang, targetLangs: otherLangs }),
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    setMReasons(prev => {
+                                                        const updated = { ...prev };
+                                                        Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => {
+                                                            updated[lang] = translated;
+                                                        });
+                                                        return updated;
+                                                    });
+                                                }
+                                            } catch { /* ignore */ }
+                                            setMTranslating(false);
+                                        }}
+                                        className="mt-1.5 h-7 px-3 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                    >
+                                        {mTranslating ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
+                                        {mTranslating ? "Çevriliyor..." : "Diğer Dillere Çevir"}
+                                    </button>
+                                )}
                             </div>
 
                             {/* Estimated End */}

@@ -646,7 +646,7 @@ function SlugFeatureEditor({
                     </div>
                     <AdminLangPicker value={translationLang} onChange={setTranslationLang} availableLangs={availableLangs} />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-3">
                     <div>
                         <label className={labelCls}>Başlık</label>
                         <input

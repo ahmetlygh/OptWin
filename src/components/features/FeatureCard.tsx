@@ -101,11 +101,6 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                                 {newBadgeLabels[lang] || newBadgeLabels.en}
                             </span>
                         )}
-                        {!feature.noRisk && feature.risk === "low" && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-emerald-500/10 border-emerald-500/25 text-emerald-400 pointer-events-none leading-none">
-                                {lang === "tr" ? "Düşük Risk" : "Low"}
-                            </span>
-                        )}
                         {!feature.noRisk && feature.risk === "medium" && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 border-amber-500/25 text-amber-400 pointer-events-none leading-none">
                                 {lang === "tr" ? "Orta Risk" : "Medium"}

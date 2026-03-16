@@ -185,7 +185,7 @@ body{background:#08080d;color:#fff;font-family:system-ui,-apple-system,sans-seri
 <div class="lang-dd" id="ld"></div>
 </div>
 <div class="c">
-<div class="logo"><img src="/optwin.png" alt="OptWin"/><h1>OptWin</h1></div>
+<div class="logo"><img src="/optwin.png" alt="OptWin" draggable="false" style="user-select:none;-webkit-user-select:none;pointer-events:none;"/><h1 style="user-select:none;-webkit-user-select:none;pointer-events:none;">OptWin</h1></div>
 <svg class="gear" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
 <div class="msg-card"><p class="msg" id="msg"></p>
 <p class="apology" id="apo"></p></div>
@@ -270,7 +270,18 @@ var he=document.getElementById('h');if(he)he.textContent=hrs;
 var me=document.getElementById('m');if(me)me.textContent=mins;
 var se=document.getElementById('s');if(se)se.textContent=secs;
 var dte=document.getElementById('dt');
-if(dte){try{var d=new Date(END);dte.textContent=d.toLocaleString(LOCALE_MAP[lang]||'en-GB',{dateStyle:'long',timeStyle:'short'});}catch(e){dte.textContent=new Date(END).toLocaleString();}}
+if(dte){try{
+var off=UTC_OFFSET[lang]||0;
+var targetTime=new Date(END).getTime()+(off*3600000);
+var targetDate=new Date(targetTime);
+var dd=String(targetDate.getUTCDate()).padStart(2,'0');
+var mm=String(targetDate.getUTCMonth()+1).padStart(2,'0');
+var yyyy=targetDate.getUTCFullYear();
+var hh=String(targetDate.getUTCHours()).padStart(2,'0');
+var min=String(targetDate.getUTCMinutes()).padStart(2,'0');
+if(lang==='en'){var mNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];dte.textContent=dd+' '+mNames[targetDate.getUTCMonth()]+' '+yyyy+', '+hh+':'+min;}
+else{dte.textContent=dd+'.'+mm+'.'+yyyy+' '+hh+':'+min;}
+}catch(e){dte.textContent=new Date(END).toLocaleString();}}
 }
 render();
 setInterval(function(){updateCountdown();updateClock();},1000);

@@ -668,37 +668,6 @@ export default function AdminFeaturesPage() {
                 />
             </div>
 
-            {/* R7: Save/Cancel buttons for feature reorder */}
-            <AnimatePresence>
-                {hasOrderChanges && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                        className="overflow-hidden"
-                    >
-                        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-500/[0.06] border border-amber-500/15">
-                            <span className="text-[11px] font-medium text-amber-400/80">Sıralama değişti — kaydetmeyi unutmayın</span>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={cancelAllOrders}
-                                    className="h-8 px-3 rounded-lg text-[11px] font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all"
-                                >
-                                    İptal
-                                </button>
-                                <button
-                                    onClick={saveAllOrders}
-                                    className="h-8 px-4 rounded-lg text-[11px] font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shadow-sm"
-                                >
-                                    Kaydet
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* Features grouped by category */}
             <div className="space-y-4">
                 {groupedFeatures.map(({ category: cat, features: catFeatures }) => {
@@ -1522,7 +1491,7 @@ function FeatureEditor({
                     </div>
                     <AdminLangPicker value={translationLang} onChange={setTranslationLang} availableLangs={availableLangs} />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-3">
                     <div>
                         <label className={labelCls}>Başlık</label>
                         <input
