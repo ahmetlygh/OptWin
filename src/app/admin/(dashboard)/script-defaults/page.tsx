@@ -80,6 +80,7 @@ export default function ScriptDefaultsPage() {
     const [originalKeyOrder, setOriginalKeyOrder] = useState<Record<string, number>>({});
     const newKeyRef = useRef<HTMLInputElement>(null);
     const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
+    const [siteVersion, setSiteVersion] = useState("1.3.0");
     const unsavedCtx = useUnsavedChanges();
 
     // Build initial order from LABEL_DESCRIPTIONS positions
@@ -104,13 +105,17 @@ export default function ScriptDefaultsPage() {
 
     const fetchLabels = useCallback(async () => {
         try {
-            const res = await fetch("/api/admin/script-labels");
+            const [res, verRes] = await Promise.all([
+                fetch("/api/admin/script-labels"),
+                fetch("/api/admin/dashboard"),
+            ]);
             const data = await res.json();
+            const verData = await verRes.json().catch(() => ({}));
+            if (verData.settings?.site_version) setSiteVersion(verData.settings.site_version);
             if (data.success) {
                 setLabels(JSON.parse(JSON.stringify(data.labels)));
                 setOriginalLabels(JSON.parse(JSON.stringify(data.labels)));
                 setLanguages(data.languages);
-                // Initialize key order from first language
                 const firstLang = data.languages[0] || "en";
                 const initOrder = buildKeyOrder(data.labels[firstLang] || {});
                 setKeyOrder(initOrder);
@@ -387,7 +392,7 @@ export default function ScriptDefaultsPage() {
     // Each key maps to a PowerShell format template
     const KEY_FORMAT: Record<string, (v: string, L: Record<string, string>) => string> = useMemo(() => ({
         scriptTitle: (v) => `# ${v}`,
-        version: (v) => `# ${v}: 1.3`,
+        version: (v) => `# ${v}: ${siteVersion}`,
         date: (v) => `# ${v}: ${new Date().toISOString().split("T")[0]}`,
         developer: (v, L) => `# ${v}: ${L.developerName || "OptWin"}`,
         developerName: (v) => `#   → ${v}`,
@@ -410,7 +415,7 @@ export default function ScriptDefaultsPage() {
         thankYou: (v) => `Write-Host "${v}" -ForegroundColor Cyan`,
         author: (v) => `Write-Host "${v}" -ForegroundColor DarkGray`,
         pressAnyKey: (v) => `Write-Host "${v}" -ForegroundColor Gray`,
-    }), []);
+    }), [siteVersion]);
 
     // N12: Simplified section separators — no decorative box-drawing lines
     const SECTION_BEFORE: Record<string, PreviewLine[]> = useMemo(() => ({
@@ -849,9 +854,10 @@ export default function ScriptDefaultsPage() {
             <AdminConfirmModal
                 open={!!deleteConfirmKey}
                 onClose={() => setDeleteConfirmKey(null)}
-                onConfirm={() => {
-                    if (deleteConfirmKey) handleDeleteKey(deleteConfirmKey);
+                onConfirm={async () => {
+                    const key = deleteConfirmKey;
                     setDeleteConfirmKey(null);
+                    if (key) await handleDeleteKey(key);
                 }}
                 title="Etiketi Sil"
                 description={`"${deleteConfirmKey}" anahtarını silmek istediğinize emin misiniz? Bu işlem tüm dillerden kalıcı olarak silinecektir.`}

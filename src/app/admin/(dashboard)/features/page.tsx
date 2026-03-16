@@ -687,7 +687,7 @@ export default function AdminFeaturesPage() {
                                         if (e.key === "Escape") cancelCatNameEdit();
                                     }}
                                     onClick={e => e.stopPropagation()}
-                                    className="text-[11px] font-bold text-white/70 uppercase tracking-wider bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2 py-0.5 focus:outline-none max-w-[200px]"
+                                    className="text-[11px] font-bold text-white/70 tracking-wider bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2 py-0.5 focus:outline-none max-w-[200px]"
                                 />
                             ) : (
                                 <>
@@ -716,10 +716,10 @@ export default function AdminFeaturesPage() {
                                 <span className={`absolute top-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${cat.enabled ? "left-[17px]" : "left-[3px]"}`} />
                             </button>
 
-                            {/* O6: Delete category button */}
+                            {/* P9: Delete category button — always visible + hover animation */}
                             <button
                                 onClick={(e) => { e.stopPropagation(); setDeleteCatId(cat.id); }}
-                                className="size-6 flex items-center justify-center rounded-md text-white/0 group-hover:text-white/15 hover:!text-red-400 hover:!bg-red-500/10 transition-all shrink-0"
+                                className="size-6 flex items-center justify-center rounded-md text-white/15 hover:text-red-400 hover:bg-red-500/10 hover:scale-110 active:scale-95 transition-all duration-200 shrink-0"
                                 title="Kategoriyi Sil"
                             >
                                 <Trash2 size={11} />
@@ -912,17 +912,93 @@ export default function AdminFeaturesPage() {
                 )}
             </AnimatePresence>
 
-            {/* O6: Delete category confirmation modal */}
-            <AdminConfirmModal
-                open={!!deleteCatId}
-                onClose={() => setDeleteCatId(null)}
-                onConfirm={() => { if (deleteCatId) deleteCategory(deleteCatId); }}
-                title="Kategoriyi Sil"
-                description={`"${deleteCatId ? getCatDisplayName(categories.find(c => c.id === deleteCatId)!) : ""}" kategorisini silmek istediğinize emin misiniz?${(features.filter(f => f.categoryId === deleteCatId).length > 0) ? ` Bu kategoriye bağlı ${features.filter(f => f.categoryId === deleteCatId).length} özellik var!` : ""}`}
-                confirmText="Evet, Sil"
-                cancelText="Hayır"
-                variant="danger"
-            />
+            {/* P10: Delete category modal — with move option if has features */}
+            <AnimatePresence>
+                {deleteCatId && (() => {
+                    const cat = categories.find(c => c.id === deleteCatId);
+                    const linkedCount = features.filter(f => f.categoryId === deleteCatId).length;
+                    const otherCats = categories.filter(c => c.id !== deleteCatId);
+                    return (
+                        <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setDeleteCatId(null)}>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.92, y: 12 }}
+                                transition={{ duration: 0.25 }}
+                                className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
+                                onClick={e => e.stopPropagation()}
+                            >
+                                <h3 className="text-lg font-bold text-white mb-2">Kategoriyi Sil</h3>
+                                {linkedCount > 0 ? (
+                                    <>
+                                        <p className="text-sm text-white/40 mb-1">
+                                            <span className="font-bold text-white/60">&quot;{cat ? getCatDisplayName(cat) : ""}&quot;</span> kategorisinde <span className="text-amber-400 font-bold">{linkedCount}</span> özellik bulunuyor.
+                                        </p>
+                                        <p className="text-sm text-white/30 mb-4">Önce özellikleri taşıyın veya hepsini silin.</p>
+                                        <div className="space-y-2">
+                                            {otherCats.length > 0 && (
+                                                <div className="flex items-center gap-2">
+                                                    <select
+                                                        id="moveCatTarget"
+                                                        className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
+                                                        defaultValue=""
+                                                    >
+                                                        <option value="" disabled>Hedef kategori seç...</option>
+                                                        {otherCats.map(oc => <option key={oc.id} value={oc.id}>{getCatDisplayName(oc)}</option>)}
+                                                    </select>
+                                                    <button
+                                                        onClick={async () => {
+                                                            const sel = (document.getElementById('moveCatTarget') as HTMLSelectElement)?.value;
+                                                            if (!sel) return;
+                                                            await fetch("/api/admin/features", {
+                                                                method: "PATCH",
+                                                                headers: { "Content-Type": "application/json" },
+                                                                body: JSON.stringify({ categoryId: deleteCatId, newCategoryId: sel }),
+                                                            });
+                                                            setFeatures(prev => prev.map(f => f.categoryId === deleteCatId ? { ...f, categoryId: sel } : f));
+                                                            await deleteCategory(deleteCatId);
+                                                        }}
+                                                        className="h-9 px-4 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shrink-0"
+                                                    >
+                                                        Taşı & Sil
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <div className="flex gap-2 pt-1">
+                                                <button onClick={() => setDeleteCatId(null)} className="flex-1 h-9 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-medium rounded-xl transition-all text-sm border border-white/[0.04]">
+                                                    İptal
+                                                </button>
+                                                <button
+                                                    onClick={() => { if (deleteCatId) deleteCategory(deleteCatId); }}
+                                                    className="flex-1 h-9 bg-red-500/80 hover:bg-red-500 text-white font-medium rounded-xl transition-all text-sm"
+                                                >
+                                                    Hepsini Sil
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm text-white/40 mb-6">Bu kategoride özellik yok. Silmek istediğinize emin misiniz?</p>
+                                        <div className="flex gap-3">
+                                            <button onClick={() => setDeleteCatId(null)} className="flex-1 h-9 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-medium rounded-xl transition-all text-sm border border-white/[0.04]">
+                                                İptal
+                                            </button>
+                                            <button
+                                                onClick={() => { if (deleteCatId) deleteCategory(deleteCatId); }}
+                                                className="flex-1 h-9 bg-red-500/80 hover:bg-red-500 text-white font-medium rounded-xl transition-all text-sm"
+                                            >
+                                                Evet, Sil
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </motion.div>
+                        </div>
+                    );
+                })()}
+            </AnimatePresence>
 
             {/* Translate toast */}
             <AnimatePresence>

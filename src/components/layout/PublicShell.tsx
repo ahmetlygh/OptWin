@@ -28,6 +28,7 @@ const ML: Record<string, {
 };
 const ML_KEYS = Object.keys(ML);
 const LOCALE_MAP: Record<string, string> = { tr: "tr-TR", en: "en-GB", de: "de-DE", fr: "fr-FR", es: "es-ES", zh: "zh-CN", hi: "hi-IN" };
+const UTC_OFFSET: Record<string, number> = { tr: 3, en: 0, de: 1, fr: 1, es: 1, zh: 8, hi: 5.5 };
 
 /* ── Maintenance Overlay ──────────────────────────────────────── */
 function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; estimatedEnd?: string | null }) {
@@ -85,12 +86,13 @@ function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; 
             transition={{ duration: 0.6 }}
             className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
         >
-            {/* Rich background */}
+            {/* Rich background with animated pulse orbs */}
             <div className="absolute inset-0 bg-[#08080d]">
-                <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(107,91,230,0.1)_0%,transparent_70%)]" />
-                <div className="absolute bottom-[-15%] left-[25%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(147,51,234,0.07)_0%,transparent_70%)]" />
-                <div className="absolute top-[30%] right-[-5%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.06)_0%,transparent_70%)]" />
-                <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+                <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle,rgba(107,91,230,0.14)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '4s' }} />
+                <div className="absolute bottom-[-15%] left-[20%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(147,51,234,0.10)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+                <div className="absolute top-[25%] right-[-8%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.09)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+                <div className="absolute bottom-[10%] right-[30%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(168,85,247,0.06)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '7s', animationDelay: '0.5s' }} />
+                <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
             </div>
 
             {/* Language dropdown */}
@@ -115,71 +117,83 @@ function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; 
             </div>
 
             {/* Main content */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative z-10 flex flex-col items-center text-center px-6 max-w-md">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative z-10 flex flex-col items-center text-center px-6 max-w-lg">
                 {/* Logo */}
-                <div className="flex items-center gap-3.5 mb-9">
-                    <Image src="/optwin.png" alt="OptWin" width={56} height={56} className="drop-shadow-[0_0_20px_rgba(107,91,230,0.5)] object-contain" />
-                    <h1 className="text-[2.1rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none">OptWin</h1>
+                <div className="flex items-center gap-4 mb-10">
+                    <Image src="/optwin.png" alt="OptWin" width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain" />
+                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none">OptWin</h1>
                 </div>
 
                 {/* Spinning gear */}
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="mb-7">
-                    <Settings size={56} className="text-[#6b5be6]/35" strokeWidth={1.5} />
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="mb-8">
+                    <Settings size={68} className="text-[#6b5be6]/35" strokeWidth={1.5} />
                 </motion.div>
 
-                {/* Message */}
-                <p className="text-white/45 text-[15px] leading-[1.7] mb-2 max-w-[400px]">{t.msg}</p>
-                <p className="text-white/22 text-[13px] leading-[1.7] mb-6 max-w-[400px]">{t.apology}</p>
+                {/* Message card */}
+                <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl px-6 py-5 mb-6 max-w-[460px] w-full backdrop-blur-sm">
+                    <p className="text-white/50 text-[18px] leading-[1.7] mb-2">{t.msg}</p>
+                    <p className="text-white/25 text-[15px] leading-[1.7]">{t.apology}</p>
+                </div>
 
                 {/* Reason */}
                 {reason && (
-                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 mb-6 max-w-[400px] w-full text-left">
-                        <p className="text-[11px] font-bold text-white/35 uppercase tracking-wider mb-1">{t.reasonLabel}</p>
-                        <p className="text-[13px] text-white/28 leading-relaxed">{reason}</p>
+                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
+                        <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">{t.reasonLabel}</p>
+                        <p className="text-[15px] text-white/30 leading-relaxed">{reason}</p>
                     </div>
                 )}
 
                 {/* Progress bar */}
-                <div className="w-full max-w-[320px] mb-2">
-                    <div className="h-[2px] bg-white/[0.06] rounded-full overflow-hidden relative">
+                <div className="w-full max-w-[384px] mb-2.5">
+                    <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden relative">
                         <motion.div className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-[#6b5be6]/60 to-transparent rounded-full" animate={{ x: ["-100%", "400%"] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
                     </div>
                 </div>
 
                 {/* WIP text below bar */}
-                <p className="text-[11px] text-white/16 font-medium mb-3 tracking-wide">{t.wip}</p>
+                <p className="text-[13px] text-white/18 font-medium mb-3 tracking-wide">{t.wip}</p>
 
-                {/* Live clock */}
-                <p className="text-[11px] text-white/12 font-mono tabular-nums mb-5">
-                    {(() => { try { return new Date().toLocaleString(LOCALE_MAP[lang] || 'en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); } catch { return new Date().toLocaleTimeString(); } })()}
+                {/* Live clock with UTC offset */}
+                <p className="text-[13px] text-white/14 font-mono tabular-nums mb-6">
+                    {(() => {
+                        const offset = UTC_OFFSET[lang] ?? 0;
+                        const utcNow = Date.now();
+                        const local = new Date(utcNow + offset * 3600000);
+                        const hh = local.getUTCHours().toString().padStart(2, '0');
+                        const mm = local.getUTCMinutes().toString().padStart(2, '0');
+                        const ss = local.getUTCSeconds().toString().padStart(2, '0');
+                        const sign = offset >= 0 ? '+' : '';
+                        const utcLabel = Number.isInteger(offset) ? `UTC${sign}${offset}` : `UTC${sign}${offset}`;
+                        return `${hh}:${mm}:${ss}  ${utcLabel}`;
+                    })()}
                 </p>
 
                 {/* Countdown */}
                 {hasCountdown && (
-                    <div className="mb-5">
-                        <p className="text-[11px] font-bold text-white/22 uppercase tracking-wider mb-3">{t.estLabel}</p>
-                        <div className="flex gap-2.5 justify-center mb-2">
+                    <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl px-6 py-5 mb-5 max-w-[460px] w-full">
+                        <p className="text-[13px] font-bold text-white/25 uppercase tracking-wider mb-4">{t.estLabel}</p>
+                        <div className="flex gap-3 justify-center mb-3">
                             {[
                                 { v: cd.d, u: t.days },
                                 { v: cd.h, u: t.hours },
                                 { v: cd.m, u: t.min },
                                 { v: cd.s, u: t.sec },
                             ].map((item, i) => (
-                                <div key={i} className="bg-[#6b5be6]/[0.06] border border-[#6b5be6]/[0.12] rounded-xl px-3.5 py-2.5 min-w-[60px] text-center">
-                                    <p className="text-2xl font-extrabold text-[#6b5be6]/70 font-mono tabular-nums">{item.v}</p>
-                                    <p className="text-[9px] text-white/16 uppercase tracking-wider mt-0.5">{item.u}</p>
+                                <div key={i} className="bg-[#6b5be6]/[0.07] border border-[#6b5be6]/[0.14] rounded-xl px-4 py-3 min-w-[72px] text-center">
+                                    <p className="text-3xl font-extrabold text-[#6b5be6]/70 font-mono tabular-nums">{item.v}</p>
+                                    <p className="text-[10px] text-white/18 uppercase tracking-wider mt-1">{item.u}</p>
                                 </div>
                             ))}
                         </div>
-                        <p className="text-[12px] text-white/16">{endDateStr}</p>
-                        <p className="text-[10px] text-white/10 italic mt-1">{t.est}</p>
+                        <p className="text-[14px] text-white/18">{endDateStr}</p>
+                        <p className="text-[11px] text-white/10 italic mt-1">{t.est}</p>
                     </div>
                 )}
             </motion.div>
 
             {/* Copyright */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="absolute bottom-8 left-0 right-0 text-center">
-                <p className="text-[13px] text-white/13 font-medium">&copy; {new Date().getFullYear()} OptWin. All rights reserved.</p>
+                <p className="text-[16px] text-white/13 font-medium">&copy; {new Date().getFullYear()} OptWin. All rights reserved.</p>
             </motion.div>
         </motion.div>
     );
@@ -274,7 +288,7 @@ export function PublicShell({ children, serverMaintenance = false }: { children:
                             <div className="absolute top-[40%] left-[30%] w-[70vw] h-[70vw] max-w-[1000px] max-h-[1000px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.08)_0%,transparent_70%)]"></div>
                         </div>
 
-                        <div className="flex flex-col min-h-screen relative z-0">
+                        <div className="flex flex-col min-h-screen relative">
                             <Header />
                             <main className="flex-1 w-full max-w-[1200px] mx-auto pt-6 pb-12 px-6">
                                 {children}

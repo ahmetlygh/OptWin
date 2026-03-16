@@ -4,6 +4,84 @@
 
 ---
 
+## P. Script Defaults Bugfix, Bakım Ekranı İyileştirme, Kategori UX, ActionArea Fix
+
+### Script Ayarları — Silme & Yeniden Oluşturma
+
+- [x] **P1. Silme onay modalında "İptal" butonuna basınca modal kapanmıyor**
+  - `AdminConfirmModal` içindeki `onClose` çağrısı `setDeleteConfirmKey(null)` yapıyor
+  - `handleDeleteKey` fonksiyonu async — silme işlemi tamamlanınca `originalLabels`'ı da güncelliyor
+  - Sorun: `onConfirm` callback'inde `handleDeleteKey` çağrılıp ardından `setDeleteConfirmKey(null)` yapılıyor ama async bitmeden state değişiyor olabilir
+  - Çözüm: `onConfirm`'de `await handleDeleteKey(...)` yapıp ardından state'i temizle
+
+- [x] **P2. EN dilindeki tüm anahtarları sil ve script-generator.ts'deki yapıya uygun şekilde baştan oluştur**
+  - Mevcut `LABEL_DESCRIPTIONS` ve `KEY_FORMAT` haritalarını `script-generator.ts`'deki `labels.xxx` kullanımlarıyla birebir eşleştir
+  - Script generator'da kullanılan tüm anahtarlar: `scriptTitle`, `version`, `date`, `developer`, `developerName`, `website`, `websiteUrl`, `githubUrl`, `openSource`, `bannerTitle`, `openSourceShort`, `adminRequest`, `adminPrompt`, `adminError`, `adminHint`, `restorePoint`, `restoreSuccess`, `restoreFail`, `done`, `complete`, `success`, `thankYou`, `author`, `pressAnyKey`
+  - Her anahtarın varsayılan EN değeri script-generator.ts'deki kullanıma uygun olmalı
+  - Seed script-labels dosyasını da güncelle
+  - DB'ye INSERT işlemi: mevcut EN satırlarını silip yeniden oluştur (API üzerinden veya doğrudan script ile)
+
+- [x] **P3. Version satırına basınca sadece "Version" etiketi düzenlenebiliyor, "1.3.0" değeri düzenlenemiyor**
+  - `version` anahtarı etiketi "Version", ama asıl versiyon numarası (`1.3.0`) `SiteSetting` tablosundaki `site_version` değerinden geliyor
+  - `KEY_FORMAT`'ta `version: (v) => \`# ${v}: 1.3\`` — sabit 1.3 yazıyor, DB'den okumak gerekli
+  - Çözüm: `KEY_FORMAT.version` fonksiyonunda site_version'ı okuyarak göster
+  - Alternatif: Preview'de version satırına tıklandığında versiyon numarasını da düzenleme imkanı ver (veya SiteSetting'e link ver)
+
+### Bakım Ekranı — Middleware HTML & React Overlay
+
+- [x] **P4. Tüm elementleri %20 daha büyüt + tasarıma hava kat**
+  - Logo: 56→68px, Gear spinner: 56→68px
+  - Ana mesaj fontu: 15px→18px, Alt mesaj: 13px→16px
+  - Countdown kutuları: 60→72px min-width, sayılar: 2xl→3xl
+  - Progress bar genişliği: 320→384px
+  - Copyright: 13px→16px
+  - Gradient orb'ları daha canlı, animasyonlu pulse efekti ekle
+  - Card-like container ekle mesaj ve countdown için (arka plan farklılaşması)
+  - Hem middleware HTML hem React overlay'de aynı değişiklikleri yap
+
+- [x] **P5. Seçilen dile göre UTC göster, saatin yanında "UTC+X" yazsın**
+  - Her dil için UTC offset haritası: `{ tr: 3, en: 0, de: 1, fr: 1, es: 1, zh: 8, hi: 5.5 }`
+  - Saat gösteriminin yanına `UTC+3` gibi etiket ekle
+  - Hem middleware HTML hem React overlay
+
+### Bakım Admin Modalı (AdminHeader.tsx)
+
+- [x] **P6. Süre seçeneklerini değiştir: 5dk, 15dk, 30dk, 1 saat, Özel**
+  - Mevcut `HOUR_PRESETS = [1, 2, 3, 6, 12, 24, 48, 72]` → yeni preset'ler: `5m, 15m, 30m, 1h, custom`
+  - "Özel" seçeneğine basınca dakika input'u açılsın (type=text inputMode=numeric, spinner olmasın)
+  - Kullanıcı doğrudan dakika sayısı girer
+
+- [x] **P7. "Tarih ve saat" sekmesine basınca UTC+3'e göre güncel saat+1 otomatik dolu gelsin**
+  - Örnek: Şu an 12:00 ise → tarih: bugün, saat: 13:00 otomatik dolu gelir
+  - `mTimeMode` "datetime" olarak değiştirildiğinde `setMDate` ve `setMTime` çağır
+
+### Kategori Yönetimi — Features Sayfası
+
+- [x] **P8. Kategori isimleri büyük harf görünsün ama düzenleme modunda gerçek hali gözüksün**
+  - Kategori başlığında `uppercase` CSS class'ı veya `toUpperCase()` ile göster
+  - Düzenleme (edit) modunda input değeri olduğu gibi (`actualValue`) gösterilsin
+  - Kullanıcı küçük harf girerse DB'ye küçük yazılır ama ekranda uppercase görünür
+
+- [x] **P9. Kategori silme butonu her zaman görünsün + hover animasyonu**
+  - Mevcut: sadece hover'da görünüyor olabilir → her zaman görünür yap
+  - Hover'da scale + renk geçişi animasyonu ekle
+
+- [x] **P10. Kategori silinirken içinde özellik varsa uyarı ver — sil veya taşı seçeneği**
+  - Mevcut `AdminConfirmModal` yerine özel bir modal gerekebilir
+  - Modal'da: "Bu kategoride X özellik var. Özellikleri silmek mi yoksa başka kategoriye taşımak mı istiyorsunuz?"
+  - "Sil" → kategori + tüm özellikleri sil
+  - "Taşı" → hedef kategori seçtir, özellikleri taşı, ardından boş kategoriyi sil
+
+### Public Site
+
+- [x] **P11. Floating "Script Oluştur" butonu (ActionArea) hala görünmüyor**
+  - Önceki fix: `PublicShell` wrapper `animate-fade-in-up` kaldırıldı (stacking context)
+  - Hala çalışmıyorsa: `position:fixed` + `z-[110]` yeterli mi kontrol et
+  - `<main>` etiketinin `overflow` ayarı fixed children'ı kesiyor olabilir
+  - `flex flex-col min-h-screen relative z-0` → `z-0` yeni stacking context oluşturuyor mu kontrol et
+
+---
+
 ## O. Bakım Tasarımı, Kategori CRUD, Feature Edit Bugfix, Script Preview Sync, Public ActionArea
 
 ### Bakım Sayfası — Middleware HTML (`buildMaintenanceHtml`)

@@ -157,6 +157,26 @@ export async function PUT(req: NextRequest) {
     }
 }
 
+// PATCH /api/admin/features — bulk move features from one category to another
+export async function PATCH(req: NextRequest) {
+    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    try {
+        const { categoryId, newCategoryId } = await req.json();
+        if (!categoryId || !newCategoryId) {
+            return NextResponse.json({ error: "categoryId and newCategoryId are required" }, { status: 400 });
+        }
+        const result = await prisma.feature.updateMany({
+            where: { categoryId },
+            data: { categoryId: newCategoryId },
+        });
+        return NextResponse.json({ success: true, moved: result.count });
+    } catch (error) {
+        console.error("Move features error:", error);
+        return NextResponse.json({ error: "Failed to move features" }, { status: 500 });
+    }
+}
+
 // DELETE /api/admin/features?id=xxx
 export async function DELETE(req: NextRequest) {
     if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

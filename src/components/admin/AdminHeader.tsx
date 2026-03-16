@@ -26,7 +26,12 @@ function getUTC3Time(): string {
     return `${h}:${m}:${s}`;
 }
 
-const HOUR_PRESETS = [1, 2, 3, 6, 12, 24, 48, 72];
+const DURATION_PRESETS = [
+    { label: "5 dk", minutes: 5 },
+    { label: "15 dk", minutes: 15 },
+    { label: "30 dk", minutes: 30 },
+    { label: "1 saat", minutes: 60 },
+];
 
 export function AdminHeader({ user }: AdminHeaderProps) {
     const [time, setTime] = useState("");
@@ -39,8 +44,10 @@ export function AdminHeader({ user }: AdminHeaderProps) {
 
     // Maintenance modal fields
     const [mReason, setMReason] = useState("");
-    const [mTimeMode, setMTimeMode] = useState<"hours" | "datetime">("hours");
-    const [mHours, setMHours] = useState<number | null>(null);
+    const [mTimeMode, setMTimeMode] = useState<"duration" | "datetime">("duration");
+    const [mMinutes, setMMinutes] = useState<number | null>(null);
+    const [mCustom, setMCustom] = useState(false);
+    const [mCustomMinutes, setMCustomMinutes] = useState("");
     const [mDate, setMDate] = useState("");
     const [mTime, setMTime] = useState("");
 
@@ -62,12 +69,13 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         try {
             let estimatedEnd = "";
             if (enabled) {
-                if (mTimeMode === "hours" && mHours) {
-                    // Admin is UTC+3, calculate absolute UTC time
-                    const end = new Date(Date.now() + mHours * 3600000);
-                    estimatedEnd = end.toISOString();
+                if (mTimeMode === "duration") {
+                    const mins = mCustom ? parseInt(mCustomMinutes) || 0 : (mMinutes || 0);
+                    if (mins > 0) {
+                        const end = new Date(Date.now() + mins * 60000);
+                        estimatedEnd = end.toISOString();
+                    }
                 } else if (mTimeMode === "datetime" && mDate && mTime) {
-                    // Admin enters UTC+3 local time, convert to UTC
                     const localStr = `${mDate}T${mTime}:00+03:00`;
                     estimatedEnd = new Date(localStr).toISOString();
                 }
@@ -83,12 +91,24 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         setMaintenanceLoading(false);
         setShowMaintenanceOn(false);
         setShowMaintenanceOff(false);
-        if (!enabled) { setMReason(""); setMHours(null); setMDate(""); setMTime(""); }
+        if (!enabled) { setMReason(""); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); }
     };
 
     const openMaintenanceModal = () => {
-        setMReason(""); setMHours(null); setMDate(""); setMTime(""); setMTimeMode("hours");
+        setMReason(""); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
         setShowMaintenanceOn(true);
+    };
+
+    // P7: Auto-fill UTC+3 current+1h when switching to datetime
+    const switchToDatetime = () => {
+        setMTimeMode("datetime");
+        const utc3Now = new Date(Date.now() + 3 * 3600000);
+        const plusOne = new Date(utc3Now.getTime() + 3600000);
+        const dateStr = plusOne.toISOString().split("T")[0];
+        const hh = plusOne.getUTCHours().toString().padStart(2, "0");
+        const mm = plusOne.getUTCMinutes().toString().padStart(2, "0");
+        setMDate(dateStr);
+        setMTime(`${hh}:${mm}`);
     };
 
     const pathname = usePathname();
@@ -283,15 +303,15 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                 {/* Mode toggle */}
                                 <div className="flex gap-1 mb-3">
                                     <button
-                                        onClick={() => setMTimeMode("hours")}
+                                        onClick={() => setMTimeMode("duration")}
                                         className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${
-                                            mTimeMode === "hours" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                            mTimeMode === "duration" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
                                         }`}
                                     >
-                                        ... saat sonra
+                                        Süre seç
                                     </button>
                                     <button
-                                        onClick={() => setMTimeMode("datetime")}
+                                        onClick={switchToDatetime}
                                         className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${
                                             mTimeMode === "datetime" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
                                         }`}
@@ -300,19 +320,43 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                     </button>
                                 </div>
 
-                                {mTimeMode === "hours" ? (
-                                    <div className="grid grid-cols-4 gap-1.5">
-                                        {HOUR_PRESETS.map(h => (
+                                {mTimeMode === "duration" ? (
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-5 gap-1.5">
+                                            {DURATION_PRESETS.map(p => (
+                                                <button
+                                                    key={p.minutes}
+                                                    onClick={() => { setMMinutes(mMinutes === p.minutes ? null : p.minutes); setMCustom(false); }}
+                                                    className={`h-8 rounded-lg text-[11px] font-bold transition-all border ${
+                                                        !mCustom && mMinutes === p.minutes ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                                    }`}
+                                                >
+                                                    {p.label}
+                                                </button>
+                                            ))}
                                             <button
-                                                key={h}
-                                                onClick={() => setMHours(mHours === h ? null : h)}
+                                                onClick={() => { setMCustom(!mCustom); setMMinutes(null); }}
                                                 className={`h-8 rounded-lg text-[11px] font-bold transition-all border ${
-                                                    mHours === h ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                                    mCustom ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
                                                 }`}
                                             >
-                                                {h < 24 ? `${h} saat` : `${h / 24} gün`}
+                                                Özel
                                             </button>
-                                        ))}
+                                        </div>
+                                        {mCustom && (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    value={mCustomMinutes}
+                                                    onChange={e => setMCustomMinutes(e.target.value.replace(/[^0-9]/g, ""))}
+                                                    placeholder="Dakika girin"
+                                                    className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-amber-500/30 transition-colors"
+                                                    autoFocus
+                                                />
+                                                <span className="text-[10px] text-white/25 font-medium">dakika</span>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="flex gap-2">
