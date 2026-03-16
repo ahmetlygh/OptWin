@@ -53,11 +53,22 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '@echo off\r\n';
     script += 'chcp 65001 >nul 2>&1\r\n';
     script += 'set "OPTWIN_BAT=%~f0"\r\n';
-    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference=\'Continue\'; try { . ([ScriptBlock]::Create((Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw))) } catch { Write-Host \" ERROR: $($_.Exception.Message)\" -ForegroundColor Red; Write-Host \'  Press any key...\' -ForegroundColor Gray; $null=$Host.UI.RawUI.ReadKey(\'NoEcho,IncludeKeyDown\') }"\r\n';
+    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& ([ScriptBlock]::Create((Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw)))"\r\n';
+    script += 'if errorlevel 1 pause\r\n';
     script += 'exit /b\r\n';
     script += '#>\r\n\r\n';
 
     // From here on: pure PowerShell code (batch never reaches here due to exit /b)
+
+    // Global error trap — if ANY unhandled error occurs, window stays open
+    script += 'trap {\n';
+    script += '    Write-Host "" \n';
+    script += '    Write-Host "  ERROR: $_" -ForegroundColor Red\n';
+    script += '    Write-Host "  Press any key to exit..." -ForegroundColor Gray\n';
+    script += '    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")\n';
+    script += '    break\n';
+    script += '}\n\n';
+
     script += '<#\n';
     script += '    ' + labels.scriptTitle + '\n';
     script += '    ' + labels.version + '   : ' + version + '\n';
