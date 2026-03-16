@@ -21,9 +21,11 @@ import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
+import { toPowerShellSafe } from "@/lib/powershell-safe";
 
 type LabelsMap = Record<string, Record<string, string>>;
-type PreviewLine = { text: string; key: string | null; editable: boolean };
+type PreviewLine = { text: string; key: string | null; valueKey?: string; editable: boolean };
+type ExtraLine = { pos: number; text: string };
 
 const LABEL_DESCRIPTIONS: Record<string, string> = {
     scriptTitle: "Script başlığı (header yorumunda görünür)",
@@ -50,6 +52,7 @@ const LABEL_DESCRIPTIONS: Record<string, string> = {
     done: "Her özellik tamamlandığında gösterilen metin",
     developerName: "Script başlığında kullanılan geliştirici adı",
     websiteUrl: "Script başlığında kullanılan website URL'i",
+    versionNumber: "Script başlığında görünen versiyon numarası (örn: 1.3.0)",
 };
 
 const getLineClass = (text: string) => {
@@ -73,6 +76,11 @@ export default function ScriptDefaultsPage() {
     const [newValue, setNewValue] = useState("");
     const [showNewRow, setShowNewRow] = useState(false);
     const [editingLineKey, setEditingLineKey] = useState<string | null>(null);
+    const [editingLineIdx, setEditingLineIdx] = useState<number | null>(null);
+    const [lineOverrides, setLineOverrides] = useState<Record<number, string>>({});
+    const [originalLineOverrides, setOriginalLineOverrides] = useState<Record<number, string>>({});
+    const [extraLines, setExtraLines] = useState<ExtraLine[]>([]);
+    const [originalExtraLines, setOriginalExtraLines] = useState<ExtraLine[]>([]);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -80,7 +88,8 @@ export default function ScriptDefaultsPage() {
     const [originalKeyOrder, setOriginalKeyOrder] = useState<Record<string, number>>({});
     const newKeyRef = useRef<HTMLInputElement>(null);
     const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
-    const [siteVersion, setSiteVersion] = useState("1.3.0");
+    const [resetting, setResetting] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
     const unsavedCtx = useUnsavedChanges();
 
     // Build initial order from LABEL_DESCRIPTIONS positions
@@ -105,13 +114,8 @@ export default function ScriptDefaultsPage() {
 
     const fetchLabels = useCallback(async () => {
         try {
-            const [res, verRes] = await Promise.all([
-                fetch("/api/admin/script-labels"),
-                fetch("/api/admin/dashboard"),
-            ]);
+            const res = await fetch("/api/admin/script-labels");
             const data = await res.json();
-            const verData = await verRes.json().catch(() => ({}));
-            if (verData.settings?.site_version) setSiteVersion(verData.settings.site_version);
             if (data.success) {
                 setLabels(JSON.parse(JSON.stringify(data.labels)));
                 setOriginalLabels(JSON.parse(JSON.stringify(data.labels)));
@@ -135,6 +139,7 @@ export default function ScriptDefaultsPage() {
         const handler = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 if (editingLineKey) { setEditingLineKey(null); }
+                if (editingLineIdx !== null) { setEditingLineIdx(null); }
             }
         };
         window.addEventListener("keydown", handler);
@@ -142,7 +147,7 @@ export default function ScriptDefaultsPage() {
     }, [editingLineKey]);
 
     // J11: beforeunload guard + context sync (includes order changes)
-    const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels) || JSON.stringify(keyOrder) !== JSON.stringify(originalKeyOrder);
+    const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels) || JSON.stringify(keyOrder) !== JSON.stringify(originalKeyOrder) || JSON.stringify(extraLines) !== JSON.stringify(originalExtraLines) || JSON.stringify(lineOverrides) !== JSON.stringify(originalLineOverrides);
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
             if (hasChanges) { e.preventDefault(); }
@@ -180,22 +185,24 @@ export default function ScriptDefaultsPage() {
                     }
                 }
             }
-            if (changedLabels.length === 0) return;
-
-            const res = await fetch("/api/admin/script-labels", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ labels: changedLabels }),
-            });
-            const data = await res.json();
-            if (data.success) {
-                setOriginalLabels(JSON.parse(JSON.stringify(labels)));
-                setOriginalKeyOrder(JSON.parse(JSON.stringify(keyOrder)));
-                setSaved(true);
-                setTimeout(() => setSaved(false), 2000);
-            } else {
-                setError(data.error || "Kaydetme başarısız");
+            if (changedLabels.length > 0) {
+                const res = await fetch("/api/admin/script-labels", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ labels: changedLabels }),
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    setError(data.error || "Kaydetme başarısız");
+                    return;
+                }
             }
+            setOriginalLabels(JSON.parse(JSON.stringify(labels)));
+            setOriginalKeyOrder(JSON.parse(JSON.stringify(keyOrder)));
+            setOriginalExtraLines(JSON.parse(JSON.stringify(extraLines)));
+            setOriginalLineOverrides(JSON.parse(JSON.stringify(lineOverrides)));
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
         } catch {
             setError("Değişiklikler kaydedilemedi");
         } finally {
@@ -206,7 +213,30 @@ export default function ScriptDefaultsPage() {
     const handleCancel = () => {
         setLabels(JSON.parse(JSON.stringify(originalLabels)));
         setKeyOrder(JSON.parse(JSON.stringify(originalKeyOrder)));
+        setExtraLines(JSON.parse(JSON.stringify(originalExtraLines)));
+        setLineOverrides(JSON.parse(JSON.stringify(originalLineOverrides)));
         setEditingLineKey(null);
+    };
+
+    const handleReset = async () => {
+        setShowResetModal(false);
+        setResetting(true);
+        try {
+            const res = await fetch("/api/admin/script-labels/reset", { method: "POST" });
+            const data = await res.json();
+            if (data.success) {
+                await fetchLabels();
+                setLineOverrides({});
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2000);
+            } else {
+                setError(data.error || "Sıfırlama başarısız");
+            }
+        } catch {
+            setError("Sıfırlama sırasında hata oluştu");
+        } finally {
+            setResetting(false);
+        }
     };
 
     // Register callbacks for sidebar navigation guard
@@ -393,94 +423,142 @@ export default function ScriptDefaultsPage() {
         });
     };
 
-    // M11: Dynamic preview lines — 100% synced with list via keyOrder
-    // Each key maps to a PowerShell format template
-    const KEY_FORMAT: Record<string, (v: string, L: Record<string, string>) => string> = useMemo(() => ({
-        scriptTitle: (v) => `# ${v}`,
-        version: (v) => `# ${v}: ${siteVersion}`,
-        date: (v) => `# ${v}: ${new Date().toISOString().split("T")[0]}`,
-        developer: (v, L) => `# ${v}: ${L.developerName || "OptWin"}`,
-        developerName: (v) => `#   → ${v}`,
-        website: (v, L) => `# ${v}: ${L.websiteUrl || "https://optwin.tech"}`,
-        websiteUrl: (v) => `#   → ${v}`,
-        githubUrl: (v) => `# GitHub: ${v}`,
-        openSource: (v) => `# ${v}`,
-        bannerTitle: (v) => `Write-Host "  ║  ${v.padEnd(36)}║" -ForegroundColor Cyan`,
-        openSourceShort: (v) => `Write-Host "  ║  ${v.padEnd(36)}║" -ForegroundColor DarkCyan`,
-        adminRequest: (v) => `# ${v}`,
-        adminPrompt: (v) => `# ${v}`,
-        adminError: (v) => `# ${v}`,
-        adminHint: (v) => `# ${v}`,
-        restorePoint: (v) => `Write-Host "[*] ${v}" -ForegroundColor Yellow`,
-        restoreSuccess: (v) => `Write-Host "[+] ${v}" -ForegroundColor Green`,
-        restoreFail: (v) => `Write-Host "[-] ${v}" -ForegroundColor Red`,
-        done: (v) => `Write-Host "  [${v}]" -ForegroundColor Green`,
-        complete: (v) => `Write-Host "  ║  ${v.padEnd(36)}║" -ForegroundColor Green`,
-        success: (v) => `Write-Host "${v}" -ForegroundColor Yellow`,
-        thankYou: (v) => `Write-Host "${v}" -ForegroundColor Cyan`,
-        author: (v) => `Write-Host "${v}" -ForegroundColor DarkGray`,
-        pressAnyKey: (v) => `Write-Host "${v}" -ForegroundColor Gray`,
-    }), [siteVersion]);
+    // Resolve <keyName> placeholders: <version> → value of "version" key
+    const resolvePlaceholders = useCallback((text: string, labelsMap: Record<string, string>): string => {
+        return text.replace(/<([a-zA-Z_][a-zA-Z0-9_]*)>/g, (match, key) => {
+            return labelsMap[key] !== undefined ? labelsMap[key] : match;
+        });
+    }, []);
 
-    // N12: Simplified section separators — no decorative box-drawing lines
-    const SECTION_BEFORE: Record<string, PreviewLine[]> = useMemo(() => ({
-        scriptTitle: [{ text: "# ============================================", key: null, editable: false }],
-        bannerTitle: [
-            { text: "# ============================================", key: null, editable: false },
-            { text: "", key: null, editable: false },
-        ],
-        adminRequest: [
-            { text: "", key: null, editable: false },
-        ],
-        restorePoint: [{ text: "", key: null, editable: false }],
-        complete: [
-            { text: "", key: null, editable: false },
-        ],
-        pressAnyKey: [{ text: "", key: null, editable: false }],
-    }), []);
-
-    // N12: All label-backed lines are editable, preview is clean/simple
+    // Preview — exactly mirrors script-generator.ts output
     const previewLines = useMemo<PreviewLine[]>(() => {
         const L = currentLabels;
-        const sortedKeys = Object.keys(L)
-            .filter(k => L[k] !== undefined)
-            .sort((a, b) => (keyOrder[a] || 999) - (keyOrder[b] || 999));
+        const ps = (key: string) => toPowerShellSafe(resolvePlaceholders(L[key] || "", L));
+        const S = (text: string): PreviewLine => ({ text, key: null, editable: true });
+        const K = (text: string, key: string, valueKey?: string): PreviewLine => ({ text, key, valueKey, editable: true });
 
-        const lines: PreviewLine[] = [];
+        const dateStr = new Date().toLocaleString();
+        const ghShort = (ps("githubUrl") || "github.com/ahmetlygh/optwin").replace("https://", "");
 
-        const postOptSet = new Set(["done", "complete", "success", "thankYou", "author", "pressAnyKey"]);
-        const preOptKeys = sortedKeys.filter(k => !postOptSet.has(k));
-        const postOptKeys = sortedKeys.filter(k => postOptSet.has(k));
+        return [
+            // <# ... #> Comment header
+            S("<#"),
+            K(`    ${ps("scriptTitle")}`, "scriptTitle"),
+            K(`    ${ps("version")}   : ${ps("versionNumber")}`, "version", "versionNumber"),
+            K(`    ${ps("date")}      : ${dateStr}`, "date"),
+            K(`    ${ps("developer")} : ${ps("developerName")}`, "developer", "developerName"),
+            K(`    ${ps("website")}   : ${ps("websiteUrl")}`, "website", "websiteUrl"),
+            K(`    GitHub    : ${ps("githubUrl")}`, "githubUrl"),
+            K(`    ${ps("openSource")}`, "openSource"),
+            S("#>"),
+            S(""),
+            // Self-elevation
+            S("# ===== SELF-ELEVATION ====="),
+            S("$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"),
+            S(""),
+            S("if (-not $isAdmin) {"),
+            S('    Write-Host ""'),
+            K(`    Write-Host "  ${ps("adminRequest")}" -ForegroundColor Yellow`, "adminRequest"),
+            K(`    Write-Host "  ${ps("adminPrompt")}" -ForegroundColor Cyan`, "adminPrompt"),
+            S('    Write-Host ""'),
+            S("    $batPath = $env:OPTWIN_BAT"),
+            S("    try {"),
+            S('        Start-Process cmd.exe -ArgumentList "/c `"$batPath`"" -Verb RunAs'),
+            S("    } catch {"),
+            K(`        Write-Host "  ${ps("adminError")}" -ForegroundColor Red`, "adminError"),
+            K(`        Write-Host "  ${ps("adminHint")}" -ForegroundColor Yellow`, "adminHint"),
+            S("        Read-Host"),
+            S("    }"),
+            S("    exit"),
+            S("}"),
+            S(""),
+            S('$host.UI.RawUI.WindowTitle = "OptWin Optimizer Script"'),
+            S(""),
+            // ASCII Banner
+            S("Clear-Host"),
+            S('Write-Host ""'),
+            S('Write-Host "  ================================================================" -ForegroundColor Magenta'),
+            S('Write-Host "" -ForegroundColor Magenta'),
+            S('Write-Host "       OOOO  PPPP  TTTTT W   W  III  N   N" -ForegroundColor Cyan'),
+            S('Write-Host "      O    O P   P   T   W   W   I   NN  N" -ForegroundColor Cyan'),
+            S('Write-Host "      O    O PPPP    T   W W W   I   N N N" -ForegroundColor Cyan'),
+            S('Write-Host "      O    O P       T   WW WW   I   N  NN" -ForegroundColor Cyan'),
+            S('Write-Host "       OOOO  P       T    W W   III  N   N" -ForegroundColor Cyan'),
+            S('Write-Host "" -ForegroundColor Magenta'),
+            S('Write-Host "  ================================================================" -ForegroundColor Magenta'),
+            K(`Write-Host "    ${ps("bannerTitle")}" -ForegroundColor White`, "bannerTitle"),
+            S('Write-Host "  ----------------------------------------------------------------" -ForegroundColor DarkGray'),
+            K(`Write-Host "    ${ps("version")}   : ${ps("versionNumber")}" -ForegroundColor Gray`, "version", "versionNumber"),
+            S(`Write-Host "    ${ps("date")}      : ${dateStr}" -ForegroundColor Gray`),
+            S('Write-Host "  ----------------------------------------------------------------" -ForegroundColor DarkGray'),
+            K(`Write-Host "    ${ps("openSourceShort")}" -ForegroundColor DarkGray`, "openSourceShort"),
+            S(`Write-Host "    GitHub: ${ghShort}" -ForegroundColor DarkGray`),
+            S('Write-Host "  ================================================================" -ForegroundColor Magenta'),
+            S('Write-Host ""'),
+            S(""),
+            // Restore point
+            K(`Write-Host "  [*] ${ps("restorePoint")}" -ForegroundColor Cyan`, "restorePoint"),
+            S("try {"),
+            S('    Enable-ComputerRestore -Drive "C:\\" -ErrorAction Stop'),
+            S('    Checkpoint-Computer -Description "OptWin Optimization" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop -WarningAction Stop'),
+            K(`    Write-Host "      ${ps("restoreSuccess")}" -ForegroundColor Green`, "restoreSuccess"),
+            S("} catch {"),
+            K(`    Write-Host "      ${ps("restoreFail")}: $($_.Exception.Message)" -ForegroundColor Red`, "restoreFail"),
+            S("}"),
+            S('Write-Host ""'),
+            S(""),
+            // Optimizations placeholder
+            S("# --- Optimizations ---"),
+            S('Write-Host "  Example Feature is being applied..." -ForegroundColor Cyan'),
+            S("# ... PowerShell commands ..."),
+            K(`Write-Host "      ${ps("done")}" -ForegroundColor Green`, "done"),
+            S('Write-Host ""'),
+            S(""),
+            // Completion
+            S('Write-Host ""'),
+            S('Write-Host "  ========================================" -ForegroundColor Green'),
+            K(`Write-Host "       ${ps("complete")}" -ForegroundColor Green`, "complete"),
+            K(`Write-Host "       ${ps("success")}" -ForegroundColor Green`, "success"),
+            S('Write-Host "  ========================================" -ForegroundColor Green'),
+            S('Write-Host ""'),
+            K(`Write-Host "  ${ps("thankYou")}" -ForegroundColor Cyan`, "thankYou"),
+            K(`Write-Host "  ${ps("author")}" -ForegroundColor Gray`, "author"),
+            S('Write-Host ""'),
+            K(`Write-Host "  ${ps("pressAnyKey")}" -ForegroundColor Gray`, "pressAnyKey"),
+        ];
+    }, [currentLabels]);
 
-        for (const key of preOptKeys) {
-            const before = SECTION_BEFORE[key];
-            if (before) lines.push(...before);
-            const fmt = KEY_FORMAT[key];
-            const val = L[key] || "";
-            lines.push({ text: fmt ? fmt(val, L) : `# ${key}: ${val}`, key, editable: true });
+    const getDisplayText = (line: PreviewLine, idx: number) =>
+        !line.key && lineOverrides[idx] !== undefined ? lineOverrides[idx] : line.text;
+
+    // Resolve <keyName> in display text for static/extra lines
+    const resolveDisplay = (text: string) =>
+        text.replace(/<([a-zA-Z_][a-zA-Z0-9_]*)>/g, (match, key) =>
+            currentLabels[key] !== undefined ? toPowerShellSafe(currentLabels[key]) : match
+        );
+
+    // Merge preview lines + extra lines (inserted at their positions)
+    type MergedItem =
+        | { type: 'preview'; line: PreviewLine; previewIdx: number }
+        | { type: 'extra'; extraIdx: number; text: string; pos: number };
+
+    const mergedItems = useMemo<MergedItem[]>(() => {
+        const items: MergedItem[] = previewLines.map((line, i) => ({ type: 'preview' as const, line, previewIdx: i }));
+        // Sort by pos descending so splicing doesn't shift earlier positions
+        const sorted = extraLines
+            .map((e, i) => ({ ...e, extraIdx: i }))
+            .sort((a, b) => b.pos - a.pos);
+        for (const extra of sorted) {
+            const insertAt = Math.max(0, Math.min(extra.pos - 1, items.length));
+            items.splice(insertAt, 0, { type: 'extra', extraIdx: extra.extraIdx, text: extra.text, pos: extra.pos });
         }
+        return items;
+    }, [previewLines, extraLines]);
 
-        // Optimization placeholder
-        lines.push({ text: "", key: null, editable: false });
-        lines.push({ text: "# --- Optimizations ---", key: null, editable: false });
-        lines.push({ text: 'Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White', key: null, editable: false });
-
-        for (const key of postOptKeys) {
-            const before = SECTION_BEFORE[key];
-            if (before) lines.push(...before);
-            const fmt = KEY_FORMAT[key];
-            const val = L[key] || "";
-            lines.push({ text: fmt ? fmt(val, L) : `Write-Host "${val}"`, key, editable: true });
-        }
-
-        // N13: Footer — pause keeps terminal open
-        lines.push({ text: "", key: null, editable: false });
-        lines.push({ text: '$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")', key: null, editable: false });
-
-        return lines;
-    }, [currentLabels, keyOrder, KEY_FORMAT, SECTION_BEFORE]);
-
-    const previewText = previewLines.map(l => l.text).join("\n");
+    const allDisplayLines = mergedItems.map(item =>
+        item.type === 'preview' ? getDisplayText(item.line, item.previewIdx) : resolveDisplay(item.text)
+    );
+    const previewText = allDisplayLines.join("\n");
 
     // J7: Enter in preview adds new line
     const handlePreviewKeyDown = (e: React.KeyboardEvent, idx: number) => {
@@ -501,16 +579,23 @@ export default function ScriptDefaultsPage() {
         }
     };
 
-    // O12: Downloaded preview — proper PowerShell pause (not CMD 'pause')
+    // Download as working .bat — polyglot header + PowerShell content + ReadKey pause
     const handleDownloadPreview = () => {
-        const bom = "\uFEFF";
-        const pauseBlock = '\nWrite-Host ""\nWrite-Host "Press Enter to exit..." -ForegroundColor Gray\nRead-Host';
-        const downloadText = previewText + pauseBlock;
-        const blob = new Blob([bom + downloadText], { type: "text/plain;charset=utf-8" });
+        // NO BOM — BOM breaks batch parsing of <# : header
+        let bat = '<# : batch header\r\n';
+        bat += '@echo off\r\n';
+        bat += 'chcp 65001 >nul 2>&1\r\n';
+        bat += 'set "OPTWIN_BAT=%~f0"\r\n';
+        bat += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw | iex"\r\n';
+        bat += 'exit /b\r\n';
+        bat += '#>\r\n\r\n';
+        bat += previewText;
+        bat += '\n\n$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")';
+        const blob = new Blob([bat], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `OptWin-Preview-${activeLang}.bat`;
+        a.download = `OptWin-Pv-${activeLang.toUpperCase()}.bat`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -540,7 +625,7 @@ export default function ScriptDefaultsPage() {
                         <h1 className="text-2xl font-black text-white tracking-tight">Script Ayarları</h1>
                         <div className="flex items-center gap-2 mt-0.5">
                             <p className="text-xs text-white/30">
-                                Oluşturulan PowerShell scriptlerinde görünen varsayılan metinleri düzenleyin
+                                Oluşturulan batch scriptlerinde görünen varsayılan metinleri düzenleyin
                             </p>
                             {currentLabels.githubUrl && (
                                 <a href={currentLabels.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-white/20 hover:text-[#6b5be6] transition-colors">
@@ -554,14 +639,14 @@ export default function ScriptDefaultsPage() {
 
                 <div className="flex items-center gap-2">
                     {/* N11: Save/Cancel buttons LEFT of lang picker */}
-                    <AnimatePresence>
+                    <AnimatePresence mode="popLayout">
                         {hasChanges && (
                             <motion.div
                                 key="save-cancel"
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
-                                transition={{ duration: 0.2 }}
+                                initial={{ opacity: 0, x: -12, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: -12, scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                 className="flex items-center gap-2"
                             >
                                 <button
@@ -583,6 +668,15 @@ export default function ScriptDefaultsPage() {
                         )}
                     </AnimatePresence>
 
+                    <button
+                        onClick={() => setShowResetModal(true)}
+                        disabled={resetting}
+                        className="h-9 px-3 rounded-xl text-xs font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        title="Tüm etiketleri varsayılana sıfırla"
+                    >
+                        {resetting ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+                        Sıfırla
+                    </button>
                     <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages} />
                 </div>
             </div>
@@ -771,11 +865,11 @@ export default function ScriptDefaultsPage() {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <MonitorPlay size={11} className="text-emerald-400/50" />
-                                <span className="text-[10px] font-mono text-white/20">OptWin-Preview-{activeLang}.bat</span>
+                                <span className="text-[10px] font-mono text-white/20">OptWin-Pv-{activeLang.toUpperCase()}.bat</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-white/15 font-mono">{previewLines.filter(l => l.key).length} editable</span>
+                            <span className="text-[9px] text-white/15 font-mono">{previewLines.length} lines</span>
                             <button
                                 onClick={handleDownloadPreview}
                                 className="h-6 px-2 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/10 transition-all flex items-center gap-1"
@@ -786,71 +880,214 @@ export default function ScriptDefaultsPage() {
                         </div>
                     </div>
 
-                    {/* Terminal body — notepad-style interactive */}
+                    {/* Terminal body — unified merged rendering */}
                     <div className="flex-1 bg-[#08080e] overflow-auto admin-scrollbar min-h-0">
                         <div className="py-3">
-                            {previewLines.map((line, idx) => {
-                                const isEditing = editingLineKey === line.key && !!line.key;
+                            {mergedItems.map((item, mIdx) => {
+                                const lineNum = mIdx + 1;
 
-                                // Editing mode for this line
-                                if (isEditing && line.key) {
+                                // === EXTRA LINE ===
+                                if (item.type === 'extra') {
+                                    const ei = item.extraIdx;
+                                    const isEditingExtra = editingLineIdx === -(ei + 1);
+                                    const displayText = resolveDisplay(item.text);
+
+                                    // Extract first <keyName> from text as label
+                                    const keyMatch = item.text.match(/<([a-zA-Z_][a-zA-Z0-9_]*)>/);
+                                    const extraLabel = keyMatch ? keyMatch[1] : null;
+
+                                    if (isEditingExtra) {
+                                        return (
+                                            <div key={`extra-${ei}`} className="flex items-center gap-0 px-2 py-px bg-amber-500/[0.04]" data-extra-row={ei}>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    value={item.pos}
+                                                    onChange={e => {
+                                                        const num = parseInt(e.target.value);
+                                                        if (!isNaN(num) && num >= 1) {
+                                                            setExtraLines(prev => { const n = [...prev]; n[ei] = { ...n[ei], pos: num }; return n; });
+                                                        }
+                                                    }}
+                                                    onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                                                    className="w-8 text-right text-[9px] font-mono text-amber-500/60 bg-amber-500/[0.08] border border-amber-500/20 rounded px-0.5 py-0 shrink-0 focus:outline-none focus:border-amber-500/40 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    title="Satır konumunu değiştir"
+                                                />
+                                                <span className="w-px h-4 bg-amber-500/15 mx-1.5 shrink-0" />
+                                                {extraLabel ? (
+                                                    <span className="text-[8px] font-mono text-amber-500/40 w-[72px] text-right pr-1.5 shrink-0 truncate" title={extraLabel}>{extraLabel}</span>
+                                                ) : (
+                                                    <span className="w-[72px] shrink-0" />
+                                                )}
+                                                <input
+                                                    autoFocus
+                                                    value={item.text}
+                                                    onChange={e => {
+                                                        const val = e.target.value;
+                                                        setExtraLines(prev => { const n = [...prev]; n[ei] = { ...n[ei], text: val }; return n; });
+                                                    }}
+                                                    onKeyDown={e => {
+                                                        if (e.key === "Escape" || e.key === "Enter") setEditingLineIdx(null);
+                                                    }}
+                                                    onBlur={e => {
+                                                        const row = (e.target as HTMLElement).closest('[data-extra-row]');
+                                                        if (row?.contains(e.relatedTarget as Node)) return;
+                                                        setEditingLineIdx(null);
+                                                    }}
+                                                    className="flex-1 bg-amber-500/[0.06] border border-amber-500/20 rounded px-2 py-0.5 text-[11px] font-mono text-amber-200/80 focus:outline-none focus:border-amber-500/40 transition-all mr-2"
+                                                    placeholder='Satır içeriği... (<version> gibi placeholder kullanabilirsiniz)'
+                                                />
+                                                <button
+                                                    onMouseDown={e => { e.preventDefault(); setExtraLines(prev => prev.filter((_, i) => i !== ei)); setEditingLineIdx(null); }}
+                                                    className="size-5 flex items-center justify-center rounded text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+                                                    title="Satırı sil"
+                                                >
+                                                    <Trash2 size={9} />
+                                                </button>
+                                            </div>
+                                        );
+                                    }
+
                                     return (
-                                        <div key={`${idx}-${line.key}`} className="flex items-center gap-0 px-2 py-px bg-[#6b5be6]/[0.04]">
-                                            <span className="w-8 text-right text-[9px] font-mono text-[#6b5be6]/30 shrink-0 select-none">{idx + 1}</span>
+                                        <div
+                                            key={`extra-${ei}`}
+                                            className="flex items-start gap-0 px-2 py-px group cursor-pointer hover:bg-white/[0.015]"
+                                            onClick={() => { setEditingLineIdx(-(ei + 1)); setEditingLineKey(null); }}
+                                        >
+                                            <span className="w-8 text-right text-[9px] font-mono text-white/[0.08] shrink-0 select-none pt-px">{lineNum}</span>
+                                            <span className="w-px h-4 bg-white/[0.04] mx-1.5 shrink-0 mt-px" />
+                                            {extraLabel ? (
+                                                <span className="text-[8px] font-mono text-white/[0.08] group-hover:text-white/15 w-[72px] text-right pr-1.5 shrink-0 truncate pt-0.5 transition-colors" title={extraLabel}>{extraLabel}</span>
+                                            ) : (
+                                                <span className="w-[72px] shrink-0" />
+                                            )}
+                                            <code className={`text-[11px] font-mono whitespace-pre leading-[1.6] ${getLineClass(displayText)} group-hover:brightness-125 transition-all`}>
+                                                {displayText || "\u00A0"}
+                                            </code>
+                                            <Pencil size={8} className="text-white/0 group-hover:text-white/20 transition-colors mt-1 ml-1.5 shrink-0" />
+                                        </div>
+                                    );
+                                }
+
+                                // === PREVIEW LINE ===
+                                const { line } = item;
+                                const idx = item.previewIdx;
+                                const isEditingKey = editingLineKey === line.key && !!line.key;
+                                const isEditingIdx = editingLineIdx === idx && !line.key;
+                                const displayText = getDisplayText(line, idx);
+
+                                // Editing a label-backed line (with optional valueKey for compound lines)
+                                if (isEditingKey && line.key) {
+                                    return (
+                                        <div key={`pv-${idx}-${line.key}`} className="flex items-center gap-0 px-2 py-px bg-[#6b5be6]/[0.04]">
+                                            <span className="w-8 text-right text-[9px] font-mono text-[#6b5be6]/30 shrink-0 select-none">{lineNum}</span>
                                             <span className="w-px h-4 bg-[#6b5be6]/15 mx-1.5 shrink-0" />
                                             <span className="text-[8px] font-mono text-[#6b5be6]/40 w-[72px] text-right pr-1.5 shrink-0 truncate" title={line.key}>{line.key}</span>
+                                            <div className="flex-1 flex items-center gap-1.5 mr-2">
+                                                <input
+                                                    autoFocus={!line.valueKey}
+                                                    value={currentLabels[line.key] || ""}
+                                                    onChange={e => handleValueChange(line.key!, e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === "Escape") setEditingLineKey(null);
+                                                    }}
+                                                    onBlur={() => { if (!line.valueKey) setEditingLineKey(null); }}
+                                                    className={`bg-[#6b5be6]/[0.06] border border-[#6b5be6]/20 rounded px-2 py-0.5 text-[11px] font-mono text-[#c4b5fd] focus:outline-none focus:border-[#6b5be6]/40 transition-all ${line.valueKey ? "w-1/2" : "flex-1"}`}
+                                                    placeholder="Etiket..."
+                                                />
+                                                {line.valueKey && (
+                                                    <>
+                                                        <span className="text-[9px] text-white/20 font-mono">:</span>
+                                                        <input
+                                                            autoFocus
+                                                            value={currentLabels[line.valueKey] || ""}
+                                                            onChange={e => handleValueChange(line.valueKey!, e.target.value)}
+                                                            onKeyDown={e => {
+                                                                if (e.key === "Escape") setEditingLineKey(null);
+                                                            }}
+                                                            onBlur={() => setEditingLineKey(null)}
+                                                            className="flex-1 bg-[#6b5be6]/[0.06] border border-[#6b5be6]/20 rounded px-2 py-0.5 text-[11px] font-mono text-[#c4b5fd] focus:outline-none focus:border-[#6b5be6]/40 transition-all"
+                                                            placeholder="Değer..."
+                                                        />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+
+                                // Editing a non-label (static) line
+                                if (isEditingIdx) {
+                                    return (
+                                        <div key={`pv-${idx}-static-edit`} className="flex items-center gap-0 px-2 py-px bg-amber-500/[0.04]">
+                                            <span className="w-8 text-right text-[9px] font-mono text-amber-500/30 shrink-0 select-none">{lineNum}</span>
+                                            <span className="w-px h-4 bg-amber-500/15 mx-1.5 shrink-0" />
+                                            <span className="w-[72px] shrink-0" />
                                             <input
                                                 autoFocus
-                                                value={currentLabels[line.key] || ""}
-                                                onChange={e => handleValueChange(line.key!, e.target.value)}
+                                                value={lineOverrides[idx] ?? line.text}
+                                                onChange={e => setLineOverrides(prev => ({ ...prev, [idx]: e.target.value }))}
                                                 onKeyDown={e => {
-                                                    if (e.key === "Escape") setEditingLineKey(null);
-                                                    handlePreviewKeyDown(e, idx);
+                                                    if (e.key === "Escape") setEditingLineIdx(null);
+                                                    if (e.key === "Enter") setEditingLineIdx(null);
                                                 }}
-                                                onBlur={() => setEditingLineKey(null)}
-                                                className="flex-1 bg-[#6b5be6]/[0.06] border border-[#6b5be6]/20 rounded px-2 py-0.5 text-[11px] font-mono text-[#c4b5fd] focus:outline-none focus:border-[#6b5be6]/40 transition-all mr-2"
-                                                placeholder="Değer girin..."
+                                                onBlur={() => setEditingLineIdx(null)}
+                                                className="flex-1 bg-amber-500/[0.06] border border-amber-500/20 rounded px-2 py-0.5 text-[11px] font-mono text-amber-200/80 focus:outline-none focus:border-amber-500/40 transition-all mr-2"
+                                                placeholder="Satır içeriği..."
                                             />
                                         </div>
                                     );
                                 }
 
-                                // Regular line (clickable if editable)
+                                // Regular line — ALL lines clickable
                                 return (
                                     <div
-                                        key={`${idx}-${line.key || 'static'}`}
-                                        className={`flex items-start gap-0 px-2 py-px group ${
-                                            line.editable && line.key
-                                                ? "cursor-pointer hover:bg-white/[0.015]"
-                                                : ""
-                                        }`}
-                                        onClick={() => line.editable && line.key && setEditingLineKey(line.key)}
+                                        key={`pv-${idx}-${line.key || 'static'}`}
+                                        className="flex items-start gap-0 px-2 py-px group cursor-pointer hover:bg-white/[0.015]"
+                                        onClick={() => {
+                                            if (line.key) {
+                                                setEditingLineKey(line.key);
+                                                setEditingLineIdx(null);
+                                            } else {
+                                                setEditingLineIdx(idx);
+                                                setEditingLineKey(null);
+                                            }
+                                        }}
                                     >
-                                        <span className="w-8 text-right text-[9px] font-mono text-white/[0.08] shrink-0 select-none pt-px">{idx + 1}</span>
+                                        <span className="w-8 text-right text-[9px] font-mono text-white/[0.08] shrink-0 select-none pt-px">{lineNum}</span>
                                         <span className="w-px h-4 bg-white/[0.04] mx-1.5 shrink-0 mt-px" />
                                         {line.key ? (
                                             <span className="text-[8px] font-mono text-white/[0.08] group-hover:text-white/15 w-[72px] text-right pr-1.5 shrink-0 truncate pt-0.5 transition-colors" title={line.key}>{line.key}</span>
                                         ) : (
                                             <span className="w-[72px] shrink-0" />
                                         )}
-                                        <code className={`text-[11px] font-mono whitespace-pre leading-[1.6] ${getLineClass(line.text)} ${
-                                            line.editable && line.key ? "group-hover:brightness-125 transition-all" : ""
-                                        }`}>
-                                            {line.text || "\u00A0"}
+                                        <code className={`text-[11px] font-mono whitespace-pre leading-[1.6] ${getLineClass(displayText)} group-hover:brightness-125 transition-all`}>
+                                            {displayText || "\u00A0"}
                                         </code>
-                                        {line.editable && line.key && (
-                                            <Pencil size={8} className="text-white/0 group-hover:text-white/20 transition-colors mt-1 ml-1.5 shrink-0" />
-                                        )}
+                                        <Pencil size={8} className="text-white/0 group-hover:text-white/20 transition-colors mt-1 ml-1.5 shrink-0" />
                                     </div>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Terminal footer — status bar */}
+                    {/* Terminal footer — status bar + add line */}
                     <div className="px-4 py-1.5 border-t border-white/[0.03] bg-[#0d0d14] flex items-center justify-between">
-                        <span className="text-[8px] font-mono text-white/10">{previewLines.length} satır</span>
-                        <span className="text-[8px] font-mono text-white/10">UTF-8 · PowerShell</span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-[8px] font-mono text-white/10">{mergedItems.length} satır</span>
+                            <button
+                                onClick={() => {
+                                    const newPos = mergedItems.length + 1;
+                                    setExtraLines(prev => [...prev, { pos: newPos, text: "" }]);
+                                    setTimeout(() => setEditingLineIdx(-(extraLines.length + 1)), 50);
+                                }}
+                                className="flex items-center gap-1 text-[9px] font-medium text-emerald-400/40 hover:text-emerald-400/80 transition-colors"
+                            >
+                                <Plus size={10} />
+                                Satır Ekle
+                            </button>
+                        </div>
+                        <span className="text-[8px] font-mono text-white/10">UTF-8 · Batch + PowerShell</span>
                     </div>
                 </div>
             </div>
@@ -868,6 +1105,18 @@ export default function ScriptDefaultsPage() {
                 description={`"${deleteConfirmKey}" anahtarını silmek istediğinize emin misiniz? Bu işlem tüm dillerden kalıcı olarak silinecektir.`}
                 confirmText="Evet, Sil"
                 cancelText="Hayır"
+                variant="danger"
+            />
+
+            {/* Reset Confirm Modal */}
+            <AdminConfirmModal
+                open={showResetModal}
+                onClose={() => setShowResetModal(false)}
+                onConfirm={handleReset}
+                title="Script Etiketlerini Sıfırla"
+                description="Tüm script etiketleri varsayılan değerlerine sıfırlanacak. Bu işlem mevcut tüm dillerdeki özelleştirmelerinizi silecek ve geri alınamaz."
+                confirmText="Evet, Sıfırla"
+                cancelText="Vazgeç"
                 variant="danger"
             />
 

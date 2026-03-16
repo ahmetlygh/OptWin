@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { toPowerShellSafe } from "./powershell-safe";
 
 type ScriptParams = {
     features: string[];
@@ -24,18 +25,24 @@ async function getLabelsFromDb(lang: string): Promise<Record<string, string>> {
 
 export async function generateScript(params: ScriptParams): Promise<string> {
     const { features, dnsProvider, lang, createRestorePoint } = params;
-    const labels = await getLabelsFromDb(lang);
+    const rawLabels = await getLabelsFromDb(lang);
+    // Resolve <keyName> placeholders then make ASCII-safe for PowerShell
+    const resolved: Record<string, string> = {};
+    for (const [k, v] of Object.entries(rawLabels)) {
+        resolved[k] = v.replace(/<([a-zA-Z_][a-zA-Z0-9_]*)>/g, (match, ref) =>
+            rawLabels[ref] !== undefined ? rawLabels[ref] : match
+        );
+    }
+    const labels: Record<string, string> = {};
+    for (const [k, v] of Object.entries(resolved)) {
+        labels[k] = toPowerShellSafe(v);
+    }
     const dateStr = new Date().toLocaleString();
 
     // The DB commands are stored in en/tr — fallback to en for other languages
     const dbLang = (lang === "en" || lang === "tr") ? lang : "en";
 
-    // Fetch site settings
-    const settingsArr = await prisma.siteSetting.findMany({
-        where: { key: { in: ["site_version", "contact_email"] } }
-    });
-    const settings = settingsArr.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {} as Record<string, string>);
-    const version = settings.site_version || "1.3.0";
+    const version = labels.versionNumber || '1.3.0';
 
     // ===== BATCH-POWERSHELL HYBRID POLYGLOT (.bat) =====
     // <# : is a no-op in Batch (failed redirect + label) but opens a block comment in PowerShell.
@@ -108,11 +115,11 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     if (createRestorePoint) {
         script += 'Write-Host "  [*] ' + labels.restorePoint + '" -ForegroundColor Cyan\n';
         script += 'try {\n';
-        script += '    Enable-ComputerRestore -Drive "C:\\" -ErrorAction SilentlyContinue\n';
-        script += '    Checkpoint-Computer -Description "OptWin Optimization" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop\n';
+        script += '    Enable-ComputerRestore -Drive "C:\\" -ErrorAction Stop\n';
+        script += '    Checkpoint-Computer -Description "OptWin Optimization" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop -WarningAction Stop\n';
         script += '    Write-Host "      ' + labels.restoreSuccess + '" -ForegroundColor Green\n';
         script += '} catch {\n';
-        script += '    Write-Host "      ' + labels.restoreFail + '" -ForegroundColor Yellow\n';
+        script += '    Write-Host "      ' + labels.restoreFail + ': $($_.Exception.Message)" -ForegroundColor Red\n';
         script += '}\n';
         script += 'Write-Host ""\n\n';
     }

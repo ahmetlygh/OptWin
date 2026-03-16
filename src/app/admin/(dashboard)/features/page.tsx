@@ -1567,16 +1567,44 @@ function FeatureEditor({
                         <button
                             type="button"
                             onClick={() => {
-                                for (const lang of availableLangs) {
-                                    const title = form.translations[lang]?.title || "";
-                                    if (title) {
-                                        updateCommand(lang, "scriptMessage", generateScriptMessage(title, lang));
+                                const enTitle = form.translations["en"]?.title || "";
+                                const allAuto = availableLangs.every(lang => {
+                                    const title = form.translations[lang]?.title || enTitle;
+                                    const msg = form.commands[lang]?.scriptMessage || "";
+                                    return title && msg && msg === generateScriptMessage(title, lang);
+                                });
+                                if (allAuto) {
+                                    for (const lang of availableLangs) {
+                                        updateCommand(lang, "scriptMessage", "");
+                                    }
+                                } else {
+                                    for (const lang of availableLangs) {
+                                        const title = form.translations[lang]?.title || enTitle;
+                                        if (title) {
+                                            updateCommand(lang, "scriptMessage", generateScriptMessage(title, lang));
+                                        }
                                     }
                                 }
                             }}
-                            className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all"
-                            title="Tüm diller için başlıktan otomatik oluştur"
+                            disabled={!form.translations["en"]?.title && !availableLangs.some(l => form.translations[l]?.title)}
+                            className={`shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed ${
+                                availableLangs.every(lang => {
+                                    const enTitle = form.translations["en"]?.title || "";
+                                    const title = form.translations[lang]?.title || enTitle;
+                                    const msg = form.commands[lang]?.scriptMessage || "";
+                                    return title && msg && msg === generateScriptMessage(title, lang);
+                                })
+                                    ? "bg-[#6b5be6]/20 text-[#6b5be6] border-[#6b5be6]/30"
+                                    : "bg-[#6b5be6]/10 text-[#6b5be6]/70 border-[#6b5be6]/15 hover:bg-[#6b5be6]/20"
+                            }`}
+                            title="Tüm diller için başlıktan otomatik oluştur / kaldır"
                         >
+                            {availableLangs.every(lang => {
+                                const enTitle = form.translations["en"]?.title || "";
+                                const title = form.translations[lang]?.title || enTitle;
+                                const msg = form.commands[lang]?.scriptMessage || "";
+                                return title && msg && msg === generateScriptMessage(title, lang);
+                            }) ? <Check size={11} /> : null}
                             Otomatik
                         </button>
                     </div>

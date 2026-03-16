@@ -13,9 +13,12 @@ async function checkAdmin() {
 export async function GET() {
     if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const labels = await prisma.scriptLabel.findMany({
-        orderBy: [{ lang: "asc" }, { key: "asc" }],
-    });
+    const [labels, versionSetting] = await Promise.all([
+        prisma.scriptLabel.findMany({
+            orderBy: [{ lang: "asc" }, { key: "asc" }],
+        }),
+        prisma.siteSetting.findUnique({ where: { key: "site_version" } }),
+    ]);
 
     // Group by language
     const grouped: Record<string, Record<string, string>> = {};
@@ -27,7 +30,12 @@ export async function GET() {
     // Get unique languages
     const languages = [...new Set(labels.map(l => l.lang))].sort();
 
-    return NextResponse.json({ success: true, labels: grouped, languages });
+    return NextResponse.json({
+        success: true,
+        labels: grouped,
+        languages,
+        siteVersion: versionSetting?.value || "1.3.0",
+    });
 }
 
 // PUT /api/admin/script-labels — update script labels
