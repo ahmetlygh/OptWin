@@ -37,8 +37,18 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const settings = settingsArr.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {} as Record<string, string>);
     const version = settings.site_version || "1.3.0";
 
-    // UTF-8 BOM for PowerShell compatibility
-    let script = '\uFEFF<#\n';
+    // ===== BATCH-POWERSHELL POLYGLOT (.bat) =====
+    // Batch wrapper calls PowerShell with -ExecutionPolicy Bypass
+    // so the script runs without digital signature issues.
+    let script = '@echo off\r\n';
+    script += 'chcp 65001 >nul 2>&1\r\n';
+    script += 'set "SCRIPT=' + '%~f0' + '"\r\n';
+    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$s=[IO.File]::ReadAllText(' + "'" + '%SCRIPT%' + "'" + ');$block=$s.Substring($s.IndexOf(' + "'" + ': #PS_START' + "'" + ')+12);iex $block" ' + '%*' + '\r\n';
+    script += 'exit /b\r\n';
+    script += ': #PS_START\r\n';
+
+    // From here on: pure PowerShell code (read by the batch wrapper above)
+    script += '<#\n';
     script += '    ' + labels.scriptTitle + '\n';
     script += '    ' + labels.version + '   : ' + version + '\n';
     script += '    ' + labels.date + '      : ' + dateStr + '\n';
@@ -48,7 +58,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '    ' + labels.openSource + '\n';
     script += '#>\n\n';
 
-    // Self-elevation code
+    // Self-elevation code (re-launches as admin via .bat itself)
     script += '# ===== SELF-ELEVATION =====\n';
     script += '$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)\n\n';
     script += 'if (-not $isAdmin) {\n';
@@ -56,19 +66,18 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '    Write-Host "  ' + labels.adminRequest + '" -ForegroundColor Yellow\n';
     script += '    Write-Host "  ' + labels.adminPrompt + '" -ForegroundColor Cyan\n';
     script += '    Write-Host ""\n';
-    script += '    $scriptPath = $MyInvocation.MyCommand.Definition\n';
+    script += '    $batPath = (Get-Item $MyInvocation.MyCommand.Definition -ErrorAction SilentlyContinue).FullName\n';
+    script += '    if (-not $batPath) { $batPath = $env:SCRIPT }\n';
     script += '    try {\n';
-    script += '        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs\n';
+    script += '        Start-Process cmd.exe -ArgumentList "/c `"$batPath`"" -Verb RunAs\n';
     script += '    } catch {\n';
     script += '        Write-Host "  ' + labels.adminError + '" -ForegroundColor Red\n';
     script += '        Write-Host "  ' + labels.adminHint + '" -ForegroundColor Yellow\n';
-    script += '        pause\n';
+    script += '        Read-Host\n';
     script += '    }\n';
     script += '    exit\n';
     script += '}\n\n';
 
-    // Set execution policy
-    script += 'Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction SilentlyContinue\n\n';
     script += '$host.UI.RawUI.WindowTitle = "OptWin Optimizer Script"\n\n';
 
     // Header - Display ASCII Banner
@@ -157,8 +166,6 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += 'Write-Host "  ' + labels.thankYou + '" -ForegroundColor Cyan\n';
     script += 'Write-Host "  ' + labels.author + '" -ForegroundColor Gray\n';
     script += 'Write-Host ""\n';
-    script += 'Write-Host "  ' + labels.pressAnyKey + '" -ForegroundColor Gray\n';
-    script += '$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")\n';
 
     return script;
 }

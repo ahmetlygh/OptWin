@@ -92,13 +92,28 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                     <FeatureIcon icon={feature.icon} size={18} />
                 </div>
                 <div className="flex-1 pr-6">
-                    <div className="flex flex-wrap items-center gap-2 mb-1 pointer-events-auto">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1 pointer-events-auto">
                         <h4 className="text-[var(--text-primary)] font-semibold tracking-tight pointer-events-none">
                             <HighlightText text={title} />
                         </h4>
                         {isNewBadgeVisible && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[var(--accent-color)]/15 border-[var(--accent-color)]/30 text-[var(--accent-color)] pointer-events-none animate-pulse">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-[var(--accent-color)]/15 border-[var(--accent-color)]/30 text-[var(--accent-color)] pointer-events-none animate-pulse leading-none">
                                 {newBadgeLabels[lang] || newBadgeLabels.en}
+                            </span>
+                        )}
+                        {!feature.noRisk && feature.risk === "low" && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-emerald-500/10 border-emerald-500/25 text-emerald-400 pointer-events-none leading-none">
+                                {lang === "tr" ? "Düşük Risk" : "Low"}
+                            </span>
+                        )}
+                        {!feature.noRisk && feature.risk === "medium" && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 border-amber-500/25 text-amber-400 pointer-events-none leading-none">
+                                {lang === "tr" ? "Orta Risk" : "Medium"}
+                            </span>
+                        )}
+                        {!feature.noRisk && feature.risk === "high" && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-red-500/10 border-red-500/25 text-red-400 pointer-events-none leading-none">
+                                {lang === "tr" ? "Yüksek Risk" : "High Risk"}
                             </span>
                         )}
                         {!showDescriptions && (

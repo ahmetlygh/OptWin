@@ -43,7 +43,10 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     const [showMaintenanceOff, setShowMaintenanceOff] = useState(false);
 
     // Maintenance modal fields
-    const [mReason, setMReason] = useState("");
+    const REASON_LANGS = ["tr", "en", "de", "fr", "es", "zh", "hi"] as const;
+    const REASON_LANG_LABELS: Record<string, string> = { tr: "TR", en: "EN", de: "DE", fr: "FR", es: "ES", zh: "ZH", hi: "HI" };
+    const [mReasons, setMReasons] = useState<Record<string, string>>(Object.fromEntries(REASON_LANGS.map(l => [l, ""])));
+    const [mReasonLang, setMReasonLang] = useState("tr");
     const [mTimeMode, setMTimeMode] = useState<"duration" | "datetime">("duration");
     const [mMinutes, setMMinutes] = useState<number | null>(null);
     const [mCustom, setMCustom] = useState(false);
@@ -83,7 +86,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             const res = await fetch("/api/admin/maintenance", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enabled, reason: enabled ? mReason : "", estimatedEnd: enabled ? estimatedEnd : "" }),
+                body: JSON.stringify({ enabled, reason: enabled ? JSON.stringify(mReasons) : "", estimatedEnd: enabled ? estimatedEnd : "" }),
             });
             const data = await res.json();
             if (data.success) setMaintenance(data.maintenance);
@@ -91,13 +94,21 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         setMaintenanceLoading(false);
         setShowMaintenanceOn(false);
         setShowMaintenanceOff(false);
-        if (!enabled) { setMReason(""); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); }
+        if (!enabled) { setMReasons(Object.fromEntries(REASON_LANGS.map(l => [l, ""]))); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); }
     };
 
     const openMaintenanceModal = () => {
-        setMReason(""); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
+        setMReasons(Object.fromEntries(REASON_LANGS.map(l => [l, ""]))); setMReasonLang("tr"); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
         setShowMaintenanceOn(true);
     };
+
+    // T4: ESC key closes maintenance modal
+    useEffect(() => {
+        if (!showMaintenanceOn) return;
+        const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setShowMaintenanceOn(false); };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [showMaintenanceOn]);
 
     // P7: Auto-fill UTC+3 current+1h when switching to datetime
     const switchToDatetime = () => {
@@ -284,13 +295,31 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                 <button onClick={() => setShowMaintenanceOn(false)} className="p-1 text-white/30 hover:text-white/60"><X size={16} /></button>
                             </div>
 
-                            {/* Reason */}
+                            {/* Reason — per language */}
                             <div className="mb-4">
-                                <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
+                                    <div className="flex gap-0.5">
+                                        {REASON_LANGS.map(l => (
+                                            <button
+                                                key={l}
+                                                type="button"
+                                                onClick={() => setMReasonLang(l)}
+                                                className={`h-5 px-1.5 rounded text-[9px] font-bold transition-all ${
+                                                    mReasonLang === l
+                                                        ? "bg-[#6b5be6]/15 text-[#6b5be6] border border-[#6b5be6]/20"
+                                                        : mReasons[l] ? "bg-white/[0.04] text-white/40 border border-white/[0.06]" : "text-white/20 border border-transparent hover:text-white/40"
+                                                }`}
+                                            >
+                                                {REASON_LANG_LABELS[l]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                                 <textarea
-                                    value={mReason}
-                                    onChange={e => setMReason(e.target.value)}
-                                    placeholder="Sistem güncellemesi, veritabanı bakımı..."
+                                    value={mReasons[mReasonLang] || ""}
+                                    onChange={e => setMReasons(prev => ({ ...prev, [mReasonLang]: e.target.value }))}
+                                    placeholder={mReasonLang === "tr" ? "Sistem güncellemesi, veritabanı bakımı..." : "System update, database maintenance..."}
                                     rows={2}
                                     className="w-full bg-white/[0.02] border border-white/[0.04] rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors resize-none"
                                 />

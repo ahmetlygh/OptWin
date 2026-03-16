@@ -135,13 +135,20 @@ function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; 
                     <p className="text-white/25 text-[15px] leading-[1.7]">{t.apology}</p>
                 </div>
 
-                {/* Reason */}
-                {reason && (
-                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
-                        <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">{t.reasonLabel}</p>
-                        <p className="text-[15px] text-white/30 leading-relaxed">{reason}</p>
-                    </div>
-                )}
+                {/* Reason — per language */}
+                {(() => {
+                    if (!reason) return null;
+                    let reasonMap: Record<string, string> = {};
+                    try { reasonMap = JSON.parse(reason); } catch { reasonMap = { en: reason, tr: reason }; }
+                    const localReason = reasonMap[lang] || reasonMap.en || reasonMap.tr || "";
+                    if (!localReason) return null;
+                    return (
+                        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
+                            <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">{t.reasonLabel}</p>
+                            <p className="text-[15px] text-white/30 leading-relaxed">{localReason}</p>
+                        </div>
+                    );
+                })()}
 
                 {/* Progress bar */}
                 <div className="w-full max-w-[384px] mb-2.5">

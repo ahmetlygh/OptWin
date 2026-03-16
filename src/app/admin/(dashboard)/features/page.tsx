@@ -219,9 +219,11 @@ export default function AdminFeaturesPage() {
         fetchFeatures();
     };
 
-    // Build original orders snapshot when features load
+    // Build original orders snapshot — only on initial load or after save/cancel (not on local drag)
+    const isLocalDrag = useRef(false);
     useEffect(() => {
         if (features.length === 0) return;
+        if (isLocalDrag.current) { isLocalDrag.current = false; return; }
         const snapshot: Record<string, { id: string; order: number }[]> = {};
         for (const cat of categories) {
             snapshot[cat.id] = features
@@ -246,7 +248,8 @@ export default function AdminFeaturesPage() {
         const reordered = arrayMove(catFeatures, oldIndex, newIndex);
         const updates = reordered.map((f, i) => ({ id: f.id, order: i + 1 }));
 
-        // Local update only
+        // Mark as local drag so useEffect doesn't rebuild originalOrders
+        isLocalDrag.current = true;
         setFeatures(prev => {
             const others = prev.filter(f => f.categoryId !== catId);
             return [...others, ...reordered.map((f, i) => ({ ...f, order: i + 1 }))];
@@ -268,10 +271,10 @@ export default function AdminFeaturesPage() {
         return false;
     }, [originalOrders, pendingOrders]);
 
-    // Wire unsaved changes guard
+    // Wire unsaved changes guard — includes both order changes AND category name edits
     useEffect(() => {
-        setHasUnsavedChanges(hasOrderChanges);
-    }, [hasOrderChanges, setHasUnsavedChanges]);
+        setHasUnsavedChanges(hasOrderChanges || catNameDirty);
+    }, [hasOrderChanges, catNameDirty, setHasUnsavedChanges]);
 
     // Save all pending order changes
     const saveAllOrders = useCallback(async () => {
@@ -314,9 +317,15 @@ export default function AdminFeaturesPage() {
 
     // Register save/discard callbacks for unsaved changes modal
     useEffect(() => {
-        onSave.current = saveAllOrders;
-        onDiscard.current = cancelAllOrders;
-    }, [saveAllOrders, cancelAllOrders, onSave, onDiscard]);
+        onSave.current = async () => {
+            if (hasOrderChanges) await saveAllOrders();
+            if (catNameDirty && editingCatName) { await saveCatName(editingCatName); }
+        };
+        onDiscard.current = () => {
+            if (hasOrderChanges) cancelAllOrders();
+            if (catNameDirty) cancelCatNameEdit();
+        };
+    }, [saveAllOrders, cancelAllOrders, onSave, onDiscard, hasOrderChanges, catNameDirty, editingCatName]);
 
     // DnD: reorder categories
     const handleCategoryDragEnd = (event: DragEndEvent) => {
@@ -658,6 +667,37 @@ export default function AdminFeaturesPage() {
                     className="w-full sm:w-[180px]"
                 />
             </div>
+
+            {/* R7: Save/Cancel buttons for feature reorder */}
+            <AnimatePresence>
+                {hasOrderChanges && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                    >
+                        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-500/[0.06] border border-amber-500/15">
+                            <span className="text-[11px] font-medium text-amber-400/80">Sıralama değişti — kaydetmeyi unutmayın</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={cancelAllOrders}
+                                    className="h-8 px-3 rounded-lg text-[11px] font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={saveAllOrders}
+                                    className="h-8 px-4 rounded-lg text-[11px] font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shadow-sm"
+                                >
+                                    Kaydet
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Features grouped by category */}
             <div className="space-y-4">
@@ -1049,6 +1089,9 @@ function FeatureEditor({
     const [error, setError] = useState("");
     const [saved, setSaved] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [translating, setTranslating] = useState(false);
+    const [translatingScript, setTranslatingScript] = useState(false);
+    const [translateToast, setTranslateToast] = useState("");
 
     const buildInitialState = useCallback(() => ({
         slug: feature?.slug || "",
@@ -1145,6 +1188,46 @@ function FeatureEditor({
             setForm(buildInitialState());
         }
         onCancel();
+    };
+
+    const LANG_DISPLAY: Record<string, string> = { en: "EN", tr: "TR", zh: "ZH", es: "ES", hi: "HI", de: "DE", fr: "FR" };
+
+    const handleAutoTranslate = async () => {
+        const title = form.translations[translationLang]?.title;
+        const desc = form.translations[translationLang]?.desc;
+        if (!title && !desc) return;
+        setTranslating(true);
+        const otherLangs = availableLangs.filter(l => l !== translationLang);
+        const names: string[] = [];
+        try {
+            if (title) {
+                const res = await fetch("/api/admin/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: title, sourceLang: translationLang, targetLangs: otherLangs }) });
+                const data = await res.json();
+                if (data.success) Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => { updateTranslation(lang, "title", translated); if (!names.includes(LANG_DISPLAY[lang] || lang)) names.push(LANG_DISPLAY[lang] || lang); });
+            }
+            if (desc) {
+                const res = await fetch("/api/admin/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: desc, sourceLang: translationLang, targetLangs: otherLangs }) });
+                const data = await res.json();
+                if (data.success) Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => { updateTranslation(lang, "desc", translated); if (!names.includes(LANG_DISPLAY[lang] || lang)) names.push(LANG_DISPLAY[lang] || lang); });
+            }
+            if (names.length > 0) { setTranslateToast(`${names.join(", ")} dillerine çeviriler eklendi`); setTimeout(() => setTranslateToast(""), 3000); }
+        } catch { setError("Çeviri başarısız oldu"); } finally { setTranslating(false); }
+    };
+
+    const handleTranslateScriptMsg = async () => {
+        const msg = form.commands[commandLang]?.scriptMessage;
+        if (!msg) return;
+        setTranslatingScript(true);
+        const otherLangs = availableLangs.filter(l => l !== commandLang);
+        try {
+            const res = await fetch("/api/admin/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: msg, sourceLang: commandLang, targetLangs: otherLangs }) });
+            const data = await res.json();
+            if (data.success) {
+                Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => updateCommand(lang, "scriptMessage", translated));
+                const names = (data.translatedLangs || otherLangs).map((l: string) => LANG_DISPLAY[l] || l);
+                setTranslateToast(`Script mesajı ${names.join(", ")} dillerine çevrildi`); setTimeout(() => setTranslateToast(""), 3000);
+            }
+        } catch { setError("Script mesajı çevirisi başarısız"); } finally { setTranslatingScript(false); }
     };
 
     const categoryOptions = categories.map(c => ({
@@ -1315,17 +1398,19 @@ function FeatureEditor({
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    <div>
-                        <label className={labelCls}>Sıra</label>
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={form.order}
-                            onChange={e => updateField("order", parseInt(e.target.value) || 0)}
-                            className={inputCls}
-                        />
-                    </div>
+                    {!isCreating && (
+                        <div>
+                            <label className={labelCls}>Sıra</label>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={form.order}
+                                onChange={e => updateField("order", parseInt(e.target.value) || 0)}
+                                className={inputCls}
+                            />
+                        </div>
+                    )}
                     {/* K8: Badge alanı animasyonlu açılıp kapanır */}
                     <AnimatePresence initial={false}>
                         {form.newBadge && (
@@ -1406,10 +1491,35 @@ function FeatureEditor({
                 </div>
             </div>
 
+            {/* Translate Toast */}
+            <AnimatePresence>
+                {translateToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="fixed top-4 right-4 z-[999] px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-sm font-medium shadow-lg backdrop-blur-xl"
+                    >
+                        ✓ {translateToast}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Translations */}
             <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
+                        <button
+                            type="button"
+                            onClick={handleAutoTranslate}
+                            disabled={translating || (!form.translations[translationLang]?.title && !form.translations[translationLang]?.desc)}
+                            className="h-7 px-3 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                        >
+                            {translating ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
+                            {translating ? "Çevriliyor..." : "Diğer Dillere Çevir"}
+                        </button>
+                    </div>
                     <AdminLangPicker value={translationLang} onChange={setTranslationLang} availableLangs={availableLangs} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1454,8 +1564,17 @@ function FeatureEditor({
                         />
                         <button
                             type="button"
+                            onClick={handleTranslateScriptMsg}
+                            disabled={translatingScript || !form.commands[commandLang]?.scriptMessage}
+                            className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                            title="Script mesajını diğer dillere çevir"
+                        >
+                            {translatingScript ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
+                            Çevir
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => {
-                                // J3: Generate script message for ALL languages from their own title
                                 for (const lang of availableLangs) {
                                     const title = form.translations[lang]?.title || "";
                                     if (title) {

@@ -253,6 +253,11 @@ export default function ScriptDefaultsPage() {
             }
             return updated;
         });
+        // R9: Assign the highest order + 1 so it appears at the bottom
+        setKeyOrder(prev => {
+            const maxOrder = Math.max(0, ...Object.values(prev));
+            return { ...prev, [key]: maxOrder + 1 };
+        });
         setNewKey("");
         setNewValue("");
         setShowNewRow(false);
@@ -505,7 +510,7 @@ export default function ScriptDefaultsPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `OptWin-Preview-${activeLang}.ps1`;
+        a.download = `OptWin-Preview-${activeLang}.bat`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -766,7 +771,7 @@ export default function ScriptDefaultsPage() {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <MonitorPlay size={11} className="text-emerald-400/50" />
-                                <span className="text-[10px] font-mono text-white/20">OptWin-Preview-{activeLang}.ps1</span>
+                                <span className="text-[10px] font-mono text-white/20">OptWin-Preview-{activeLang}.bat</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -776,7 +781,7 @@ export default function ScriptDefaultsPage() {
                                 className="h-6 px-2 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/10 transition-all flex items-center gap-1"
                             >
                                 <Download size={9} />
-                                .ps1
+                                .bat
                             </button>
                         </div>
                     </div>

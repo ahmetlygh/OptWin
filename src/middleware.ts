@@ -110,7 +110,13 @@ export const config = {
 
 /* ── Dynamic maintenance HTML builder ── */
 function buildMaintenanceHtml(reason: string, estimatedEnd: string): string {
-    const safeReason = reason.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // reason may be a JSON object like {"tr":"...","en":"..."} or a plain string
+    let reasonMap: Record<string, string> = {};
+    try { reasonMap = JSON.parse(reason); } catch { reasonMap = { en: reason, tr: reason }; }
+    const safeReasonMap = Object.fromEntries(
+        Object.entries(reasonMap).map(([k, v]) => [k, (v || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')])
+    );
+    const hasAnyReason = Object.values(safeReasonMap).some(v => v.trim());
     const hasEnd = !!estimatedEnd;
     return `<!DOCTYPE html>
 <html lang="en">
@@ -183,7 +189,7 @@ body{background:#08080d;color:#fff;font-family:system-ui,-apple-system,sans-seri
 <svg class="gear" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
 <div class="msg-card"><p class="msg" id="msg"></p>
 <p class="apology" id="apo"></p></div>
-${safeReason ? `<div class="reason"><strong id="rl"></strong>${safeReason}</div>` : ''}
+${hasAnyReason ? `<div class="reason"><strong id="rl"></strong><span id="reasonText"></span></div>` : ''}
 <div class="bar"><span></span></div>
 <p class="wip" id="wip"></p>
 <p class="clock" id="clock"></p>
@@ -203,6 +209,7 @@ zh:{label:"中文",flag:"\u{1F1E8}\u{1F1F3}",msg:"我们的网站正在维护中
 hi:{label:"हिन्दी",flag:"\u{1F1EE}\u{1F1F3}",msg:"हमारी साइट वर्तमान में रखरखाव में है। हमारी टीम सर्वोत्तम अनुभव प्रदान करने के लिए काम कर रही है।",apo:"असुविधा के लिए हम क्षमा चाहते हैं।",rl:"कारण:",cl:"अनुमानित समाप्ति",d:"दिन",h:"घंटे",m:"मिनट",s:"सेकंड",est:"अनुमानित समय — पहले या बाद में समाप्त हो सकता है",wip:"कार्य प्रगति पर है..."}
 };
 var LKEYS=Object.keys(LANGS);
+var REASON_MAP=${JSON.stringify(safeReasonMap)};
 var END=${hasEnd ? `"${estimatedEnd}"` : 'null'};
 var ddOpen=false;
 var lang=localStorage.getItem('optwin-lang')||navigator.language.slice(0,2)||'en';
@@ -228,6 +235,7 @@ document.getElementById('wip').textContent=t.wip;
 document.getElementById('lf').textContent=t.flag;
 document.getElementById('ll').textContent=t.label;
 var rl=document.getElementById('rl');if(rl)rl.textContent=t.rl;
+var rt=document.getElementById('reasonText');if(rt){var rTxt=REASON_MAP[lang]||REASON_MAP.en||REASON_MAP.tr||'';rt.textContent=rTxt;var rDiv=rt.parentElement;if(rDiv)rDiv.style.display=rTxt?'':'none';}
 var cl=document.getElementById('cl');if(cl)cl.textContent=t.cl;
 var du=document.getElementById('du');if(du)du.textContent=t.d;
 var hu=document.getElementById('hu');if(hu)hu.textContent=t.h;

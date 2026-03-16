@@ -20,7 +20,7 @@ export function ScriptOverlay() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "OptWin.ps1";
+        a.download = "OptWin.bat";
         a.click();
         URL.revokeObjectURL(url);
         showToast(t["script.downloadToast"], "success");
@@ -111,7 +111,7 @@ export function ScriptOverlay() {
                 <div className="w-full md:w-[72%] p-4 md:p-6 flex flex-col h-full bg-[var(--card-bg)]">
                     <div className="flex items-center justify-between bg-[var(--bg-color)]/50 border border-[var(--border-color)] rounded-t-xl px-4 py-3 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
                         <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
-                            <MonitorCog size={14} className="text-purple-500" /> OptWin.ps1
+                            <MonitorCog size={14} className="text-purple-500" /> OptWin.bat
                         </div>
                         <button
                             onClick={handleCopy}
