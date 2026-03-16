@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -25,6 +25,7 @@ import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
 import { generateScriptMessage } from "@/lib/powershell-safe";
+import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 import {
     DndContext,
     closestCenter,
@@ -78,36 +79,38 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 // ─── Sortable Feature Row ────────────────────────────────────────────
-function SortableFeatureRow({ feature, onClick, onToggle }: {
+function SortableFeatureRow({ feature, onClick, onToggle, lang }: {
     feature: Feature;
     onClick: () => void;
     onToggle: (e: React.MouseEvent) => void;
+    lang: string;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: feature.id });
     const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.5 : 1 };
-    const titleEn = feature.translations.find(t => t.lang === "en")?.title || feature.slug;
-    const titleTr = feature.translations.find(t => t.lang === "tr")?.title;
+    const title = feature.translations.find(t => t.lang === lang)?.title || feature.translations.find(t => t.lang === "en")?.title || feature.slug;
+    const subtitle = lang !== "en" ? (feature.translations.find(t => t.lang === "en")?.title) : (feature.translations.find(t => t.lang === "tr")?.title);
 
     return (
         <div
             ref={setNodeRef}
             style={style}
+            {...attributes}
+            {...listeners}
             onClick={onClick}
-            className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-pointer group"
+            className={`flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-grab active:cursor-grabbing group touch-none ${isDragging ? "bg-white/[0.04] shadow-lg rounded-lg" : ""}`}
         >
-            <button {...attributes} {...listeners} className="shrink-0 p-1 text-white/10 hover:text-white/30 cursor-grab active:cursor-grabbing touch-none" onClick={e => e.stopPropagation()}>
-                <GripVertical size={14} />
-            </button>
+            <GripVertical size={13} className="shrink-0 text-white/[0.06] group-hover:text-white/15 transition-colors" />
             <span className="w-7 text-center text-[10px] font-mono text-white/15 shrink-0">{feature.order}</span>
             <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-white/80 group-hover:text-white transition-colors truncate">{titleEn}</p>
-                {titleTr && <p className="text-[11px] text-white/20 truncate">{titleTr}</p>}
+                <p className="font-semibold text-sm text-white/80 group-hover:text-white transition-colors truncate">{title}</p>
+                {subtitle && <p className="text-[11px] text-white/20 truncate">{subtitle}</p>}
             </div>
             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border shrink-0 ${RISK_COLORS[feature.risk] || ""}`}>
                 {RISK_LABELS[feature.risk] || feature.risk}
             </span>
             <button
                 onClick={onToggle}
+                onPointerDown={e => e.stopPropagation()}
                 className={`w-9 h-[20px] rounded-full transition-all duration-300 relative shrink-0 ${feature.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
             >
                 <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${feature.enabled ? "left-[19px]" : "left-[3px]"}`} />
@@ -153,7 +156,17 @@ export default function AdminFeaturesPage() {
     const [savingCategory, setSavingCategory] = useState(false);
     const [orderedCategories, setOrderedCategories] = useState<(Category & { _count?: { features: number } })[]>([]);
 
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+    // M7-M10 states
+    const [displayLang, setDisplayLang] = useState("en");
+    const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+    const [originalOrders, setOriginalOrders] = useState<Record<string, { id: string; order: number }[]>>({});
+    const [pendingOrders, setPendingOrders] = useState<Record<string, { id: string; order: number }[]>>({});
+    const [editingCatName, setEditingCatName] = useState<string | null>(null);
+    const [editingCatValue, setEditingCatValue] = useState("");
+    const catNameRef = useRef<HTMLInputElement>(null);
+    const { setHasUnsavedChanges, onSave, onDiscard } = useUnsavedChanges();
+
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
     const fetchFeatures = useCallback(async () => {
         const res = await fetch("/api/admin/features");
@@ -188,8 +201,22 @@ export default function AdminFeaturesPage() {
         fetchFeatures();
     };
 
-    // DnD: reorder features within a category
-    const handleFeatureDragEnd = async (event: DragEndEvent, catId: string) => {
+    // Build original orders snapshot when features load
+    useEffect(() => {
+        if (features.length === 0) return;
+        const snapshot: Record<string, { id: string; order: number }[]> = {};
+        for (const cat of categories) {
+            snapshot[cat.id] = features
+                .filter(f => f.categoryId === cat.id)
+                .sort((a, b) => a.order - b.order)
+                .map(f => ({ id: f.id, order: f.order }));
+        }
+        setOriginalOrders(snapshot);
+        setPendingOrders({});
+    }, [features, categories]);
+
+    // DnD: reorder features within a category (local only, no API call)
+    const handleFeatureDragEnd = (event: DragEndEvent, catId: string) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
@@ -201,18 +228,77 @@ export default function AdminFeaturesPage() {
         const reordered = arrayMove(catFeatures, oldIndex, newIndex);
         const updates = reordered.map((f, i) => ({ id: f.id, order: i + 1 }));
 
-        // Optimistic update
+        // Local update only
         setFeatures(prev => {
             const others = prev.filter(f => f.categoryId !== catId);
             return [...others, ...reordered.map((f, i) => ({ ...f, order: i + 1 }))];
         });
+        setPendingOrders(prev => ({ ...prev, [catId]: updates }));
+    };
 
+    // Check if any category has pending order changes
+    const hasOrderChanges = useMemo(() => {
+        for (const catId of Object.keys(pendingOrders)) {
+            const orig = originalOrders[catId];
+            const pending = pendingOrders[catId];
+            if (!orig || !pending) continue;
+            if (orig.length !== pending.length) return true;
+            for (let i = 0; i < orig.length; i++) {
+                if (orig[i].id !== pending[i].id || orig[i].order !== pending[i].order) return true;
+            }
+        }
+        return false;
+    }, [originalOrders, pendingOrders]);
+
+    // Wire unsaved changes guard
+    useEffect(() => {
+        setHasUnsavedChanges(hasOrderChanges);
+    }, [hasOrderChanges, setHasUnsavedChanges]);
+
+    // Save all pending order changes
+    const saveAllOrders = useCallback(async () => {
+        const allUpdates: { id: string; order: number }[] = [];
+        for (const items of Object.values(pendingOrders)) {
+            allUpdates.push(...items);
+        }
+        if (allUpdates.length === 0) return;
         await fetch("/api/admin/reorder", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "feature", items: updates }),
+            body: JSON.stringify({ type: "feature", items: allUpdates }),
         });
-    };
+        // Snapshot current state as new original
+        const snapshot: Record<string, { id: string; order: number }[]> = {};
+        for (const cat of categories) {
+            snapshot[cat.id] = features
+                .filter(f => f.categoryId === cat.id)
+                .sort((a, b) => a.order - b.order)
+                .map(f => ({ id: f.id, order: f.order }));
+        }
+        setOriginalOrders(snapshot);
+        setPendingOrders({});
+    }, [pendingOrders, features, categories]);
+
+    // Cancel all pending order changes — restore original orders
+    const cancelAllOrders = useCallback(() => {
+        setFeatures(prev => {
+            const restored = [...prev];
+            for (const [catId, items] of Object.entries(originalOrders)) {
+                for (const item of items) {
+                    const idx = restored.findIndex(f => f.id === item.id);
+                    if (idx !== -1) restored[idx] = { ...restored[idx], order: item.order };
+                }
+            }
+            return restored;
+        });
+        setPendingOrders({});
+    }, [originalOrders]);
+
+    // Register save/discard callbacks for unsaved changes modal
+    useEffect(() => {
+        onSave.current = saveAllOrders;
+        onDiscard.current = cancelAllOrders;
+    }, [saveAllOrders, cancelAllOrders, onSave, onDiscard]);
 
     // DnD: reorder categories
     const handleCategoryDragEnd = (event: DragEndEvent) => {
@@ -283,8 +369,48 @@ export default function AdminFeaturesPage() {
     const getCategoryName = (cat: Feature["category"]) =>
         cat?.translations?.find(t => t.lang === "en")?.name || cat?.slug || "—";
 
-    const getCatTrName = (cat: Category) =>
-        cat.translations.find(t => t.lang === "tr")?.name || cat.translations.find(t => t.lang === "en")?.name || cat.slug;
+    const getCatDisplayName = (cat: Category) =>
+        cat.translations.find(t => t.lang === displayLang)?.name || cat.translations.find(t => t.lang === "en")?.name || cat.slug;
+
+    // M8: Toggle category collapse
+    const toggleCollapse = (catId: string) => {
+        setCollapsedCategories(prev => {
+            const next = new Set(prev);
+            if (next.has(catId)) next.delete(catId); else next.add(catId);
+            return next;
+        });
+    };
+
+    // M9: Save category name inline edit
+    const saveCatName = async (catId: string) => {
+        if (!editingCatValue.trim()) { setEditingCatName(null); return; }
+        const cat = categories.find(c => c.id === catId);
+        if (!cat) return;
+        // Check if translation exists for displayLang
+        const existingTr = cat.translations.find(t => t.lang === displayLang);
+        const translations = existingTr
+            ? cat.translations.map(t => t.lang === displayLang ? { ...t, name: editingCatValue.trim() } : t)
+            : [...cat.translations, { lang: displayLang, name: editingCatValue.trim() }];
+        await fetch("/api/admin/categories", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: catId, translations: translations.map(t => ({ lang: t.lang, name: t.name })) }),
+        });
+        setCategories(prev => prev.map(c => c.id === catId ? { ...c, translations } : c));
+        setEditingCatName(null);
+    };
+
+    // M9: Toggle category enabled/disabled
+    const toggleCatEnabled = async (e: React.MouseEvent, cat: Category) => {
+        e.stopPropagation();
+        const newEnabled = !cat.enabled;
+        setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, enabled: newEnabled } : c));
+        await fetch("/api/admin/categories", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: cat.id, enabled: newEnabled }),
+        });
+    };
 
     // Group features by category
     const groupedFeatures = useMemo(() => {
@@ -352,6 +478,24 @@ export default function AdminFeaturesPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* M10: Save/Cancel order changes */}
+                    <AnimatePresence>
+                        {hasOrderChanges && (
+                            <motion.div initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} className="flex items-center gap-1.5">
+                                <button onClick={cancelAllOrders} className="h-8 px-3 bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 text-xs font-medium rounded-lg transition-all border border-white/[0.04] flex items-center gap-1.5">
+                                    <RotateCcw size={12} /> İptal
+                                </button>
+                                <button onClick={saveAllOrders} className="h-8 px-3 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-lg shadow-[#6b5be6]/20">
+                                    <Save size={12} /> Kaydet
+                                </button>
+                                <div className="w-px h-5 bg-white/[0.06] mx-1" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* M9: Language picker */}
+                    <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
+
                     <motion.button
                         whileTap={{ scale: 0.97 }}
                         onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }}
@@ -410,36 +554,87 @@ export default function AdminFeaturesPage() {
 
             {/* Features grouped by category */}
             <div className="space-y-4">
-                {groupedFeatures.map(({ category: cat, features: catFeatures }) => (
-                    <div key={cat.id} className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
-                        {/* Category header */}
-                        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
-                            <ChevronRight size={14} className="text-[#6b5be6]/60" />
-                            <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider flex-1">
-                                {getCatTrName(cat)}
-                            </span>
+                {groupedFeatures.map(({ category: cat, features: catFeatures }) => {
+                    const isCollapsed = collapsedCategories.has(cat.id);
+                    return (
+                    <div key={cat.id} className={`rounded-2xl border bg-white/[0.015] overflow-hidden transition-colors ${cat.enabled ? "border-white/[0.04]" : "border-white/[0.02] opacity-60"}`}>
+                        {/* Category header — clickable to collapse */}
+                        <div
+                            className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer select-none group"
+                            onClick={() => toggleCollapse(cat.id)}
+                        >
+                            <ChevronRight size={14} className={`text-[#6b5be6]/60 transition-transform duration-200 ${isCollapsed ? "" : "rotate-90"}`} />
+
+                            {/* Editable category name */}
+                            {editingCatName === cat.id ? (
+                                <input
+                                    ref={catNameRef}
+                                    autoFocus
+                                    value={editingCatValue}
+                                    onChange={e => setEditingCatValue(e.target.value)}
+                                    onBlur={() => saveCatName(cat.id)}
+                                    onKeyDown={e => { if (e.key === "Enter") saveCatName(cat.id); if (e.key === "Escape") setEditingCatName(null); }}
+                                    onClick={e => e.stopPropagation()}
+                                    className="text-[11px] font-bold text-white/70 uppercase tracking-wider flex-1 bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2 py-0.5 focus:outline-none"
+                                />
+                            ) : (
+                                <span
+                                    className="text-[11px] font-bold text-white/50 uppercase tracking-wider flex-1 group-hover:text-white/70 transition-colors"
+                                    onDoubleClick={e => {
+                                        e.stopPropagation();
+                                        setEditingCatName(cat.id);
+                                        setEditingCatValue(getCatDisplayName(cat));
+                                    }}
+                                    title="Çift tıklayarak düzenle"
+                                >
+                                    {getCatDisplayName(cat)}
+                                </span>
+                            )}
+
                             <span className="text-[10px] text-white/20">{catFeatures.length} özellik</span>
+
+                            {/* Category enable/disable toggle */}
+                            <button
+                                onClick={(e) => toggleCatEnabled(e, cat)}
+                                className={`w-8 h-[18px] rounded-full transition-all duration-300 relative shrink-0 ${cat.enabled ? "bg-emerald-500/70" : "bg-white/[0.06]"}`}
+                            >
+                                <span className={`absolute top-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${cat.enabled ? "left-[17px]" : "left-[3px]"}`} />
+                            </button>
                         </div>
 
-                        {/* Sortable feature rows */}
-                        {catFeatures.length > 0 ? (
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleFeatureDragEnd(e, cat.id)}>
-                                <SortableContext items={catFeatures.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                                    {catFeatures.map(f => (
-                                        <SortableFeatureRow
-                                            key={f.id}
-                                            feature={f}
-                                            onClick={() => router.push(`/admin/features/edit/${f.slug}`)}
-                                            onToggle={(e) => toggleEnabled(e, f)}
-                                        />
-                                    ))}
-                                </SortableContext>
-                            </DndContext>
-                        ) : (
-                            <div className="text-center py-6 text-white/15 text-xs">Bu kategoride özellik yok</div>
-                        )}
+                        {/* Collapsible feature rows */}
+                        <AnimatePresence initial={false}>
+                            {!isCollapsed && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                                    className="overflow-hidden"
+                                >
+                                    {catFeatures.length > 0 ? (
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleFeatureDragEnd(e, cat.id)}>
+                                            <SortableContext items={catFeatures.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                                                {catFeatures.map(f => (
+                                                    <SortableFeatureRow
+                                                        key={f.id}
+                                                        feature={f}
+                                                        lang={displayLang}
+                                                        onClick={() => router.push(`/admin/features/edit/${f.slug}`)}
+                                                        onToggle={(e) => toggleEnabled(e, f)}
+                                                    />
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                    ) : (
+                                        <div className="text-center py-6 text-white/15 text-xs">Bu kategoride özellik yok</div>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
-                ))}
+                    );
+                })}
 
                 {groupedFeatures.length === 0 && filtered.length === 0 && (
                     <div className="text-center py-12 text-white/20">Özellik bulunamadı</div>
@@ -481,7 +676,7 @@ export default function AdminFeaturesPage() {
                                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
                                     <SortableContext items={orderedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
                                         {orderedCategories.map(cat => (
-                                            <SortableCategoryRow key={cat.id} cat={cat} getTrName={getCatTrName} />
+                                            <SortableCategoryRow key={cat.id} cat={cat} getTrName={getCatDisplayName} />
                                         ))}
                                     </SortableContext>
                                 </DndContext>

@@ -40,13 +40,6 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     const title = getTranslation("title");
     const desc = getTranslation("desc");
 
-    // Risk badge — multi-language
-    const riskLabels: Record<string, Record<string, string>> = {
-        high: { en: "Critical", tr: "Riskli", de: "Kritisch", fr: "Critique", zh: "危险", es: "Crítico", hi: "खतरनाक" },
-        medium: { en: "Read Desc", tr: "Dikkat", de: "Achtung", fr: "Attention", zh: "注意", es: "Cuidado", hi: "ध्यान दें" },
-        low: { en: "Safe", tr: "Güvenli", de: "Sicher", fr: "Sûr", zh: "安全", es: "Seguro", hi: "सुरक्षित" },
-    };
-
     // New badge logic
     const newBadgeLabels: Record<string, string> = {
         en: "New", tr: "Yeni", de: "Neu", fr: "Nouveau", zh: "新", es: "Nuevo", hi: "नया",
@@ -54,28 +47,6 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     const isNewBadgeVisible = feature.newBadge && (
         !feature.newBadgeExpiry || new Date(feature.newBadgeExpiry) > new Date()
     );
-
-    let riskBadgeColor = "";
-    let riskBadgeBg = "";
-    let riskBadgeText = "";
-
-    switch (feature.risk) {
-        case "high":
-            riskBadgeColor = "text-[#ff6b6b]";
-            riskBadgeBg = "bg-[#ff6b6b]/10 border-[#ff6b6b]/30";
-            riskBadgeText = riskLabels.high[lang] || riskLabels.high.en;
-            break;
-        case "medium":
-            riskBadgeColor = "text-[#feca57]";
-            riskBadgeBg = "bg-[#feca57]/10 border-[#feca57]/30";
-            riskBadgeText = riskLabels.medium[lang] || riskLabels.medium.en;
-            break;
-        default:
-            riskBadgeColor = "text-[#1dd1a1]";
-            riskBadgeBg = "bg-[#1dd1a1]/10 border-[#1dd1a1]/30";
-            riskBadgeText = riskLabels.low[lang] || riskLabels.low.en;
-            break;
-    }
 
     const dnsDisplayName: Record<string, string> = {
         default: "Default", cloudflare: "Cloudflare", google: "Google",
@@ -128,11 +99,6 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                         {isNewBadgeVisible && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[var(--accent-color)]/15 border-[var(--accent-color)]/30 text-[var(--accent-color)] pointer-events-none animate-pulse">
                                 {newBadgeLabels[lang] || newBadgeLabels.en}
-                            </span>
-                        )}
-                        {!feature.noRisk && (
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${riskBadgeBg} ${riskBadgeColor} pointer-events-none`}>
-                                {riskBadgeText}
                             </span>
                         )}
                         {!showDescriptions && (

@@ -2,6 +2,84 @@
 
 > Aşağıdaki maddeler öncelik sırasına göre düzenlenmiştir.
 
+## M. Risk Badge Kaldırma, Bakım Sistemi Yenileme, Features DnD & Script Preview Yeniden Yazım
+
+### Public Site
+- [x] **M1. Risk badge'larını FeatureCard'dan kaldır**
+  - `noRisk` kontrolü ve risk badge render bloğu tamamen kaldırılacak
+  - Zaten admin'den risk seviyesi yönetilebilir, public'te göstermeye gerek yok
+
+### Admin Hydration Fix
+- [x] **M2. AdminHeader saat hydration hatası düzelt**
+  - `getUTC3Time()` SSR'da çalışıp farklı zaman üretir → hydration mismatch
+  - İlk render'da boş string göster, `useEffect` ile client-side saat başlat
+  - `suppressHydrationWarning` eklenmeyecek, kök neden düzeltilecek
+
+### Bakım Sistemi Yenileme
+- [x] **M3. Bakım API: sebep + tahmini bitiş alanları**
+  - `PUT /api/admin/maintenance` — `reason` (string) ve `estimatedEnd` (ISO datetime UTC) alanları
+  - DB'de `SiteSetting` key'leri: `maintenanceReason`, `maintenanceEstimatedEnd`
+  - `GET /api/admin/maintenance` — tüm bakım bilgilerini döndür
+  - `GET /api/maintenance` (public) — bakım durumu + sebep + tahmini bitiş
+
+- [x] **M4. Admin bakım modal: sebep + tahmini süre inputları**
+  - Bakımı açarken modal: textarea (sebep), süre seçimi (saat dropdown VEYA tarih-saat picker)
+  - Saat seçenekleri: 1, 2, 3, 6, 12, 24, 48, 72 saat
+  - Tarih-saat: date + time input ile kesin zaman (admin UTC+3 girer, API UTC'ye çevirir)
+  - Opsiyonel alanlar — boş bırakılabilir
+
+- [x] **M5. Middleware bakım HTML: yeni tasarım + dinamik veri**
+  - Bakım mesajı tüm dillerde: "Sitemiz şu anda bakımdadır. Ekibimiz en iyi deneyimi sunmak için çalışıyor."
+  - Sebep varsa göster (görünümü bozmadan, küçük metin)
+  - Tahmini bitiş varsa: geri sayım timer (JS ile), dile göre tarih formatı, zaman dilimine göre ayarlı
+  - "Tahmini süre — daha erken veya geç bitebilir" disclaimer
+  - Middleware bakım bilgilerini DB'den çeker ve HTML'e inject eder
+  - Self-contained: tüm CSS/JS inline, dışarıdan hiçbir şey yüklenmez
+
+- [x] **M6. PublicShell MaintenanceOverlay: yeni mesaj + countdown + tüm diller**
+  - Aynı mesaj ve countdown mantığı React bileşeni olarak
+  - `/api/maintenance` response'undaki `reason` ve `estimatedEnd` kullan
+  - Geri sayım: gün, saat, dakika, saniye — canlı güncellenen
+  - Kullanıcının tarayıcı zaman dilimine göre tarih gösterimi
+  - Dil desteği: en, tr, de, fr, es, zh, hi
+
+### Features Sayfası İyileştirmeleri
+- [x] **M7. Her yerden sürükleme + tıklama navigasyonu**
+  - Grip handle yerine tüm satır sürüklenebilir olacak
+  - `PointerSensor` `distance: 8` ile drag/click ayrımı (8px hareket → drag, aksi halde click)
+  - Tıklama hâlâ `/admin/features/edit/[slug]`'a yönlendiriyor
+
+- [x] **M8. Kategoriler katlanabilir (animasyonlu)**
+  - Her kategori başlığı tıklanabilir → açılır/kapanır
+  - `AnimatePresence` + `motion.div` ile smooth height animasyonu
+  - ChevronRight ikonu dönüşü ile açık/kapalı gösterimi
+  - Varsayılan: tüm kategoriler açık
+
+- [x] **M9. Dil seçici + kategori adı düzenleme + devre dışı bırakma**
+  - "Kategorileri Sırala" soluna dil seçici (AdminLangPicker)
+  - Seçilen dile göre özellik başlıkları ve kategori adları güncellenir
+  - Kategori başlığına çift tıklayarak inline düzenleme
+  - Kategori başlığı yanında enable/disable toggle
+
+- [x] **M10. Sıralama kaydet/iptal + unsaved changes guard**
+  - Sıralama değişikliğinde optimistic update YAPILMAYACAK
+  - Değişiklikler local state'te tutulur, dil başlığının solunda Kaydet/İptal butonları belirir
+  - Geri alınırsa butonlar kaybolur
+  - Kaydet → API'ye gönder, İptal → orijinal sıraya dön
+  - Sayfa değiştirirken unsaved changes modal (ESC ile kapatılabilir)
+
+### Script Ayarları Terminal Preview Yeniden Yazım
+- [x] **M11. Terminal preview tamamen yeniden yaz**
+  - Mevcut previewLines siliniyor, sıfırdan yazılıyor
+  - Liste ile %100 senkron: ekleme, silme, sıralama hepsi yansır
+  - Modern terminal tasarımı (koyu arka plan, syntax highlighting)
+  - Tüm varsayılan satırlar düzenlenebilir (optimizasyon placeholder hariç)
+  - Not defteri modu: preview'e tıklayıp yazabilme, Enter ile alt satıra geçiş
+  - Anahtar tamamlama (autocomplete) özelliği
+  - Write-Host kısımlarına kadar her şey düzenlenebilir
+
+---
+
 ## J. Özellik Düzenleme & Script Ayarları Geliştirmeleri
 
 ### Özellik Düzenleme Sayfası

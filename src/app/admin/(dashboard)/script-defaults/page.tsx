@@ -14,8 +14,6 @@ import {
     Download,
     MonitorPlay,
     Pencil,
-    Code2,
-    List,
     Github,
     ChevronUp,
     ChevronDown,
@@ -75,7 +73,6 @@ export default function ScriptDefaultsPage() {
     const [newKey, setNewKey] = useState("");
     const [newValue, setNewValue] = useState("");
     const [showNewRow, setShowNewRow] = useState(false);
-    const [editMode, setEditMode] = useState<"off" | "line" | "full">("off");
     const [editingLineKey, setEditingLineKey] = useState<string | null>(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
@@ -132,13 +129,12 @@ export default function ScriptDefaultsPage() {
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
-                if (editingLineKey) { setEditingLineKey(null); return; }
-                if (editMode !== "off") { setEditMode("off"); }
+                if (editingLineKey) { setEditingLineKey(null); }
             }
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-    }, [editMode, editingLineKey]);
+    }, [editingLineKey]);
 
     // J11: beforeunload guard + context sync (includes order changes)
     const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels) || JSON.stringify(keyOrder) !== JSON.stringify(originalKeyOrder);
@@ -205,7 +201,6 @@ export default function ScriptDefaultsPage() {
     const handleCancel = () => {
         setLabels(JSON.parse(JSON.stringify(originalLabels)));
         setKeyOrder(JSON.parse(JSON.stringify(originalKeyOrder)));
-        setEditMode("off");
         setEditingLineKey(null);
     };
 
@@ -388,56 +383,103 @@ export default function ScriptDefaultsPage() {
         });
     };
 
-    // J5+J8: Preview lines — githubUrl included, all text lines editable
+    // M11: Dynamic preview lines — 100% synced with list via keyOrder
+    // Each key maps to a PowerShell format template
+    const KEY_FORMAT: Record<string, (v: string, L: Record<string, string>) => string> = useMemo(() => ({
+        scriptTitle: (v) => `# ${v}`,
+        version: (v) => `# ${v}: 1.3`,
+        date: (v) => `# ${v}: ${new Date().toISOString().split("T")[0]}`,
+        developer: (v, L) => `# ${v}: ${L.developerName || "OptWin"}`,
+        developerName: (v) => `#   → ${v}`,
+        website: (v, L) => `# ${v}: ${L.websiteUrl || "https://optwin.tech"}`,
+        websiteUrl: (v) => `#   → ${v}`,
+        githubUrl: (v) => `# GitHub: ${v}`,
+        openSource: (v) => `# ${v}`,
+        bannerTitle: (v) => `Write-Host "  ║  ${v.padEnd(36)}║" -ForegroundColor Cyan`,
+        openSourceShort: (v) => `Write-Host "  ║  ${v.padEnd(36)}║" -ForegroundColor DarkCyan`,
+        adminRequest: (v) => `# ${v}`,
+        adminPrompt: (v) => `# ${v}`,
+        adminError: (v) => `# ${v}`,
+        adminHint: (v) => `# ${v}`,
+        restorePoint: (v) => `Write-Host "[*] ${v}" -ForegroundColor Yellow`,
+        restoreSuccess: (v) => `Write-Host "[+] ${v}" -ForegroundColor Green`,
+        restoreFail: (v) => `Write-Host "[-] ${v}" -ForegroundColor Red`,
+        done: (v) => `Write-Host "  [${v}]" -ForegroundColor Green`,
+        complete: (v) => `Write-Host "  ║  ${v.padEnd(36)}║" -ForegroundColor Green`,
+        success: (v) => `Write-Host "${v}" -ForegroundColor Yellow`,
+        thankYou: (v) => `Write-Host "${v}" -ForegroundColor Cyan`,
+        author: (v) => `Write-Host "${v}" -ForegroundColor DarkGray`,
+        pressAnyKey: (v) => `Write-Host "${v}" -ForegroundColor Gray`,
+    }), []);
+
+    // Section separators inserted BEFORE certain keys
+    const SECTION_BEFORE: Record<string, PreviewLine[]> = useMemo(() => ({
+        scriptTitle: [{ text: "# ============================================", key: null, editable: false }],
+        bannerTitle: [
+            { text: "# ============================================", key: null, editable: false },
+            { text: "", key: null, editable: false },
+            { text: 'Write-Host ""', key: null, editable: false },
+            { text: 'Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Cyan', key: null, editable: false },
+        ],
+        adminRequest: [
+            { text: 'Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Cyan', key: null, editable: false },
+            { text: 'Write-Host ""', key: null, editable: false },
+            { text: "", key: null, editable: false },
+        ],
+        restorePoint: [{ text: "", key: null, editable: false }],
+        complete: [
+            { text: "", key: null, editable: false },
+            { text: 'Write-Host ""', key: null, editable: false },
+            { text: 'Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Green', key: null, editable: false },
+        ],
+        success: [
+            { text: 'Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Green', key: null, editable: false },
+            { text: 'Write-Host ""', key: null, editable: false },
+        ],
+        pressAnyKey: [{ text: 'Write-Host ""', key: null, editable: false }],
+    }), []);
+
     const previewLines = useMemo<PreviewLine[]>(() => {
         const L = currentLabels;
-        const today = new Date().toISOString().split("T")[0];
-        return [
-            { text: `# ============================================`, key: null, editable: false },
-            { text: `# ${L.scriptTitle || "OptWin - Windows System Optimizer"}`, key: "scriptTitle", editable: true },
-            { text: `# ${L.version || "Version"}: 1.3`, key: "version", editable: true },
-            { text: `# ${L.date || "Date"}: ${today}`, key: "date", editable: true },
-            { text: `# ${L.developer || "Developer"}: ${L.developerName || "OptWin"}`, key: "developer", editable: true },
-            { text: `#   → ${L.developerName || "OptWin"}`, key: "developerName", editable: true },
-            { text: `# ${L.website || "Website"}: ${L.websiteUrl || "https://optwin.tech"}`, key: "website", editable: true },
-            { text: `#   → ${L.websiteUrl || "https://optwin.tech"}`, key: "websiteUrl", editable: true },
-            { text: `# GitHub: ${L.githubUrl || "https://github.com/ahmetlygh/OptWin"}`, key: "githubUrl", editable: true },
-            { text: `# ${L.openSource || "Open Source"}`, key: "openSource", editable: true },
-            { text: `# ============================================`, key: null, editable: false },
-            { text: ``, key: null, editable: false },
-            { text: `Write-Host ""`, key: null, editable: false },
-            { text: `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Cyan`, key: null, editable: false },
-            { text: `Write-Host "  ║  ${(L.bannerTitle || "OPTWIN").padEnd(36)}║" -ForegroundColor Cyan`, key: "bannerTitle", editable: true },
-            { text: `Write-Host "  ║  ${(L.openSourceShort || "Open Source Optimizer").padEnd(36)}║" -ForegroundColor DarkCyan`, key: "openSourceShort", editable: true },
-            { text: `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Cyan`, key: null, editable: false },
-            { text: `Write-Host ""`, key: null, editable: false },
-            { text: ``, key: null, editable: false },
-            { text: `# ${L.adminRequest || "Requesting admin privileges..."}`, key: "adminRequest", editable: true },
-            { text: `# ${L.adminPrompt || "Please click Yes on the UAC prompt"}`, key: "adminPrompt", editable: true },
-            { text: `# ${L.adminError || "Failed to elevate privileges"}`, key: "adminError", editable: true },
-            { text: `# ${L.adminHint || "Right-click and Run as Administrator"}`, key: "adminHint", editable: true },
-            { text: ``, key: null, editable: false },
-            { text: `Write-Host "[*] ${L.restorePoint || "Creating restore point..."}" -ForegroundColor Yellow`, key: "restorePoint", editable: true },
-            { text: `Write-Host "[+] ${L.restoreSuccess || "Restore point created"}" -ForegroundColor Green`, key: "restoreSuccess", editable: true },
-            { text: `Write-Host "[-] ${L.restoreFail || "Failed to create restore point"}" -ForegroundColor Red`, key: "restoreFail", editable: true },
-            { text: ``, key: null, editable: false },
-            { text: `# --- Optimizations ---`, key: null, editable: false },
-            { text: `Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White`, key: null, editable: false },
-            { text: `Write-Host "  [${L.done || "DONE"}]" -ForegroundColor Green`, key: "done", editable: true },
-            { text: ``, key: null, editable: false },
-            { text: `Write-Host ""`, key: null, editable: false },
-            { text: `Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Green`, key: null, editable: false },
-            { text: `Write-Host "  ║  ${(L.complete || "Optimization Complete!").padEnd(36)}║" -ForegroundColor Green`, key: "complete", editable: true },
-            { text: `Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Green`, key: null, editable: false },
-            { text: `Write-Host ""`, key: null, editable: false },
-            { text: `Write-Host "${L.success || "Please restart your computer."}" -ForegroundColor Yellow`, key: "success", editable: true },
-            { text: `Write-Host "${L.thankYou || "Thank you for using OptWin!"}" -ForegroundColor Cyan`, key: "thankYou", editable: true },
-            { text: `Write-Host "${L.author || "by OptWin Team"}" -ForegroundColor DarkGray`, key: "author", editable: true },
-            { text: `Write-Host ""`, key: null, editable: false },
-            { text: `Write-Host "${L.pressAnyKey || "Press any key to exit..."}" -ForegroundColor Gray`, key: "pressAnyKey", editable: true },
-            { text: `$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`, key: null, editable: false },
-        ];
-    }, [currentLabels]);
+        const sortedKeys = Object.keys(L)
+            .filter(k => L[k] !== undefined)
+            .sort((a, b) => (keyOrder[a] || 999) - (keyOrder[b] || 999));
+
+        const lines: PreviewLine[] = [];
+
+        // Split keys: before optimization placeholder and after
+        const preOptKeys = sortedKeys.filter(k => !["done", "complete", "success", "thankYou", "author", "pressAnyKey"].includes(k));
+        const postOptKeys = sortedKeys.filter(k => ["done", "complete", "success", "thankYou", "author", "pressAnyKey"].includes(k));
+
+        // Render pre-optimization keys
+        for (const key of preOptKeys) {
+            const before = SECTION_BEFORE[key];
+            if (before) lines.push(...before);
+            const fmt = KEY_FORMAT[key];
+            const val = L[key] || "";
+            lines.push({ text: fmt ? fmt(val, L) : `# ${key}: ${val}`, key, editable: true });
+        }
+
+        // Optimization placeholder (NOT editable)
+        lines.push({ text: "", key: null, editable: false });
+        lines.push({ text: "# --- Optimizations ---", key: null, editable: false });
+        lines.push({ text: 'Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White', key: null, editable: false });
+
+        // Render post-optimization keys
+        for (const key of postOptKeys) {
+            const before = SECTION_BEFORE[key];
+            if (before) lines.push(...before);
+            const fmt = KEY_FORMAT[key];
+            const val = L[key] || "";
+            lines.push({ text: fmt ? fmt(val, L) : `Write-Host "${val}"`, key, editable: true });
+        }
+
+        // Footer
+        lines.push({ text: "", key: null, editable: false });
+        lines.push({ text: '$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")', key: null, editable: false });
+
+        return lines;
+    }, [currentLabels, keyOrder, KEY_FORMAT, SECTION_BEFORE]);
 
     const previewText = previewLines.map(l => l.text).join("\n");
 
@@ -743,159 +785,98 @@ export default function ScriptDefaultsPage() {
                     </div>
                 </div>
 
-                {/* Terminal Preview */}
+                {/* M11: Modern Interactive Terminal Preview */}
                 <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden flex flex-col min-h-0">
-                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between shrink-0">
-                        <div className="flex items-center gap-2">
-                            <MonitorPlay size={13} className="text-emerald-400" />
-                            <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Terminal Önizleme</h3>
+                    {/* Terminal header — macOS style dots + title + download */}
+                    <div className="px-4 py-2.5 border-b border-white/[0.04] flex items-center justify-between shrink-0 bg-[#0d0d14]">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+                                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <MonitorPlay size={11} className="text-emerald-400/50" />
+                                <span className="text-[10px] font-mono text-white/20">OptWin-Preview-{activeLang}.ps1</span>
+                            </div>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <button
-                                onClick={() => {
-                                    if (editMode === "line") { setEditMode("off"); setEditingLineKey(null); }
-                                    else { setEditMode("line"); setEditingLineKey(null); }
-                                }}
-                                className={`h-7 px-2.5 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1.5 ${
-                                    editMode === "line"
-                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15"
-                                        : "bg-white/[0.03] text-white/30 border-white/[0.04] hover:text-white/50"
-                                }`}
-                            >
-                                <List size={10} />
-                                Satır
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (editMode === "full") { setEditMode("off"); setEditingLineKey(null); }
-                                    else { setEditMode("full"); setEditingLineKey(null); }
-                                }}
-                                className={`h-7 px-2.5 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1.5 ${
-                                    editMode === "full"
-                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/15"
-                                        : "bg-white/[0.03] text-white/30 border-white/[0.04] hover:text-white/50"
-                                }`}
-                            >
-                                <Code2 size={10} />
-                                Komple
-                            </button>
+                            <span className="text-[9px] text-white/15 font-mono">{previewLines.filter(l => l.key).length} editable</span>
                             <button
                                 onClick={handleDownloadPreview}
-                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-[#6b5be6]/10 text-[#6b5be6] hover:bg-[#6b5be6]/20 border border-[#6b5be6]/15 transition-all flex items-center gap-1.5"
+                                className="h-6 px-2 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/10 transition-all flex items-center gap-1"
                             >
-                                <Download size={10} />
-                                İndir
+                                <Download size={9} />
+                                .ps1
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-[#0a0a0f] overflow-auto admin-scrollbar min-h-0">
-                        {editMode === "full" ? (
-                            /* Full edit: all editable lines become inputs at once */
-                            <div className="p-4 space-y-0.5">
-                                {previewLines.map((line, idx) => {
-                                    if (line.key && line.editable) {
-                                        const ord = keyOrder[line.key];
-                                        return (
-                                            <div key={idx} className="flex items-center gap-1">
-                                                <span className="text-[9px] font-mono text-amber-400/30 w-20 text-right shrink-0 pr-1 truncate" title={line.key}>{line.key}</span>
-                                                <span className="text-amber-400/20 text-[8px] font-mono w-4 text-center shrink-0" title={`Sıra: ${ord}`}>{ord}</span>
-                                                <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0">{idx + 1}</span>
-                                                <input
-                                                    value={currentLabels[line.key] || ""}
-                                                    onChange={e => handleValueChange(line.key!, e.target.value)}
-                                                    onKeyDown={e => handlePreviewKeyDown(e, idx)}
-                                                    className="flex-1 bg-amber-500/[0.05] border border-amber-500/15 hover:border-amber-500/30 focus:border-amber-500/40 rounded px-2 py-0.5 text-[12px] font-mono text-amber-200/80 focus:outline-none transition-all"
-                                                />
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <div key={idx} className="flex items-start gap-1">
-                                            <span className="text-transparent text-[9px] font-mono w-20 shrink-0 pr-1">&nbsp;</span>
-                                            <span className="text-transparent text-[8px] font-mono w-4 shrink-0">&nbsp;</span>
-                                            <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0 pt-px">{idx + 1}</span>
-                                            <code className={`text-[12px] font-mono whitespace-pre ${getLineClass(line.text)}`}>{line.text || " "}</code>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : editMode === "line" ? (
-                            /* Line edit: click individual lines to edit */
-                            <div className="p-4 space-y-0.5">
-                                {previewLines.map((line, idx) => {
-                                    const isEditing = editingLineKey === line.key && line.key;
-                                    const ord = line.key ? keyOrder[line.key] : null;
+                    {/* Terminal body — notepad-style interactive */}
+                    <div className="flex-1 bg-[#08080e] overflow-auto admin-scrollbar min-h-0">
+                        <div className="py-3">
+                            {previewLines.map((line, idx) => {
+                                const isEditing = editingLineKey === line.key && !!line.key;
 
-                                    if (isEditing && line.key) {
-                                        return (
-                                            <div key={idx} className="flex items-center gap-1">
-                                                <span className="text-[9px] font-mono text-[#6b5be6]/40 w-20 text-right shrink-0 pr-1 truncate" title={line.key}>{line.key}</span>
-                                                <span className="text-[#6b5be6]/25 text-[8px] font-mono w-4 text-center shrink-0">{ord}</span>
-                                                <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0">{idx + 1}</span>
-                                                <input
-                                                    autoFocus
-                                                    value={currentLabels[line.key] || ""}
-                                                    onChange={e => handleValueChange(line.key!, e.target.value)}
-                                                    onKeyDown={e => {
-                                                        if (e.key === "Escape") setEditingLineKey(null);
-                                                        handlePreviewKeyDown(e, idx);
-                                                    }}
-                                                    className="flex-1 bg-[#6b5be6]/10 border border-[#6b5be6]/30 rounded px-2 py-0.5 text-[12px] font-mono text-purple-300 focus:outline-none"
-                                                />
-                                            </div>
-                                        );
-                                    }
+                                // Editing mode for this line
+                                if (isEditing && line.key) {
+                                    return (
+                                        <div key={`${idx}-${line.key}`} className="flex items-center gap-0 px-2 py-px bg-[#6b5be6]/[0.04]">
+                                            <span className="w-8 text-right text-[9px] font-mono text-[#6b5be6]/30 shrink-0 select-none">{idx + 1}</span>
+                                            <span className="w-px h-4 bg-[#6b5be6]/15 mx-1.5 shrink-0" />
+                                            <span className="text-[8px] font-mono text-[#6b5be6]/40 w-[72px] text-right pr-1.5 shrink-0 truncate" title={line.key}>{line.key}</span>
+                                            <input
+                                                autoFocus
+                                                value={currentLabels[line.key] || ""}
+                                                onChange={e => handleValueChange(line.key!, e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === "Escape") setEditingLineKey(null);
+                                                    handlePreviewKeyDown(e, idx);
+                                                }}
+                                                onBlur={() => setEditingLineKey(null)}
+                                                className="flex-1 bg-[#6b5be6]/[0.06] border border-[#6b5be6]/20 rounded px-2 py-0.5 text-[11px] font-mono text-[#c4b5fd] focus:outline-none focus:border-[#6b5be6]/40 transition-all mr-2"
+                                                placeholder="Değer girin..."
+                                            />
+                                        </div>
+                                    );
+                                }
 
-                                    return (
-                                        <div
-                                            key={idx}
-                                            className={`flex items-start gap-1 group ${line.key && line.editable ? "cursor-pointer hover:bg-white/[0.03] rounded" : ""}`}
-                                            onClick={() => line.key && line.editable && setEditingLineKey(line.key)}
-                                        >
-                                            <span className={`text-[9px] font-mono w-20 text-right shrink-0 pr-1 pt-px truncate ${
-                                                line.key ? "text-[#6b5be6]/25" : "text-transparent"
-                                            }`} title={line.key || ""}>
-                                                {line.key || ""}
-                                            </span>
-                                            <span className={`text-[8px] font-mono w-4 text-center shrink-0 pt-px ${
-                                                line.key ? "text-[#6b5be6]/15" : "text-transparent"
-                                            }`}>{ord ?? ""}</span>
-                                            <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0 pt-px">{idx + 1}</span>
-                                            <code className={`text-[12px] font-mono whitespace-pre ${getLineClass(line.text)}`}>
-                                                {line.text || " "}
-                                            </code>
-                                            {line.key && line.editable && (
-                                                <Pencil size={9} className="text-white/0 group-hover:text-white/30 transition-colors mt-1 shrink-0" />
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            /* View mode: plain preview with key labels + order */
-                            <div className="p-4 space-y-0.5">
-                                {previewLines.map((line, idx) => {
-                                    const ord = line.key ? keyOrder[line.key] : null;
-                                    return (
-                                        <div key={idx} className="flex items-start gap-1">
-                                            <span className={`text-[9px] font-mono w-20 text-right shrink-0 pr-1 pt-px truncate ${
-                                                line.key ? "text-white/10" : "text-transparent"
-                                            }`} title={line.key || ""}>
-                                                {line.key || ""}
-                                            </span>
-                                            <span className={`text-[8px] font-mono w-4 text-center shrink-0 pt-px ${
-                                                line.key ? "text-white/8" : "text-transparent"
-                                            }`}>{ord ?? ""}</span>
-                                            <span className="text-white/15 text-[10px] font-mono w-6 text-right shrink-0 pt-px">{idx + 1}</span>
-                                            <code className={`text-[12px] font-mono whitespace-pre ${getLineClass(line.text)}`}>
-                                                {line.text || " "}
-                                            </code>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                // Regular line (clickable if editable)
+                                return (
+                                    <div
+                                        key={`${idx}-${line.key || 'static'}`}
+                                        className={`flex items-start gap-0 px-2 py-px group ${
+                                            line.editable && line.key
+                                                ? "cursor-pointer hover:bg-white/[0.015]"
+                                                : ""
+                                        }`}
+                                        onClick={() => line.editable && line.key && setEditingLineKey(line.key)}
+                                    >
+                                        <span className="w-8 text-right text-[9px] font-mono text-white/[0.08] shrink-0 select-none pt-px">{idx + 1}</span>
+                                        <span className="w-px h-4 bg-white/[0.04] mx-1.5 shrink-0 mt-px" />
+                                        {line.key ? (
+                                            <span className="text-[8px] font-mono text-white/[0.08] group-hover:text-white/15 w-[72px] text-right pr-1.5 shrink-0 truncate pt-0.5 transition-colors" title={line.key}>{line.key}</span>
+                                        ) : (
+                                            <span className="w-[72px] shrink-0" />
+                                        )}
+                                        <code className={`text-[11px] font-mono whitespace-pre leading-[1.6] ${getLineClass(line.text)} ${
+                                            line.editable && line.key ? "group-hover:brightness-125 transition-all" : ""
+                                        }`}>
+                                            {line.text || "\u00A0"}
+                                        </code>
+                                        {line.editable && line.key && (
+                                            <Pencil size={8} className="text-white/0 group-hover:text-white/20 transition-colors mt-1 ml-1.5 shrink-0" />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Terminal footer — status bar */}
+                    <div className="px-4 py-1.5 border-t border-white/[0.03] bg-[#0d0d14] flex items-center justify-between">
+                        <span className="text-[8px] font-mono text-white/10">{previewLines.length} satır</span>
+                        <span className="text-[8px] font-mono text-white/10">UTF-8 · PowerShell</span>
                     </div>
                 </div>
             </div>

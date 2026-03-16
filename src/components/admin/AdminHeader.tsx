@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { LogOut, ExternalLink, Clock, Loader2, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { LogOut, ExternalLink, Clock, Loader2, ChevronRight, X, AlertTriangle } from "lucide-react";
 import { AdminConfirmModal } from "./AdminConfirmModal";
 
 interface AdminHeaderProps {
@@ -26,8 +26,10 @@ function getUTC3Time(): string {
     return `${h}:${m}:${s}`;
 }
 
+const HOUR_PRESETS = [1, 2, 3, 6, 12, 24, 48, 72];
+
 export function AdminHeader({ user }: AdminHeaderProps) {
-    const [time, setTime] = useState(getUTC3Time());
+    const [time, setTime] = useState("");
     const [showSignOut, setShowSignOut] = useState(false);
     const [showViewSite, setShowViewSite] = useState(false);
     const [maintenance, setMaintenance] = useState(false);
@@ -35,7 +37,15 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     const [showMaintenanceOn, setShowMaintenanceOn] = useState(false);
     const [showMaintenanceOff, setShowMaintenanceOff] = useState(false);
 
+    // Maintenance modal fields
+    const [mReason, setMReason] = useState("");
+    const [mTimeMode, setMTimeMode] = useState<"hours" | "datetime">("hours");
+    const [mHours, setMHours] = useState<number | null>(null);
+    const [mDate, setMDate] = useState("");
+    const [mTime, setMTime] = useState("");
+
     useEffect(() => {
+        setTime(getUTC3Time());
         const interval = setInterval(() => setTime(getUTC3Time()), 1000);
         return () => clearInterval(interval);
     }, []);
@@ -50,10 +60,22 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     const toggleMaintenance = async (enabled: boolean) => {
         setMaintenanceLoading(true);
         try {
+            let estimatedEnd = "";
+            if (enabled) {
+                if (mTimeMode === "hours" && mHours) {
+                    // Admin is UTC+3, calculate absolute UTC time
+                    const end = new Date(Date.now() + mHours * 3600000);
+                    estimatedEnd = end.toISOString();
+                } else if (mTimeMode === "datetime" && mDate && mTime) {
+                    // Admin enters UTC+3 local time, convert to UTC
+                    const localStr = `${mDate}T${mTime}:00+03:00`;
+                    estimatedEnd = new Date(localStr).toISOString();
+                }
+            }
             const res = await fetch("/api/admin/maintenance", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enabled }),
+                body: JSON.stringify({ enabled, reason: enabled ? mReason : "", estimatedEnd: enabled ? estimatedEnd : "" }),
             });
             const data = await res.json();
             if (data.success) setMaintenance(data.maintenance);
@@ -61,6 +83,12 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         setMaintenanceLoading(false);
         setShowMaintenanceOn(false);
         setShowMaintenanceOff(false);
+        if (!enabled) { setMReason(""); setMHours(null); setMDate(""); setMTime(""); }
+    };
+
+    const openMaintenanceModal = () => {
+        setMReason(""); setMHours(null); setMDate(""); setMTime(""); setMTimeMode("hours");
+        setShowMaintenanceOn(true);
     };
 
     const pathname = usePathname();
@@ -124,7 +152,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                             {maintenance ? "Bakımda" : "Aktif"}
                         </span>
                         <button
-                            onClick={() => maintenance ? setShowMaintenanceOff(true) : setShowMaintenanceOn(true)}
+                            onClick={() => maintenance ? setShowMaintenanceOff(true) : openMaintenanceModal()}
                             disabled={maintenanceLoading}
                             className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${!maintenance ? "bg-emerald-500/80" : "bg-white/[0.06]"} ${maintenanceLoading ? "opacity-50" : ""}`}
                         >
@@ -212,17 +240,116 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 cancelText="İptal"
             />
 
-            {/* Maintenance On Modal */}
-            <AdminConfirmModal
-                open={showMaintenanceOn}
-                onClose={() => setShowMaintenanceOn(false)}
-                onConfirm={() => toggleMaintenance(true)}
-                title="Bakıma Al"
-                description="Siteyi bakım moduna almak istediğinize emin misiniz? Tüm ziyaretçiler bakım sayfasına yönlendirilecek."
-                confirmText="Bakıma Al"
-                cancelText="İptal"
-                variant="danger"
-            />
+            {/* Maintenance On Modal — custom with reason + estimated time */}
+            <AnimatePresence>
+                {showMaintenanceOn && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setShowMaintenanceOn(false)}>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+                            transition={{ duration: 0.25 }}
+                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-md w-full mx-4 shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                                    <AlertTriangle size={16} className="text-amber-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-bold text-white">Bakıma Al</h3>
+                                    <p className="text-[11px] text-white/30">Tüm ziyaretçiler bakım sayfasına yönlendirilecek</p>
+                                </div>
+                                <button onClick={() => setShowMaintenanceOn(false)} className="p-1 text-white/30 hover:text-white/60"><X size={16} /></button>
+                            </div>
+
+                            {/* Reason */}
+                            <div className="mb-4">
+                                <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
+                                <textarea
+                                    value={mReason}
+                                    onChange={e => setMReason(e.target.value)}
+                                    placeholder="Sistem güncellemesi, veritabanı bakımı..."
+                                    rows={2}
+                                    className="w-full bg-white/[0.02] border border-white/[0.04] rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors resize-none"
+                                />
+                            </div>
+
+                            {/* Estimated End */}
+                            <div className="mb-4">
+                                <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5">Tahmini Bitiş <span className="text-white/15">(opsiyonel)</span></label>
+
+                                {/* Mode toggle */}
+                                <div className="flex gap-1 mb-3">
+                                    <button
+                                        onClick={() => setMTimeMode("hours")}
+                                        className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${
+                                            mTimeMode === "hours" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                        }`}
+                                    >
+                                        ... saat sonra
+                                    </button>
+                                    <button
+                                        onClick={() => setMTimeMode("datetime")}
+                                        className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${
+                                            mTimeMode === "datetime" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                        }`}
+                                    >
+                                        Tarih ve saat
+                                    </button>
+                                </div>
+
+                                {mTimeMode === "hours" ? (
+                                    <div className="grid grid-cols-4 gap-1.5">
+                                        {HOUR_PRESETS.map(h => (
+                                            <button
+                                                key={h}
+                                                onClick={() => setMHours(mHours === h ? null : h)}
+                                                className={`h-8 rounded-lg text-[11px] font-bold transition-all border ${
+                                                    mHours === h ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                                }`}
+                                            >
+                                                {h < 24 ? `${h} saat` : `${h / 24} gün`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="date"
+                                            value={mDate}
+                                            onChange={e => setMDate(e.target.value)}
+                                            className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
+                                        />
+                                        <input
+                                            type="time"
+                                            value={mTime}
+                                            onChange={e => setMTime(e.target.value)}
+                                            className="w-28 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
+                                        />
+                                        <span className="flex items-center text-[10px] text-white/20 font-mono">UTC+3</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowMaintenanceOn(false)} className="flex-1 h-9 rounded-xl text-sm font-medium text-white/40 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all">
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={() => toggleMaintenance(true)}
+                                    className="flex-1 h-9 rounded-xl text-sm font-bold text-white bg-amber-600 hover:bg-amber-500 transition-all shadow-lg shadow-amber-600/20 flex items-center justify-center gap-2"
+                                >
+                                    <AlertTriangle size={13} />
+                                    Bakıma Al
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Maintenance Off Modal */}
             <AdminConfirmModal
