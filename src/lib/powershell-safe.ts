@@ -48,6 +48,17 @@ const CHAR_MAP: Record<string, string> = {
     "ș": "s", "Ș": "S",
 };
 
+/**
+ * Escape a string for use inside PowerShell double-quoted strings.
+ * Backtick-escapes: `  "  $
+ */
+export function escapeForPsString(text: string): string {
+    return text
+        .replace(/`/g, "``")
+        .replace(/"/g, '`"')
+        .replace(/\$/g, "`$");
+}
+
 export function toPowerShellSafe(text: string): string {
     let result = "";
     for (const char of text) {
@@ -60,8 +71,8 @@ export function toPowerShellSafe(text: string): string {
             result += char;
         }
     }
-    // Collapse multiple spaces
-    return result.replace(/\s{2,}/g, " ").trim();
+    // Collapse multiple spaces, then escape for PS double-quoted strings
+    return escapeForPsString(result.replace(/\s{2,}/g, " ").trim());
 }
 
 /**

@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { toPowerShellSafe } from "./powershell-safe";
+import { toPowerShellSafe, escapeForPsString } from "./powershell-safe";
 
 type ScriptParams = {
     features: string[];
@@ -53,8 +53,8 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '@echo off\r\n';
     script += 'chcp 65001 >nul 2>&1\r\n';
     script += 'set "OPTWIN_BAT=%~f0"\r\n';
-    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& ([ScriptBlock]::Create((Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw)))"\r\n';
-    script += 'if errorlevel 1 pause\r\n';
+    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { & ([ScriptBlock]::Create((Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw))) } catch { Write-Host $_.Exception.Message -ForegroundColor Red; Read-Host \'Press Enter to exit\' }"\r\n';
+    script += 'if errorlevel 1 (echo. & echo   Script failed. & pause)\r\n';
     script += 'exit /b\r\n';
     script += '#>\r\n\r\n';
 
@@ -209,7 +209,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
 
         const cmd = feat.commands[0];
         if (cmd) {
-            script += 'Write-Host "  ' + cmd.scriptMessage + '" -ForegroundColor Cyan\n';
+            script += 'Write-Host "  ' + escapeForPsString(cmd.scriptMessage) + '" -ForegroundColor Cyan\n';
             script += cmd.command + '\n';
             script += 'Write-Host "      ' + labels.done + '" -ForegroundColor Green\n';
             script += 'Write-Host ""\n';
@@ -230,7 +230,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
             command = command.replace(/\{\{PRIMARY_DNS\}\}/g, provider.primary);
             command = command.replace(/\{\{SECONDARY_DNS\}\}/g, provider.secondary);
 
-            script += 'Write-Host "  ' + dnsCmd.commands[0].scriptMessage + '" -ForegroundColor Cyan\n';
+            script += 'Write-Host "  ' + escapeForPsString(dnsCmd.commands[0].scriptMessage) + '" -ForegroundColor Cyan\n';
             script += command + '\n';
             script += 'Write-Host "      ' + labels.done + ' (' + provider.name + ')" -ForegroundColor Green\n';
             script += 'Write-Host ""\n';
