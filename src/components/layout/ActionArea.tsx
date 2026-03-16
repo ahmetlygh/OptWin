@@ -47,7 +47,7 @@ export function ActionArea() {
         <div
             className={`fixed bottom-0 left-0 right-0 px-3 sm:px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:pb-6 pointer-events-none flex justify-center z-[110] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${shouldShow ? "-translate-y-6 sm:-translate-y-4 opacity-100" : "translate-y-full opacity-0"}`}
         >
-            <div className="pointer-events-auto w-auto max-w-[640px] bg-[var(--card-bg)]/95 backdrop-blur-2xl border border-[var(--border-color)] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35),0_0_30px_rgba(107,91,230,0.1)] flex items-center gap-2 sm:gap-1.5 p-2 sm:p-1.5 animate-scale-in">
+            <div className="pointer-events-auto w-auto max-w-[640px] bg-card/95 backdrop-blur-2xl border border-[var(--border-color)] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35),0_0_30px_rgba(107,91,230,0.1)] flex items-center gap-2 sm:gap-1.5 p-2 sm:p-1.5 animate-scale-in">
                 {/* Selection Counter */}
                 <div className="h-12 sm:h-11 px-4 sm:px-4 flex items-center gap-1.5 sm:gap-2 rounded-xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/20 shrink-0">
                     <span className="text-[var(--accent-color)] font-black text-xl sm:text-lg leading-none tabular-nums">{selectedFeatures.size}</span>

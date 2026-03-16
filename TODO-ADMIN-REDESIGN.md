@@ -2,6 +2,174 @@
 
 > Aşağıdaki maddeler öncelik sırasına göre düzenlenmiştir.
 
+---
+
+## O. Bakım Tasarımı, Kategori CRUD, Feature Edit Bugfix, Script Preview Sync, Public ActionArea
+
+### Bakım Sayfası — Middleware HTML (`buildMaintenanceHtml`)
+- [x] **O1. Bakım HTML tasarımını zenginleştir + eski iyi tasarımı geri getir**
+  - Copyright yazısını büyüt (`.copy` font-size `.62rem` → `.78rem`)
+  - Logo yamukluğunu düzelt: `img` etiketinde `object-fit:contain` + `vertical-align:middle` ekle
+  - Tüm metin boyutlarını ~%15 artır (msg, apology, reason, countdown label, date vb.)
+  - Tüm elementleri ~%15 büyüt (gear `48→56px`, countdown box `min-width:52→60px`, num `1.3→1.5rem` vb.)
+  - Progress bar'ın altına "Çalışmalar devam ediyor" metni ekle (tüm 7 dilde: `wip` anahtarı)
+  - Güncel saati saniyeye kadar göster, dile göre locale formatında (her saniye güncellenir)
+  - Eski tasarımdaki `status` text'ini geri getir (bar altında)
+
+### Bakım Sayfası — React Overlay (`PublicShell.tsx > MaintenanceOverlay`)
+- [x] **O2. React overlay'i middleware ile uyumlu hale getir**
+  - Tüm metin ve element boyutlarını ~%15 artır (aynı oranlar)
+  - Copyright yazısını büyüt
+  - Progress bar'ın altına "Çalışmalar devam ediyor" metni ekle (tüm 7 dilde)
+  - Güncel saati saniyeye kadar göster (dile göre locale)
+  - Fade-in/out spinner (TransitionSpinner): bakıma girerken VE bakımdan çıkarken çalışsın
+  - Bakım bitince ani geçiş yerine spinner → fade → ana site
+
+### Kategori Yönetimi — Features Sayfası
+- [x] **O3. Düzenleme butonunu kategori isminin hemen yanına taşı**
+  - Pencil butonu şu anda toggle/özellik sayısından sonra → isim `<span>` etiketinin hemen sağına taşı
+  - Dil ne olursa olsun her zaman ismin yanında olsun
+
+- [x] **O4. Tümünü Daralt / Genişlet butonlarını genişlet + isim yaz**
+  - Sadece ikon yerine simge + "Tümünü Genişlet" / "Tümünü Daralt" yazısı butonlara ekle
+  - Butonlar daha geniş olacak (`w-8` → `h-8 px-3` + metin)
+
+- [x] **O5. Kaydet/İptal butonlarını Daralt/Genişlet butonlarının SOLUNA taşı**
+  - Şu an: [Daralt][Genişlet] | [İptal][Kaydet] | [Dil]
+  - Olması gereken: [İptal][Kaydet] | [Daralt][Genişlet] | [Dil]
+
+- [x] **O6. Kategori silme ekle — toggle'ın sağına, onay modalı ile**
+  - Enable/disable toggle'ın sağında Trash2 ikonu butonu
+  - Basınca AdminConfirmModal ile onay iste
+  - Onaylanırsa `DELETE /api/admin/categories?id=xxx` çağır
+  - Kategoriye bağlı özellik varsa uyarı göster
+
+### Yeni Kategori Modalı
+- [x] **O7. Dil seçimini AdminLangPicker bayraklı butona çevir + seçili dilden çeviri**
+  - Sağdaki 7 inputluk liste yerine: tek bir AdminLangPicker dropdown + tek input
+  - AdminLangPicker ile dil seç → o dildeki ismi gir → Çevir butonuna bas → diğer dillere çevrilsin
+  - Çeviri kaynağı: seçili dil (sadece EN değil)
+
+- [x] **O8. Aynı sırada kategori varsa mevcut kategorilerin sıralarını kaydır**
+  - `createCategory` fonksiyonunda: eğer `newCatOrder` ile aynı order'da bir kategori varsa, o ve sonrakilerin order'ını +1 artır
+  - API tarafında da bu kontrol yapılmalı veya client-side shift + save
+
+### Feature Edit Sayfası (`/admin/features/edit/[slug]`)
+- [x] **O9. "Sıra" alanını kaldır**
+  - Temel Bilgiler grid'inden `<div>` Sıra input'unu sil
+
+- [x] **O10. Risk seviyesi dropdown açılmıyor — düzelt**
+  - `AdminSelect` overflow hidden olan `motion.div` parent'ı dropdown'ı kesiyor
+  - `overflow-hidden` → `overflow-visible` yap veya dropdown'ı portal'a taşı
+
+- [x] **O11. Unsaved changes modal zamanlama sorunu — düzelt**
+  - `registerOnSave.current` ve `registerOnDiscard.current` atamalarında `handleSubmit` henüz tanımlı olmayabilir
+  - `useEffect` ile doğru zamanda register et, cleanup'ta null'a çek
+
+### Script Ayarları
+- [x] **O12. İndirilen .ps1 hemen kapanıyor — düzelt**
+  - Mevcut: `previewText + "\npause"` — ancak PowerShell'de `pause` sadece `cmd` komutu
+  - Düzeltme: `Read-Host -Prompt "Press Enter to exit"` veya `$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")` zaten satırlarda var ama `pause` çalışmıyor
+  - Çözüm: `\npause` yerine `\nWrite-Host ""\nRead-Host "Press Enter to exit"` ekle
+
+- [x] **O13. Preview'de "Geliştirici" vb. değer değişiklikleri yansımıyor**
+  - `developer` format fonksiyonu: `(v, L) => \`# ${v}: ${L.developerName}\`` — burada `v` = "Geliştirici" etiketi, `L.developerName` = "ahmetly" değeri
+  - Kullanıcı "developerName" değerini değiştirdiğinde preview'e yansıyor ama "developer" satırındaki `L.developerName` referansı güncellenmiyormuş gibi görünüyor
+  - Sorun: `useMemo` dependency'de `currentLabels` var ama `L.developerName` deep reference ile güncellenmiyor olabilir
+  - Çözüm: KEY_FORMAT fonksiyonlarının `L` parametresini her render'da taze `currentLabels`'dan alsın
+
+### Public Site
+- [x] **O14. Floating "Script Oluştur" butonu (ActionArea) görünmüyor**
+  - `ActionArea` bileşeni `shouldShow = hasSelections && !isDnsModalOpen` koşuluna bağlı
+  - Sorun: Feature seçildiğinde `selectedFeatures.size > 0` olması lazım
+  - Zustand store'da `selectedFeatures` Set'inin doğru güncellenip güncellenmediğini kontrol et
+  - CSS: `translate-y-full` ile gizleniyor, `shouldShow` true olduğunda `-translate-y-6` ile gösterilmeli
+  - `z-[110]` yeterli mi kontrol et, başka element üstünü kapatıyor olabilir
+
+---
+
+## N. Bakım Sayfası Düzeltme, Kategori UX, Script Ayarları & Otomatik Toggle Bugfix
+
+### Bakım Sayfası (Middleware + React Overlay)
+- [x] **N1. Bakım sayfası tasarımını eski haline getir + son özellikleri koru**
+  - Mevcut tasarım kötü: fade/spinner geçişi çalışmıyor, dil seçici siteye özel değil, logo bozuk, altta çizgi animasyonu yok, özür mesajı eksik
+  - Middleware HTML (`buildMaintenanceHtml`): logo düzelt (48x48, drop-shadow), özür mesajı ekle (msg altında), progress bar'a kayma animasyonu ekle, dil seçici OptWin'e özel tasarım (select yerine custom dropdown)
+  - React overlay (`MaintenanceOverlay`): fade geçişi düzelt, spinner geçişi düzelt (bakıma girerken/çıkarken), özür mesajı zaten var — koru
+  - Tersine mühendislik ile ana site içeriği ASLA görülemesin — mevcut güvenlik korunsun
+  - Son eklenen özellikler aynen kalsın: countdown, sebep, çok dilli destek, tahmini bitiş
+
+### Kategori Yönetimi (Features Sayfası)
+- [x] **N2. Çift tıklama yerine düzenleme butonu ile yeniden adlandırma**
+  - Kategori başlığının yanında hover'da beliren kalem (Pencil) ikonu butonu
+  - Bu butona basınca inline edit açılsın (mevcut çift tıklama kaldırılacak)
+  - Butona basınca açılıp kapanma sorunu olmayacak
+
+- [x] **N3. Kategori yeniden adlandırınca Kaydet/İptal butonları — dil seçicinin SOLUNA**
+  - Düzenleme yapılınca dil seçicinin solunda Kaydet + İptal butonları belirsin
+  - Eski haline döndürülürse veya butonlara basılırsa kaybolsun
+  - AnimatePresence ile animasyonlu giriş/çıkış
+
+- [x] **N4. Küçültülen kategoriler F5'te bile aynı kalsın — localStorage**
+  - `collapsedCategories` Set'i localStorage'a yazılsın/okunansın
+  - Sayfa yenilendiğinde (F5) aynı kategoriler kapalı kalsın
+
+- [x] **N5. Tüm Kategorileri Daralt / Genişlet butonları**
+  - Özellikler kısmında tüm kategoriler listesinin soluna iki buton ekle
+  - "Tümünü Daralt" (ChevronsDownUp) + "Tümünü Genişlet" (ChevronsUpDown)
+  - Her ikisi de localStorage'ı günceller
+
+- [x] **N6. Kategori ekleme modalına dil listesi + sıra + çeviri API**
+  - Modalın sağına dil listesi koy (tüm diller: en, tr, de, fr, es, zh, hi)
+  - Her dil için isim girişi, slug tüm dillerde aynı kalacak
+  - Sıra (order) alanı ekle — oluştururken belirlenebilsin
+  - Çeviri API butonu: hangi dildeysem ondan diğer hepsine çevirecek
+  - Çeviri başarılı olunca bildirim göster
+
+- [x] **N7. Kategori içi sıralama değişince Kaydet/İptal butonları dil seçicinin SOLUNA**
+  - Mevcut butonlar dil seçicinin sağında — sola taşınacak
+  - Sıralama değişince animasyonlu belirsin, kaydet/iptal sonrası kaybolsun
+
+### Script Düzenleme (Feature Edit) Bugfix
+- [x] **N8. Otomatik toggle state bug düzelt**
+  - `autoScriptMsg` state form ile senkronize değil
+  - İptal'e basınca toggle sıfırlanmıyor
+  - Kaydet sonrası toggle durumu korunmuyor
+  - Çözüm: `autoScriptMsg` state'i form.commands'daki scriptMessage'lara bakarak türetilmeli (derived state)
+  - Veya save/cancel işlemlerinde `autoScriptMsg`'ı da sıfırla
+
+### Sidebar Navigasyon Guard
+- [x] **N9. Tüm sayfalarda sidebar'dan geçiş yaparken unsaved changes modal**
+  - Features sayfası zaten bağlı (UnsavedChangesContext)
+  - Script Defaults sayfası zaten bağlı
+  - Slug editor: mevcut kendi internal UnsavedChangesModal var ama sidebar'a bağlı DEĞİL → UnsavedChangesContext'e de bağla
+  - Her sayfada sidebar geçişinde değişiklik varsa modal çıksın
+
+### Script Ayarları Sayfası İyileştirmeleri
+- [x] **N10. Satır sıralaması scriptlerin içinden değiştirilemesin**
+  - Sol listedeki yukarı/aşağı ok butonlarını ve sıra input'unu kaldır
+  - Sıralama sadece LABEL_DESCRIPTIONS sırasına göre sabit olsun
+
+- [x] **N11. Kaydet/İptal butonları dil seçicinin SOLUNA**
+  - Mevcut: dil seçicinin sağında — sola taşınacak
+  - Animasyonla belirip kaybolacak
+
+- [x] **N12. Terminal preview yazılarını baştan yaz + tamamını düzenlenebilir yap**
+  - Mevcut 44 satırdan 24'ü düzenlenebilir — HEPSİ düzenlenebilir olmalı
+  - Gereksiz süslü dekoratif satırları sadeleştir, sade tasarımlı script olsun
+  - Liste ile %100 senkron
+
+- [x] **N13. Admin'den indirilen preview .ps1'de "Press any key" çalışsın**
+  - `$null = $Host.UI.RawUI.ReadKey(...)` satırı zaten var ama dosya açılınca kapanıyor
+  - Scriptin sonuna `pause` veya `Read-Host` ekle ki terminal açık kalsın
+
+- [x] **N14. Satır silmeden önce onay modalı + undo**
+  - Listeden bir satır silinmeye çalışılınca "Emin misiniz?" modalı açılsın (ESC ile kapatılabilir)
+  - Evet → sil, Hayır → silme
+  - Silme işlemi Kaydet/İptal butonlarını tetiklesin
+  - İptal'e basarsak silinen satırlar animasyonla geri gelsin
+
+---
+
 ## M. Risk Badge Kaldırma, Bakım Sistemi Yenileme, Features DnD & Script Preview Yeniden Yazım
 
 ### Public Site

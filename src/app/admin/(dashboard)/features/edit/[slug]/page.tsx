@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +20,7 @@ import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
 import { generateScriptMessage } from "@/lib/powershell-safe";
 import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
+import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 
 type Feature = {
     id: string;
@@ -147,6 +148,9 @@ function SlugFeatureEditor({
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
 
+    // N9: Wire to shared UnsavedChangesContext so sidebar nav guard works
+    const { setHasUnsavedChanges, onSave: registerOnSave, onDiscard: registerOnDiscard } = useUnsavedChanges();
+
     const handleAutoTranslate = async () => {
         const title = form.translations[translationLang]?.title;
         const desc = form.translations[translationLang]?.desc;
@@ -222,7 +226,6 @@ function SlugFeatureEditor({
         }
     };
 
-    const [autoScriptMsg, setAutoScriptMsg] = useState(false);
     const [translatingScript, setTranslatingScript] = useState(false);
     const handleTranslateScriptMsg = async () => {
         const msg = form.commands[commandLang]?.scriptMessage;
@@ -283,6 +286,23 @@ function SlugFeatureEditor({
     const [form, setForm] = useState(buildInitialState);
     const [original, setOriginal] = useState(buildInitialState);
     const hasChanges = JSON.stringify(form) !== JSON.stringify(original);
+
+    // O11: Sync hasChanges with shared context + register callbacks for sidebar nav guard
+    useEffect(() => {
+        setHasUnsavedChanges(hasChanges);
+        return () => setHasUnsavedChanges(false);
+    }, [hasChanges, setHasUnsavedChanges]);
+
+    // Use refs to always point to latest functions without causing re-renders
+    const handleSubmitRef = useRef<(() => Promise<void>) | null>(null);
+    const buildInitRef = useRef(buildInitialState);
+    buildInitRef.current = buildInitialState;
+
+    useEffect(() => {
+        registerOnSave.current = async () => { if (handleSubmitRef.current) await handleSubmitRef.current(); };
+        registerOnDiscard.current = () => { setForm(buildInitRef.current()); };
+        return () => { registerOnSave.current = null; registerOnDiscard.current = null; };
+    }, [registerOnSave, registerOnDiscard]);
 
     const tryNavigate = (navFn: () => void) => {
         if (hasChanges) {
@@ -350,6 +370,9 @@ function SlugFeatureEditor({
             setSaving(false);
         }
     };
+
+    // O11: Keep ref pointing to latest handleSubmit
+    handleSubmitRef.current = handleSubmit;
 
     const handleDelete = async () => {
         await fetch(`/api/admin/features?id=${feature.id}`, { method: "DELETE" });
@@ -496,32 +519,22 @@ function SlugFeatureEditor({
                         <AdminIconPicker value={form.icon} onChange={v => updateField("icon", v)} />
                     </div>
                     {/* K7: Risk seviyesi — noRisk true iken gizlenir */}
+                    {/* O10: overflow-visible so AdminSelect dropdown isn't clipped */}
                     <AnimatePresence initial={false}>
                         {!form.noRisk && (
                             <motion.div
                                 key="risk-field"
                                 initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+                                exit={{ opacity: 0, height: 0, overflow: "hidden" }}
                                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                                className="overflow-hidden"
                             >
                                 <label className={labelCls}>Risk Seviyesi</label>
                                 <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    <div>
-                        <label className={labelCls}>Sıra</label>
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={form.order}
-                            onChange={e => updateField("order", parseInt(e.target.value) || 0)}
-                            className={inputCls}
-                        />
-                    </div>
+                    {/* O9: Sıra alanı kaldırıldı — sıralama sadece features sayfasından yapılır */}
                     {/* K8: Badge alanı animasyonlu açılıp kapanır */}
                     <AnimatePresence initial={false}>
                         {form.newBadge && (
@@ -686,31 +699,43 @@ function SlugFeatureEditor({
                         <button
                             type="button"
                             onClick={() => {
-                                const next = !autoScriptMsg;
-                                setAutoScriptMsg(next);
-                                if (next) {
-                                    // K6: Generate script message for ALL languages from their own title
+                                // N8: Derive auto state from whether all langs have auto-generated messages
+                                const allAuto = availableLangs.every(lang => {
+                                    const title = form.translations[lang]?.title || "";
+                                    const msg = form.commands[lang]?.scriptMessage || "";
+                                    return title && msg && msg === generateScriptMessage(title, lang);
+                                });
+                                if (allAuto) {
+                                    // Already auto — clear all
+                                    for (const lang of availableLangs) {
+                                        updateCommand(lang, "scriptMessage", "");
+                                    }
+                                } else {
+                                    // Generate for all
                                     for (const lang of availableLangs) {
                                         const title = form.translations[lang]?.title || "";
                                         if (title) {
                                             updateCommand(lang, "scriptMessage", generateScriptMessage(title, lang));
                                         }
                                     }
-                                } else {
-                                    // K6: Clear all script messages
-                                    for (const lang of availableLangs) {
-                                        updateCommand(lang, "scriptMessage", "");
-                                    }
                                 }
                             }}
                             className={`shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
-                                autoScriptMsg
+                                availableLangs.every(lang => {
+                                    const title = form.translations[lang]?.title || "";
+                                    const msg = form.commands[lang]?.scriptMessage || "";
+                                    return title && msg && msg === generateScriptMessage(title, lang);
+                                })
                                     ? "bg-[#6b5be6]/20 text-[#6b5be6] border-[#6b5be6]/30"
                                     : "bg-[#6b5be6]/10 text-[#6b5be6]/70 border-[#6b5be6]/15 hover:bg-[#6b5be6]/20"
                             }`}
-                            title={autoScriptMsg ? "Otomatik mesajları kaldır" : "Tüm diller için başlıktan otomatik oluştur"}
+                            title="Tüm diller için başlıktan otomatik oluştur / kaldır"
                         >
-                            {autoScriptMsg ? <Check size={11} /> : null}
+                            {availableLangs.every(lang => {
+                                const title = form.translations[lang]?.title || "";
+                                const msg = form.commands[lang]?.scriptMessage || "";
+                                return title && msg && msg === generateScriptMessage(title, lang);
+                            }) ? <Check size={11} /> : null}
                             Otomatik
                         </button>
                     </div>

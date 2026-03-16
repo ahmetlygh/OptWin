@@ -19,6 +19,10 @@ import {
     FolderPlus,
     ArrowUpDown,
     ChevronRight,
+    Pencil,
+    ChevronsUpDown,
+    ChevronsDownUp,
+    Languages,
 } from "lucide-react";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
@@ -151,20 +155,34 @@ export default function AdminFeaturesPage() {
     const [showCategoryOrder, setShowCategoryOrder] = useState(false);
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [newCatSlug, setNewCatSlug] = useState("");
-    const [newCatNameTr, setNewCatNameTr] = useState("");
-    const [newCatNameEn, setNewCatNameEn] = useState("");
+    const [newCatNames, setNewCatNames] = useState<Record<string, string>>({ en: "", tr: "", de: "", fr: "", es: "", zh: "", hi: "" });
+    const [newCatOrder, setNewCatOrder] = useState(0);
     const [savingCategory, setSavingCategory] = useState(false);
+    const [translatingCat, setTranslatingCat] = useState(false);
+    const [newCatLang, setNewCatLang] = useState("en");
     const [orderedCategories, setOrderedCategories] = useState<(Category & { _count?: { features: number } })[]>([]);
 
     // M7-M10 states
     const [displayLang, setDisplayLang] = useState("en");
-    const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+    const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const stored = localStorage.getItem("optwin-collapsed-cats");
+                if (stored) return new Set(JSON.parse(stored));
+            } catch { /* ignore */ }
+        }
+        return new Set();
+    });
     const [originalOrders, setOriginalOrders] = useState<Record<string, { id: string; order: number }[]>>({});
     const [pendingOrders, setPendingOrders] = useState<Record<string, { id: string; order: number }[]>>({});
     const [editingCatName, setEditingCatName] = useState<string | null>(null);
     const [editingCatValue, setEditingCatValue] = useState("");
+    const [originalCatValue, setOriginalCatValue] = useState("");
     const catNameRef = useRef<HTMLInputElement>(null);
     const { setHasUnsavedChanges, onSave, onDiscard } = useUnsavedChanges();
+    const [catNameDirty, setCatNameDirty] = useState(false);
+    const [translateToast, setTranslateToast] = useState("");
+    const [deleteCatId, setDeleteCatId] = useState<string | null>(null);
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -322,34 +340,77 @@ export default function AdminFeaturesPage() {
     };
 
     const createCategory = async () => {
-        if (!newCatSlug || !newCatNameEn) return;
+        if (!newCatSlug || !newCatNames.en) return;
         setSavingCategory(true);
         try {
-            const maxOrder = categories.reduce((max, c) => Math.max(max, c.order), 0);
+            const order = newCatOrder > 0 ? newCatOrder : categories.reduce((max, c) => Math.max(max, c.order), 0) + 1;
+
+            // O8: Shift existing categories if same order exists
+            const conflict = categories.some(c => c.order === order);
+            if (conflict) {
+                const shifted = categories
+                    .filter(c => c.order >= order)
+                    .map(c => ({ id: c.id, order: c.order + 1 }));
+                if (shifted.length > 0) {
+                    await fetch("/api/admin/reorder", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ type: "category", items: shifted }),
+                    });
+                    setCategories(prev => prev.map(c => {
+                        const s = shifted.find(x => x.id === c.id);
+                        return s ? { ...c, order: s.order } : c;
+                    }));
+                }
+            }
+
+            const translations = Object.entries(newCatNames)
+                .filter(([, name]) => name.trim())
+                .map(([lang, name]) => ({ lang, name: name.trim() }));
             const res = await fetch("/api/admin/categories", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    slug: newCatSlug,
-                    order: maxOrder + 1,
-                    enabled: true,
-                    translations: [
-                        { lang: "en", name: newCatNameEn },
-                        ...(newCatNameTr ? [{ lang: "tr", name: newCatNameTr }] : []),
-                    ],
-                }),
+                body: JSON.stringify({ slug: newCatSlug, order, enabled: true, translations }),
             });
             const data = await res.json();
             if (data.success) {
                 setCategories(prev => [...prev, data.category]);
                 setShowNewCategory(false);
                 setNewCatSlug("");
-                setNewCatNameEn("");
-                setNewCatNameTr("");
+                setNewCatNames({ en: "", tr: "", de: "", fr: "", es: "", zh: "", hi: "" });
+                setNewCatOrder(0);
             }
         } finally {
             setSavingCategory(false);
         }
+    };
+
+    // N6: Translate category name from current language to all others
+    const translateCatName = async () => {
+        const sourceName = newCatNames[newCatLang];
+        if (!sourceName?.trim()) return;
+        setTranslatingCat(true);
+        try {
+            const targetLangs = Object.keys(newCatNames).filter(l => l !== newCatLang);
+            const res = await fetch("/api/admin/translate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: sourceName, sourceLang: newCatLang, targetLangs }),
+            });
+            const data = await res.json();
+            if (data.success && data.translations) {
+                setNewCatNames(prev => {
+                    const updated = { ...prev };
+                    Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => {
+                        updated[lang] = translated;
+                    });
+                    return updated;
+                });
+                setTranslateToast("Çeviriler eklendi!");
+                setTimeout(() => setTranslateToast(""), 2500);
+            }
+        } catch { /* ignore */ }
+        finally { setTranslatingCat(false); }
     };
 
     const filtered = useMemo(() => {
@@ -372,21 +433,32 @@ export default function AdminFeaturesPage() {
     const getCatDisplayName = (cat: Category) =>
         cat.translations.find(t => t.lang === displayLang)?.name || cat.translations.find(t => t.lang === "en")?.name || cat.slug;
 
-    // M8: Toggle category collapse
+    // M8: Toggle category collapse — persisted to localStorage
     const toggleCollapse = (catId: string) => {
         setCollapsedCategories(prev => {
             const next = new Set(prev);
             if (next.has(catId)) next.delete(catId); else next.add(catId);
+            try { localStorage.setItem("optwin-collapsed-cats", JSON.stringify([...next])); } catch { /* ignore */ }
             return next;
         });
     };
 
-    // M9: Save category name inline edit
+    // N5: Collapse all / Expand all
+    const collapseAll = () => {
+        const allIds = new Set(categories.map(c => c.id));
+        setCollapsedCategories(allIds);
+        try { localStorage.setItem("optwin-collapsed-cats", JSON.stringify([...allIds])); } catch { /* ignore */ }
+    };
+    const expandAll = () => {
+        setCollapsedCategories(new Set());
+        try { localStorage.setItem("optwin-collapsed-cats", JSON.stringify([])); } catch { /* ignore */ }
+    };
+
+    // N3: Save category name inline edit with save/cancel buttons
     const saveCatName = async (catId: string) => {
-        if (!editingCatValue.trim()) { setEditingCatName(null); return; }
+        if (!editingCatValue.trim()) { setEditingCatName(null); setCatNameDirty(false); return; }
         const cat = categories.find(c => c.id === catId);
         if (!cat) return;
-        // Check if translation exists for displayLang
         const existingTr = cat.translations.find(t => t.lang === displayLang);
         const translations = existingTr
             ? cat.translations.map(t => t.lang === displayLang ? { ...t, name: editingCatValue.trim() } : t)
@@ -398,6 +470,31 @@ export default function AdminFeaturesPage() {
         });
         setCategories(prev => prev.map(c => c.id === catId ? { ...c, translations } : c));
         setEditingCatName(null);
+        setCatNameDirty(false);
+    };
+
+    const cancelCatNameEdit = () => {
+        setEditingCatName(null);
+        setEditingCatValue("");
+        setCatNameDirty(false);
+    };
+
+    // O6: Delete category
+    const deleteCategory = async (catId: string) => {
+        await fetch(`/api/admin/categories?id=${catId}`, { method: "DELETE" });
+        setCategories(prev => prev.filter(c => c.id !== catId));
+        setDeleteCatId(null);
+    };
+
+    const startCatNameEdit = (e: React.MouseEvent, catId: string) => {
+        e.stopPropagation();
+        const cat = categories.find(c => c.id === catId);
+        if (!cat) return;
+        const name = getCatDisplayName(cat);
+        setEditingCatName(catId);
+        setEditingCatValue(name);
+        setOriginalCatValue(name);
+        setCatNameDirty(false);
     };
 
     // M9: Toggle category enabled/disabled
@@ -478,20 +575,30 @@ export default function AdminFeaturesPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* M10: Save/Cancel order changes */}
+                    {/* O5: Save/Cancel LEFT of collapse/expand */}
                     <AnimatePresence>
-                        {hasOrderChanges && (
-                            <motion.div initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} className="flex items-center gap-1.5">
-                                <button onClick={cancelAllOrders} className="h-8 px-3 bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 text-xs font-medium rounded-lg transition-all border border-white/[0.04] flex items-center gap-1.5">
+                        {(hasOrderChanges || catNameDirty) && (
+                            <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} className="flex items-center gap-1.5">
+                                <button onClick={() => { if (catNameDirty) cancelCatNameEdit(); else cancelAllOrders(); }} className="h-8 px-3 bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 text-xs font-medium rounded-lg transition-all border border-white/[0.04] flex items-center gap-1.5">
                                     <RotateCcw size={12} /> İptal
                                 </button>
-                                <button onClick={saveAllOrders} className="h-8 px-3 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-lg shadow-[#6b5be6]/20">
+                                <button onClick={() => { if (catNameDirty && editingCatName) saveCatName(editingCatName); else saveAllOrders(); }} className="h-8 px-3 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-lg shadow-[#6b5be6]/20">
                                     <Save size={12} /> Kaydet
                                 </button>
                                 <div className="w-px h-5 bg-white/[0.06] mx-1" />
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* O4: Collapse/Expand all — with text labels */}
+                    <button onClick={expandAll} title="Tümünü Genişlet" className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.05] text-white/25 hover:text-white/50 border border-white/[0.04] transition-all text-[10px] font-medium">
+                        <ChevronsUpDown size={13} /> Genişlet
+                    </button>
+                    <button onClick={collapseAll} title="Tümünü Daralt" className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.05] text-white/25 hover:text-white/50 border border-white/[0.04] transition-all text-[10px] font-medium">
+                        <ChevronsDownUp size={13} /> Daralt
+                    </button>
+
+                    <div className="w-px h-5 bg-white/[0.06]" />
 
                     {/* M9: Language picker */}
                     <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
@@ -565,33 +672,41 @@ export default function AdminFeaturesPage() {
                         >
                             <ChevronRight size={14} className={`text-[#6b5be6]/60 transition-transform duration-200 ${isCollapsed ? "" : "rotate-90"}`} />
 
-                            {/* Editable category name */}
+                            {/* O3: Editable category name — edit button RIGHT NEXT to name */}
                             {editingCatName === cat.id ? (
                                 <input
                                     ref={catNameRef}
                                     autoFocus
                                     value={editingCatValue}
-                                    onChange={e => setEditingCatValue(e.target.value)}
-                                    onBlur={() => saveCatName(cat.id)}
-                                    onKeyDown={e => { if (e.key === "Enter") saveCatName(cat.id); if (e.key === "Escape") setEditingCatName(null); }}
+                                    onChange={e => {
+                                        setEditingCatValue(e.target.value);
+                                        setCatNameDirty(e.target.value.trim() !== originalCatValue);
+                                    }}
+                                    onKeyDown={e => {
+                                        if (e.key === "Enter") saveCatName(cat.id);
+                                        if (e.key === "Escape") cancelCatNameEdit();
+                                    }}
                                     onClick={e => e.stopPropagation()}
-                                    className="text-[11px] font-bold text-white/70 uppercase tracking-wider flex-1 bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2 py-0.5 focus:outline-none"
+                                    className="text-[11px] font-bold text-white/70 uppercase tracking-wider bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2 py-0.5 focus:outline-none max-w-[200px]"
                                 />
                             ) : (
-                                <span
-                                    className="text-[11px] font-bold text-white/50 uppercase tracking-wider flex-1 group-hover:text-white/70 transition-colors"
-                                    onDoubleClick={e => {
-                                        e.stopPropagation();
-                                        setEditingCatName(cat.id);
-                                        setEditingCatValue(getCatDisplayName(cat));
-                                    }}
-                                    title="Çift tıklayarak düzenle"
-                                >
-                                    {getCatDisplayName(cat)}
-                                </span>
+                                <>
+                                    <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider group-hover:text-white/70 transition-colors">
+                                        {getCatDisplayName(cat)}
+                                    </span>
+                                    {/* O3: Edit button — immediately after name */}
+                                    <button
+                                        onClick={(e) => startCatNameEdit(e, cat.id)}
+                                        className="size-6 flex items-center justify-center rounded-md text-white/0 group-hover:text-white/25 hover:!text-white/50 hover:!bg-white/[0.04] transition-all shrink-0"
+                                        title="Yeniden Adlandır"
+                                    >
+                                        <Pencil size={11} />
+                                    </button>
+                                </>
                             )}
 
-                            <span className="text-[10px] text-white/20">{catFeatures.length} özellik</span>
+                            <span className="flex-1" />
+                            <span className="text-[10px] text-white/20 shrink-0">{catFeatures.length} özellik</span>
 
                             {/* Category enable/disable toggle */}
                             <button
@@ -599,6 +714,15 @@ export default function AdminFeaturesPage() {
                                 className={`w-8 h-[18px] rounded-full transition-all duration-300 relative shrink-0 ${cat.enabled ? "bg-emerald-500/70" : "bg-white/[0.06]"}`}
                             >
                                 <span className={`absolute top-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${cat.enabled ? "left-[17px]" : "left-[3px]"}`} />
+                            </button>
+
+                            {/* O6: Delete category button */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setDeleteCatId(cat.id); }}
+                                className="size-6 flex items-center justify-center rounded-md text-white/0 group-hover:text-white/15 hover:!text-red-400 hover:!bg-red-500/10 transition-all shrink-0"
+                                title="Kategoriyi Sil"
+                            >
+                                <Trash2 size={11} />
                             </button>
                         </div>
 
@@ -695,7 +819,7 @@ export default function AdminFeaturesPage() {
                 )}
             </AnimatePresence>
 
-            {/* New Category Modal */}
+            {/* N6: New Category Modal — with language list, order, translate */}
             <AnimatePresence>
                 {showNewCategory && (
                     <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setShowNewCategory(false)}>
@@ -705,7 +829,7 @@ export default function AdminFeaturesPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.92, y: 12 }}
                             transition={{ duration: 0.25 }}
-                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-md w-full mx-4 shadow-2xl"
+                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-xl w-full mx-4 shadow-2xl"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-4">
@@ -723,25 +847,51 @@ export default function AdminFeaturesPage() {
                                         className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">İsim (EN)</label>
-                                    <input
-                                        value={newCatNameEn}
-                                        onChange={e => setNewCatNameEn(e.target.value)}
-                                        placeholder="Computer Optimization"
-                                        className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
-                                    />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">Sıra</label>
+                                        <input
+                                            type="number"
+                                            value={newCatOrder || ""}
+                                            onChange={e => setNewCatOrder(parseInt(e.target.value) || 0)}
+                                            placeholder={`${categories.length + 1}`}
+                                            className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
+                                        <p className="text-[9px] text-white/15 mt-0.5">Aynı sıra varsa mevcut kategoriler kaydırılır</p>
+                                    </div>
+                                    <div className="flex items-end pb-6">
+                                        <p className="text-[9px] text-white/15">Boş = #{categories.length + 1} (sona)</p>
+                                    </div>
                                 </div>
+                                {/* O7: Language picker + single input + translate */}
                                 <div>
-                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">İsim (TR)</label>
-                                    <input
-                                        value={newCatNameTr}
-                                        onChange={e => setNewCatNameTr(e.target.value)}
-                                        placeholder="Bilgisayar Optimizasyonu"
-                                        className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
-                                    />
+                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">Kategori İsmi</label>
+                                    <div className="flex items-center gap-2">
+                                        <AdminLangPicker value={newCatLang} onChange={setNewCatLang} />
+                                        <input
+                                            value={newCatNames[newCatLang] || ""}
+                                            onChange={e => setNewCatNames(prev => ({ ...prev, [newCatLang]: e.target.value }))}
+                                            placeholder={`İsim (${LANG_NAMES[newCatLang] || newCatLang})`}
+                                            className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
+                                        />
+                                        <button
+                                            onClick={translateCatName}
+                                            disabled={translatingCat || !newCatNames[newCatLang]?.trim()}
+                                            className="shrink-0 h-9 px-3 rounded-xl text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                        >
+                                            {translatingCat ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
+                                            {translatingCat ? "..." : "Çevir"}
+                                        </button>
+                                    </div>
+                                    {/* Show filled languages as small tags */}
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                        {Object.entries(newCatNames).filter(([, v]) => v.trim()).map(([l, v]) => (
+                                            <span key={l} className={`text-[9px] px-1.5 py-0.5 rounded ${l === newCatLang ? "bg-[#6b5be6]/15 text-[#6b5be6]" : "bg-white/[0.03] text-white/25"}`}>
+                                                {l.toUpperCase()}: {v.length > 20 ? v.slice(0, 20) + "…" : v}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
-                                <p className="text-[10px] text-white/20">Sıra: #{categories.length + 1} (listenin sonuna eklenir)</p>
                             </div>
 
                             <div className="flex gap-2 mt-4">
@@ -750,7 +900,7 @@ export default function AdminFeaturesPage() {
                                 </button>
                                 <button
                                     onClick={createCategory}
-                                    disabled={!newCatSlug || !newCatNameEn || savingCategory}
+                                    disabled={!newCatSlug || !newCatNames.en || savingCategory}
                                     className="flex-1 h-9 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all shadow-lg shadow-[#6b5be6]/20 flex items-center justify-center gap-2"
                                 >
                                     {savingCategory ? <Loader2 size={14} className="animate-spin" /> : <FolderPlus size={14} />}
@@ -759,6 +909,32 @@ export default function AdminFeaturesPage() {
                             </div>
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* O6: Delete category confirmation modal */}
+            <AdminConfirmModal
+                open={!!deleteCatId}
+                onClose={() => setDeleteCatId(null)}
+                onConfirm={() => { if (deleteCatId) deleteCategory(deleteCatId); }}
+                title="Kategoriyi Sil"
+                description={`"${deleteCatId ? getCatDisplayName(categories.find(c => c.id === deleteCatId)!) : ""}" kategorisini silmek istediğinize emin misiniz?${(features.filter(f => f.categoryId === deleteCatId).length > 0) ? ` Bu kategoriye bağlı ${features.filter(f => f.categoryId === deleteCatId).length} özellik var!` : ""}`}
+                confirmText="Evet, Sil"
+                cancelText="Hayır"
+                variant="danger"
+            />
+
+            {/* Translate toast */}
+            <AnimatePresence>
+                {translateToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="fixed top-4 right-4 z-[999] px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-sm font-medium shadow-lg backdrop-blur-xl"
+                    >
+                        ✓ {translateToast}
+                    </motion.div>
                 )}
             </AnimatePresence>
         </motion.div>

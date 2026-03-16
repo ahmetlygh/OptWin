@@ -15,11 +15,10 @@ import {
     MonitorPlay,
     Pencil,
     Github,
-    ChevronUp,
-    ChevronDown,
     X,
 } from "lucide-react";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
+import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 
@@ -80,6 +79,7 @@ export default function ScriptDefaultsPage() {
     const [keyOrder, setKeyOrder] = useState<Record<string, number>>({});
     const [originalKeyOrder, setOriginalKeyOrder] = useState<Record<string, number>>({});
     const newKeyRef = useRef<HTMLInputElement>(null);
+    const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
     const unsavedCtx = useUnsavedChanges();
 
     // Build initial order from LABEL_DESCRIPTIONS positions
@@ -412,33 +412,24 @@ export default function ScriptDefaultsPage() {
         pressAnyKey: (v) => `Write-Host "${v}" -ForegroundColor Gray`,
     }), []);
 
-    // Section separators inserted BEFORE certain keys
+    // N12: Simplified section separators — no decorative box-drawing lines
     const SECTION_BEFORE: Record<string, PreviewLine[]> = useMemo(() => ({
         scriptTitle: [{ text: "# ============================================", key: null, editable: false }],
         bannerTitle: [
             { text: "# ============================================", key: null, editable: false },
             { text: "", key: null, editable: false },
-            { text: 'Write-Host ""', key: null, editable: false },
-            { text: 'Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Cyan', key: null, editable: false },
         ],
         adminRequest: [
-            { text: 'Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Cyan', key: null, editable: false },
-            { text: 'Write-Host ""', key: null, editable: false },
             { text: "", key: null, editable: false },
         ],
         restorePoint: [{ text: "", key: null, editable: false }],
         complete: [
             { text: "", key: null, editable: false },
-            { text: 'Write-Host ""', key: null, editable: false },
-            { text: 'Write-Host "  ╔══════════════════════════════════════╗" -ForegroundColor Green', key: null, editable: false },
         ],
-        success: [
-            { text: 'Write-Host "  ╚══════════════════════════════════════╝" -ForegroundColor Green', key: null, editable: false },
-            { text: 'Write-Host ""', key: null, editable: false },
-        ],
-        pressAnyKey: [{ text: 'Write-Host ""', key: null, editable: false }],
+        pressAnyKey: [{ text: "", key: null, editable: false }],
     }), []);
 
+    // N12: All label-backed lines are editable, preview is clean/simple
     const previewLines = useMemo<PreviewLine[]>(() => {
         const L = currentLabels;
         const sortedKeys = Object.keys(L)
@@ -447,11 +438,10 @@ export default function ScriptDefaultsPage() {
 
         const lines: PreviewLine[] = [];
 
-        // Split keys: before optimization placeholder and after
-        const preOptKeys = sortedKeys.filter(k => !["done", "complete", "success", "thankYou", "author", "pressAnyKey"].includes(k));
-        const postOptKeys = sortedKeys.filter(k => ["done", "complete", "success", "thankYou", "author", "pressAnyKey"].includes(k));
+        const postOptSet = new Set(["done", "complete", "success", "thankYou", "author", "pressAnyKey"]);
+        const preOptKeys = sortedKeys.filter(k => !postOptSet.has(k));
+        const postOptKeys = sortedKeys.filter(k => postOptSet.has(k));
 
-        // Render pre-optimization keys
         for (const key of preOptKeys) {
             const before = SECTION_BEFORE[key];
             if (before) lines.push(...before);
@@ -460,12 +450,11 @@ export default function ScriptDefaultsPage() {
             lines.push({ text: fmt ? fmt(val, L) : `# ${key}: ${val}`, key, editable: true });
         }
 
-        // Optimization placeholder (NOT editable)
+        // Optimization placeholder
         lines.push({ text: "", key: null, editable: false });
         lines.push({ text: "# --- Optimizations ---", key: null, editable: false });
         lines.push({ text: 'Write-Host "[*] Example Feature islemi yapiliyor..." -ForegroundColor White', key: null, editable: false });
 
-        // Render post-optimization keys
         for (const key of postOptKeys) {
             const before = SECTION_BEFORE[key];
             if (before) lines.push(...before);
@@ -474,7 +463,7 @@ export default function ScriptDefaultsPage() {
             lines.push({ text: fmt ? fmt(val, L) : `Write-Host "${val}"`, key, editable: true });
         }
 
-        // Footer
+        // N13: Footer — pause keeps terminal open
         lines.push({ text: "", key: null, editable: false });
         lines.push({ text: '$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")', key: null, editable: false });
 
@@ -502,9 +491,12 @@ export default function ScriptDefaultsPage() {
         }
     };
 
+    // O12: Downloaded preview — proper PowerShell pause (not CMD 'pause')
     const handleDownloadPreview = () => {
         const bom = "\uFEFF";
-        const blob = new Blob([bom + previewText], { type: "text/plain;charset=utf-8" });
+        const pauseBlock = '\nWrite-Host ""\nWrite-Host "Press Enter to exit..." -ForegroundColor Gray\nRead-Host';
+        const downloadText = previewText + pauseBlock;
+        const blob = new Blob([bom + downloadText], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -551,15 +543,14 @@ export default function ScriptDefaultsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages} />
-
+                    {/* N11: Save/Cancel buttons LEFT of lang picker */}
                     <AnimatePresence>
                         {hasChanges && (
                             <motion.div
                                 key="save-cancel"
-                                initial={{ opacity: 0, x: 8 }}
+                                initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 8, scale: 0.95 }}
+                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
                                 transition={{ duration: 0.2 }}
                                 className="flex items-center gap-2"
                             >
@@ -581,6 +572,8 @@ export default function ScriptDefaultsPage() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages} />
                 </div>
             </div>
 
@@ -606,7 +599,6 @@ export default function ScriptDefaultsPage() {
                                     const original = originalLabels[activeLang]?.[key];
                                     const current = currentLabels[key];
                                     const changed = original !== undefined && original !== current;
-                                    const order = keyOrder[key] ?? 0;
 
                                     return (
                                         <motion.tr
@@ -617,36 +609,9 @@ export default function ScriptDefaultsPage() {
                                             transition={{ delay: i * 0.01, layout: { duration: 0.2 } }}
                                             className={`border-b border-white/[0.03] hover:bg-white/[0.015] transition-colors group/row ${changed ? "bg-[#6b5be6]/[0.03]" : ""}`}
                                         >
-                                            {/* J10: Order column — wider */}
-                                            <td className="pl-1.5 pr-0 py-1.5 w-[56px] align-top">
-                                                <div className="flex flex-col items-center gap-0">
-                                                    <button
-                                                        onClick={() => handleMoveUp(key)}
-                                                        disabled={i === 0}
-                                                        className="size-4 flex items-center justify-center rounded text-white/0 group-hover/row:text-white/20 hover:!text-white/50 disabled:!text-white/0 transition-colors"
-                                                        title="Yukarı taşı"
-                                                    >
-                                                        <ChevronUp size={10} />
-                                                    </button>
-                                                    <input
-                                                        type="number"
-                                                        value={order}
-                                                        onChange={e => {
-                                                            const v = parseInt(e.target.value);
-                                                            if (!isNaN(v)) handleSetOrder(key, v);
-                                                        }}
-                                                        className="w-10 h-5 text-center text-[9px] font-mono font-bold text-white/30 bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] focus:border-[#6b5be6]/30 rounded focus:outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                        title="Sıra numarası"
-                                                    />
-                                                    <button
-                                                        onClick={() => handleMoveDown(key)}
-                                                        disabled={i === keys.length - 1}
-                                                        className="size-4 flex items-center justify-center rounded text-white/0 group-hover/row:text-white/20 hover:!text-white/50 disabled:!text-white/0 transition-colors"
-                                                        title="Aşağı taşı"
-                                                    >
-                                                        <ChevronDown size={10} />
-                                                    </button>
-                                                </div>
+                                            {/* N10: Simple index column — no reorder buttons */}
+                                            <td className="pl-2.5 pr-0 py-2 w-[36px] align-top">
+                                                <span className="block text-center text-[9px] font-mono font-bold text-white/15 pt-1">{i + 1}</span>
                                             </td>
                                             {/* K9: Editable key name */}
                                             <td className="px-1.5 py-2 align-top w-[150px]">
@@ -686,7 +651,7 @@ export default function ScriptDefaultsPage() {
                                             </td>
                                             <td className="px-1 py-1.5 w-8">
                                                 <button
-                                                    onClick={() => handleDeleteKey(key)}
+                                                    onClick={() => setDeleteConfirmKey(key)}
                                                     className="size-6 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-white/10 hover:text-red-400 transition-all"
                                                     title="Anahtarı sil"
                                                 >
@@ -708,9 +673,8 @@ export default function ScriptDefaultsPage() {
                                             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                                             className="border-b border-white/[0.03] bg-[#6b5be6]/[0.03]"
                                         >
-                                            <td className="pl-1.5 pr-0 py-2 w-[56px]">
-                                                {/* Order placeholder for new row */}
-                                                <span className="block w-10 h-5 text-center text-[9px] font-mono text-white/15">—</span>
+                                            <td className="pl-2.5 pr-0 py-2 w-[36px]">
+                                                <span className="block text-center text-[9px] font-mono text-white/15">—</span>
                                             </td>
                                             <td className="px-1.5 py-2 w-[150px] relative">
                                                 <input
@@ -880,6 +844,21 @@ export default function ScriptDefaultsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* N14: Delete Confirm Modal */}
+            <AdminConfirmModal
+                open={!!deleteConfirmKey}
+                onClose={() => setDeleteConfirmKey(null)}
+                onConfirm={() => {
+                    if (deleteConfirmKey) handleDeleteKey(deleteConfirmKey);
+                    setDeleteConfirmKey(null);
+                }}
+                title="Etiketi Sil"
+                description={`"${deleteConfirmKey}" anahtarını silmek istediğinize emin misiniz? Bu işlem tüm dillerden kalıcı olarak silinecektir.`}
+                confirmText="Evet, Sil"
+                cancelText="Hayır"
+                variant="danger"
+            />
 
             {/* J11: Unsaved Changes Modal */}
             <UnsavedChangesModal
