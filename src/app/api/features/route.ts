@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 export async function GET() {
     try {
         const features = await prisma.feature.findMany({
-            where: { enabled: true },
+            where: { enabled: true, category: { enabled: true } },
             include: {
                 translations: true,
                 category: {

@@ -126,7 +126,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
 
     // Fetch feature commands
     const featuresDb = await prisma.feature.findMany({
-        where: { slug: { in: features }, enabled: true },
+        where: { slug: { in: features }, enabled: true, category: { enabled: true } },
         include: { commands: { where: { lang: dbLang } } },
         orderBy: { order: 'asc' }
     });

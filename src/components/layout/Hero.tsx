@@ -6,7 +6,7 @@ import { HeroTitle } from "./HeroTitle";
 export async function Hero() {
     const [stats, featuresCount] = await Promise.all([
         prisma.siteStats.findUnique({ where: { id: "main" } }),
-        prisma.feature.count({ where: { enabled: true } })
+        prisma.feature.count({ where: { enabled: true, category: { enabled: true } } })
     ]);
 
     const totalScripts = stats?.totalScripts || 0;

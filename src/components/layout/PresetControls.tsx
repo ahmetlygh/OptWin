@@ -25,8 +25,9 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
     const showDnsBar = dnsEverShown && dnsOpen && hasDnsSelected;
 
     const handleApplyPreset = (featureSlugs: string[]) => {
-        selectFeatures(featureSlugs);
-        if (!featureSlugs.includes("changeDNS")) {
+        const validSlugs = featureSlugs.filter(s => allFeatureSlugs.includes(s));
+        selectFeatures(validSlugs);
+        if (!validSlugs.includes("changeDNS")) {
             setDnsOpen(false);
         }
     };

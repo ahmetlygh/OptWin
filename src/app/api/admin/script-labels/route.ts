@@ -13,12 +13,15 @@ async function checkAdmin() {
 export async function GET() {
     if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const [labels, versionSetting] = await Promise.all([
+    const [labels, metaSettings] = await Promise.all([
         prisma.scriptLabel.findMany({
             orderBy: [{ lang: "asc" }, { key: "asc" }],
         }),
-        prisma.siteSetting.findUnique({ where: { key: "site_version" } }),
+        prisma.siteSetting.findMany({
+            where: { key: { in: ["site_version", "script_extra_lines", "script_line_overrides", "script_deleted_preview_lines"] } },
+        }),
     ]);
+    const settingsMap = metaSettings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {} as Record<string, string>);
 
     // Group by language
     const grouped: Record<string, Record<string, string>> = {};
@@ -30,11 +33,21 @@ export async function GET() {
     // Get unique languages
     const languages = [...new Set(labels.map(l => l.lang))].sort();
 
+    let extraLines = [];
+    let lineOverrides = {};
+    let deletedPreviewLines: number[] = [];
+    try { extraLines = JSON.parse(settingsMap.script_extra_lines || "[]"); } catch {}
+    try { lineOverrides = JSON.parse(settingsMap.script_line_overrides || "{}"); } catch {}
+    try { deletedPreviewLines = JSON.parse(settingsMap.script_deleted_preview_lines || "[]"); } catch {}
+
     return NextResponse.json({
         success: true,
         labels: grouped,
         languages,
-        siteVersion: versionSetting?.value || "1.3.0",
+        siteVersion: settingsMap.site_version || "1.3.0",
+        extraLines,
+        lineOverrides,
+        deletedPreviewLines,
     });
 }
 
@@ -44,17 +57,42 @@ export async function PUT(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { labels } = body as { labels: { lang: string; key: string; value: string }[] };
+        const { labels, extraLines, lineOverrides, deletedPreviewLines } = body as {
+            labels?: { lang: string; key: string; value: string }[];
+            extraLines?: unknown;
+            lineOverrides?: unknown;
+            deletedPreviewLines?: unknown;
+        };
 
-        if (!labels || !Array.isArray(labels)) {
-            return NextResponse.json({ error: "labels array is required" }, { status: 400 });
+        if (labels && Array.isArray(labels)) {
+            for (const label of labels) {
+                await prisma.scriptLabel.upsert({
+                    where: { lang_key: { lang: label.lang, key: label.key } },
+                    update: { value: label.value },
+                    create: { lang: label.lang, key: label.key, value: label.value },
+                });
+            }
         }
 
-        for (const label of labels) {
-            await prisma.scriptLabel.upsert({
-                where: { lang_key: { lang: label.lang, key: label.key } },
-                update: { value: label.value },
-                create: { lang: label.lang, key: label.key, value: label.value },
+        if (extraLines !== undefined) {
+            await prisma.siteSetting.upsert({
+                where: { key: "script_extra_lines" },
+                update: { value: JSON.stringify(extraLines) },
+                create: { key: "script_extra_lines", value: JSON.stringify(extraLines) },
+            });
+        }
+        if (lineOverrides !== undefined) {
+            await prisma.siteSetting.upsert({
+                where: { key: "script_line_overrides" },
+                update: { value: JSON.stringify(lineOverrides) },
+                create: { key: "script_line_overrides", value: JSON.stringify(lineOverrides) },
+            });
+        }
+        if (deletedPreviewLines !== undefined) {
+            await prisma.siteSetting.upsert({
+                where: { key: "script_deleted_preview_lines" },
+                update: { value: JSON.stringify(deletedPreviewLines) },
+                create: { key: "script_deleted_preview_lines", value: JSON.stringify(deletedPreviewLines) },
             });
         }
 

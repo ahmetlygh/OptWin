@@ -24,7 +24,7 @@ export async function GET() {
     ] = await Promise.all([
         prisma.siteStats.findUnique({ where: { id: "main" } }),
         prisma.feature.count(),
-        prisma.feature.count({ where: { enabled: true } }),
+        prisma.feature.count({ where: { enabled: true, category: { enabled: true } } }),
         prisma.category.count(),
         prisma.contactMessage.count({ where: { deleted: false } }),
         prisma.contactMessage.count({ where: { read: false, deleted: false } }),

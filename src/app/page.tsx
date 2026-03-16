@@ -25,7 +25,7 @@ export default async function Home() {
             orderBy: { order: 'asc' }
         }),
         prisma.feature.findMany({
-            where: { enabled: true },
+            where: { enabled: true, category: { enabled: true } },
             select: { slug: true }
         }),
     ]);

@@ -81,6 +81,8 @@ export default function ScriptDefaultsPage() {
     const [originalLineOverrides, setOriginalLineOverrides] = useState<Record<number, string>>({});
     const [extraLines, setExtraLines] = useState<ExtraLine[]>([]);
     const [originalExtraLines, setOriginalExtraLines] = useState<ExtraLine[]>([]);
+    const [deletedPreviewLines, setDeletedPreviewLines] = useState<number[]>([]);
+    const [originalDeletedPreviewLines, setOriginalDeletedPreviewLines] = useState<number[]>([]);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -124,6 +126,19 @@ export default function ScriptDefaultsPage() {
                 const initOrder = buildKeyOrder(data.labels[firstLang] || {});
                 setKeyOrder(initOrder);
                 setOriginalKeyOrder(JSON.parse(JSON.stringify(initOrder)));
+                // Restore persisted extra lines & line overrides
+                if (Array.isArray(data.extraLines)) {
+                    setExtraLines(data.extraLines);
+                    setOriginalExtraLines(JSON.parse(JSON.stringify(data.extraLines)));
+                }
+                if (data.lineOverrides && typeof data.lineOverrides === 'object') {
+                    setLineOverrides(data.lineOverrides);
+                    setOriginalLineOverrides(JSON.parse(JSON.stringify(data.lineOverrides)));
+                }
+                if (Array.isArray(data.deletedPreviewLines)) {
+                    setDeletedPreviewLines(data.deletedPreviewLines);
+                    setOriginalDeletedPreviewLines(JSON.parse(JSON.stringify(data.deletedPreviewLines)));
+                }
             }
         } catch {
             setError("Script etiketleri yüklenemedi");
@@ -147,7 +162,7 @@ export default function ScriptDefaultsPage() {
     }, [editingLineKey]);
 
     // J11: beforeunload guard + context sync (includes order changes)
-    const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels) || JSON.stringify(keyOrder) !== JSON.stringify(originalKeyOrder) || JSON.stringify(extraLines) !== JSON.stringify(originalExtraLines) || JSON.stringify(lineOverrides) !== JSON.stringify(originalLineOverrides);
+    const hasChanges = JSON.stringify(labels) !== JSON.stringify(originalLabels) || JSON.stringify(keyOrder) !== JSON.stringify(originalKeyOrder) || JSON.stringify(extraLines) !== JSON.stringify(originalExtraLines) || JSON.stringify(lineOverrides) !== JSON.stringify(originalLineOverrides) || JSON.stringify(deletedPreviewLines) !== JSON.stringify(originalDeletedPreviewLines);
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
             if (hasChanges) { e.preventDefault(); }
@@ -185,11 +200,17 @@ export default function ScriptDefaultsPage() {
                     }
                 }
             }
-            if (changedLabels.length > 0) {
+            const payload: Record<string, unknown> = {};
+            if (changedLabels.length > 0) payload.labels = changedLabels;
+            if (JSON.stringify(extraLines) !== JSON.stringify(originalExtraLines)) payload.extraLines = extraLines;
+            if (JSON.stringify(lineOverrides) !== JSON.stringify(originalLineOverrides)) payload.lineOverrides = lineOverrides;
+            if (JSON.stringify(deletedPreviewLines) !== JSON.stringify(originalDeletedPreviewLines)) payload.deletedPreviewLines = deletedPreviewLines;
+
+            if (Object.keys(payload).length > 0) {
                 const res = await fetch("/api/admin/script-labels", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ labels: changedLabels }),
+                    body: JSON.stringify(payload),
                 });
                 const data = await res.json();
                 if (!data.success) {
@@ -201,6 +222,7 @@ export default function ScriptDefaultsPage() {
             setOriginalKeyOrder(JSON.parse(JSON.stringify(keyOrder)));
             setOriginalExtraLines(JSON.parse(JSON.stringify(extraLines)));
             setOriginalLineOverrides(JSON.parse(JSON.stringify(lineOverrides)));
+            setOriginalDeletedPreviewLines(JSON.parse(JSON.stringify(deletedPreviewLines)));
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch {
@@ -215,6 +237,7 @@ export default function ScriptDefaultsPage() {
         setKeyOrder(JSON.parse(JSON.stringify(originalKeyOrder)));
         setExtraLines(JSON.parse(JSON.stringify(originalExtraLines)));
         setLineOverrides(JSON.parse(JSON.stringify(originalLineOverrides)));
+        setDeletedPreviewLines(JSON.parse(JSON.stringify(originalDeletedPreviewLines)));
         setEditingLineKey(null);
     };
 
@@ -543,7 +566,9 @@ export default function ScriptDefaultsPage() {
         | { type: 'extra'; extraIdx: number; text: string; pos: number };
 
     const mergedItems = useMemo<MergedItem[]>(() => {
-        const items: MergedItem[] = previewLines.map((line, i) => ({ type: 'preview' as const, line, previewIdx: i }));
+        const items: MergedItem[] = previewLines
+            .map((line, i) => ({ type: 'preview' as const, line, previewIdx: i }))
+            .filter(item => !deletedPreviewLines.includes(item.previewIdx));
         // Sort by pos descending so splicing doesn't shift earlier positions
         const sorted = extraLines
             .map((e, i) => ({ ...e, extraIdx: i }))
@@ -553,7 +578,7 @@ export default function ScriptDefaultsPage() {
             items.splice(insertAt, 0, { type: 'extra', extraIdx: extra.extraIdx, text: extra.text, pos: extra.pos });
         }
         return items;
-    }, [previewLines, extraLines]);
+    }, [previewLines, extraLines, deletedPreviewLines]);
 
     const allDisplayLines = mergedItems.map(item =>
         item.type === 'preview' ? getDisplayText(item.line, item.previewIdx) : resolveDisplay(item.text)
@@ -1012,6 +1037,13 @@ export default function ScriptDefaultsPage() {
                                                     </>
                                                 )}
                                             </div>
+                                            <button
+                                                onMouseDown={e => { e.preventDefault(); setDeletedPreviewLines(prev => [...prev, idx]); setEditingLineKey(null); }}
+                                                className="size-5 flex items-center justify-center rounded text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+                                                title="Satırı sil"
+                                            >
+                                                <Trash2 size={9} />
+                                            </button>
                                         </div>
                                     );
                                 }
@@ -1035,6 +1067,13 @@ export default function ScriptDefaultsPage() {
                                                 className="flex-1 bg-amber-500/[0.06] border border-amber-500/20 rounded px-2 py-0.5 text-[11px] font-mono text-amber-200/80 focus:outline-none focus:border-amber-500/40 transition-all mr-2"
                                                 placeholder="Satır içeriği..."
                                             />
+                                            <button
+                                                onMouseDown={e => { e.preventDefault(); setDeletedPreviewLines(prev => [...prev, idx]); setEditingLineIdx(null); }}
+                                                className="size-5 flex items-center justify-center rounded text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+                                                title="Satırı sil"
+                                            >
+                                                <Trash2 size={9} />
+                                            </button>
                                         </div>
                                     );
                                 }
@@ -1065,6 +1104,13 @@ export default function ScriptDefaultsPage() {
                                             {displayText || "\u00A0"}
                                         </code>
                                         <Pencil size={8} className="text-white/0 group-hover:text-white/20 transition-colors mt-1 ml-1.5 shrink-0" />
+                                        <button
+                                            onClick={e => { e.stopPropagation(); setDeletedPreviewLines(prev => [...prev, idx]); setEditingLineKey(null); setEditingLineIdx(null); }}
+                                            className="size-4 flex items-center justify-center rounded text-white/0 group-hover:text-red-400/30 hover:!text-red-400 hover:!bg-red-500/10 transition-all shrink-0 ml-0.5"
+                                            title="Satırı sil"
+                                        >
+                                            <Trash2 size={8} />
+                                        </button>
                                     </div>
                                 );
                             })}
