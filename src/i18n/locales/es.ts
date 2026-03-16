@@ -55,6 +55,11 @@ const es = {
     "script.copy": "Copiar",
     "script.copiedToast": "¡Script copiado al portapapeles!",
     "script.downloadToast": "¡Descarga iniciada!",
+    "script.supportPromptTitle": "Apoya OptWin",
+    "script.supportPromptDesc": "OptWin es completamente gratis y de código abierto. Si te resulta útil, considera apoyar su desarrollo para que podamos seguir mejorándolo.",
+    "script.supportDonate": "Invítame un Café",
+    "script.supportReview": "Dejar una Reseña",
+    "script.supportDismiss": "No, gracias",
 
     "restore.title": "¿Crear Punto de Restauración?",
     "restore.description": "¿Desea crear un Punto de Restauración del Sistema antes de aplicar las optimizaciones seleccionadas? Se recomienda encarecidamente por seguridad.",

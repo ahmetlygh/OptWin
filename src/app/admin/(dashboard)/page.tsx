@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { AdminDashboardClient } from "@/components/admin/AdminDashboardClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
     const session = await auth();
     const [

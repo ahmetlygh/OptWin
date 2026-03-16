@@ -63,6 +63,11 @@ const en = {
     "script.copy": "Copy",
     "script.copiedToast": "Script copied to clipboard!",
     "script.downloadToast": "Download started!",
+    "script.supportPromptTitle": "Support OptWin",
+    "script.supportPromptDesc": "OptWin is completely free and open-source. If you find it useful, consider supporting its development so we can keep improving it for everyone.",
+    "script.supportDonate": "Buy Me a Coffee",
+    "script.supportReview": "Leave a Review",
+    "script.supportDismiss": "No Thanks",
 
     // Restore Point Modal
     "restore.title": "Create Restore Point?",

@@ -11,20 +11,31 @@ import { SupportModal } from "@/components/modals/SupportModal";
 import { ScrollToTop } from "./ScrollToTop";
 import { ScrollRestorer } from "@/components/shared/ScrollRestorer";
 
+/* ── SVG Flag icons (cross-browser) ──────── */
+const FlagSvg: Record<string, React.ReactNode> = {
+    tr: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#E30A17" width="30" height="20"/><circle cx="11" cy="10" r="6" fill="white"/><circle cx="13" cy="10" r="5" fill="#E30A17"/><polygon fill="white" points="17,10 14.09,8.09 15.18,11.45 13.09,9.54 16.45,10.73"/></svg>,
+    en: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#012169" width="30" height="20"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="white" strokeWidth="4"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="#C8102E" strokeWidth="2"/><path d="M15,0 V20 M0,10 H30" stroke="white" strokeWidth="6"/><path d="M15,0 V20 M0,10 H30" stroke="#C8102E" strokeWidth="3"/></svg>,
+    de: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#000" width="30" height="6.67"/><rect fill="#DD0000" y="6.67" width="30" height="6.67"/><rect fill="#FFCC00" y="13.33" width="30" height="6.67"/></svg>,
+    fr: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#002395" width="10" height="20"/><rect fill="white" x="10" width="10" height="20"/><rect fill="#ED2939" x="20" width="10" height="20"/></svg>,
+    es: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#AA151B" width="30" height="5"/><rect fill="#F1BF00" y="5" width="30" height="10"/><rect fill="#AA151B" y="15" width="30" height="5"/></svg>,
+    zh: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#DE2910" width="30" height="20"/><polygon fill="#FFDE00" points="5,2.5 6.1,5.9 3.1,3.9 6.9,3.9 3.9,5.9"/><polygon fill="#FFDE00" points="10,1 10.5,2.3 9.2,1.5 10.8,1.5 9.5,2.3" transform="scale(0.6) translate(10,0)"/><polygon fill="#FFDE00" points="12,3 12.5,4.3 11.2,3.5 12.8,3.5 11.5,4.3" transform="scale(0.6) translate(10,0)"/></svg>,
+    hi: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#FF9933" width="30" height="6.67"/><rect fill="white" y="6.67" width="30" height="6.67"/><rect fill="#138808" y="13.33" width="30" height="6.67"/><circle cx="15" cy="10" r="2" fill="none" stroke="#000080" strokeWidth="0.5"/></svg>,
+};
+
 /* ── Maintenance i18n ──────── */
 const ML: Record<string, {
-    label: string; flag: string;
+    label: string; flag: React.ReactNode;
     msg: string; apology: string; reasonLabel: string;
     estLabel: string; days: string; hours: string; min: string; sec: string;
     est: string; wip: string;
 }> = {
-    tr: { label: "Türkçe", flag: "🇹🇷", msg: "Sitemiz şu anda bakımdadır. Ekibimiz en iyi deneyimi sunmak için çalışıyor.", apology: "Verdiğimiz rahatsızlık için özür dileriz.", reasonLabel: "Sebep:", estLabel: "Tahmini Bitiş", days: "Gün", hours: "Saat", min: "Dk", sec: "Sn", est: "Tahmini süre — daha erken veya geç bitebilir", wip: "Çalışmalar devam ediyor..." },
-    en: { label: "English", flag: "🇬🇧", msg: "Our site is currently under maintenance. Our team is working to provide the best experience.", apology: "We apologize for the inconvenience.", reasonLabel: "Reason:", estLabel: "Estimated Completion", days: "Days", hours: "Hours", min: "Min", sec: "Sec", est: "Estimated time — may finish earlier or later", wip: "Work in progress..." },
-    de: { label: "Deutsch", flag: "🇩🇪", msg: "Unsere Website befindet sich derzeit in Wartung. Unser Team arbeitet daran, das beste Erlebnis zu bieten.", apology: "Wir entschuldigen uns für die Unannehmlichkeiten.", reasonLabel: "Grund:", estLabel: "Voraussichtliches Ende", days: "Tage", hours: "Std", min: "Min", sec: "Sek", est: "Geschätzte Zeit — kann früher oder später enden", wip: "Arbeiten im Gange..." },
-    fr: { label: "Français", flag: "🇫🇷", msg: "Notre site est actuellement en maintenance. Notre équipe travaille pour offrir la meilleure expérience.", apology: "Nous nous excusons pour la gêne occasionnée.", reasonLabel: "Raison :", estLabel: "Fin estimée", days: "Jours", hours: "Heures", min: "Min", sec: "Sec", est: "Temps estimé — peut finir plus tôt ou plus tard", wip: "Travaux en cours..." },
-    es: { label: "Español", flag: "🇪🇸", msg: "Nuestro sitio está en mantenimiento. Nuestro equipo trabaja para ofrecer la mejor experiencia.", apology: "Pedimos disculpas por las molestias.", reasonLabel: "Razón:", estLabel: "Finalización estimada", days: "Días", hours: "Horas", min: "Min", sec: "Seg", est: "Tiempo estimado — puede terminar antes o después", wip: "Trabajos en curso..." },
-    zh: { label: "中文", flag: "🇨🇳", msg: "我们的网站正在维护中。我们的团队正在努力提供最佳体验。", apology: "对此给您带来的不便，我们深表歉意。", reasonLabel: "原因：", estLabel: "预计完成时间", days: "天", hours: "时", min: "分", sec: "秒", est: "预计时间 - 可能提前或延迟完成", wip: "工作正在进行中..." },
-    hi: { label: "हिन्दी", flag: "🇮🇳", msg: "हमारी साइट वर्तमान में रखरखाव में है। हमारी टीम सर्वोत्तम अनुभव प्रदान करने के लिए काम कर रही है।", apology: "असुविधा के लिए हम क्षमा चाहते हैं।", reasonLabel: "कारण:", estLabel: "अनुमानित समाप्ति", days: "दिन", hours: "घंटे", min: "मिनट", sec: "सेकंड", est: "अनुमानित समय — पहले या बाद में समाप्त हो सकता है", wip: "कार्य प्रगति पर है..." },
+    tr: { label: "Türkçe", flag: FlagSvg.tr, msg: "Sitemiz şu anda bakımdadır. Ekibimiz en iyi deneyimi sunmak için çalışıyor.", apology: "Verdiğimiz rahatsızlık için özür dileriz.", reasonLabel: "Sebep:", estLabel: "Tahmini Bitiş", days: "Gün", hours: "Saat", min: "Dk", sec: "Sn", est: "Tahmini süre — daha erken veya geç bitebilir", wip: "Çalışmalar devam ediyor..." },
+    en: { label: "English", flag: FlagSvg.en, msg: "Our site is currently under maintenance. Our team is working to provide the best experience.", apology: "We apologize for the inconvenience.", reasonLabel: "Reason:", estLabel: "Estimated Completion", days: "Days", hours: "Hours", min: "Min", sec: "Sec", est: "Estimated time — may finish earlier or later", wip: "Work in progress..." },
+    de: { label: "Deutsch", flag: FlagSvg.de, msg: "Unsere Website befindet sich derzeit in Wartung. Unser Team arbeitet daran, das beste Erlebnis zu bieten.", apology: "Wir entschuldigen uns für die Unannehmlichkeiten.", reasonLabel: "Grund:", estLabel: "Voraussichtliches Ende", days: "Tage", hours: "Std", min: "Min", sec: "Sek", est: "Geschätzte Zeit — kann früher oder später enden", wip: "Arbeiten im Gange..." },
+    fr: { label: "Français", flag: FlagSvg.fr, msg: "Notre site est actuellement en maintenance. Notre équipe travaille pour offrir la meilleure expérience.", apology: "Nous nous excusons pour la gêne occasionnée.", reasonLabel: "Raison :", estLabel: "Fin estimée", days: "Jours", hours: "Heures", min: "Min", sec: "Sec", est: "Temps estimé — peut finir plus tôt ou plus tard", wip: "Travaux en cours..." },
+    es: { label: "Español", flag: FlagSvg.es, msg: "Nuestro sitio está en mantenimiento. Nuestro equipo trabaja para ofrecer la mejor experiencia.", apology: "Pedimos disculpas por las molestias.", reasonLabel: "Razón:", estLabel: "Finalización estimada", days: "Días", hours: "Horas", min: "Min", sec: "Seg", est: "Tiempo estimado — puede terminar antes o después", wip: "Trabajos en curso..." },
+    zh: { label: "中文", flag: FlagSvg.zh, msg: "我们的网站正在维护中。我们的团队正在努力提供最佳体验。", apology: "对此给您带来的不便，我们深表歉意。", reasonLabel: "原因：", estLabel: "预计完成时间", days: "天", hours: "时", min: "分", sec: "秒", est: "预计时间 - 可能提前或延迟完成", wip: "工作正在进行中..." },
+    hi: { label: "हिन्दी", flag: FlagSvg.hi, msg: "हमारी साइट वर्तमान में रखरखाव में है। हमारी टीम सर्वोत्तम अनुभव प्रदान करने के लिए काम कर रही है।", apology: "असुविधा के लिए हम क्षमा चाहते हैं।", reasonLabel: "कारण:", estLabel: "अनुमानित समाप्ति", days: "दिन", hours: "घंटे", min: "मिनट", sec: "सेकंड", est: "अनुमानित समय — पहले या बाद में समाप्त हो सकता है", wip: "कार्य प्रगति पर है..." },
 };
 const ML_KEYS = Object.keys(ML);
 const LOCALE_MAP: Record<string, string> = { tr: "tr-TR", en: "en-GB", de: "de-DE", fr: "fr-FR", es: "es-ES", zh: "zh-CN", hi: "hi-IN" };
@@ -32,7 +43,7 @@ const UTC_OFFSET: Record<string, number> = { tr: 3, en: 0, de: 1, fr: 1, es: 1, 
 
 /* ── Maintenance Overlay ──────────────────────────────────────── */
 function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; estimatedEnd?: string | null }) {
-    const [lang, setLang] = useState("tr");
+    const [lang, setLang] = useState("en");
     const [langOpen, setLangOpen] = useState(false);
     const [tick, setTick] = useState(0);
     const langRef = useRef<HTMLDivElement>(null);

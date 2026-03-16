@@ -1,10 +1,13 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useModalPhase } from "@/hooks/useModalPhase";
-import { XIcon, CheckIcon, BookOpenIcon, DownloadIcon, RepeatIcon, CopyIcon } from "../shared/Icons";
-import { MonitorCog } from "lucide-react";
+import { XIcon, CheckIcon, BookOpenIcon, DownloadIcon, RepeatIcon, CopyIcon, CoffeeIcon, HeartIcon } from "../shared/Icons";
+import { MonitorCog, MessageSquare } from "lucide-react";
+
+const SUPPORT_SHOWN_KEY = "optwin-support-shown";
 
 export function ScriptOverlay() {
     const {
@@ -12,8 +15,20 @@ export function ScriptOverlay() {
         previewCode, showToast
     } = useOptWinStore();
     const { t } = useTranslation();
-    const handleClose = () => setScriptOverlayOpen(false);
+    const handleClose = () => { setScriptOverlayOpen(false); };
     const { isVisible, isMounted, phase, containerRef } = useModalPhase(isScriptOverlayOpen, handleClose);
+    const [supportPhase, setSupportPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
+
+    // Reset support prompt when overlay closes
+    useEffect(() => {
+        if (!isScriptOverlayOpen) setSupportPhase("hidden");
+    }, [isScriptOverlayOpen]);
+
+    const dismissSupport = useCallback(() => {
+        setSupportPhase("exiting");
+        localStorage.setItem(SUPPORT_SHOWN_KEY, "1");
+        setTimeout(() => setSupportPhase("hidden"), 250);
+    }, []);
 
     const handleDownload = async () => {
         const blob = new Blob([previewCode], { type: "text/plain;charset=utf-8" });
@@ -25,6 +40,13 @@ export function ScriptOverlay() {
         URL.revokeObjectURL(url);
         showToast(t["script.downloadToast"], "success");
         fetch("/api/stats?action=download", { method: "POST" }).catch(() => { });
+        // Show support prompt only once ever
+        if (typeof window !== "undefined" && !localStorage.getItem(SUPPORT_SHOWN_KEY)) {
+            setTimeout(() => {
+                setSupportPhase("entering");
+                requestAnimationFrame(() => setSupportPhase("visible"));
+            }, 400);
+        }
     };
 
     const handleCopy = async () => {
@@ -33,6 +55,9 @@ export function ScriptOverlay() {
     };
 
     if (!isMounted) return null;
+
+    const supportVisible = supportPhase === "entering" || supportPhase === "visible";
+    const supportExiting = supportPhase === "exiting";
 
     return (
         <div
@@ -52,7 +77,7 @@ export function ScriptOverlay() {
                 </button>
 
                 {/* Left Side: Instructions */}
-                <div className="w-full md:w-[28%] bg-[var(--bg-color)] p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[var(--border-color)] relative">
+                <div className="w-full md:w-[28%] bg-[var(--bg-color)] p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[var(--border-color)] relative shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-b from-[var(--accent-color)]/5 to-transparent pointer-events-none"></div>
                     <div className="space-y-8 relative z-10">
                         <div className="animate-fade-in-up">
@@ -87,6 +112,16 @@ export function ScriptOverlay() {
                                 </li>
                             </ul>
                         </div>
+
+                        {/* Mobile download button — right below step 3 */}
+                        <div className="md:hidden animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+                            <button
+                                onClick={handleDownload}
+                                className="w-full flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(168,85,247,0.3)] transition-all duration-200"
+                            >
+                                <DownloadIcon size={18} /> {t["script.download"]}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="pt-6 border-t border-[var(--border-color)] hidden md:block animate-fade-in-up relative z-10" style={{ animationDelay: "0.2s" }}>
@@ -108,8 +143,8 @@ export function ScriptOverlay() {
                 </div>
 
                 {/* Right Side: Code Preview */}
-                <div className="w-full md:w-[72%] p-4 md:p-6 flex flex-col h-full bg-[var(--card-bg)]">
-                    <div className="flex items-center justify-between bg-[var(--bg-color)]/50 border border-[var(--border-color)] rounded-t-xl px-4 py-3 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+                <div className="w-full md:w-[72%] p-4 md:p-6 flex flex-col min-h-0 bg-[var(--card-bg)]">
+                    <div className="flex items-center justify-between bg-[var(--bg-color)]/50 border border-[var(--border-color)] rounded-t-xl px-4 py-3 shrink-0 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
                         <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
                             <MonitorCog size={14} className="text-purple-500" /> OptWin.bat
                         </div>
@@ -121,22 +156,61 @@ export function ScriptOverlay() {
                             {t["script.copy"]}
                         </button>
                     </div>
-                    <div className="flex-1 bg-[#1e1e2e] dark:bg-[#0a0a0f] border-x border-b border-[var(--border-color)] rounded-b-xl overflow-auto script-scrollbar">
+                    <div className="flex-1 min-h-0 bg-[#1e1e2e] dark:bg-[#0a0a0f] border-x border-b border-[var(--border-color)] rounded-b-xl overflow-auto script-scrollbar">
                         <pre className="p-6 m-0">
                             <code className="text-purple-300 dark:text-purple-400 font-mono text-xs md:text-sm whitespace-pre selection:bg-[var(--accent-color)]/30">{previewCode}</code>
                         </pre>
                     </div>
-
-                    {/* Mobile Actions */}
-                    <div className="pt-4 flex md:hidden flex-row gap-2">
-                        <button
-                            onClick={handleDownload}
-                            className="flex-1 flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(168,85,247,0.3)] text-sm transition-all duration-200"
-                        >
-                            <DownloadIcon size={16} /> {t["script.download"]}
-                        </button>
-                    </div>
                 </div>
+
+                {/* Support Prompt Overlay — shown once after first download */}
+                {(supportVisible || supportExiting) && (
+                    <div
+                        className={`absolute inset-0 z-30 flex items-center justify-center transition-all duration-250 ${supportExiting ? "opacity-0" : "opacity-100"}`}
+                        style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+                        onClick={dismissSupport}
+                    >
+                        <div
+                            className={`w-[90%] max-w-sm bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl p-6 shadow-2xl shadow-[var(--accent-color)]/20 text-center transition-all duration-250 ${supportExiting ? "opacity-0 scale-95" : "animate-pop-in"}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <div className="size-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                                    <HeartIcon size={18} className="text-amber-500" />
+                                </div>
+                                <h3 className="text-lg font-black text-[var(--text-primary)]">{t["script.supportPromptTitle"]}</h3>
+                            </div>
+                            <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+                                {t["script.supportPromptDesc"]}
+                            </p>
+                            <div className="flex flex-col gap-2.5">
+                                <a
+                                    href="https://www.buymeacoffee.com/ahmetly_"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => { localStorage.setItem(SUPPORT_SHOWN_KEY, "1"); }}
+                                    className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 transition-all duration-300"
+                                >
+                                    <CoffeeIcon size={16} />
+                                    {t["script.supportDonate"]}
+                                </a>
+                                <button
+                                    disabled
+                                    className="w-full py-3 bg-[var(--text-secondary)]/5 text-[var(--text-secondary)]/40 font-bold text-sm rounded-xl border border-[var(--border-color)] flex items-center justify-center gap-2 cursor-not-allowed"
+                                >
+                                    <MessageSquare size={16} />
+                                    {t["script.supportReview"]}
+                                </button>
+                                <button
+                                    onClick={dismissSupport}
+                                    className="w-full py-2.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm font-medium transition-colors"
+                                >
+                                    {t["script.supportDismiss"]}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

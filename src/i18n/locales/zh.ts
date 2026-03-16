@@ -55,6 +55,11 @@ const zh = {
     "script.copy": "复制",
     "script.copiedToast": "脚本已复制到剪贴板！",
     "script.downloadToast": "下载已开始！",
+    "script.supportPromptTitle": "支持 OptWin",
+    "script.supportPromptDesc": "OptWin 完全免费且开源。如果您觉得有用，请考虑支持其开发，以便我们为所有人持续改进。",
+    "script.supportDonate": "请我喝杯咖啡",
+    "script.supportReview": "留下评价",
+    "script.supportDismiss": "不了，谢谢",
 
     "restore.title": "创建还原点？",
     "restore.description": "在应用所选优化之前，是否要创建系统还原点？强烈建议创建以确保安全。",

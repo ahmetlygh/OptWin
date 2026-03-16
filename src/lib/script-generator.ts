@@ -39,8 +39,9 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     }
     const dateStr = new Date().toLocaleString();
 
-    // The DB commands are stored in en/tr — fallback to en for other languages
-    const dbLang = (lang === "en" || lang === "tr") ? lang : "en";
+    // The DB commands are stored per-language — fallback to en for unknown languages
+    const supportedLangs = ["en", "tr", "de", "fr", "es", "zh", "hi"];
+    const dbLang = supportedLangs.includes(lang) ? lang : "en";
 
     const version = labels.versionNumber || '1.3.0';
 
@@ -52,7 +53,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '@echo off\r\n';
     script += 'chcp 65001 >nul 2>&1\r\n';
     script += 'set "OPTWIN_BAT=%~f0"\r\n';
-    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw | iex"\r\n';
+    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference=\'Continue\'; try { . ([ScriptBlock]::Create((Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw))) } catch { Write-Host \" ERROR: $($_.Exception.Message)\" -ForegroundColor Red; Write-Host \'  Press any key...\' -ForegroundColor Gray; $null=$Host.UI.RawUI.ReadKey(\'NoEcho,IncludeKeyDown\') }"\r\n';
     script += 'exit /b\r\n';
     script += '#>\r\n\r\n';
 
@@ -68,21 +69,82 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '#>\n\n';
 
     // Self-elevation (re-launches the .bat via cmd.exe with RunAs)
+    // Error messages are hardcoded per-language so they always display correctly
+    const elevationMessages: Record<string, { requesting: string; error: string; requires: string; hint: string; pressKey: string }> = {
+        en: {
+            requesting: "Requesting administrator privileges...",
+            error: "ERROR: Administrator privileges could not be obtained automatically.",
+            requires: "This script requires administrator privileges to run.",
+            hint: "Please right-click the file and select 'Run as administrator'.",
+            pressKey: "Press any key to exit...",
+        },
+        tr: {
+            requesting: "Yonetici yetkileri isteniyor...",
+            error: "HATA: Yonetici yetkileri otomatik olarak alinamadi.",
+            requires: "Bu betik calistirilmak icin yonetici izni gerektirir.",
+            hint: "Lutfen dosyaya sag tiklayip 'Yonetici olarak calistir' secenegini secin.",
+            pressKey: "Cikmak icin bir tusa basin...",
+        },
+        de: {
+            requesting: "Administratorrechte werden angefordert...",
+            error: "FEHLER: Administratorrechte konnten nicht automatisch erlangt werden.",
+            requires: "Dieses Skript erfordert Administratorrechte.",
+            hint: "Bitte klicken Sie mit der rechten Maustaste auf die Datei und waehlen Sie 'Als Administrator ausfuehren'.",
+            pressKey: "Druecken Sie eine beliebige Taste zum Beenden...",
+        },
+        fr: {
+            requesting: "Demande de privileges administrateur...",
+            error: "ERREUR: Les privileges administrateur n'ont pas pu etre obtenus automatiquement.",
+            requires: "Ce script necessite des privileges administrateur pour fonctionner.",
+            hint: "Veuillez faire un clic droit sur le fichier et selectionner 'Executer en tant qu'administrateur'.",
+            pressKey: "Appuyez sur une touche pour quitter...",
+        },
+        es: {
+            requesting: "Solicitando privilegios de administrador...",
+            error: "ERROR: No se pudieron obtener los privilegios de administrador automaticamente.",
+            requires: "Este script requiere privilegios de administrador para ejecutarse.",
+            hint: "Haga clic derecho en el archivo y seleccione 'Ejecutar como administrador'.",
+            pressKey: "Presione cualquier tecla para salir...",
+        },
+        zh: {
+            requesting: "Requesting administrator privileges...",
+            error: "ERROR: Unable to obtain administrator privileges automatically.",
+            requires: "This script requires administrator privileges to run.",
+            hint: "Please right-click the file and select 'Run as administrator'.",
+            pressKey: "Press any key to exit...",
+        },
+        hi: {
+            requesting: "Requesting administrator privileges...",
+            error: "ERROR: Administrator privileges could not be obtained automatically.",
+            requires: "This script requires administrator privileges to run.",
+            hint: "Please right-click the file and select 'Run as administrator'.",
+            pressKey: "Press any key to exit...",
+        },
+    };
+    const elev = elevationMessages[lang] || elevationMessages.en;
+
     script += '# ===== SELF-ELEVATION =====\n';
     script += '$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)\n\n';
     script += 'if (-not $isAdmin) {\n';
     script += '    Write-Host ""\n';
-    script += '    Write-Host "  ' + labels.adminRequest + '" -ForegroundColor Yellow\n';
-    script += '    Write-Host "  ' + labels.adminPrompt + '" -ForegroundColor Cyan\n';
+    script += '    Write-Host "  [*] ' + elev.requesting + '" -ForegroundColor Yellow\n';
     script += '    Write-Host ""\n';
-    script += '    $batPath = $env:OPTWIN_BAT\n';
+    script += '    $elevated = $false\n';
     script += '    try {\n';
-    script += '        Start-Process cmd.exe -ArgumentList "/c `"$batPath`"" -Verb RunAs\n';
-    script += '    } catch {\n';
-    script += '        Write-Host "  ' + labels.adminError + '" -ForegroundColor Red\n';
-    script += '        Write-Host "  ' + labels.adminHint + '" -ForegroundColor Yellow\n';
-    script += '        Read-Host\n';
-    script += '    }\n';
+    script += '        Start-Process -FilePath $env:OPTWIN_BAT -Verb RunAs\n';
+    script += '        $elevated = $true\n';
+    script += '    } catch { }\n';
+    script += '    if ($elevated) { exit }\n';
+    script += '    Write-Host ""\n';
+    script += '    Write-Host "  ========================================" -ForegroundColor Red\n';
+    script += '    Write-Host "  ' + elev.error + '" -ForegroundColor Red\n';
+    script += '    Write-Host "  ========================================" -ForegroundColor Red\n';
+    script += '    Write-Host ""\n';
+    script += '    Write-Host "  ' + elev.requires + '" -ForegroundColor Yellow\n';
+    script += '    Write-Host "  ' + elev.hint + '" -ForegroundColor Yellow\n';
+    script += '    Write-Host ""\n';
+    script += '    Write-Host "  ' + elev.pressKey + '" -ForegroundColor Gray\n';
+    script += '    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")\n';
     script += '    exit\n';
     script += '}\n\n';
 
@@ -174,6 +236,8 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += 'Write-Host "  ' + labels.thankYou + '" -ForegroundColor Cyan\n';
     script += 'Write-Host "  ' + labels.author + '" -ForegroundColor Gray\n';
     script += 'Write-Host ""\n';
+    script += 'Write-Host "  ' + (labels.pressAnyKey || 'Press any key to exit...') + '" -ForegroundColor Gray\n';
+    script += '$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")\n';
 
     return script;
 }

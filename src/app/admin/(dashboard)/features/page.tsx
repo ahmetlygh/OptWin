@@ -582,7 +582,7 @@ export default function AdminFeaturesPage() {
                     <div>
                         <h1 className="text-2xl font-black text-white tracking-tight">Özellikler</h1>
                         <p className="text-xs text-white/30 mt-0.5">
-                            {filtered.length} / {features.length} özellik · {categories.length} kategori
+                            {features.filter(f => f.enabled && categories.find(c => c.id === f.categoryId)?.enabled).length} / {features.length} aktif özellik · {categories.filter(c => c.enabled).length} / {categories.length} kategori
                         </p>
                     </div>
                 </div>

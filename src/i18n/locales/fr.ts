@@ -55,6 +55,11 @@ const fr = {
     "script.copy": "Copier",
     "script.copiedToast": "Script copié dans le presse-papiers !",
     "script.downloadToast": "Téléchargement lancé !",
+    "script.supportPromptTitle": "Soutenir OptWin",
+    "script.supportPromptDesc": "OptWin est entièrement gratuit et open source. Si vous le trouvez utile, soutenez son développement pour que nous puissions continuer à l'améliorer.",
+    "script.supportDonate": "Offrez-moi un café",
+    "script.supportReview": "Laisser un avis",
+    "script.supportDismiss": "Non merci",
 
     "restore.title": "Créer un point de restauration ?",
     "restore.description": "Souhaitez-vous créer un point de restauration système avant d'appliquer les optimisations sélectionnées ? C'est fortement recommandé pour la sécurité.",

@@ -55,6 +55,11 @@ const tr = {
     "script.copy": "Kopyala",
     "script.copiedToast": "Script panoya kopyalandı!",
     "script.downloadToast": "İndirme başladı!",
+    "script.supportPromptTitle": "OptWin'i Destekle",
+    "script.supportPromptDesc": "OptWin tamamen ücretsiz ve açık kaynaklıdır. Faydalı buluyorsanız, geliştirilmesine destek olarak herkes için daha iyi hale getirmemize yardımcı olun.",
+    "script.supportDonate": "Bana Bir Kahve Ismarla",
+    "script.supportReview": "Yorum Bırak",
+    "script.supportDismiss": "Hayır, Teşekkürler",
 
     "restore.title": "Geri Yükleme Noktası Oluştur?",
     "restore.description": "Seçilen optimizasyonları uygulamadan önce bir Sistem Geri Yükleme Noktası oluşturmak ister misiniz? Güvenlik açısından şiddetle tavsiye edilir.",

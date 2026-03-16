@@ -55,6 +55,11 @@ const hi = {
     "script.copy": "कॉपी",
     "script.copiedToast": "स्क्रिप्ट क्लिपबोर्ड पर कॉपी हो गई!",
     "script.downloadToast": "डाउनलोड शुरू हुआ!",
+    "script.supportPromptTitle": "OptWin का समर्थन करें",
+    "script.supportPromptDesc": "OptWin पूरी तरह मुफ्त और ओपन-सोर्स है। अगर आपको यह उपयोगी लगता है, तो इसके विकास का समर्थन करें ताकि हम इसे सबके लिए बेहतर बना सकें।",
+    "script.supportDonate": "मुझे एक कॉफी पिलाएं",
+    "script.supportReview": "समीक्षा छोड़ें",
+    "script.supportDismiss": "नहीं, धन्यवाद",
 
     "restore.title": "रिस्टोर पॉइंट बनाएं?",
     "restore.description": "क्या आप चयनित ऑप्टिमाइज़ेशन लागू करने से पहले सिस्टम रिस्टोर पॉइंट बनाना चाहते हैं? सुरक्षा के लिए यह अत्यधिक अनुशंसित है।",
