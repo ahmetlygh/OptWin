@@ -37,17 +37,19 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const settings = settingsArr.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {} as Record<string, string>);
     const version = settings.site_version || "1.3.0";
 
-    // ===== BATCH-POWERSHELL POLYGLOT (.bat) =====
-    // Batch wrapper calls PowerShell with -ExecutionPolicy Bypass
-    // so the script runs without digital signature issues.
-    let script = '@echo off\r\n';
+    // ===== BATCH-POWERSHELL HYBRID POLYGLOT (.bat) =====
+    // <# : is a no-op in Batch (failed redirect + label) but opens a block comment in PowerShell.
+    // Batch executes the header, calls PowerShell to re-read the same file.
+    // PowerShell sees <# ... #> as a comment, skips the batch header, runs only the PS code after #>.
+    let script = '<# : batch header\r\n';
+    script += '@echo off\r\n';
     script += 'chcp 65001 >nul 2>&1\r\n';
-    script += 'set "SCRIPT=' + '%~f0' + '"\r\n';
-    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$s=[IO.File]::ReadAllText(' + "'" + '%SCRIPT%' + "'" + ');$block=$s.Substring($s.IndexOf(' + "'" + ': #PS_START' + "'" + ')+12);iex $block" ' + '%*' + '\r\n';
+    script += 'set "OPTWIN_BAT=%~f0"\r\n';
+    script += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw | iex"\r\n';
     script += 'exit /b\r\n';
-    script += ': #PS_START\r\n';
+    script += '#>\r\n\r\n';
 
-    // From here on: pure PowerShell code (read by the batch wrapper above)
+    // From here on: pure PowerShell code (batch never reaches here due to exit /b)
     script += '<#\n';
     script += '    ' + labels.scriptTitle + '\n';
     script += '    ' + labels.version + '   : ' + version + '\n';
@@ -58,7 +60,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '    ' + labels.openSource + '\n';
     script += '#>\n\n';
 
-    // Self-elevation code (re-launches as admin via .bat itself)
+    // Self-elevation (re-launches the .bat via cmd.exe with RunAs)
     script += '# ===== SELF-ELEVATION =====\n';
     script += '$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)\n\n';
     script += 'if (-not $isAdmin) {\n';
@@ -66,8 +68,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     script += '    Write-Host "  ' + labels.adminRequest + '" -ForegroundColor Yellow\n';
     script += '    Write-Host "  ' + labels.adminPrompt + '" -ForegroundColor Cyan\n';
     script += '    Write-Host ""\n';
-    script += '    $batPath = (Get-Item $MyInvocation.MyCommand.Definition -ErrorAction SilentlyContinue).FullName\n';
-    script += '    if (-not $batPath) { $batPath = $env:SCRIPT }\n';
+    script += '    $batPath = $env:OPTWIN_BAT\n';
     script += '    try {\n';
     script += '        Start-Process cmd.exe -ArgumentList "/c `"$batPath`"" -Verb RunAs\n';
     script += '    } catch {\n';

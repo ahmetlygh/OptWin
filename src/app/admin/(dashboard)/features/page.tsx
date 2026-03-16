@@ -109,9 +109,11 @@ function SortableFeatureRow({ feature, onClick, onToggle, lang }: {
                 <p className="font-semibold text-sm text-white/80 group-hover:text-white transition-colors truncate">{title}</p>
                 {subtitle && <p className="text-[11px] text-white/20 truncate">{subtitle}</p>}
             </div>
-            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border shrink-0 ${RISK_COLORS[feature.risk] || ""}`}>
-                {RISK_LABELS[feature.risk] || feature.risk}
-            </span>
+            {!feature.noRisk && (
+                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border shrink-0 ${RISK_COLORS[feature.risk] || ""}`}>
+                    {RISK_LABELS[feature.risk] || feature.risk}
+                </span>
+            )}
             <button
                 onClick={onToggle}
                 onPointerDown={e => e.stopPropagation()}
@@ -1054,12 +1056,12 @@ function FeatureEditor({
     onDelete: (id: string) => void;
 }) {
     const availableLangs = useMemo(() => {
-        if (!feature) return ["en", "tr"];
-        const langs = new Set<string>();
-        feature.translations.forEach(t => langs.add(t.lang));
-        feature.commands.forEach(c => langs.add(c.lang));
-        if (!langs.has("en")) langs.add("en");
-        if (!langs.has("tr")) langs.add("tr");
+        const ALL_LANGS = ["en", "tr", "de", "es", "fr", "hi", "zh"];
+        const langs = new Set<string>(ALL_LANGS);
+        if (feature) {
+            feature.translations.forEach(t => langs.add(t.lang));
+            feature.commands.forEach(c => langs.add(c.lang));
+        }
         return Array.from(langs).sort();
     }, [feature]);
 
@@ -1352,7 +1354,18 @@ function FeatureEditor({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label className={labelCls}>Slug (benzersiz ID)</label>
-                        <input value={form.slug} onChange={e => updateField("slug", e.target.value)} placeholder="disableTelemetry" className={inputCls} />
+                        <input value={form.slug} onChange={e => {
+                            const sanitized = e.target.value
+                                .replace(/ğ/gi, 'g').replace(/Ğ/g, 'G')
+                                .replace(/ü/gi, 'u').replace(/Ü/g, 'U')
+                                .replace(/ş/gi, 's').replace(/Ş/g, 'S')
+                                .replace(/ı/g, 'i').replace(/İ/g, 'I')
+                                .replace(/ö/gi, 'o').replace(/Ö/g, 'O')
+                                .replace(/ç/gi, 'c').replace(/Ç/g, 'C')
+                                .replace(/\s+/g, '-')
+                                .replace(/[^a-zA-Z0-9\-_]/g, '');
+                            updateField("slug", sanitized);
+                        }} placeholder="disableTelemetry" className={inputCls} />
                     </div>
                     <div>
                         <label className={labelCls}>Kategori</label>
@@ -1367,11 +1380,10 @@ function FeatureEditor({
                         {!form.noRisk && (
                             <motion.div
                                 key="risk-field"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                                className="overflow-hidden"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             >
                                 <label className={labelCls}>Risk Seviyesi</label>
                                 <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />

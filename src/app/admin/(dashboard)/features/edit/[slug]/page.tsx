@@ -129,11 +129,10 @@ function SlugFeatureEditor({
     onDelete: () => void;
 }) {
     const availableLangs = useMemo(() => {
-        const langs = new Set<string>();
+        const ALL_LANGS = ["en", "tr", "de", "es", "fr", "hi", "zh"];
+        const langs = new Set<string>(ALL_LANGS);
         feature.translations.forEach(t => langs.add(t.lang));
         feature.commands.forEach(c => langs.add(c.lang));
-        if (!langs.has("en")) langs.add("en");
-        if (!langs.has("tr")) langs.add("tr");
         return Array.from(langs).sort();
     }, [feature]);
 
@@ -508,7 +507,18 @@ function SlugFeatureEditor({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label className={labelCls}>Slug (benzersiz ID)</label>
-                        <input value={form.slug} onChange={e => updateField("slug", e.target.value)} placeholder="disableTelemetry" className={inputCls} />
+                        <input value={form.slug} onChange={e => {
+                            const sanitized = e.target.value
+                                .replace(/ğ/gi, 'g').replace(/Ğ/g, 'G')
+                                .replace(/ü/gi, 'u').replace(/Ü/g, 'U')
+                                .replace(/ş/gi, 's').replace(/Ş/g, 'S')
+                                .replace(/ı/g, 'i').replace(/İ/g, 'I')
+                                .replace(/ö/gi, 'o').replace(/Ö/g, 'O')
+                                .replace(/ç/gi, 'c').replace(/Ç/g, 'C')
+                                .replace(/\s+/g, '-')
+                                .replace(/[^a-zA-Z0-9\-_]/g, '');
+                            updateField("slug", sanitized);
+                        }} placeholder="disableTelemetry" className={inputCls} />
                     </div>
                     <div>
                         <label className={labelCls}>Kategori</label>
@@ -519,15 +529,14 @@ function SlugFeatureEditor({
                         <AdminIconPicker value={form.icon} onChange={v => updateField("icon", v)} />
                     </div>
                     {/* K7: Risk seviyesi — noRisk true iken gizlenir */}
-                    {/* O10: overflow-visible so AdminSelect dropdown isn't clipped */}
                     <AnimatePresence initial={false}>
                         {!form.noRisk && (
                             <motion.div
                                 key="risk-field"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto", overflow: "visible" }}
-                                exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             >
                                 <label className={labelCls}>Risk Seviyesi</label>
                                 <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />
