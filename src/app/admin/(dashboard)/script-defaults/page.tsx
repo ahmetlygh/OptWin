@@ -464,36 +464,16 @@ export default function ScriptDefaultsPage() {
         const ghShort = (ps("githubUrl") || "github.com/ahmetlygh/optwin").replace("https://", "");
 
         return [
-            // <# ... #> Comment header
-            S("<#"),
-            K(`    ${ps("scriptTitle")}`, "scriptTitle"),
-            K(`    ${ps("version")}   : ${ps("versionNumber")}`, "version", "versionNumber"),
-            K(`    ${ps("date")}      : ${dateStr}`, "date"),
-            K(`    ${ps("developer")} : ${ps("developerName")}`, "developer", "developerName"),
-            K(`    ${ps("website")}   : ${ps("websiteUrl")}`, "website", "websiteUrl"),
-            K(`    GitHub    : ${ps("githubUrl")}`, "githubUrl"),
-            K(`    ${ps("openSource")}`, "openSource"),
-            S("#>"),
-            S(""),
-            // Self-elevation
-            S("# ===== SELF-ELEVATION ====="),
-            S("$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"),
-            S(""),
-            S("if (-not $isAdmin) {"),
-            S('    Write-Host ""'),
-            K(`    Write-Host "  ${ps("adminRequest")}" -ForegroundColor Yellow`, "adminRequest"),
-            K(`    Write-Host "  ${ps("adminPrompt")}" -ForegroundColor Cyan`, "adminPrompt"),
-            S('    Write-Host ""'),
-            S("    $batPath = $env:OPTWIN_BAT"),
-            S("    try {"),
-            S('        Start-Process cmd.exe -ArgumentList "/c `"$batPath`"" -Verb RunAs'),
-            S("    } catch {"),
-            K(`        Write-Host "  ${ps("adminError")}" -ForegroundColor Red`, "adminError"),
-            K(`        Write-Host "  ${ps("adminHint")}" -ForegroundColor Yellow`, "adminHint"),
-            S("        Read-Host"),
-            S("    }"),
-            S("    exit"),
-            S("}"),
+            // Script info comment (# line comments only, NO block comments)
+            S("#"),
+            K(`#    ${ps("scriptTitle")}`, "scriptTitle"),
+            K(`#    ${ps("version")}   : ${ps("versionNumber")}`, "version", "versionNumber"),
+            K(`#    ${ps("date")}      : ${dateStr}`, "date"),
+            K(`#    ${ps("developer")} : ${ps("developerName")}`, "developer", "developerName"),
+            K(`#    ${ps("website")}   : ${ps("websiteUrl")}`, "website", "websiteUrl"),
+            K(`#    GitHub    : ${ps("githubUrl")}`, "githubUrl"),
+            K(`#    ${ps("openSource")}`, "openSource"),
+            S("#"),
             S(""),
             S('$host.UI.RawUI.WindowTitle = "OptWin Optimizer Script"'),
             S(""),
@@ -604,18 +584,37 @@ export default function ScriptDefaultsPage() {
         }
     };
 
-    // Download as working .bat — polyglot header + PowerShell content + ReadKey pause
+    // Download as working .bat — EncodedCommand marker-based loader
     const handleDownloadPreview = () => {
-        // NO BOM — BOM breaks batch parsing of <# : header
-        let bat = '<# : batch header\r\n';
-        bat += '@echo off\r\n';
-        bat += 'chcp 65001 >nul 2>&1\r\n';
-        bat += 'set "OPTWIN_BAT=%~f0"\r\n';
-        bat += 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw | iex"\r\n';
-        bat += 'exit /b\r\n';
-        bat += '#>\r\n\r\n';
-        bat += previewText;
-        bat += '\n\n$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")';
+        const psLoader =
+            "$c=Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw;" +
+            "$m='REM === OPTWIN PS ===';" +
+            "$i=$c.IndexOf($m);" +
+            "if($i -ge 0){" +
+            "$ps=$c.Substring($i+$m.Length);" +
+            "try{&([ScriptBlock]::Create($ps))}" +
+            "catch{Write-Host $_.Exception.Message -ForegroundColor Red;Read-Host 'Press Enter to exit'}" +
+            "}";
+        // UTF-16LE Base64 encode for -EncodedCommand
+        const utf16 = new Uint8Array(psLoader.length * 2);
+        for (let i = 0; i < psLoader.length; i++) {
+            utf16[i * 2] = psLoader.charCodeAt(i) & 0xff;
+            utf16[i * 2 + 1] = (psLoader.charCodeAt(i) >> 8) & 0xff;
+        }
+        const b64 = btoa(String.fromCharCode(...utf16));
+        const header = [
+            '@echo off',
+            'chcp 65001 >nul 2>&1',
+            'title OptWin Optimizer Preview',
+            'set "OPTWIN_BAT=%~f0"',
+            'powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + b64,
+            'pause',
+            'exit /b',
+            'REM === OPTWIN PS ===',
+        ].join('\r\n') + '\r\n';
+        let bat = header;
+        bat += previewText.split('\n').join('\r\n');
+        bat += '\r\n\r\n$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")';
         const blob = new Blob([bat], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
