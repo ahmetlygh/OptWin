@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { z } from "zod";
+
+const contactSchema = z.object({
+    name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long").trim(),
+    email: z.string().email("Invalid email address").max(255, "Email too long").trim(),
+    subject: z.string().min(3, "Subject must be at least 3 characters").max(200, "Subject too long").trim(),
+    message: z.string().min(10, "Message must be at least 10 characters").max(5000, "Message too long").trim(),
+});
 
 // Simple memory store for basic rate limiting on the edge
 // In a serverless deployment like Vercel, this state resets frequently,
@@ -41,14 +49,17 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { name, email, subject, message } = body;
+        const parsed = contactSchema.safeParse(body);
 
-        if (!name || !email || !subject || !message) {
+        if (!parsed.success) {
+            const firstError = parsed.error.issues[0]?.message || "Invalid input";
             return NextResponse.json(
-                { success: false, error: "All fields are required" },
+                { success: false, error: firstError },
                 { status: 400 }
             );
         }
+
+        const { name, email, subject, message } = parsed.data;
 
         const contact = await prisma.contactMessage.create({
             data: { name, email, subject, message }

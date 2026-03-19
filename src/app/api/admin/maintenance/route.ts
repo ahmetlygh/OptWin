@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
-
-async function checkAdmin() {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!session?.user || !(session as any).isAdmin) return false;
-    return true;
-}
+import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 
 // GET /api/admin/maintenance — get maintenance mode status + details
 export async function GET() {
@@ -31,9 +24,7 @@ export async function GET() {
 
 // PUT /api/admin/maintenance — toggle maintenance mode with optional reason + estimatedEnd
 export async function PUT(req: Request) {
-    if (!(await checkAdmin())) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         const body = await req.json();

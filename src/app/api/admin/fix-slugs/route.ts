@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 
 function sanitizeSlug(slug: string): string {
     return slug
@@ -16,11 +16,7 @@ function sanitizeSlug(slug: string): string {
 
 // POST /api/admin/fix-slugs — one-time fix for features with Turkish chars or spaces in slugs
 export async function POST() {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!session?.user || !(session as any).isAdmin) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     const features = await prisma.feature.findMany({ select: { id: true, slug: true } });
     const fixed: { id: string; oldSlug: string; newSlug: string }[] = [];

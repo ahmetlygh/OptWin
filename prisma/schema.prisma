@@ -186,6 +186,15 @@ model ScriptLabel {
   @@map("script_labels")
 }
 
+model VisitDedup {
+  id     String   @id @default(cuid())
+  ipHash String
+  date   DateTime @db.Date
+
+  @@unique([ipHash, date])
+  @@map("visit_dedup")
+}
+
 enum RiskLevel {
   low
   medium

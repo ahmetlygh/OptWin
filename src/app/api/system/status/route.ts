@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 export async function GET() {
     try {
         const setting = await prisma.siteSetting.findUnique({
-            where: { key: "maintenance_mode" }
+            where: { key: "maintenanceMode" }
         });
 
         // if "true" -> true, else false

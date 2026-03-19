@@ -29,6 +29,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+build.log
+err.log
+fix-labels-*.mjs
+
+# development docs (README.md & AGENTS.md stay in repo)
+PROGRESS.md
+STITCH_PROMPT.md
+TASARIMLAR.md
+TODO-ADMIN-REDESIGN.md
+analyze*.md
+start*.md
 
 # env files (can opt-in for committing if needed)
 .env*

@@ -27,7 +27,7 @@ export interface AdminDashboardStats {
 
 // Known setting keys for type safety
 export type SettingKey =
-    | "maintenance_mode"
+    | "maintenanceMode"
     | "site_version"
     | "github_url"
     | "bmc_url"

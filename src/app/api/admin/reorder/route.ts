@@ -1,18 +1,11 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
-
-async function checkAdmin() {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!session?.user || !(session as any).isAdmin) return false;
-    return true;
-}
+import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 
 // POST /api/admin/reorder — reorder items
 // body: { type: "feature" | "category" | "dns", items: [{ id, order }] }
 export async function POST(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         const { type, items } = await req.json();

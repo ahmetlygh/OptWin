@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
-
-async function checkAdmin() {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!session?.user || !(session as any).isAdmin) return false;
-    return true;
-}
+import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 
 // All values MUST be ASCII-safe (no Turkish/accented chars) for PowerShell compatibility
 const DEFAULTS: Record<string, Record<string, string>> = {
@@ -204,9 +197,7 @@ const DEFAULTS: Record<string, Record<string, string>> = {
 
 // POST /api/admin/script-labels/reset — wipe all labels and seed with correct defaults
 export async function POST() {
-    if (!(await checkAdmin())) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         // Delete all existing labels

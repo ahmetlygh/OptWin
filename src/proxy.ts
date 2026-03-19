@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 /* ── In-memory maintenance cache for middleware ──────────────── */
 interface MaintenanceInfo { active: boolean; reason: string; estimatedEnd: string }
 let maintenanceCache: { value: MaintenanceInfo; time: number } | null = null;
-const CACHE_TTL = 3000; // 3 seconds
+const CACHE_TTL = 15000; // 15 seconds — reduces self-fetch load while keeping reasonable latency
 
 async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
     const now = Date.now();
@@ -42,7 +42,7 @@ const ALWAYS_ALLOWED = [
     '/assets',
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Pass pathname to server components via header
@@ -52,15 +52,27 @@ export async function middleware(request: NextRequest) {
     // CORS for API routes
     const isApiRequest = pathname.startsWith('/api');
     if (isApiRequest) {
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        const origin = request.headers.get('origin') || '';
+        const allowedOrigins = [
+            'https://optwin.tech',
+            'https://www.optwin.tech',
+            'http://localhost:3000',
+        ];
+        const corsOrigin = allowedOrigins.includes(origin) ? origin : '';
+
+        if (corsOrigin) {
+            response.headers.set('Access-Control-Allow-Origin', corsOrigin);
+            response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        }
 
         if (request.method === 'OPTIONS') {
             const optionsResponse = new NextResponse(null, { status: 200 });
-            optionsResponse.headers.set('Access-Control-Allow-Origin', '*');
-            optionsResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-            optionsResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            if (corsOrigin) {
+                optionsResponse.headers.set('Access-Control-Allow-Origin', corsOrigin);
+                optionsResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+                optionsResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            }
             return optionsResponse;
         }
     }

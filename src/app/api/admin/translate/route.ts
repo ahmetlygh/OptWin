@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 
 // Language codes for different APIs
 const LANG_CODES: Record<string, string> = {
@@ -54,6 +55,8 @@ async function translateText(text: string, source: string, target: string): Prom
 }
 
 export async function POST(req: Request) {
+    if (!(await checkAdmin())) return unauthorizedResponse();
+
     try {
         const body = await req.json();
         const { text, sourceLang, targetLangs } = body as {

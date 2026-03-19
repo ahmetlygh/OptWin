@@ -1,17 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
-
-async function checkAdmin() {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!session?.user || !(session as any).isAdmin) return false;
-    return true;
-}
+import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 
 // GET /api/admin/features — list all features with translations, commands, category
 export async function GET(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
@@ -123,27 +116,30 @@ export async function PUT(req: NextRequest) {
             data,
         });
 
-        // Update translations
+        // Update translations & commands in parallel
+        const upsertOps: Promise<unknown>[] = [];
+
         if (translations) {
             for (const t of translations) {
-                await prisma.featureTranslation.upsert({
+                upsertOps.push(prisma.featureTranslation.upsert({
                     where: { featureId_lang: { featureId: id, lang: t.lang } },
                     create: { featureId: id, lang: t.lang, title: t.title, desc: t.desc || "" },
                     update: { title: t.title, desc: t.desc || "" },
-                });
+                }));
             }
         }
 
-        // Update commands
         if (commands) {
             for (const c of commands) {
-                await prisma.featureCommand.upsert({
+                upsertOps.push(prisma.featureCommand.upsert({
                     where: { featureId_lang: { featureId: id, lang: c.lang } },
                     create: { featureId: id, lang: c.lang, command: c.command || "", scriptMessage: c.scriptMessage || "" },
                     update: { command: c.command || "", scriptMessage: c.scriptMessage || "" },
-                });
+                }));
             }
         }
+
+        if (upsertOps.length > 0) await Promise.all(upsertOps);
 
         const updated = await prisma.feature.findUnique({
             where: { id },

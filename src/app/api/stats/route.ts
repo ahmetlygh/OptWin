@@ -1,5 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { createHash } from "crypto";
+
+function hashIp(ip: string): string {
+    return createHash("sha256").update(ip).digest("hex").slice(0, 16);
+}
 
 // GET /api/stats -> returns { totalVisits, totalScripts, totalDownloads }
 export async function GET() {
@@ -38,20 +43,18 @@ export async function POST(req: NextRequest) {
         if (action === "visit") {
             const forwarded = req.headers.get("x-forwarded-for");
             const ip = forwarded ? forwarded.split(",")[0].trim() : req.headers.get("x-real-ip") || "unknown";
+            const ipHash = hashIp(ip);
 
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Check if this IP already visited today using a simple hash
-            const visitKey = `visit:${ip}:${today.toISOString().slice(0, 10)}`;
-
-            // Use SiteSetting as a simple key-value store for visit dedup
-            const existing = await prisma.siteSetting.findUnique({
-                where: { key: visitKey }
-            });
-
-            if (existing) {
-                // Already counted this IP today
+            // Try to insert — unique constraint prevents duplicates
+            try {
+                await prisma.visitDedup.create({
+                    data: { ipHash, date: today }
+                });
+            } catch {
+                // Unique constraint violation = already counted today
                 const stats = await prisma.siteStats.findUnique({ where: { id: "main" } });
                 return NextResponse.json({
                     success: true,
@@ -62,25 +65,12 @@ export async function POST(req: NextRequest) {
                 });
             }
 
-            // Record this visit
-            await prisma.siteSetting.create({
-                data: {
-                    key: visitKey,
-                    value: ip,
-                    type: "visit_dedup",
-                    description: `Visit from ${ip} on ${today.toISOString().slice(0, 10)}`
-                }
-            });
-
-            // Clean up old visit dedup entries (older than 2 days)
+            // Clean up old dedup entries (older than 2 days) — fire and forget
             const twoDaysAgo = new Date();
             twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-            await prisma.siteSetting.deleteMany({
-                where: {
-                    type: "visit_dedup",
-                    updatedAt: { lt: twoDaysAgo }
-                }
-            });
+            prisma.visitDedup.deleteMany({
+                where: { date: { lt: twoDaysAgo } }
+            }).catch(() => {});
         }
 
         let stats = await prisma.siteStats.findUnique({ where: { id: "main" } });

@@ -1,17 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import sharp from "sharp";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import crypto from "crypto";
-
-async function checkAdmin() {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!session?.user || !(session as any).isAdmin) return false;
-    return true;
-}
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "icons");
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -24,9 +17,7 @@ const ALLOWED_TYPES = [
 ];
 
 export async function POST(req: Request) {
-    if (!(await checkAdmin())) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         const formData = await req.formData();
