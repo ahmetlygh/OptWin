@@ -584,42 +584,40 @@ export default function ScriptDefaultsPage() {
         }
     };
 
-    // Download as working .bat — EncodedCommand marker-based loader
+    // Download as working .bat — batch-level UAC + temp .ps1 (same as script-generator.ts)
     const handleDownloadPreview = () => {
-        const psLoader =
-            "$c=Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw;" +
-            "$m='REM === OPTWIN PS ===';" +
-            "$i=$c.IndexOf($m);" +
-            "if($i -ge 0){" +
-            "$ps=$c.Substring($i+$m.Length);" +
-            "try{&([ScriptBlock]::Create($ps))}" +
-            "catch{Write-Host $_.Exception.Message -ForegroundColor Red;Read-Host 'Press Enter to exit'}" +
-            "}";
-        // UTF-16LE Base64 encode for -EncodedCommand
-        const utf16 = new Uint8Array(psLoader.length * 2);
-        for (let i = 0; i < psLoader.length; i++) {
-            utf16[i * 2] = psLoader.charCodeAt(i) & 0xff;
-            utf16[i * 2 + 1] = (psLoader.charCodeAt(i) >> 8) & 0xff;
-        }
-        const b64 = btoa(String.fromCharCode(...utf16));
         const header = [
             '@echo off',
             'chcp 65001 >nul 2>&1',
             'title OptWin Optimizer Preview',
-            'set "OPTWIN_BAT=%~f0"',
-            'powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + b64,
-            'pause',
+            'cd /d "%~dp0"',
+            // Batch-level UAC elevation (goto avoids parenthesis issues)
+            'net session >nul 2>&1',
+            'if %errorlevel% equ 0 goto :OPTWIN_ADMIN',
+            'powershell.exe -NoProfile -Command "Start-Process -FilePath \'%~f0\' -Verb RunAs"',
+            'exit /b',
+            ':OPTWIN_ADMIN',
+            // Extract PS code to temp file
+            'set "T=%TEMP%\\optwin_%RANDOM%.ps1"',
+            "powershell -NoP -Ep Bypass -C \"$f='%~f0';$c=[IO.File]::ReadAllText($f);$m='REM === OPTWIN'+' PS ===';$i=$c.IndexOf($m);if($i-ge0){$u=New-Object Text.UTF8Encoding($false);[IO.File]::WriteAllText($env:T,$c.Substring($i+$m.Length),$u)}\"",
+            // Run PS (NO -NoExit)
+            'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%T%"',
+            'del /f /q "%T%" >nul 2>&1',
             'exit /b',
             'REM === OPTWIN PS ===',
         ].join('\r\n') + '\r\n';
+        // No PS self-elevation needed — batch handles UAC
         let bat = header;
         bat += previewText.split('\n').join('\r\n');
         bat += '\r\n\r\n$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")';
+        bat += '\r\nexit';
         const blob = new Blob([bat], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `OptWin-Pv-${activeLang.toUpperCase()}.bat`;
+        const now = new Date();
+        const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+        a.download = `OptWin-Pv-${activeLang.toUpperCase()}_${ts}.bat`;
         a.click();
         URL.revokeObjectURL(url);
     };

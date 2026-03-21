@@ -46,31 +46,44 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const L = '\r\n'; // line ending
 
     // ===== BATCH HEADER =====
-    // Two-step approach to avoid batch encoding issues:
-    //   Step 1: Short PS command reads the .bat, extracts PS code after marker → temp .ps1
-    //   Step 2: Runs the temp .ps1 with -NoExit (keeps window open on errors)
     //
-    // Why this works for all scenarios (double-click, Run as Admin, command line):
-    //   - cd /d "%~dp0" fixes UAC working directory issue (System32 → script dir)
-    //   - Step 1 PS command is ~300 chars, well under cmd.exe's 8191 limit
-    //   - .NET ReadAllText/WriteAllText handles encoding correctly
-    //   - -File is simpler and more reliable than -Command or -EncodedCommand
-    //   - Temp file is cleaned up after execution
+    // Architecture: UAC elevation happens at BATCH level, NOT in PowerShell.
+    // This eliminates ghost windows, elevation loops, and temp file race conditions.
+    //
+    // Flow:
+    //   1. Batch checks admin via `net session`
+    //   2. If NOT admin → re-launch THIS .bat with -Verb RunAs → exit original
+    //   3. If admin → extract PS code to temp .ps1 → run it → cleanup
+    //
+    // Why this works for ALL scenarios:
+    //   - Double-click: batch detects non-admin → UAC popup → elevated batch runs
+    //   - Right-click Run as Admin: net session succeeds → skip elevation → proceed
+    //   - Parenthesized paths: '%~f0' in PS single quotes handles OptWin(4).bat etc.
+    //   - No -NoExit: PS `exit` actually closes the terminal. No ghost windows.
+    //   - No PS self-elevation: no second window, no race condition with temp file.
+    //
     const batchLines: string[] = [];
     batchLines.push(`@echo off`);
     batchLines.push(`chcp 65001 >nul 2>&1`);
     batchLines.push(`title OptWin Optimizer`);
-    // Fix working directory — UAC elevation changes it to C:\Windows\System32
     batchLines.push(`cd /d "%~dp0"`);
-    // Step 1: Extract PS code from this .bat into a temp .ps1 file
-    // IMPORTANT: The marker string is built via concatenation ('REM === OPTWIN'+' PS ===')
-    // so that IndexOf doesn't match THIS line itself — it only matches the real marker below.
-    // UTF8Encoding($false) avoids BOM which would break PS parsing.
+    // --- UAC self-elevation at batch level ---
+    // Uses goto instead of if() block to avoid batch parser issues
+    // with parentheses in %~f0 (e.g. OptWin(4).bat)
+    batchLines.push(`net session >nul 2>&1`);
+    batchLines.push(`if %errorlevel% equ 0 goto :OPTWIN_ADMIN`);
+    batchLines.push(`powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"`);
+    batchLines.push(`exit /b`);
+    batchLines.push(`:OPTWIN_ADMIN`);
+    // --- We are admin past this point ---
+    // Extract PS code from this .bat into temp .ps1 file
+    // Marker built via concatenation so IndexOf doesn't match THIS line
+    // UTF8Encoding($false) avoids BOM
     batchLines.push(`set "T=%TEMP%\\optwin_%RANDOM%.ps1"`);
     batchLines.push(`powershell -NoP -Ep Bypass -C "$f='%~f0';$c=[IO.File]::ReadAllText($f);$m='REM === OPTWIN'+' PS ===';$i=$c.IndexOf($m);if($i-ge0){$u=New-Object Text.UTF8Encoding($false);[IO.File]::WriteAllText($env:T,$c.Substring($i+$m.Length),$u)}"`);
-    // Step 2: Run the extracted PS1 file — -NoExit keeps window open if there's an error
-    batchLines.push(`powershell.exe -NoProfile -NoExit -ExecutionPolicy Bypass -File "%T%"`);
-    // Cleanup
+    // Run PS (NO -NoExit — script handles its own pause via ReadKey)
+    batchLines.push(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%T%"`);
+    // Cleanup temp file
     batchLines.push(`del /f /q "%T%" >nul 2>&1`);
     batchLines.push(`exit /b`);
     batchLines.push(`REM === OPTWIN PS ===`);
@@ -78,8 +91,13 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     let script = batchLines.join(L) + L;
 
     // ===== POWERSHELL CODE (after marker, extracted by the loader) =====
+    // NOTE: No self-elevation here — batch handles UAC before PS even starts.
 
     const ps: string[] = [];
+
+    // Error counter
+    ps.push('$global:optwinErrors = 0');
+    ps.push('');
 
     // Error trap — keeps window open on any unhandled error
     ps.push('trap {');
@@ -139,25 +157,38 @@ export async function generateScript(params: ScriptParams): Promise<string> {
         ps.push('    Write-Host "      ' + labels.restoreSuccess + '" -ForegroundColor Green');
         ps.push('} catch {');
         ps.push('    Write-Host "      ' + labels.restoreFail + ': $($_.Exception.Message)" -ForegroundColor Red');
+        ps.push('    $global:optwinErrors++');
         ps.push('}');
         ps.push('Write-Host ""');
         ps.push('');
     }
 
-    // Feature commands
+    // Feature commands — each wrapped in try/catch for error reporting
     const featuresDb = await prisma.feature.findMany({
         where: { slug: { in: features }, enabled: true, category: { enabled: true } },
         include: { commands: { where: { lang: dbLang } } },
         orderBy: { order: 'asc' }
     });
 
+    const failLabel = labels.fail || 'FAILED';
+    const skippedLabel = labels.skipped || 'SKIPPED';
+
     featuresDb.forEach(feat => {
         if (feat.slug === 'changeDNS') return;
         const cmd = feat.commands[0];
         if (cmd) {
             ps.push('Write-Host "  ' + escapeForPsString(cmd.scriptMessage) + '" -ForegroundColor Cyan');
-            ps.push(cmd.command.trim());
-            ps.push('Write-Host "      ' + labels.done + '" -ForegroundColor Green');
+            ps.push('try {');
+            // Indent all command lines and add -ErrorAction Stop to known cmdlets
+            const cmdLines = cmd.command.trim().split(/\r?\n/);
+            cmdLines.forEach(line => {
+                ps.push('    ' + line);
+            });
+            ps.push('    Write-Host "      ' + labels.done + '" -ForegroundColor Green');
+            ps.push('} catch {');
+            ps.push('    Write-Host "      ' + failLabel + ': $($_.Exception.Message)" -ForegroundColor Red');
+            ps.push('    $global:optwinErrors++');
+            ps.push('}');
             ps.push('Write-Host ""');
         }
     });
@@ -174,19 +205,34 @@ export async function generateScript(params: ScriptParams): Promise<string> {
             command = command.replace(/\{\{PRIMARY_DNS\}\}/g, provider.primary);
             command = command.replace(/\{\{SECONDARY_DNS\}\}/g, provider.secondary);
             ps.push('Write-Host "  ' + escapeForPsString(dnsCmd.commands[0].scriptMessage) + '" -ForegroundColor Cyan');
-            ps.push(command.trim());
-            ps.push('Write-Host "      ' + labels.done + ' (' + provider.name + ')" -ForegroundColor Green');
+            ps.push('try {');
+            const dnsLines = command.trim().split(/\r?\n/);
+            dnsLines.forEach(line => {
+                ps.push('    ' + line);
+            });
+            ps.push('    Write-Host "      ' + labels.done + ' (' + provider.name + ')" -ForegroundColor Green');
+            ps.push('} catch {');
+            ps.push('    Write-Host "      ' + failLabel + ': $($_.Exception.Message)" -ForegroundColor Red');
+            ps.push('    $global:optwinErrors++');
+            ps.push('}');
             ps.push('Write-Host ""');
         }
     }
 
-    // Completion
+    // Completion — show errors if any
     ps.push('');
     ps.push('Write-Host ""');
-    ps.push('Write-Host "  ========================================" -ForegroundColor Green');
-    ps.push('Write-Host "       ' + labels.complete + '" -ForegroundColor Green');
-    ps.push('Write-Host "       ' + labels.success + '" -ForegroundColor Green');
-    ps.push('Write-Host "  ========================================" -ForegroundColor Green');
+    ps.push('if ($global:optwinErrors -gt 0) {');
+    ps.push('    Write-Host "  ========================================" -ForegroundColor Yellow');
+    ps.push('    Write-Host "       ' + labels.complete + '" -ForegroundColor Yellow');
+    ps.push('    Write-Host "       $($global:optwinErrors) ' + (labels.errorsOccurred || 'error(s) occurred') + '" -ForegroundColor Red');
+    ps.push('    Write-Host "  ========================================" -ForegroundColor Yellow');
+    ps.push('} else {');
+    ps.push('    Write-Host "  ========================================" -ForegroundColor Green');
+    ps.push('    Write-Host "       ' + labels.complete + '" -ForegroundColor Green');
+    ps.push('    Write-Host "       ' + labels.success + '" -ForegroundColor Green');
+    ps.push('    Write-Host "  ========================================" -ForegroundColor Green');
+    ps.push('}');
     ps.push('Write-Host ""');
     ps.push('Write-Host "  ' + labels.thankYou + '" -ForegroundColor Cyan');
     ps.push('Write-Host "  ' + labels.author + '" -ForegroundColor Gray');

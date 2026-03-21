@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useModalPhase } from "@/hooks/useModalPhase";
-import { XIcon, CheckIcon, BookOpenIcon, DownloadIcon, RepeatIcon, CopyIcon, CoffeeIcon, HeartIcon } from "../shared/Icons";
+import { XIcon, CheckIcon, BookOpenIcon, DownloadIcon, RepeatIcon, CopyIcon, CoffeeIcon, HeartIcon, LoaderIcon } from "../shared/Icons";
 import { MonitorCog, MessageSquare } from "lucide-react";
 
 const SUPPORT_SHOWN_KEY = "optwin-support-shown";
@@ -18,6 +18,7 @@ export function ScriptOverlay() {
     const handleClose = () => { setScriptOverlayOpen(false); };
     const { isVisible, isMounted, phase, containerRef } = useModalPhase(isScriptOverlayOpen, handleClose);
     const [supportPhase, setSupportPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
+    const [isDownloading, setIsDownloading] = useState(false);
 
     // Reset support prompt when overlay closes
     useEffect(() => {
@@ -31,13 +32,20 @@ export function ScriptOverlay() {
     }, []);
 
     const handleDownload = async () => {
+        if (isDownloading) return;
+        setIsDownloading(true);
+        // 1s spin delay — ensures unique timestamp per click
+        await new Promise(r => setTimeout(r, 1000));
         const blob = new Blob([previewCode], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "OptWin.bat";
+        const now = new Date();
+        const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+        a.download = `OptWin_${ts}.bat`;
         a.click();
         URL.revokeObjectURL(url);
+        setIsDownloading(false);
         showToast(t["script.downloadToast"], "success");
         fetch("/api/stats?action=download", { method: "POST" }).catch(() => { });
         // Show support prompt only once ever
@@ -117,9 +125,10 @@ export function ScriptOverlay() {
                         <div className="md:hidden animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
                             <button
                                 onClick={handleDownload}
-                                className="w-full flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(168,85,247,0.3)] transition-all duration-200"
+                                disabled={isDownloading}
+                                className="w-full flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(168,85,247,0.3)] transition-all duration-200 disabled:opacity-70"
                             >
-                                <DownloadIcon size={18} /> {t["script.download"]}
+                                {isDownloading ? <LoaderIcon size={18} className="animate-spin" /> : <DownloadIcon size={18} />} {t["script.download"]}
                             </button>
                         </div>
                     </div>
@@ -128,9 +137,10 @@ export function ScriptOverlay() {
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={handleDownload}
-                                className="w-full flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(168,85,247,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(168,85,247,0.4)]"
+                                disabled={isDownloading}
+                                className="w-full flex items-center justify-center gap-2 h-12 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(168,85,247,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(168,85,247,0.4)] disabled:opacity-70"
                             >
-                                <DownloadIcon size={18} /> {t["script.download"]}
+                                {isDownloading ? <LoaderIcon size={18} className="animate-spin" /> : <DownloadIcon size={18} />} {t["script.download"]}
                             </button>
                             <button
                                 onClick={handleClose}
