@@ -1,282 +1,304 @@
-# AGENTS.md — OptWin v1.3 Project Reference
+# AGENTS.md — OptWin v1.3 Proje Referansı
 
-> This document is the single source of truth for any AI agent, developer, or contributor working on OptWin.
-> Read this file **first** before touching any code. Keep it updated as the project evolves.
-
----
-
-## 🧠 What is OptWin?
-
-**OptWin** is a free, open-source, browser-based Windows optimization tool hosted at [optwin.tech](https://optwin.tech).
-Users select from 62+ optimization options across 7 categories and instantly generate a self-elevating **PowerShell (`.ps1`) script** tailored to their choices.
-
-- No installation required
-- No backend required for core functionality
-- Bilingual: English 🇬🇧 & Turkish 🇹🇷
-- Transparent: Every command is open source and reviewable
+> Bu belge projedeki **gerçek mevcut durumu** yansıtır.
+> Herhangi bir AI agent, geliştirici veya katkıda bulunan bu dosyayı okuyarak başlamalıdır.
+> Son güncelleme: 22 Mart 2026
 
 ---
 
-## 🏗️ Target Architecture — v1.3
+## 🧠 OptWin Nedir?
 
-The project is being migrated from a static Vanilla JS site to a full-stack modern web application.
+**OptWin** ücretsiz, açık kaynak, tarayıcı tabanlı bir Windows optimizasyon aracıdır.
+Kullanıcılar 7 kategorideki 62+ optimizasyon seçeneği arasından tercihlerini yapar ve özelleştirilmiş bir **PowerShell (.bat wrapper + gömülü .ps1)** scripti oluşturur.
 
-### Chosen Stack
+- Kurulum gerektirmez
+- Çok dilli: EN, TR, DE, FR, ES, ZH, HI
+- Her komut açık kaynak ve incelenebilir
+- Canlı site: [optwin.tech](https://optwin.tech)
 
-| Layer | Technology | Reason |
+---
+
+## 🏗️ Mevcut Teknoloji Stack'i
+
+| Katman | Teknoloji | Sürüm |
 |---|---|---|
-| **Framework** | Next.js 15 (App Router) + React 19 | SSG for public pages, SSR for admin, file-based routing |
-| **Language** | TypeScript (strict mode) | Type safety across features, commands, translations |
-| **Styling** | Tailwind CSS v4 + CSS Variables | Utility-first, tiny bundle, custom design tokens |
-| **Animations** | Framer Motion | Smooth 60fps UI transitions matching current aesthetic |
-| **State Management** | Zustand | Lightweight, perfect for selectedFeatures + lang + theme |
-| **Auth** | NextAuth.js v5 (Google OAuth) | Admin-only Google Sign-In, no user accounts needed |
-| **Database** | PostgreSQL (self-hosted via Coolify) | Stats, features, translations, messages, admin settings |
-| **ORM** | Prisma | Type-safe DB queries, migrations, schema |
-| **Deployment** | Coolify (self-hosted) | User's own server, Docker-based |
-| **UI Components** | Radix UI + Shadcn/ui | Accessible, headless, fully styled |
+| Framework | Next.js (App Router) | 16.1.6 |
+| UI | React | 19.2.3 |
+| Dil | TypeScript (strict) | ^5 |
+| Styling | Tailwind CSS v4 + CSS Variables | ^4 |
+| Animasyon | Framer Motion | ^12.34.3 |
+| State | Zustand (persist) | ^5.0.11 |
+| Auth | NextAuth.js v5 beta (Google OAuth) | ^5.0.0-beta.30 |
+| ORM | Prisma | ^6.4.1 |
+| DB | PostgreSQL (Coolify üzerinde Docker) | — |
+| Validasyon | Zod (kısmen kullanılıyor) | ^4.3.6 |
+| Resim İşleme | Sharp | ^0.34.5 |
+| UI Bileşenleri | Radix UI (dialog, dropdown, switch, toast, tooltip) | — |
+| DnD | @dnd-kit/core + @dnd-kit/sortable | ^6/^10 |
+| Deploy | Coolify (self-hosted, standalone output) | — |
 
 ---
 
-## 📁 Project Structure (v1.3 Target)
+## 📁 Gerçek Proje Yapısı
 
 ```
 optwin/
-├── AGENTS.md                    ← You are here
-├── PROGRESS.md                  ← Phase tracker
-├── README.md                    ← Public-facing docs
-│
-├── old-optwin/                  ← Legacy v1.2 files (static site)
+├── AGENTS.md                    ← Bu dosya
 ├── prisma/
-│   ├── schema.prisma            ← DB schema: features, categories, stats, messages, settings
-│   └── migrations/              ← Auto-generated migration files
+│   ├── schema.prisma            ← 15 model, 1 enum (RiskLevel)
+│   ├── migrations/              ← 5 migration dosyası
+│   ├── seed.ts                  ← Ana seed scripti
+│   ├── seed-data/               ← Kategori, feature, ayar seed verileri
+│   └── (seed-commands*.ts, translate.ts) ← Tek seferlik yardımcı scriptler
 │
 ├── src/
-│   ├── app/                     ← Next.js App Router
-│   │   ├── layout.tsx           ← Root layout (fonts, theme provider)
-│   │   ├── page.tsx             ← Public homepage (SSG)
+│   ├── app/
+│   │   ├── layout.tsx           ← Root layout (Inter font, theme provider, PublicShell)
+│   │   ├── page.tsx             ← Ana sayfa (SSR: preset, DNS, features sorguları)
+│   │   ├── globals.css          ← CSS Variables + animasyonlar (~544 satır)
+│   │   ├── contact/page.tsx     ← İletişim formu (client component)
+│   │   ├── privacy/page.tsx     ← Gizlilik politikası (7 dil, hardcoded)
+│   │   ├── terms/page.tsx       ← Kullanım koşulları (hardcoded)
+│   │   ├── maintenance/page.tsx ← Bakım modu yönlendirme
 │   │   ├── api/
-│   │   │   ├── auth/[...nextauth]/route.ts   ← NextAuth Google OAuth
-│   │   │   ├── stats/route.ts               ← GET/POST visit & script stats
-│   │   │   ├── features/route.ts            ← GET all features (public)
-│   │   │   └── contact/route.ts             ← POST contact messages
+│   │   │   ├── auth/[...nextauth]/route.ts  ← NextAuth handler
+│   │   │   ├── features/route.ts            ← GET: public feature listesi
+│   │   │   ├── features/[id]/route.ts       ← GET: tek feature (slug veya id)
+│   │   │   ├── generate-script/route.ts     ← POST: script oluşturma
+│   │   │   ├── stats/route.ts               ← GET/POST: ziyaret/script/indirme sayaçları
+│   │   │   ├── contact/route.ts             ← POST: iletişim formu (Zod validasyonlu)
+│   │   │   ├── maintenance/route.ts         ← GET: public bakım modu durumu
+│   │   │   ├── system/status/route.ts       ← GET: public sistem durumu
+│   │   │   └── admin/                       ← Admin API'leri (auth korumalı)
+│   │   │       ├── categories/route.ts      ← CRUD: kategoriler
+│   │   │       ├── dashboard/route.ts       ← GET: dashboard istatistikleri
+│   │   │       ├── dns/route.ts             ← CRUD: DNS sağlayıcıları
+│   │   │       ├── features/route.ts        ← CRUD + bulk move: özellikler
+│   │   │       ├── maintenance/route.ts     ← GET/PUT: bakım modu
+│   │   │       ├── reorder/route.ts         ← POST: sıralama değiştirme
+│   │   │       ├── script-labels/route.ts   ← GET/PUT/DELETE: script etiketleri
+│   │   │       ├── script-labels/reset/     ← POST: etiketleri varsayılana sıfırla
+│   │   │       ├── translate/route.ts       ← POST: otomatik çeviri (Google + MyMemory)
+│   │   │       ├── upload/route.ts          ← POST: ikon yükleme (Sharp ile WebP dönüşüm)
+│   │   │       └── fix-slugs/route.ts       ← POST: Türkçe slug düzeltme (tek seferlik)
 │   │   └── admin/
-│   │       ├── layout.tsx       ← Admin shell (auth guard, sidebar)
-│   │       ├── page.tsx         ← Dashboard overview
-│   │       ├── features/
-│   │       │   ├── page.tsx     ← Feature list & management
-│   │       │   └── [id]/page.tsx ← Edit single feature
-│   │       ├── categories/page.tsx   ← Category CRUD
-│   │       ├── translations/page.tsx ← Live translation editor (EN/TR + future)
-│   │       ├── messages/page.tsx     ← Contact form inbox
-│   │       ├── stats/page.tsx        ← Detailed site analytics
-│   │       ├── settings/page.tsx     ← Site-wide settings (maintenance mode, version, etc.)
-│   │       └── appearance/page.tsx   ← Theme colors, hero text, homepage content
+│   │       ├── login/page.tsx               ← Admin giriş sayfası
+│   │       ├── unauthorized/page.tsx        ← Yetkisiz erişim sayfası
+│   │       └── (dashboard)/
+│   │           ├── layout.tsx               ← Auth guard + sidebar + header
+│   │           ├── page.tsx                 ← Dashboard ana sayfa
+│   │           ├── features/page.tsx        ← Feature listesi
+│   │           ├── features/edit/page.tsx   ← Feature düzenleme
+│   │           ├── features/edit/[slug]/    ← Tek feature düzenleme
+│   │           ├── categories/page.tsx      ← Kategori yönetimi
+│   │           ├── dns/page.tsx             ← DNS sağlayıcı yönetimi
+│   │           └── script-defaults/page.tsx ← Script etiket yönetimi
 │   │
 │   ├── components/
-│   │   ├── ui/                  ← Shadcn/ui base components (button, modal, input, toast…)
-│   │   ├── layout/
-│   │   │   ├── Header.tsx
-│   │   │   ├── Footer.tsx
-│   │   │   └── MobileNav.tsx
-│   │   ├── features/
-│   │   │   ├── FeatureCard.tsx  ← Individual optimization card with checkbox
-│   │   │   ├── FeatureGrid.tsx  ← Category section + grid
-│   │   │   └── SearchBar.tsx
-│   │   ├── script/
-│   │   │   ├── ScriptOverlay.tsx        ← Preview + download panel
-│   │   │   └── RestorePointModal.tsx
-│   │   ├── admin/
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── FeatureEditor.tsx
-│   │   │   ├── CategoryEditor.tsx
-│   │   │   ├── TranslationEditor.tsx
-│   │   │   ├── MessagesInbox.tsx
-│   │   │   ├── StatsPanel.tsx
-│   │   │   └── SettingsPanel.tsx
-│   │   └── shared/
-│   │       ├── Toast.tsx
-│   │       ├── ThemeToggle.tsx
-│   │       └── LangSwitch.tsx
+│   │   ├── admin/         ← 9 admin bileşeni (Sidebar, Header, ConfirmModal, IconPicker, vs.)
+│   │   ├── features/      ← FeatureCard, FeatureGrid (server), FeatureGridClient, SearchBar
+│   │   ├── layout/        ← Header, Footer, Hero, HeroStats, HeroTitle, ActionArea,
+│   │   │                     MobileNav, PublicShell, ScrollToTop, StickyControlsPanel,
+│   │   │                     PresetControls, MaintenanceOverlay
+│   │   ├── modals/        ← DnsModal, RestorePointModal, ScriptOverlay, SupportModal,
+│   │   │                     Toast, WarningModal
+│   │   ├── providers/     ← ClientProviders (tema, dil, hydration)
+│   │   ├── sections/      ← AboutSection, StatsSection
+│   │   └── shared/        ← CountUp, Flags (SVG), HashScroller, HighlightText, Icons,
+│   │                         ScrollRestorer, TranslatableText
 │   │
 │   ├── lib/
+│   │   ├── auth.ts              ← NextAuth yapılandırması (Google OAuth + admin whitelist)
 │   │   ├── db.ts                ← Prisma client singleton
-│   │   ├── auth.ts              ← NextAuth config, authorized admin emails list
-│   │   ├── script-generator.ts ← Core PowerShell script builder (ported from script.js)
-│   │   └── utils.ts             ← cn(), formatNumber(), etc.
+│   │   ├── admin-guard.ts       ← checkAdmin() + unauthorizedResponse()
+│   │   ├── script-generator.ts  ← PowerShell script builder (batch wrapper + PS kodu)
+│   │   ├── powershell-safe.ts   ← ASCII dönüşüm + PS string escaping
+│   │   ├── maintenance.ts       ← Bakım modu kontrolü (memory cache, 2s TTL)
+│   │   ├── settings.ts          ← Site ayarları okuma (getSetting, getSettings)
+│   │   └── utils.ts             ← cn(), formatNumber()
 │   │
 │   ├── store/
-│   │   └── useOptWinStore.ts    ← Zustand: selectedFeatures, lang, theme, dnsProvider
+│   │   └── useOptWinStore.ts    ← Zustand: selectedFeatures, lang, theme, DNS, modals, toast
 │   │
 │   ├── types/
-│   │   ├── feature.ts           ← Feature, Category, RiskLevel types
-│   │   ├── translation.ts       ← Translation shape types
-│   │   └── admin.ts             ← Admin-only types (Message, Setting, etc.)
+│   │   ├── feature.ts           ← Feature, Category, DnsProvider, Preset tip tanımları
+│   │   ├── admin.ts             ← ContactMessage, SiteSetting, SettingKey, DashboardStats
+│   │   └── next-auth.d.ts       ← NextAuth Session tipi genişletmesi (isAdmin)
 │   │
 │   └── i18n/
-│       ├── en.ts                ← English translations (ported from config.js)
-│       └── tr.ts                ← Turkish translations
+│       ├── index.ts             ← getTranslation(), t() fonksiyonları
+│       ├── useTranslation.ts    ← React hook: { t, lang }
+│       └── locales/             ← 7 dil dosyası: en, tr, de, fr, es, zh, hi
 │
 ├── public/
-│   ├── assets/
-│   │   ├── optwin.png
-│   │   └── favicon.ico
-│   └── og-image.png
+│   ├── optwin.png, favicon.ico, background.png
+│   └── (file.svg, globe.svg, next.svg, vercel.svg, window.svg → kullanılmıyor)
 │
-├── .env.local                   ← LOCAL ONLY — never commit
-├── .env.example                 ← Committed template
-├── next.config.ts
-├── tailwind.config.ts
-├── tsconfig.json
-└── package.json
+├── old-optwin/                  ← Legacy v1.2 (statik HTML/CSS/JS + PHP)
+│
+├── .env                         ← ⚠️ Gerçek secret'lar (rotate edilmeli!)
+├── .gitignore
+├── next.config.ts               ← standalone output, sharp resim, Google avatar pattern
+├── tsconfig.json                ← strict mode, bundler moduleResolution
+├── eslint.config.mjs            ← core-web-vitals + typescript preset
+├── postcss.config.mjs
+├── .prettierrc
+└── package.json                 ← v1.3.0
 ```
 
 ---
 
-## 🗄️ Database Schema (Prisma — PostgreSQL)
+## 🗄️ Veritabanı Şeması (Prisma — PostgreSQL)
 
-### Key Models
+### Mevcut Modeller (15 model + 1 enum)
 
-```
-Feature          → id, categoryId, icon, risk, noRisk, order, enabled
-Category         → id, slug, order, enabled
-FeatureTranslation → featureId, lang, title, desc
-CategoryTranslation → categoryId, lang, name
-FeatureCommand   → featureId, lang, scriptContent, messageText
-DnsProvider      → id, slug, primary, secondary, name, enabled
-SiteStats        → id, totalVisits, totalScripts, updatedAt
-ContactMessage   → id, name, email, subject, message, read, createdAt
-SiteSetting      → key (unique), value, type, description
-AdminUser        → email (unique), name, createdAt
-```
-
-> **Key rule:** Features, categories, and translations are **database-driven**.
-> The admin panel is the single place to add/edit/remove anything. The public site reads from the DB at build/request time.
-
----
-
-## 🔐 Authentication & Authorization
-
-- **Google OAuth only** via NextAuth.js
-- No user registration — admin access is controlled by `AdminUser` table
-- Only emails in the `AdminUser` table can access `/admin/*`
-- Auth guard in `src/app/admin/layout.tsx` — redirects unauthenticated users to `/`
-- Session checked server-side via `getServerSession()` in all admin API routes
-
----
-
-## ⚙️ Core Business Logic Rules
-
-### Script Generator (`src/lib/script-generator.ts`)
-- Accepts `selectedFeatureIds[]`, `lang`, `createRestorePoint`, `dnsProvider`
-- Returns a UTF-8 PowerShell string
-- Self-elevating: script requests UAC admin on launch
-- Mutual exclusion: `highPerformance` and `ultimatePerformance` cannot coexist
-- DNS placeholders: `{{PRIMARY_DNS}}` and `{{SECONDARY_DNS}}` are replaced at generation time
-
-### Feature Risk System
-- `LOW` → No risk badge shown (`noRisk: true`)
-- `MEDIUM` → Yellow badge, no block
-- `HIGH` → Red badge, shown in "Select All" warning toast
-- Risk is stored per feature in DB and reflected in admin panel
-
-### Preset System
-- `recommended`: Only `noRisk: true` features
-- `gamer`: Performance + network + visual (all `noRisk`)
-- `all`: Everything (triggers warning toast)
-- `reset`: Clear all
-
-### Internationalization
-- Languages: `en` (default), `tr`
-- Language stored in `localStorage` and Zustand
-- All UI strings are in `src/i18n/[lang].ts`
-- All feature/category strings are in DB `FeatureTranslation` / `CategoryTranslation` tables
-- Script messages (PowerShell output) are ASCII-only (Turkish accents stripped) for PowerShell compat
-
----
-
-## 🛡️ Admin Panel Capabilities (God Mode)
-
-The `/admin` section provides **complete control** over the entire site:
-
-| Section | What you can do |
+| Model | Açıklama |
 |---|---|
-| **Dashboard** | Live stats, quick actions, site health |
-| **Features** | Add, edit, delete, reorder, enable/disable features. Edit icon, risk, commands, all translations |
-| **Categories** | Add, rename, reorder, enable/disable categories |
-| **Translations** | Edit every string on the site in EN/TR side-by-side |
-| **Messages** | Read/delete contact form submissions from users |
-| **Stats** | Detailed visit & download graphs, reset counters |
-| **Settings** | Maintenance mode on/off, site version, contact email, BMC URL, GitHub URL, etc. |
-| **Appearance** | Hero title/desc, about section, support section content |
+| `AdminUser` | Admin e-posta whitelist (Google OAuth sonrası oluşturulur) |
+| `Category` | Optimizasyon kategorileri (slug, icon, order, enabled) |
+| `CategoryTranslation` | Kategori isimleri (categoryId + lang → name) |
+| `Feature` | Optimizasyon özellikleri (slug, icon, risk, order, selectCount, newBadge) |
+| `FeatureTranslation` | Feature başlık ve açıklamaları (featureId + lang → title, desc) |
+| `FeatureCommand` | PowerShell komutları (featureId + lang → command, scriptMessage) |
+| `DnsProvider` | DNS sağlayıcıları (slug, primary, secondary IP) |
+| `Preset` | Ön tanımlı seçim kümeleri (recommended, gamer, all) |
+| `PresetTranslation` | Preset isimleri (presetId + lang → name) |
+| `SiteStats` | Global sayaçlar (totalVisits, totalScripts, totalDownloads) |
+| `DailyStat` | Günlük istatistikler (date → visits, scripts, downloads) |
+| `ContactMessage` | İletişim form mesajları (soft delete: deleted boolean) |
+| `SiteSetting` | Key-value site ayarları (maintenanceMode, version, vs.) |
+| `UiTranslation` | UI çeviri tablosu (key + lang → value) |
+| `ScriptLabel` | Script içi etiketler (lang + key → value, 7 dil) |
+| `VisitDedup` | Günlük benzersiz ziyaret kontrolü (ipHash + date) |
+
+**Enum:** `RiskLevel` → `low`, `medium`, `high`
 
 ---
 
-## 🚀 Deployment
+## 🔐 Kimlik Doğrulama & Yetkilendirme
 
-- **Target platform:** Coolify (self-hosted Docker)
-- **Dockerfile:** Standard Next.js standalone output (`output: 'standalone'` in next.config.ts)
-- **Environment variables required:**
+- **Google OAuth** → NextAuth.js v5 beta
+- Kullanıcı kaydı yok — sadece admin erişimi
+- Admin kontrolü: `AdminUser` tablosu + `ADMIN_EMAILS` env değişkeni
+- Auth guard: `src/lib/admin-guard.ts` → `checkAdmin()` her admin API route'unda çağrılır
+- Admin layout: `src/app/admin/(dashboard)/layout.tsx` → SSR auth kontrolü + redirect
+- Oturum: `session.isAdmin` boolean (next-auth.d.ts ile genişletilmiş)
+
+---
+
+## ⚙️ Script Generator Mantığı
+
+**Dosya:** `src/lib/script-generator.ts`
+
+### Akış:
+1. `ScriptLabel` tablosundan dile göre etiketler çekilir
+2. Etiketlerdeki `<referans>` placeholder'ları çözümlenir
+3. Tüm etiketler `toPowerShellSafe()` ile ASCII'ye dönüştürülür
+4. **Batch header** oluşturulur:
+   - UAC yükseltme batch seviyesinde yapılır (PS'de değil)
+   - `net session` ile admin kontrolü
+   - Admin değilse `Start-Process -Verb RunAs` ile yeniden başlatma
+   - Admin ise PS kodunu temp .ps1'e çıkarıp çalıştırma
+5. **PowerShell kodu** oluşturulur:
+   - Error trap
+   - ASCII banner
+   - Restore point (opsiyonel)
+   - Her feature komutu try/catch içinde
+   - DNS değişikliği (e ğer seçiliyse, `{{PRIMARY_DNS}}/{{SECONDARY_DNS}}` replace)
+   - Tamamlanma özeti
+   - ReadKey ile bekleme
+
+### İş Kuralları:
+- `highPerformance` ↔ `ultimatePerformance` karşılıklı dışlama (Zustand store'da)
+- `changeDNS` seçildiğinde DNS modal otomatik açılır
+- Script çıktısı `.bat` dosyası (batch + embedded PS)
+- Tüm script mesajları ASCII-safe (Türkçe/aksanlı karakterler dönüştürülür)
+
+---
+
+## 🛡️ Admin Paneli — Mevcut Durum
+
+| Sayfa | Durum | Açıklama |
+|---|---|---|
+| Dashboard | ✅ Mevcut | Ziyaret, script, mesaj istatistikleri |
+| Features | ✅ Mevcut | CRUD + düzenleme + sıralama |
+| Categories | ✅ Mevcut | CRUD + sıralama |
+| DNS | ✅ Mevcut | CRUD + sıralama |
+| Script Defaults | ✅ Mevcut | Script etiketleri düzenleme + sıfırlama |
+| Messages | ❌ Yok | API mevcut ama admin sayfası yok |
+| Translations | ❌ Yok | API mevcut ama admin sayfası yok |
+| Settings | ❌ Yok | API mevcut ama admin sayfası yok |
+| Appearance | ❌ Yok | Henüz planlanmamış |
+| Stats (detay) | ❌ Yok | Sadece dashboard'da özet var |
+
+---
+
+## 🌐 Public Sayfalar
+
+| Route | Açıklama |
+|---|---|
+| `/` | Ana optimizasyon aracı (Hero + Preset + Features + Stats + About) |
+| `/contact` | İletişim formu (Zod validasyonlu) |
+| `/privacy` | Gizlilik politikası (7 dil, hardcoded) |
+| `/terms` | Kullanım koşulları (hardcoded) |
+| `/#about` | Hakkında bölümü (scroll anchor) |
+
+---
+
+## 📏 Kod Kuralları
+
+- **TypeScript strict mode** — `any` kullanımı minimum (bazı admin API'lerde hâlâ var)
+- **Server Components varsayılan** — `'use client'` yalnızca interaktif bileşenlerde
+- **Zustand store** — client-side UI state (seçimler, dil, tema, modals)
+- **Prisma** — yalnızca server tarafında (API routes + Server Components)
+- **Tailwind CSS v4** — CSS Variables ile design tokens
+- **PascalCase** bileşenler, **camelCase** utils/hooks, **kebab-case** route'lar
+
+---
+
+## 🚀 Deploy
+
+- **Platform:** Coolify (self-hosted Docker)
+- **Output:** `standalone` (next.config.ts)
+- **Dockerfile:** ⚠️ Henüz oluşturulmamış
+- **Gerekli env değişkenleri:**
 
 ```env
 DATABASE_URL=postgresql://user:pass@host:5432/optwin
 NEXTAUTH_SECRET=<random-secret>
 NEXTAUTH_URL=https://optwin.tech
-GOOGLE_CLIENT_ID=<from-google-console>
-GOOGLE_CLIENT_SECRET=<from-google-console>
-ADMIN_EMAILS=admin@example.com,other@example.com  # comma-separated
+GOOGLE_CLIENT_ID=<google-console>
+GOOGLE_CLIENT_SECRET=<google-console>
+ADMIN_EMAILS=admin@example.com
 ```
 
-- **nixpacks.toml** remains for Coolify auto-detection if nixpacks is used instead of Docker
+---
+
+## ⚠️ Bilinen Sorunlar & Teknik Borç
+
+1. **`.env` dosyası gerçek secret'lar içeriyor** — rotasyon gerekli
+2. **Admin API'lerde `any` tipi yaygın** — Zod validasyonu eksik
+3. **Modal bileşenleri çift render** — `page.tsx` + `ClientProviders`
+4. **Test altyapısı yok** — ne unit test ne E2E
+5. **Error boundary / loading state yok**
+6. **Rate limiting sadece contact için** — memory-based, güvenilmez
+7. **SVG upload XSS riski** — sanitization yok
+8. **5 admin sayfası henüz oluşturulmamış** (messages, translations, settings, appearance, stats)
+
+> Detaylı analiz için: `OptWin-Analyze.md`
+> Görev listesi için: `OptWin-Phases.md`
 
 ---
 
-## 📏 Code Conventions
+## 🔑 Kritik Dosya Referansları
 
-- **TypeScript strict mode** — no `any` without explicit comment
-- **Server Components by default** — `'use client'` only when needed
-- **Co-located types** — types live in `src/types/` or next to their component
-- **Zustand store** — only client-side UI state (selections, lang, theme)
-- **Server-side data fetching** — all DB calls happen in Server Components or API Routes
-- **Prisma** — never import in Client Components. Use API routes for mutations.
-- **Tailwind** — use CSS variables for design tokens, Tailwind for layout utilities
-- **File naming** — PascalCase for components, camelCase for utils/hooks, kebab-case for routes
-
----
-
-## 🔑 Key Files Quick Reference
-
-| File | Purpose |
+| Dosya | Amaç |
 |---|---|
-| `prisma/schema.prisma` | Single source of truth for all data shapes |
-| `src/lib/auth.ts` | NextAuth config + admin email whitelist |
-| `src/lib/script-generator.ts` | PowerShell script builder (core feature) |
-| `src/store/useOptWinStore.ts` | All client-side UI state |
-| `src/app/api/stats/route.ts` | Visit & script download counter |
-| `src/app/admin/layout.tsx` | Auth guard for all admin pages |
-| `src/app/admin/features/page.tsx` | Feature CRUD (most complex admin page) |
-| `src/i18n/en.ts` + `tr.ts` | All static UI strings |
-| `.env.example` | Template for environment variables |
-| `PROGRESS.md` | Phase-by-phase implementation tracker |
-
----
-
-## 🌐 Public Pages
-
-| Route | Description |
-|---|---|
-| `/` | Main optimization tool (homepage) |
-| `/#about` | About + values + donation section |
-| `/contact` | Contact form (sends to DB → admin inbox) |
-
----
-
-## ⚠️ Important Notes for Agents
-
-1. **Never modify `prisma/schema.prisma` without running `npx prisma migrate dev`.**
-2. **Never expose admin routes without auth check** — all `/admin/*` pages must verify session.
-3. **PowerShell script content must remain ASCII-safe** — no Unicode/Turkish chars in PS messages.
-4. **The `selectedFeatures` Set in Zustand is the source of truth** for what goes into the generated script.
-5. **Maintenance mode** is a `SiteSetting` key. When enabled, the public site shows a maintenance page and all API routes return 503.
-6. **Stats are eventually consistent** — use a simple increment-on-visit pattern, not real-time events.
-7. **Contact form messages** must never be auto-deleted. Only soft-delete (mark as deleted) or admin explicitly deletes.
+| `prisma/schema.prisma` | Tüm veri modellerinin kaynağı |
+| `src/lib/auth.ts` | NextAuth + admin whitelist |
+| `src/lib/script-generator.ts` | PowerShell script oluşturucu (en kritik iş mantığı) |
+| `src/lib/powershell-safe.ts` | ASCII dönüşüm + PS escaping |
+| `src/store/useOptWinStore.ts` | Tüm client-side UI state |
+| `src/app/api/generate-script/route.ts` | Script API endpoint |
+| `src/app/admin/(dashboard)/layout.tsx` | Admin auth guard |
+| `src/i18n/locales/en.ts` | İngilizce UI çevirileri (ana referans) |
