@@ -46,31 +46,34 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const L = '\r\n'; // line ending
 
     // ===== BATCH HEADER =====
-    // Pure batch. No polyglot. No <# anywhere. No temp files.
-    // Uses -EncodedCommand with a small PS loader that reads the .bat,
-    // finds the marker line, and executes everything after it directly.
-    // Works identically for double-click AND right-click "Run as administrator".
-    // IMPORTANT: No semicolons between try{} and catch{} — that's a PS parse error.
-    const psLoader =
-        "$c=Get-Content -LiteralPath $env:OPTWIN_BAT -Encoding UTF8 -Raw;" +
-        "$m='REM === OPTWIN PS ===';" +
-        "$i=$c.IndexOf($m);" +
-        "if($i -ge 0){" +
-        "$ps=$c.Substring($i+$m.Length);" +
-        "try{&([ScriptBlock]::Create($ps))}" +
-        "catch{Write-Host $_.Exception.Message -ForegroundColor Red;Read-Host 'Press Enter to exit'}" +
-        "}";
-    const encoded = Buffer.from(psLoader, "utf16le").toString("base64");
-
+    // Two-step approach to avoid batch encoding issues:
+    //   Step 1: Short PS command reads the .bat, extracts PS code after marker → temp .ps1
+    //   Step 2: Runs the temp .ps1 with -NoExit (keeps window open on errors)
+    //
+    // Why this works for all scenarios (double-click, Run as Admin, command line):
+    //   - cd /d "%~dp0" fixes UAC working directory issue (System32 → script dir)
+    //   - Step 1 PS command is ~300 chars, well under cmd.exe's 8191 limit
+    //   - .NET ReadAllText/WriteAllText handles encoding correctly
+    //   - -File is simpler and more reliable than -Command or -EncodedCommand
+    //   - Temp file is cleaned up after execution
     const batchLines: string[] = [];
-    batchLines.push('@echo off');
-    batchLines.push('chcp 65001 >nul 2>&1');
-    batchLines.push('title OptWin Optimizer');
-    batchLines.push('set "OPTWIN_BAT=%~f0"');
-    batchLines.push('powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + encoded);
-    batchLines.push('pause');
-    batchLines.push('exit /b');
-    batchLines.push('REM === OPTWIN PS ===');
+    batchLines.push(`@echo off`);
+    batchLines.push(`chcp 65001 >nul 2>&1`);
+    batchLines.push(`title OptWin Optimizer`);
+    // Fix working directory — UAC elevation changes it to C:\Windows\System32
+    batchLines.push(`cd /d "%~dp0"`);
+    // Step 1: Extract PS code from this .bat into a temp .ps1 file
+    // IMPORTANT: The marker string is built via concatenation ('REM === OPTWIN'+' PS ===')
+    // so that IndexOf doesn't match THIS line itself — it only matches the real marker below.
+    // UTF8Encoding($false) avoids BOM which would break PS parsing.
+    batchLines.push(`set "T=%TEMP%\\optwin_%RANDOM%.ps1"`);
+    batchLines.push(`powershell -NoP -Ep Bypass -C "$f='%~f0';$c=[IO.File]::ReadAllText($f);$m='REM === OPTWIN'+' PS ===';$i=$c.IndexOf($m);if($i-ge0){$u=New-Object Text.UTF8Encoding($false);[IO.File]::WriteAllText($env:T,$c.Substring($i+$m.Length),$u)}"`);
+    // Step 2: Run the extracted PS1 file — -NoExit keeps window open if there's an error
+    batchLines.push(`powershell.exe -NoProfile -NoExit -ExecutionPolicy Bypass -File "%T%"`);
+    // Cleanup
+    batchLines.push(`del /f /q "%T%" >nul 2>&1`);
+    batchLines.push(`exit /b`);
+    batchLines.push(`REM === OPTWIN PS ===`);
 
     let script = batchLines.join(L) + L;
 
@@ -84,7 +87,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     ps.push('    Write-Host "  ERROR: $_" -ForegroundColor Red');
     ps.push('    Write-Host "  Press any key to exit..." -ForegroundColor Gray');
     ps.push('    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")');
-    ps.push('    break');
+    ps.push('    exit 1');
     ps.push('}');
     ps.push('');
 
@@ -190,6 +193,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     ps.push('Write-Host ""');
     ps.push('Write-Host "  ' + (labels.pressAnyKey || 'Press any key to exit...') + '" -ForegroundColor Gray');
     ps.push('$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")');
+    ps.push('exit');
 
     script += ps.join(L) + L;
 
