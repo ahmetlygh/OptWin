@@ -1,6 +1,59 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
+import { z } from "zod";
+
+/* ─── Zod schemas ─── */
+
+const translationSchema = z.object({
+    lang: z.string().max(5),
+    title: z.string().max(500),
+    desc: z.string().max(2000).default(""),
+});
+
+const commandSchema = z.object({
+    lang: z.string().max(5),
+    command: z.string().max(10000).default(""),
+    scriptMessage: z.string().max(500).default(""),
+});
+
+const createFeatureSchema = z.object({
+    slug: z.string().min(1).max(100),
+    categoryId: z.string().min(1),
+    icon: z.string().max(100).default("settings"),
+    iconType: z.string().max(20).default("solid"),
+    risk: z.enum(["low", "medium", "high"]).default("low"),
+    noRisk: z.boolean().default(false),
+    order: z.number().int().default(0),
+    enabled: z.boolean().default(true),
+    newBadge: z.boolean().default(false),
+    newBadgeExpiry: z.string().nullable().optional(),
+    translations: z.array(translationSchema).default([]),
+    commands: z.array(commandSchema).default([]),
+});
+
+const updateFeatureSchema = z.object({
+    id: z.string().min(1),
+    slug: z.string().min(1).max(100).optional(),
+    categoryId: z.string().min(1).optional(),
+    icon: z.string().max(100).optional(),
+    iconType: z.string().max(20).optional(),
+    risk: z.enum(["low", "medium", "high"]).optional(),
+    noRisk: z.boolean().optional(),
+    order: z.number().int().optional(),
+    enabled: z.boolean().optional(),
+    newBadge: z.boolean().optional(),
+    newBadgeExpiry: z.string().nullable().optional(),
+    translations: z.array(translationSchema).optional(),
+    commands: z.array(commandSchema).optional(),
+});
+
+const bulkMoveSchema = z.object({
+    categoryId: z.string().min(1),
+    newCategoryId: z.string().min(1),
+});
+
+/* ─── Handlers ─── */
 
 // GET /api/admin/features — list all features with translations, commands, category
 export async function GET(req: NextRequest) {
@@ -11,7 +64,7 @@ export async function GET(req: NextRequest) {
     const risk = searchParams.get("risk");
     const search = searchParams.get("search");
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (category) where.categoryId = category;
     if (risk) where.risk = risk;
 
@@ -39,40 +92,42 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/features — create a new feature
 export async function POST(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         const body = await req.json();
-        const { slug, categoryId, icon, iconType, risk, noRisk, order, enabled, newBadge, newBadgeExpiry, translations, commands } = body;
+        const parsed = createFeatureSchema.safeParse(body);
 
-        if (!slug || !categoryId) {
-            return NextResponse.json({ error: "slug and categoryId are required" }, { status: 400 });
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
         }
+
+        const { slug, categoryId, icon, iconType, risk, noRisk, order, enabled, newBadge, newBadgeExpiry, translations, commands } = parsed.data;
 
         const feature = await prisma.feature.create({
             data: {
                 slug,
                 categoryId,
-                icon: icon || "settings",
-                iconType: iconType || "solid",
-                risk: risk || "low",
-                noRisk: noRisk || false,
-                order: order || 0,
-                enabled: enabled !== false,
-                newBadge: newBadge || false,
+                icon,
+                iconType,
+                risk,
+                noRisk,
+                order,
+                enabled,
+                newBadge,
                 newBadgeExpiry: newBadgeExpiry ? new Date(newBadgeExpiry) : null,
                 translations: {
-                    create: (translations || []).map((t: any) => ({
+                    create: translations.map(t => ({
                         lang: t.lang,
                         title: t.title,
-                        desc: t.desc || "",
+                        desc: t.desc,
                     })),
                 },
                 commands: {
-                    create: (commands || []).map((c: any) => ({
+                    create: commands.map(c => ({
                         lang: c.lang,
-                        command: c.command || "",
-                        scriptMessage: c.scriptMessage || "",
+                        command: c.command,
+                        scriptMessage: c.scriptMessage,
                     })),
                 },
             },
@@ -80,9 +135,10 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json({ success: true, feature });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Create feature error:", error);
-        if (error.code === "P2002") {
+        const prismaError = error as { code?: string };
+        if (prismaError.code === "P2002") {
             return NextResponse.json({ error: "A feature with this slug already exists" }, { status: 409 });
         }
         return NextResponse.json({ error: "Failed to create feature" }, { status: 500 });
@@ -91,15 +147,19 @@ export async function POST(req: NextRequest) {
 
 // PUT /api/admin/features — update feature
 export async function PUT(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         const body = await req.json();
-        const { id, slug, categoryId, icon, iconType, risk, noRisk, order, enabled, newBadge, newBadgeExpiry, translations, commands } = body;
+        const parsed = updateFeatureSchema.safeParse(body);
 
-        if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
+        }
 
-        const data: any = {};
+        const { id, slug, categoryId, icon, iconType, risk, noRisk, order, enabled, newBadge, newBadgeExpiry, translations, commands } = parsed.data;
+
+        const data: Record<string, unknown> = {};
         if (slug !== undefined) data.slug = slug;
         if (categoryId !== undefined) data.categoryId = categoryId;
         if (icon !== undefined) data.icon = icon;
@@ -123,8 +183,8 @@ export async function PUT(req: NextRequest) {
             for (const t of translations) {
                 upsertOps.push(prisma.featureTranslation.upsert({
                     where: { featureId_lang: { featureId: id, lang: t.lang } },
-                    create: { featureId: id, lang: t.lang, title: t.title, desc: t.desc || "" },
-                    update: { title: t.title, desc: t.desc || "" },
+                    create: { featureId: id, lang: t.lang, title: t.title, desc: t.desc },
+                    update: { title: t.title, desc: t.desc },
                 }));
             }
         }
@@ -133,8 +193,8 @@ export async function PUT(req: NextRequest) {
             for (const c of commands) {
                 upsertOps.push(prisma.featureCommand.upsert({
                     where: { featureId_lang: { featureId: id, lang: c.lang } },
-                    create: { featureId: id, lang: c.lang, command: c.command || "", scriptMessage: c.scriptMessage || "" },
-                    update: { command: c.command || "", scriptMessage: c.scriptMessage || "" },
+                    create: { featureId: id, lang: c.lang, command: c.command, scriptMessage: c.scriptMessage },
+                    update: { command: c.command, scriptMessage: c.scriptMessage },
                 }));
             }
         }
@@ -147,7 +207,7 @@ export async function PUT(req: NextRequest) {
         });
 
         return NextResponse.json({ success: true, feature: updated });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Update feature error:", error);
         return NextResponse.json({ error: "Failed to update feature" }, { status: 500 });
     }
@@ -155,13 +215,18 @@ export async function PUT(req: NextRequest) {
 
 // PATCH /api/admin/features — bulk move features from one category to another
 export async function PATCH(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
-        const { categoryId, newCategoryId } = await req.json();
-        if (!categoryId || !newCategoryId) {
-            return NextResponse.json({ error: "categoryId and newCategoryId are required" }, { status: 400 });
+        const body = await req.json();
+        const parsed = bulkMoveSchema.safeParse(body);
+
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
         }
+
+        const { categoryId, newCategoryId } = parsed.data;
+
         // Find the highest order in the target category
         const maxOrderFeature = await prisma.feature.findFirst({
             where: { categoryId: newCategoryId },
@@ -177,16 +242,18 @@ export async function PATCH(req: NextRequest) {
             select: { id: true },
         });
 
-        // Move each feature with incremental order at the end
-        for (let i = 0; i < toMove.length; i++) {
-            await prisma.feature.update({
-                where: { id: toMove[i].id },
-                data: { categoryId: newCategoryId, order: startOrder + i },
-            });
-        }
+        // Move in a single transaction
+        await prisma.$transaction(
+            toMove.map((f, i) =>
+                prisma.feature.update({
+                    where: { id: f.id },
+                    data: { categoryId: newCategoryId, order: startOrder + i },
+                })
+            )
+        );
 
         return NextResponse.json({ success: true, moved: toMove.length, startOrder });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Move features error:", error);
         return NextResponse.json({ error: "Failed to move features" }, { status: 500 });
     }
@@ -194,7 +261,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/admin/features?id=xxx
 export async function DELETE(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
@@ -203,7 +270,7 @@ export async function DELETE(req: NextRequest) {
     try {
         await prisma.feature.delete({ where: { id } });
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Delete feature error:", error);
         return NextResponse.json({ error: "Failed to delete feature" }, { status: 500 });
     }

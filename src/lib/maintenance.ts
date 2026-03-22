@@ -1,32 +1,31 @@
 import { prisma } from "@/lib/db";
-
-let cachedValue: boolean | null = null;
-let cacheTime = 0;
-const CACHE_TTL = 2000; // 2 seconds
+import { unstable_cache } from "next/cache";
 
 /**
- * Server-side maintenance mode check with short cache.
- * Used in server components and API routes.
+ * Server-side maintenance mode check with Next.js built-in cache.
+ * Revalidates every 2 seconds — works correctly across instances.
  */
-export async function isMaintenanceMode(): Promise<boolean> {
-    const now = Date.now();
-    if (cachedValue !== null && now - cacheTime < CACHE_TTL) {
-        return cachedValue;
-    }
-    try {
-        const setting = await prisma.siteSetting.findUnique({
-            where: { key: "maintenanceMode" },
-        });
-        cachedValue = setting?.value === "true";
-        cacheTime = now;
-        return cachedValue;
-    } catch {
-        return cachedValue ?? false;
-    }
-}
+export const isMaintenanceMode = unstable_cache(
+    async (): Promise<boolean> => {
+        try {
+            const setting = await prisma.siteSetting.findUnique({
+                where: { key: "maintenanceMode" },
+            });
+            return setting?.value === "true";
+        } catch {
+            return false;
+        }
+    },
+    ["maintenance-mode"],
+    { revalidate: 2 }
+);
 
-/** Invalidate the cache (call after admin toggles maintenance) */
+/**
+ * Invalidate the maintenance cache.
+ * After Next.js 16 stabilizes revalidateTag, switch to that.
+ * For now, the 2-second TTL ensures fast staleness expiry.
+ */
 export function invalidateMaintenanceCache() {
-    cachedValue = null;
-    cacheTime = 0;
+    // With unstable_cache + revalidate:2, cache auto-expires.
+    // This function exists for API compatibility — no manual invalidation needed.
 }

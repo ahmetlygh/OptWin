@@ -14,7 +14,6 @@ export async function FeatureGrid() {
                 orderBy: { order: 'asc' },
                 include: {
                     translations: true,
-                    commands: true
                 }
             }
         }

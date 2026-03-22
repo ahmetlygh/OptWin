@@ -3,19 +3,17 @@ import { prisma } from "@/lib/db";
 import { createHash } from "crypto";
 
 function hashIp(ip: string): string {
-    return createHash("sha256").update(ip).digest("hex").slice(0, 16);
+    return createHash("sha256").update(ip).digest("hex").slice(0, 32);
 }
 
 // GET /api/stats -> returns { totalVisits, totalScripts, totalDownloads }
 export async function GET() {
     try {
-        let stats = await prisma.siteStats.findUnique({ where: { id: "main" } });
-
-        if (!stats) {
-            stats = await prisma.siteStats.create({
-                data: { id: "main", totalVisits: 0, totalScripts: 0, totalDownloads: 0 }
-            });
-        }
+        const stats = await prisma.siteStats.upsert({
+            where: { id: "main" },
+            create: { id: "main", totalVisits: 0, totalScripts: 0, totalDownloads: 0 },
+            update: {},
+        });
 
         return NextResponse.json({
             success: true,
@@ -23,7 +21,7 @@ export async function GET() {
             totalScripts: stats.totalScripts,
             totalDownloads: stats.totalDownloads
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Stats API GET error:", error);
         return NextResponse.json({ success: false, error: "Database error" }, { status: 500 });
     }
@@ -70,47 +68,48 @@ export async function POST(req: NextRequest) {
             twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
             prisma.visitDedup.deleteMany({
                 where: { date: { lt: twoDaysAgo } }
-            }).catch(() => {});
-        }
-
-        let stats = await prisma.siteStats.findUnique({ where: { id: "main" } });
-
-        if (!stats) {
-            stats = await prisma.siteStats.create({
-                data: { id: "main", totalVisits: 0, totalScripts: 0, totalDownloads: 0 }
-            });
+            }).catch((err: unknown) => console.warn("Dedup cleanup failed:", err));
         }
 
         // Build increment data based on action
-        const updateData: Record<string, { increment: number } | undefined> = {
-            totalVisits: action === "visit" ? { increment: 1 } : undefined,
-            totalScripts: action === "script" ? { increment: 1 } : undefined,
-            totalDownloads: action === "download" ? { increment: 1 } : undefined,
-        };
+        const incrementField = action === "visit"
+            ? { totalVisits: { increment: 1 } }
+            : action === "script"
+                ? { totalScripts: { increment: 1 } }
+                : { totalDownloads: { increment: 1 } };
 
-        stats = await prisma.siteStats.update({
+        const createField = action === "visit"
+            ? { totalVisits: 1 }
+            : action === "script"
+                ? { totalScripts: 1 }
+                : { totalDownloads: 1 };
+
+        // Atomic upsert — no race condition
+        const stats = await prisma.siteStats.upsert({
             where: { id: "main" },
-            data: updateData
+            create: { id: "main", totalVisits: 0, totalScripts: 0, totalDownloads: 0, ...createField },
+            update: incrementField,
         });
 
+        // Daily stats — also atomic upsert
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const dailyCreate: Record<string, number> = {
+        const dailyCreate = {
             visits: action === "visit" ? 1 : 0,
             scripts: action === "script" ? 1 : 0,
-            downloads: action === "download" ? 1 : 0
+            downloads: action === "download" ? 1 : 0,
         };
-        const dailyUpdate: Record<string, { increment: number } | undefined> = {
-            visits: action === "visit" ? { increment: 1 } : undefined,
-            scripts: action === "script" ? { increment: 1 } : undefined,
-            downloads: action === "download" ? { increment: 1 } : undefined,
-        };
+        const dailyIncrement = action === "visit"
+            ? { visits: { increment: 1 } }
+            : action === "script"
+                ? { scripts: { increment: 1 } }
+                : { downloads: { increment: 1 } };
 
         await prisma.dailyStat.upsert({
             where: { date: today },
             create: { date: today, ...dailyCreate },
-            update: dailyUpdate
+            update: dailyIncrement,
         });
 
         return NextResponse.json({
@@ -119,7 +118,7 @@ export async function POST(req: NextRequest) {
             totalScripts: stats.totalScripts,
             totalDownloads: stats.totalDownloads
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Stats API POST error:", error);
         return NextResponse.json({ success: false, error: "Database error" }, { status: 500 });
     }

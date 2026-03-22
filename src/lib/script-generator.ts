@@ -25,7 +25,29 @@ async function getLabelsFromDb(lang: string): Promise<Record<string, string>> {
 
 export async function generateScript(params: ScriptParams): Promise<string> {
     const { features, dnsProvider, lang, createRestorePoint } = params;
-    const rawLabels = await getLabelsFromDb(lang);
+
+    const supportedLangs = ["en", "tr", "de", "fr", "es", "zh", "hi"];
+    const dbLang = supportedLangs.includes(lang) ? lang : "en";
+
+    // Parallelize: labels + features + DNS provider all at once
+    const [rawLabels, featuresDb, dnsData] = await Promise.all([
+        getLabelsFromDb(lang),
+        prisma.feature.findMany({
+            where: { slug: { in: features }, enabled: true, category: { enabled: true } },
+            include: { commands: { where: { lang: dbLang } } },
+            orderBy: { order: 'asc' }
+        }),
+        features.includes('changeDNS') && dnsProvider
+            ? Promise.all([
+                prisma.feature.findUnique({
+                    where: { slug: 'changeDNS' },
+                    include: { commands: { where: { lang: dbLang } } }
+                }),
+                prisma.dnsProvider.findUnique({ where: { slug: dnsProvider } }),
+            ])
+            : Promise.resolve([null, null] as const),
+    ]);
+
     const resolved: Record<string, string> = {};
     for (const [k, v] of Object.entries(rawLabels)) {
         resolved[k] = v.replace(/<([a-zA-Z_][a-zA-Z0-9_]*)>/g, (match, ref) =>
@@ -37,9 +59,6 @@ export async function generateScript(params: ScriptParams): Promise<string> {
         labels[k] = toPowerShellSafe(v);
     }
     const dateStr = new Date().toLocaleString();
-
-    const supportedLangs = ["en", "tr", "de", "fr", "es", "zh", "hi"];
-    const dbLang = supportedLangs.includes(lang) ? lang : "en";
     const version = labels.versionNumber || '1.3.0';
 
     // Use \r\n for ALL lines so batch and PowerShell both parse correctly.
@@ -164,12 +183,6 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     }
 
     // Feature commands — each wrapped in try/catch for error reporting
-    const featuresDb = await prisma.feature.findMany({
-        where: { slug: { in: features }, enabled: true, category: { enabled: true } },
-        include: { commands: { where: { lang: dbLang } } },
-        orderBy: { order: 'asc' }
-    });
-
     const failLabel = labels.fail || 'FAILED';
     const skippedLabel = labels.skipped || 'SKIPPED';
 
@@ -193,30 +206,24 @@ export async function generateScript(params: ScriptParams): Promise<string> {
         }
     });
 
-    // DNS
-    if (features.includes('changeDNS') && dnsProvider) {
-        const dnsCmd = await prisma.feature.findUnique({
-            where: { slug: 'changeDNS' },
-            include: { commands: { where: { lang: dbLang } } }
+    // DNS — use pre-fetched data from parallelized queries
+    const [dnsCmd, provider] = dnsData;
+    if (dnsCmd && dnsCmd.commands[0] && provider) {
+        let command = dnsCmd.commands[0].command;
+        command = command.replace(/\{\{PRIMARY_DNS\}\}/g, provider.primary);
+        command = command.replace(/\{\{SECONDARY_DNS\}\}/g, provider.secondary);
+        ps.push('Write-Host "  ' + escapeForPsString(dnsCmd.commands[0].scriptMessage) + '" -ForegroundColor Cyan');
+        ps.push('try {');
+        const dnsLines = command.trim().split(/\r?\n/);
+        dnsLines.forEach(line => {
+            ps.push('    ' + line);
         });
-        const provider = await prisma.dnsProvider.findUnique({ where: { slug: dnsProvider } });
-        if (dnsCmd && dnsCmd.commands[0] && provider) {
-            let command = dnsCmd.commands[0].command;
-            command = command.replace(/\{\{PRIMARY_DNS\}\}/g, provider.primary);
-            command = command.replace(/\{\{SECONDARY_DNS\}\}/g, provider.secondary);
-            ps.push('Write-Host "  ' + escapeForPsString(dnsCmd.commands[0].scriptMessage) + '" -ForegroundColor Cyan');
-            ps.push('try {');
-            const dnsLines = command.trim().split(/\r?\n/);
-            dnsLines.forEach(line => {
-                ps.push('    ' + line);
-            });
-            ps.push('    Write-Host "      ' + labels.done + ' (' + provider.name + ')" -ForegroundColor Green');
-            ps.push('} catch {');
-            ps.push('    Write-Host "      ' + failLabel + ': $($_.Exception.Message)" -ForegroundColor Red');
-            ps.push('    $global:optwinErrors++');
-            ps.push('}');
-            ps.push('Write-Host ""');
-        }
+        ps.push('    Write-Host "      ' + labels.done + ' (' + provider.name + ')" -ForegroundColor Green');
+        ps.push('} catch {');
+        ps.push('    Write-Host "      ' + failLabel + ': $($_.Exception.Message)" -ForegroundColor Red');
+        ps.push('    $global:optwinErrors++');
+        ps.push('}');
+        ps.push('Write-Host ""');
     }
 
     // Completion — show errors if any

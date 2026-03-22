@@ -25,7 +25,7 @@ export interface Feature {
     newBadge?: boolean;
     newBadgeExpiry?: string | null;
     translations: FeatureTranslation[];
-    commands: FeatureCommand[];
+    commands?: FeatureCommand[];
 }
 
 export interface CategoryTranslation {

@@ -16,6 +16,63 @@ const ALLOWED_TYPES = [
     "image/gif",
 ];
 
+// Magic bytes for raster image validation
+const MAGIC_BYTES: Record<string, number[][]> = {
+    "image/png": [[0x89, 0x50, 0x4e, 0x47]],
+    "image/jpeg": [[0xff, 0xd8, 0xff]],
+    "image/gif": [[0x47, 0x49, 0x46, 0x38]],     // GIF8
+    "image/webp": [[0x52, 0x49, 0x46, 0x46]],     // RIFF
+};
+
+function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
+    const signatures = MAGIC_BYTES[mimeType];
+    if (!signatures) return true; // SVG validated separately
+    return signatures.some(sig =>
+        sig.every((byte, i) => buffer[i] === byte)
+    );
+}
+
+/**
+ * Sanitize SVG content by removing dangerous elements and attributes.
+ * Strips: <script>, <iframe>, <object>, <embed>, <foreignObject>,
+ * event handlers (on*), javascript: URLs, and <use> with external refs.
+ */
+function sanitizeSvg(svgContent: string): string {
+    let sanitized = svgContent;
+
+    // Remove dangerous elements entirely (with their content)
+    const dangerousTags = ["script", "iframe", "object", "embed", "foreignObject", "link", "meta"];
+    for (const tag of dangerousTags) {
+        // Remove opening+closing tags with content
+        sanitized = sanitized.replace(
+            new RegExp(`<${tag}[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi"),
+            ""
+        );
+        // Remove self-closing tags
+        sanitized = sanitized.replace(
+            new RegExp(`<${tag}[^>]*\\/?>`, "gi"),
+            ""
+        );
+    }
+
+    // Remove event handler attributes (onclick, onerror, onload, etc.)
+    sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, "");
+    sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, "");
+
+    // Remove javascript:, data:text/html, and vbscript: URLs from attributes
+    sanitized = sanitized.replace(/javascript\s*:/gi, "blocked:");
+    sanitized = sanitized.replace(/vbscript\s*:/gi, "blocked:");
+    sanitized = sanitized.replace(/data\s*:\s*text\/html/gi, "blocked:text/html");
+
+    // Remove <use> elements with external references (xlink:href="http://...")
+    sanitized = sanitized.replace(/<use[^>]*xlink:href\s*=\s*["']https?:\/\/[^"']*["'][^>]*\/?>/gi, "");
+
+    // Remove set/animate elements that could trigger scripts
+    sanitized = sanitized.replace(/<set[^>]*attributeName\s*=\s*["']on\w+["'][^>]*\/?>/gi, "");
+
+    return sanitized;
+}
+
 export async function POST(req: Request) {
     if (!(await checkAdmin())) return unauthorizedResponse();
 
@@ -50,11 +107,32 @@ export async function POST(req: Request) {
         const hash = crypto.createHash("md5").update(buffer).digest("hex").slice(0, 12);
         const timestamp = Date.now();
 
-        // SVGs are kept as-is, raster images are converted to WebP
+        // Validate magic bytes for raster images
+        if (file.type !== "image/svg+xml") {
+            if (!validateMagicBytes(buffer, file.type)) {
+                return NextResponse.json(
+                    { error: "File content doesn't match declared type" },
+                    { status: 400 }
+                );
+            }
+        }
+
+        // SVGs are sanitized then saved; raster images are converted to WebP
         if (file.type === "image/svg+xml") {
+            const svgContent = buffer.toString("utf-8");
+
+            // Validate it's actually SVG
+            if (!svgContent.includes("<svg")) {
+                return NextResponse.json(
+                    { error: "Invalid SVG content" },
+                    { status: 400 }
+                );
+            }
+
+            const sanitized = sanitizeSvg(svgContent);
             const filename = `${timestamp}-${hash}.svg`;
             const filepath = path.join(UPLOAD_DIR, filename);
-            await writeFile(filepath, buffer);
+            await writeFile(filepath, sanitized, "utf-8");
             return NextResponse.json({
                 success: true,
                 url: `/uploads/icons/${filename}`,
@@ -77,7 +155,7 @@ export async function POST(req: Request) {
             url: `/uploads/icons/${filename}`,
             type: "webp",
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Upload error:", error);
         return NextResponse.json(
             { error: "Upload failed" },

@@ -39,8 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const admin = await prisma.adminUser.findUnique({
                     where: { email: session.user.email },
                 });
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (session as any).isAdmin = !!admin;
+                session.isAdmin = !!admin;
             }
             return session;
         },

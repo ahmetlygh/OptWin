@@ -1,21 +1,34 @@
 import { NextResponse } from "next/server";
 import { generateScript } from "@/lib/script-generator";
 import { prisma } from "@/lib/db";
+import { z } from "zod";
+
+const SUPPORTED_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"] as const;
+
+const scriptRequestSchema = z.object({
+    features: z.array(z.string().max(100)).min(1).max(200),
+    dnsProvider: z.string().max(50).nullable().optional(),
+    lang: z.enum(SUPPORTED_LANGS).default("en"),
+    createRestorePoint: z.boolean().default(false),
+});
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { features, dnsProvider, lang, createRestorePoint } = body;
+        const parsed = scriptRequestSchema.safeParse(body);
 
-        if (!features || !Array.isArray(features)) {
-            return NextResponse.json({ error: "Missing or invalid features array" }, { status: 400 });
+        if (!parsed.success) {
+            const firstError = parsed.error.issues[0]?.message || "Invalid input";
+            return NextResponse.json({ error: firstError }, { status: 400 });
         }
+
+        const { features, dnsProvider, lang, createRestorePoint } = parsed.data;
 
         const scriptString = await generateScript({
             features,
-            dnsProvider,
-            lang: lang || "en",
-            createRestorePoint: !!createRestorePoint
+            dnsProvider: dnsProvider ?? null,
+            lang,
+            createRestorePoint,
         });
 
         // Increment selectCount for each selected feature (fire and forget)
@@ -27,7 +40,7 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ script: scriptString });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Script generation error:", error);
         return NextResponse.json({ error: "Failed to generate script" }, { status: 500 });
     }

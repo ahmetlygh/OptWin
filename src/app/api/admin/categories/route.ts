@@ -1,6 +1,29 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
+import { z } from "zod";
+
+const catTranslationSchema = z.object({
+    lang: z.string().max(5),
+    name: z.string().max(200),
+});
+
+const createCategorySchema = z.object({
+    slug: z.string().min(1).max(100),
+    icon: z.string().max(100).nullable().default(null),
+    order: z.number().int().default(0),
+    enabled: z.boolean().default(true),
+    translations: z.array(catTranslationSchema).default([]),
+});
+
+const updateCategorySchema = z.object({
+    id: z.string().min(1),
+    slug: z.string().min(1).max(100).optional(),
+    icon: z.string().max(100).nullable().optional(),
+    order: z.number().int().optional(),
+    enabled: z.boolean().optional(),
+    translations: z.array(catTranslationSchema).optional(),
+});
 
 // GET /api/admin/categories
 export async function GET() {
@@ -19,22 +42,26 @@ export async function GET() {
 
 // POST /api/admin/categories
 export async function POST(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         const body = await req.json();
-        const { slug, icon, order, enabled, translations } = body;
+        const parsed = createCategorySchema.safeParse(body);
 
-        if (!slug) return NextResponse.json({ error: "slug is required" }, { status: 400 });
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
+        }
+
+        const { slug, icon, order, enabled, translations } = parsed.data;
 
         const category = await prisma.category.create({
             data: {
                 slug,
-                icon: icon || null,
-                order: order || 0,
-                enabled: enabled !== false,
+                icon,
+                order,
+                enabled,
                 translations: {
-                    create: (translations || []).map((t: any) => ({
+                    create: translations.map(t => ({
                         lang: t.lang,
                         name: t.name,
                     })),
@@ -44,23 +71,28 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json({ success: true, category });
-    } catch (error: any) {
-        if (error.code === "P2002") return NextResponse.json({ error: "Category slug already exists" }, { status: 409 });
+    } catch (error: unknown) {
+        const prismaError = error as { code?: string };
+        if (prismaError.code === "P2002") return NextResponse.json({ error: "Category slug already exists" }, { status: 409 });
         return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
     }
 }
 
 // PUT /api/admin/categories
 export async function PUT(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     try {
         const body = await req.json();
-        const { id, slug, icon, order, enabled, translations } = body;
+        const parsed = updateCategorySchema.safeParse(body);
 
-        if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
+        }
 
-        const data: any = {};
+        const { id, slug, icon, order, enabled, translations } = parsed.data;
+
+        const data: Record<string, unknown> = {};
         if (slug !== undefined) data.slug = slug;
         if (icon !== undefined) data.icon = icon;
         if (order !== undefined) data.order = order;
@@ -84,14 +116,15 @@ export async function PUT(req: NextRequest) {
         });
 
         return NextResponse.json({ success: true, category: updated });
-    } catch (error) {
+    } catch (error: unknown) {
+        console.error("Update category error:", error);
         return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
     }
 }
 
 // DELETE /api/admin/categories?id=xxx
 export async function DELETE(req: NextRequest) {
-    if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!(await checkAdmin())) return unauthorizedResponse();
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
@@ -106,7 +139,8 @@ export async function DELETE(req: NextRequest) {
     try {
         await prisma.category.delete({ where: { id } });
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: unknown) {
+        console.error("Delete category error:", error);
         return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
     }
 }

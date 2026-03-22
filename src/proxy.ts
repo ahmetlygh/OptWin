@@ -1,10 +1,67 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-/* ── In-memory maintenance cache for middleware ──────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Rate Limiting — In-memory sliding window
+   Limits: /api/generate-script (10/min), /api/stats (30/min),
+           /api/features (60/min), /api/contact (5/min)
+   Note: Per-instance. For multi-instance, replace with Redis.
+   ═══════════════════════════════════════════════════════════════ */
+
+type RateLimitEntry = { count: number; resetAt: number };
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RL_CLEANUP_INTERVAL = 5 * 60 * 1000;
+let lastRLCleanup = Date.now();
+
+function cleanupRateLimit() {
+    const now = Date.now();
+    if (now - lastRLCleanup < RL_CLEANUP_INTERVAL) return;
+    lastRLCleanup = now;
+    for (const [key, entry] of rateLimitMap.entries()) {
+        if (now > entry.resetAt) rateLimitMap.delete(key);
+    }
+}
+
+type RateLimitConfig = { maxRequests: number; windowMs: number };
+
+const RATE_LIMITS: Record<string, RateLimitConfig> = {
+    '/api/generate-script': { maxRequests: 10, windowMs: 60_000 },
+    '/api/stats': { maxRequests: 30, windowMs: 60_000 },
+    '/api/features': { maxRequests: 60, windowMs: 60_000 },
+    '/api/contact': { maxRequests: 5, windowMs: 60_000 },
+};
+
+function getClientIp(req: NextRequest): string {
+    const forwarded = req.headers.get('x-forwarded-for');
+    if (forwarded) return forwarded.split(',')[0].trim();
+    return req.headers.get('x-real-ip') || 'unknown';
+}
+
+function checkRateLimit(key: string, config: RateLimitConfig): { allowed: boolean; remaining: number } {
+    cleanupRateLimit();
+    const now = Date.now();
+    const entry = rateLimitMap.get(key);
+
+    if (!entry || now > entry.resetAt) {
+        rateLimitMap.set(key, { count: 1, resetAt: now + config.windowMs });
+        return { allowed: true, remaining: config.maxRequests - 1 };
+    }
+
+    if (entry.count >= config.maxRequests) {
+        return { allowed: false, remaining: 0 };
+    }
+
+    entry.count++;
+    return { allowed: true, remaining: config.maxRequests - entry.count };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Maintenance Mode — In-memory cache with self-fetch
+   ═══════════════════════════════════════════════════════════════ */
+
 interface MaintenanceInfo { active: boolean; reason: string; estimatedEnd: string }
 let maintenanceCache: { value: MaintenanceInfo; time: number } | null = null;
-const CACHE_TTL = 15000; // 15 seconds — reduces self-fetch load while keeping reasonable latency
+const CACHE_TTL = 15000;
 
 async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
     const now = Date.now();
@@ -31,12 +88,12 @@ async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
 
 /* ── Paths that are ALWAYS allowed (even during maintenance) ── */
 const ALWAYS_ALLOWED = [
-    '/admin',           // All admin routes
-    '/api/admin',       // All admin API routes
-    '/api/auth',        // NextAuth
-    '/api/maintenance', // Maintenance status check (used by this middleware)
-    '/api/system',      // System status
-    '/_next',           // Next.js internals
+    '/admin',
+    '/api/admin',
+    '/api/auth',
+    '/api/maintenance',
+    '/api/system',
+    '/_next',
     '/favicon.ico',
     '/optwin.png',
     '/assets',
@@ -49,8 +106,9 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set('x-next-pathname', pathname);
 
-    // CORS for API routes
     const isApiRequest = pathname.startsWith('/api');
+
+    // ── CORS for API routes ──
     if (isApiRequest) {
         const origin = request.headers.get('origin') || '';
         const allowedOrigins = [
@@ -75,9 +133,37 @@ export async function proxy(request: NextRequest) {
             }
             return optionsResponse;
         }
+
+        // ── Rate Limiting (public API only, skip admin & auth) ──
+        if (!pathname.startsWith('/api/admin/') && !pathname.startsWith('/api/auth/')) {
+            const matchedPath = Object.keys(RATE_LIMITS).find(p => pathname.startsWith(p));
+            if (matchedPath) {
+                const rlConfig = RATE_LIMITS[matchedPath];
+                const ip = getClientIp(request);
+                const key = `${matchedPath}:${ip}`;
+                const { allowed, remaining } = checkRateLimit(key, rlConfig);
+
+                if (!allowed) {
+                    return NextResponse.json(
+                        { error: 'Too many requests. Please try again later.' },
+                        {
+                            status: 429,
+                            headers: {
+                                'Retry-After': '60',
+                                'X-RateLimit-Limit': rlConfig.maxRequests.toString(),
+                                'X-RateLimit-Remaining': '0',
+                            },
+                        }
+                    );
+                }
+
+                response.headers.set('X-RateLimit-Limit', rlConfig.maxRequests.toString());
+                response.headers.set('X-RateLimit-Remaining', remaining.toString());
+            }
+        }
     }
 
-    // Check if path is always allowed
+    // Check if path is always allowed (skip maintenance check)
     const isAllowed = ALWAYS_ALLOWED.some(p => pathname.startsWith(p));
     if (isAllowed) return response;
 
@@ -85,7 +171,6 @@ export async function proxy(request: NextRequest) {
     const mInfo = await checkMaintenance(request.nextUrl.origin);
 
     if (mInfo.active) {
-        // For page requests, return maintenance HTML directly (no site JS bundles)
         if (!isApiRequest) {
             return new NextResponse(buildMaintenanceHtml(mInfo.reason, mInfo.estimatedEnd), {
                 status: 503,
@@ -98,7 +183,6 @@ export async function proxy(request: NextRequest) {
             });
         }
 
-        // For API requests, return 503 JSON
         return NextResponse.json(
             { error: 'Service Unavailable', maintenance: true },
             {

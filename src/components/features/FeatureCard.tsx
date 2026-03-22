@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { Feature } from "@/types/feature";
 import { HighlightText } from "../shared/HighlightText";
@@ -17,13 +17,12 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     const dnsProvider = useOptWinStore(state => state.dnsProvider);
     const lang = useOptWinStore(state => state.lang);
     const showDescriptions = useOptWinStore(state => state.showDescriptions);
-    const [descState, setDescState] = useState({ show: false, key: showDescriptions });
+    const [localShowDesc, setLocalShowDesc] = useState(false);
 
-    // Reset local toggle when global showDescriptions changes (React-safe state derivation)
-    const localShowDesc = descState.key === showDescriptions ? descState.show : false;
-    if (descState.key !== showDescriptions) {
-        setDescState({ show: false, key: showDescriptions });
-    }
+    // Reset local toggle when global showDescriptions changes
+    useEffect(() => {
+        setLocalShowDesc(false);
+    }, [showDescriptions]);
 
     const isChangeDns = feature.slug === "changeDNS";
     const isDescVisible = showDescriptions || localShowDesc;
@@ -47,11 +46,6 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     const isNewBadgeVisible = feature.newBadge && (
         !feature.newBadgeExpiry || new Date(feature.newBadgeExpiry) > new Date()
     );
-
-    const dnsDisplayName: Record<string, string> = {
-        default: "Default", cloudflare: "Cloudflare", google: "Google",
-        opendns: "OpenDNS", quad9: "Quad9", adguard: "AdGuard",
-    };
 
     return (
         <label
@@ -116,7 +110,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    setDescState({ show: !localShowDesc, key: showDescriptions });
+                                    setLocalShowDesc(prev => !prev);
                                 }}
                                 className={`flex items-center justify-center rounded-full p-1 transition-colors duration-200 opacity-0 group-hover:opacity-100 ${localShowDesc ? 'text-[var(--accent-color)] bg-[var(--accent-color)]/10' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]'}`}
                                 title={localShowDesc ? "Hide description" : "Show description"}
@@ -152,7 +146,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                             className="pointer-events-auto mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/30 text-[var(--accent-color)] text-xs font-bold hover:bg-[var(--accent-color)]/25 transition-all duration-200 animate-slide-in-right"
                         >
                             <GlobeIcon size={14} />
-                            <span>{lang === "tr" ? "Değiştir" : "Change"}: {dnsDisplayName[dnsProvider] || dnsProvider}</span>
+                            <span>{lang === "tr" ? "Değiştir" : "Change"}: {dnsProvider}</span>
                         </button>
                     )}
                 </div>

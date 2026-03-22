@@ -5,10 +5,6 @@ import { ActionArea } from "@/components/layout/ActionArea";
 import { StatsSection } from "@/components/sections/StatsSection";
 import { AboutSection } from "@/components/sections/AboutSection";
 import { DnsModal } from "@/components/modals/DnsModal";
-import { ScriptOverlay } from "@/components/modals/ScriptOverlay";
-import { RestorePointModal } from "@/components/modals/RestorePointModal";
-import { WarningModal } from "@/components/modals/WarningModal";
-import { Toast } from "@/components/modals/Toast";
 import { HashScroller } from "@/components/shared/HashScroller";
 import { StickyControlsPanel } from "@/components/layout/StickyControlsPanel";
 
@@ -56,14 +52,9 @@ export default async function Home() {
                 <AboutSection />
             </div>
             <ActionArea />
-            {/* Modals and overlays — driven by Zustand store state */}
+            {/* DnsModal needs server-side providers prop — other modals live in ClientProviders */}
             <DnsModal providers={dnsProvidersDb} />
-            <ScriptOverlay />
-            <RestorePointModal />
-            <WarningModal />
-            <Toast />
             <HashScroller />
         </>
     );
 }
-

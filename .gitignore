@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -23,18 +21,20 @@
 # misc
 .DS_Store
 *.pem
+thumbs.db
 
-# debug
+# debug & one-off scripts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-build.log
-err.log
+*.log
 fix-labels-*.mjs
 
-# development docs (README.md & AGENTS.md stay in repo)
-PROGRESS.md
+# legacy codebase
+/old-optwin/
+
+# project docs (only README.md and .env.example go to repo)
 AGENTS.md
 STITCH_PROMPT.md
 TASARIMLAR.md
@@ -44,8 +44,12 @@ start*.md
 OptWin-Analyze.md
 OptWin-Phases.md
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files (.env.example is committed)
+.env
+.env.local
+.env.development
+.env.production
+!.env.example
 
 # vercel
 .vercel
@@ -54,4 +58,5 @@ OptWin-Phases.md
 *.tsbuildinfo
 next-env.d.ts
 
+# prisma generated
 /src/generated/prisma

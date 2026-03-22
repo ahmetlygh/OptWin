@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
+import { z } from "zod";
+
+const maintenanceSchema = z.object({
+    enabled: z.boolean(),
+    reason: z.string().max(500).default(""),
+    estimatedEnd: z.string().max(100).default(""),
+});
 
 // GET /api/admin/maintenance — get maintenance mode status + details
 export async function GET() {
+    if (!(await checkAdmin())) return unauthorizedResponse();
     try {
         const settings = await prisma.siteSetting.findMany({
             where: {
@@ -28,9 +36,11 @@ export async function PUT(req: Request) {
 
     try {
         const body = await req.json();
-        const enabled = body.enabled === true;
-        const reason = typeof body.reason === "string" ? body.reason.trim() : "";
-        const estimatedEnd = typeof body.estimatedEnd === "string" ? body.estimatedEnd.trim() : "";
+        const parsed = maintenanceSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
+        }
+        const { enabled, reason, estimatedEnd } = parsed.data;
 
         // Upsert all three settings
         await Promise.all([
@@ -52,7 +62,7 @@ export async function PUT(req: Request) {
         ]);
 
         return NextResponse.json({ success: true, maintenance: enabled, reason, estimatedEnd });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Maintenance toggle error:", error);
         return NextResponse.json({ error: "Failed to toggle maintenance" }, { status: 500 });
     }

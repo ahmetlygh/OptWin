@@ -36,6 +36,7 @@ Kullanıcılar 7 kategorideki 62+ optimizasyon seçeneği arasından tercihlerin
 | UI Bileşenleri | Radix UI (dialog, dropdown, switch, toast, tooltip) | — |
 | DnD | @dnd-kit/core + @dnd-kit/sortable | ^6/^10 |
 | Deploy | Coolify (self-hosted, standalone output) | — |
+| Test | Vitest | ^4.1.0 |
 
 ---
 
@@ -46,16 +47,21 @@ optwin/
 ├── AGENTS.md                    ← Bu dosya
 ├── prisma/
 │   ├── schema.prisma            ← 15 model, 1 enum (RiskLevel)
-│   ├── migrations/              ← 5 migration dosyası
+│   ├── migrations/              ← Migration dosyaları
 │   ├── seed.ts                  ← Ana seed scripti
-│   ├── seed-data/               ← Kategori, feature, ayar seed verileri
-│   └── (seed-commands*.ts, translate.ts) ← Tek seferlik yardımcı scriptler
+│   └── seed-data/               ← Kategori, feature, ayar seed verileri
 │
 ├── src/
+│   ├── proxy.ts                 ← Next.js 16 proxy (rate limiting + CORS + bakım modu)
 │   ├── app/
 │   │   ├── layout.tsx           ← Root layout (Inter font, theme provider, PublicShell)
 │   │   ├── page.tsx             ← Ana sayfa (SSR: preset, DNS, features sorguları)
 │   │   ├── globals.css          ← CSS Variables + animasyonlar (~544 satır)
+│   │   ├── error.tsx            ← Error boundary
+│   │   ├── global-error.tsx     ← Global error boundary
+│   │   ├── loading.tsx          ← Loading state
+│   │   ├── robots.ts            ← Dinamik robots.txt
+│   │   ├── sitemap.ts           ← Dinamik sitemap.xml
 │   │   ├── contact/page.tsx     ← İletişim formu (client component)
 │   │   ├── privacy/page.tsx     ← Gizlilik politikası (7 dil, hardcoded)
 │   │   ├── terms/page.tsx       ← Kullanım koşulları (hardcoded)
@@ -64,22 +70,22 @@ optwin/
 │   │   │   ├── auth/[...nextauth]/route.ts  ← NextAuth handler
 │   │   │   ├── features/route.ts            ← GET: public feature listesi
 │   │   │   ├── features/[id]/route.ts       ← GET: tek feature (slug veya id)
-│   │   │   ├── generate-script/route.ts     ← POST: script oluşturma
+│   │   │   ├── generate-script/route.ts     ← POST: script oluşturma (Zod validasyonlu)
 │   │   │   ├── stats/route.ts               ← GET/POST: ziyaret/script/indirme sayaçları
-│   │   │   ├── contact/route.ts             ← POST: iletişim formu (Zod validasyonlu)
+│   │   │   ├── contact/route.ts             ← POST: iletişim formu (Zod + DB rate limit)
 │   │   │   ├── maintenance/route.ts         ← GET: public bakım modu durumu
 │   │   │   ├── system/status/route.ts       ← GET: public sistem durumu
-│   │   │   └── admin/                       ← Admin API'leri (auth korumalı)
+│   │   │   └── admin/                       ← Admin API'leri (auth korumalı, Zod validasyonlu)
 │   │   │       ├── categories/route.ts      ← CRUD: kategoriler
 │   │   │       ├── dashboard/route.ts       ← GET: dashboard istatistikleri
 │   │   │       ├── dns/route.ts             ← CRUD: DNS sağlayıcıları
 │   │   │       ├── features/route.ts        ← CRUD + bulk move: özellikler
-│   │   │       ├── maintenance/route.ts     ← GET/PUT: bakım modu
+│   │   │       ├── maintenance/route.ts     ← GET/PUT: bakım modu (auth korumalı)
 │   │   │       ├── reorder/route.ts         ← POST: sıralama değiştirme
 │   │   │       ├── script-labels/route.ts   ← GET/PUT/DELETE: script etiketleri
 │   │   │       ├── script-labels/reset/     ← POST: etiketleri varsayılana sıfırla
 │   │   │       ├── translate/route.ts       ← POST: otomatik çeviri (Google + MyMemory)
-│   │   │       ├── upload/route.ts          ← POST: ikon yükleme (Sharp ile WebP dönüşüm)
+│   │   │       ├── upload/route.ts          ← POST: ikon yükleme (Sharp + SVG sanitize)
 │   │   │       └── fix-slugs/route.ts       ← POST: Türkçe slug düzeltme (tek seferlik)
 │   │   └── admin/
 │   │       ├── login/page.tsx               ← Admin giriş sayfası
@@ -95,10 +101,10 @@ optwin/
 │   │           └── script-defaults/page.tsx ← Script etiket yönetimi
 │   │
 │   ├── components/
-│   │   ├── admin/         ← 9 admin bileşeni (Sidebar, Header, ConfirmModal, IconPicker, vs.)
+│   │   ├── admin/         ← Admin bileşenleri (AdminSidebar, AdminHeader, ConfirmModal, vs.)
 │   │   ├── features/      ← FeatureCard, FeatureGrid (server), FeatureGridClient, SearchBar
 │   │   ├── layout/        ← Header, Footer, Hero, HeroStats, HeroTitle, ActionArea,
-│   │   │                     MobileNav, PublicShell, ScrollToTop, StickyControlsPanel,
+│   │   │                     PublicShell, ScrollToTop, StickyControlsPanel,
 │   │   │                     PresetControls, MaintenanceOverlay
 │   │   ├── modals/        ← DnsModal, RestorePointModal, ScriptOverlay, SupportModal,
 │   │   │                     Toast, WarningModal
@@ -113,9 +119,12 @@ optwin/
 │   │   ├── admin-guard.ts       ← checkAdmin() + unauthorizedResponse()
 │   │   ├── script-generator.ts  ← PowerShell script builder (batch wrapper + PS kodu)
 │   │   ├── powershell-safe.ts   ← ASCII dönüşüm + PS string escaping
-│   │   ├── maintenance.ts       ← Bakım modu kontrolü (memory cache, 2s TTL)
+│   │   ├── maintenance.ts       ← Bakım modu kontrolü (unstable_cache)
 │   │   ├── settings.ts          ← Site ayarları okuma (getSetting, getSettings)
 │   │   └── utils.ts             ← cn(), formatNumber()
+│   │
+│   ├── hooks/
+│   │   └── useModalPhase.ts     ← Modal açılış/kapanış animasyon hook'u
 │   │
 │   ├── store/
 │   │   └── useOptWinStore.ts    ← Zustand: selectedFeatures, lang, theme, DNS, modals, toast
@@ -132,12 +141,14 @@ optwin/
 │
 ├── public/
 │   ├── optwin.png, favicon.ico, background.png
-│   └── (file.svg, globe.svg, next.svg, vercel.svg, window.svg → kullanılmıyor)
-│
-├── old-optwin/                  ← Legacy v1.2 (statik HTML/CSS/JS + PHP)
+│   └── uploads/                 ← Yüklenen ikonlar (WebP)
 │
 ├── .env                         ← ⚠️ Gerçek secret'lar (rotate edilmeli!)
+├── .env.example                 ← Sahte değerlerle örnek dosya
 ├── .gitignore
+├── Dockerfile                   ← Next.js standalone build
+├── docker-compose.yml           ← App + PostgreSQL
+├── vitest.config.ts             ← Test yapılandırması
 ├── next.config.ts               ← standalone output, sharp resim, Google avatar pattern
 ├── tsconfig.json                ← strict mode, bundler moduleResolution
 ├── eslint.config.mjs            ← core-web-vitals + typescript preset
@@ -222,14 +233,16 @@ optwin/
 |---|---|---|
 | Dashboard | ✅ Mevcut | Ziyaret, script, mesaj istatistikleri |
 | Features | ✅ Mevcut | CRUD + düzenleme + sıralama |
-| Categories | ✅ Mevcut | CRUD + sıralama |
-| DNS | ✅ Mevcut | CRUD + sıralama |
+| Categories | 🔒 Disabled | CRUD + sıralama (sidebar'da tıklanamaz) |
+| DNS | 🔒 Disabled | CRUD + sıralama (sidebar'da tıklanamaz) |
 | Script Defaults | ✅ Mevcut | Script etiketleri düzenleme + sıfırlama |
-| Messages | ❌ Yok | API mevcut ama admin sayfası yok |
-| Translations | ❌ Yok | API mevcut ama admin sayfası yok |
-| Settings | ❌ Yok | API mevcut ama admin sayfası yok |
-| Appearance | ❌ Yok | Henüz planlanmamış |
-| Stats (detay) | ❌ Yok | Sadece dashboard'da özet var |
+| Translations | 🔒 Disabled | API mevcut ama admin sayfası yok |
+| Messages | 🔒 Disabled | API mevcut ama admin sayfası yok |
+| Announcements | 🔒 Disabled | Yeni — sidebar'da tab eklendi, sayfa yok (Faz 13) |
+| Stats (detay) | 🔒 Disabled | Sadece dashboard'da özet var |
+| Languages | 🔒 Disabled | Yeni — sidebar'da tab eklendi, sayfa yok (Faz 14) |
+| Settings | 🔒 Disabled | API mevcut ama admin sayfası yok |
+| Appearance | 🔒 Disabled | Henüz planlanmamış |
 
 ---
 
@@ -260,7 +273,8 @@ optwin/
 
 - **Platform:** Coolify (self-hosted Docker)
 - **Output:** `standalone` (next.config.ts)
-- **Dockerfile:** ⚠️ Henüz oluşturulmamış
+- **Dockerfile:** ✅ Mevcut (Next.js standalone build)
+- **docker-compose.yml:** ✅ Mevcut (App + PostgreSQL)
 - **Gerekli env değişkenleri:**
 
 ```env
@@ -276,14 +290,15 @@ ADMIN_EMAILS=admin@example.com
 
 ## ⚠️ Bilinen Sorunlar & Teknik Borç
 
-1. **`.env` dosyası gerçek secret'lar içeriyor** — rotasyon gerekli
-2. **Admin API'lerde `any` tipi yaygın** — Zod validasyonu eksik
-3. **Modal bileşenleri çift render** — `page.tsx` + `ClientProviders`
-4. **Test altyapısı yok** — ne unit test ne E2E
-5. **Error boundary / loading state yok**
-6. **Rate limiting sadece contact için** — memory-based, güvenilmez
-7. **SVG upload XSS riski** — sanitization yok
-8. **5 admin sayfası henüz oluşturulmamış** (messages, translations, settings, appearance, stats)
+1. **`.env` dosyası gerçek secret'lar içeriyor** — rotasyon gerekli (henüz yapılmadı)
+2. **7+ admin sayfası henüz oluşturulmamış** (messages, translations, settings, appearance, stats, announcements, languages)
+3. **Privacy/Terms sayfaları hardcoded** — i18n veya DB'ye taşınmadı
+4. **50+ hardcoded URL ve marka bilgisi** — merkezi yapılandırma sistemi bekleniyor
+5. **Bakım sayfası çevirileri 2 yerde duplicate** — proxy.ts HTML + MaintenanceOverlay.tsx
+6. **Script generator ve core modüller test kapsamı yetersiz** — sadece powershell-safe testleri var
+7. **Admin panel sadece Türkçe** — çok dilli admin planlanmadı
+
+> ~~Çözülen eski sorunlar:~~ Admin API'lerde `any` → Zod ile değiştirildi, modal çift render → düzeltildi, error boundary → eklendi, rate limiting → proxy.ts'e entegre edildi, SVG XSS → sanitization eklendi.
 
 > Detaylı analiz için: `OptWin-Analyze.md`
 > Görev listesi için: `OptWin-Phases.md`
@@ -295,10 +310,12 @@ ADMIN_EMAILS=admin@example.com
 | Dosya | Amaç |
 |---|---|
 | `prisma/schema.prisma` | Tüm veri modellerinin kaynağı |
+| `src/proxy.ts` | Next.js 16 proxy: rate limiting + CORS + bakım modu |
 | `src/lib/auth.ts` | NextAuth + admin whitelist |
 | `src/lib/script-generator.ts` | PowerShell script oluşturucu (en kritik iş mantığı) |
 | `src/lib/powershell-safe.ts` | ASCII dönüşüm + PS escaping |
 | `src/store/useOptWinStore.ts` | Tüm client-side UI state |
 | `src/app/api/generate-script/route.ts` | Script API endpoint |
 | `src/app/admin/(dashboard)/layout.tsx` | Admin auth guard |
+| `src/components/admin/AdminSidebar.tsx` | Admin sidebar navigasyonu (12 menü öğesi) |
 | `src/i18n/locales/en.ts` | İngilizce UI çevirileri (ana referans) |
