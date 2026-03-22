@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { getTranslation, type TranslationKeys } from "@/i18n";
 
@@ -13,7 +14,7 @@ import { getTranslation, type TranslationKeys } from "@/i18n";
  */
 export function useTranslation() {
     const lang = useOptWinStore((state) => state.lang);
-    const t = getTranslation(lang);
+    const t = useMemo(() => getTranslation(lang), [lang]);
     return { t, lang };
 }
 

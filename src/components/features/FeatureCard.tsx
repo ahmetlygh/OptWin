@@ -97,12 +97,12 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                         )}
                         {!feature.noRisk && feature.risk === "medium" && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 border-amber-500/25 text-amber-400 pointer-events-none leading-none">
-                                {lang === "tr" ? "Orta Risk" : "Medium"}
+                                {{ en: "Medium", tr: "Orta Risk", de: "Mittel", fr: "Moyen", es: "Medio", zh: "中等", hi: "मध्यम" }[lang] || "Medium"}
                             </span>
                         )}
                         {!feature.noRisk && feature.risk === "high" && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-red-500/10 border-red-500/25 text-red-400 pointer-events-none leading-none">
-                                {lang === "tr" ? "Yüksek Risk" : "High Risk"}
+                                {{ en: "High Risk", tr: "Yüksek Risk", de: "Hoch", fr: "Élevé", es: "Alto", zh: "高风险", hi: "उच्च" }[lang] || "High Risk"}
                             </span>
                         )}
                         {!showDescriptions && (

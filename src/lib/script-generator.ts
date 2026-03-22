@@ -58,7 +58,21 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     for (const [k, v] of Object.entries(resolved)) {
         labels[k] = toPowerShellSafe(v);
     }
-    const dateStr = new Date().toLocaleString();
+    // UTC offset map — each language shows its own timezone
+    const UTC_OFFSETS: Record<string, number> = { tr: 3, en: 0, de: 1, fr: 1, es: 1, zh: 8, hi: 5.5 };
+    const langOffset = UTC_OFFSETS[dbLang] ?? 0;
+
+    // Calculate date/time for the target language's timezone
+    // now.getTime() is always UTC milliseconds — no getTimezoneOffset needed
+    const now = new Date();
+    const targetTime = new Date(now.getTime() + (langOffset * 3600000));
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const dateStr = `${pad(targetTime.getUTCDate())}.${pad(targetTime.getUTCMonth() + 1)}.${targetTime.getUTCFullYear()} ${pad(targetTime.getUTCHours())}:${pad(targetTime.getUTCMinutes())}`;
+
+    // UTC label for the script
+    const utcLabel = langOffset >= 0 ? `UTC+${langOffset}` : `UTC${langOffset}`;
+    const dateWithUtc = `${dateStr} (${utcLabel})`;
+
     const version = labels.versionNumber || '1.3.0';
 
     // Use \r\n for ALL lines so batch and PowerShell both parse correctly.
@@ -72,14 +86,12 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     // Flow:
     //   1. Batch checks admin via `net session`
     //   2. If NOT admin → re-launch THIS .bat with -Verb RunAs → exit original
-    //   3. If admin → extract PS code to temp .ps1 → run it → cleanup
+    //   3. If admin → extract PS code to temp .ps1 → run it → cleanup → pause
     //
-    // Why this works for ALL scenarios:
-    //   - Double-click: batch detects non-admin → UAC popup → elevated batch runs
-    //   - Right-click Run as Admin: net session succeeds → skip elevation → proceed
-    //   - Parenthesized paths: '%~f0' in PS single quotes handles OptWin(4).bat etc.
-    //   - No -NoExit: PS `exit` actually closes the terminal. No ghost windows.
-    //   - No PS self-elevation: no second window, no race condition with temp file.
+    // Why pause at end: When Start-Process opens an elevated CMD to run the .bat,
+    // the CMD window closes when the batch finishes. The PS ReadKey keeps it open
+    // while PS runs, but if PS crashes, `pause` at batch level ensures the user
+    // can see error messages before the window closes.
     //
     const batchLines: string[] = [];
     batchLines.push(`@echo off`);
@@ -104,6 +116,9 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     batchLines.push(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%T%"`);
     // Cleanup temp file
     batchLines.push(`del /f /q "%T%" >nul 2>&1`);
+    // pause keeps the elevated window open so the user can read output
+    // (PS ReadKey handles normal flow, pause is a safety net if PS crashes)
+    batchLines.push(`pause >nul`);
     batchLines.push(`exit /b`);
     batchLines.push(`REM === OPTWIN PS ===`);
 
@@ -132,7 +147,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     ps.push('#');
     ps.push('#    ' + labels.scriptTitle);
     ps.push('#    ' + labels.version + '   : ' + version);
-    ps.push('#    ' + labels.date + '      : ' + dateStr);
+    ps.push('#    ' + labels.date + '      : ' + dateWithUtc);
     ps.push('#    ' + labels.developer + ' : ' + (labels.developerName || 'ahmetly'));
     ps.push('#    ' + labels.website + '   : ' + (labels.websiteUrl || 'https://optwin.tech'));
     ps.push('#    GitHub    : ' + (labels.githubUrl || 'https://github.com/ahmetlygh/optwin'));
@@ -158,7 +173,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     ps.push('Write-Host "    ' + labels.bannerTitle + '" -ForegroundColor White');
     ps.push('Write-Host "  ----------------------------------------------------------------" -ForegroundColor DarkGray');
     ps.push('Write-Host "    ' + labels.version + '   : ' + version + '" -ForegroundColor Gray');
-    ps.push('Write-Host "    ' + labels.date + '      : ' + dateStr + '" -ForegroundColor Gray');
+    ps.push('Write-Host "    ' + labels.date + '      : ' + dateWithUtc + '" -ForegroundColor Gray');
     ps.push('Write-Host "  ----------------------------------------------------------------" -ForegroundColor DarkGray');
     ps.push('Write-Host "    ' + labels.openSourceShort + '" -ForegroundColor DarkGray');
     const ghShort = (labels.githubUrl || 'https://github.com/ahmetlygh/optwin').replace('https://', '');

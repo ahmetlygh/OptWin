@@ -56,6 +56,30 @@ export default async function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={`${inter.variable} antialiased selection:bg-[#6c5ce7] selection:text-white`}>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "SoftwareApplication",
+                            "name": "OptWin",
+                            "applicationCategory": "UtilitiesApplication",
+                            "operatingSystem": "Windows",
+                            "url": "https://optwin.tech",
+                            "description": "Free, open-source browser-based Windows optimizer. Select from 60+ optimizations and generate a custom PowerShell script.",
+                            "offers": {
+                                "@type": "Offer",
+                                "price": "0",
+                                "priceCurrency": "USD",
+                            },
+                            "author": {
+                                "@type": "Person",
+                                "name": "ahmetly",
+                                "url": "https://www.ahmetly.com",
+                            },
+                        }),
+                    }}
+                />
                 <ClientProviders>
                     <PublicShell serverMaintenance={maintenance}>
                         {children}

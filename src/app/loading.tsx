@@ -1,13 +1,31 @@
+"use client";
+
+import { Settings } from "lucide-react";
+import { useOptWinStore } from "@/store/useOptWinStore";
+
+const LOADING_TEXT: Record<string, string> = {
+    en: "Loading...",
+    tr: "Yükleniyor...",
+    de: "Wird geladen...",
+    fr: "Chargement...",
+    es: "Cargando...",
+    zh: "加载中...",
+    hi: "लोड हो रहा है...",
+};
+
 export default function Loading() {
+    const lang = useOptWinStore((state) => state.lang);
+    const text = LOADING_TEXT[lang] || LOADING_TEXT.en;
+
     return (
-        <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <div className="relative w-12 h-12">
-                    <div className="absolute inset-0 rounded-full border-2 border-[var(--border-color)]"></div>
-                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--accent-color)] animate-spin"></div>
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-[var(--bg-color)]">
+            <div className="flex flex-col items-center gap-5">
+                {/* Spinning gear — fast spin like maintenance overlay */}
+                <div className="animate-spin" style={{ animationDuration: "2s" }}>
+                    <Settings size={56} className="text-[var(--accent-color)] opacity-35" strokeWidth={1.5} />
                 </div>
-                <p className="text-sm text-[var(--text-secondary)] font-medium animate-pulse">
-                    Loading...
+                <p className="text-sm font-medium text-[var(--text-secondary)] animate-pulse">
+                    {text}
                 </p>
             </div>
         </div>

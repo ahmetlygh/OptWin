@@ -32,6 +32,7 @@ export function Footer() {
                         </div>
                         <div className="flex flex-col gap-2.5 items-center md:items-start">
                             <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.support"]}</span>
+                            <a href="/#about" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["nav.about"]}</a>
                             <Link href="/contact" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.contactUs"]}</Link>
                             <a href="mailto:contact@optwin.tech" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">contact@optwin.tech</a>
                         </div>
