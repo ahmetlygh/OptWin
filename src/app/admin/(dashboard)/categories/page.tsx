@@ -39,8 +39,8 @@ export default function AdminCategoriesPage() {
         fetchCategories();
     };
 
-    const handleDelete = async (id: string) => {
-        const res = await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" });
+    const handleDelete = async (id: string, force = false) => {
+        const res = await fetch(`/api/admin/categories?id=${id}${force ? '&force=true' : ''}`, { method: "DELETE" });
         const data = await res.json();
         if (!data.success) alert(data.error);
         setDeleteConfirm(null);
@@ -174,18 +174,27 @@ export default function AdminCategoriesPage() {
                 })}
             </div>
 
-            {deleteConfirm && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 backdrop-blur-xl" onClick={() => setDeleteConfirm(null)}>
-                    <div className="bg-[#1a1a24] border border-[#2b2938] rounded-2xl p-6 max-w-sm w-full mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-white mb-2">Delete Category?</h3>
-                        <p className="text-sm text-[#a19eb7] mb-6">Categories with features cannot be deleted. Move or remove features first.</p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">Cancel</button>
-                            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">Delete</button>
+            {deleteConfirm && (() => {
+                const cat = categories.find(c => c.id === deleteConfirm);
+                if (!cat) return null;
+                const hasFeatures = cat._count.features > 0;
+                return (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 backdrop-blur-xl" onClick={() => setDeleteConfirm(null)}>
+                        <div className="bg-[#1a1a24] border border-[#2b2938] rounded-2xl p-6 max-w-sm w-full mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                            <h3 className="text-lg font-bold text-white mb-2">Kategoriyi Sil?</h3>
+                            {hasFeatures ? (
+                                <p className="text-sm text-red-400 mb-6">Bu kategori içinde <b>{cat._count.features}</b> adet özellik bulunuyor! "Hepsini Sil" diyerek kategoriyi ve içindeki tüm özellikleri tamamen silebilirsiniz.</p>
+                            ) : (
+                                <p className="text-sm text-[#a19eb7] mb-6">Bu kategoriyi silmek istediğinizden emin misiniz?</p>
+                            )}
+                            <div className="flex gap-3">
+                                <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">İptal</button>
+                                <button onClick={() => handleDelete(deleteConfirm, hasFeatures)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">{hasFeatures ? "Hepsini Sil" : "Sil"}</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 }
@@ -242,10 +251,6 @@ function CategoryForm({ category, isCreating, saving, onSave, onCancel }: {
                     <div>
                         <label className={labelClass}>Icon SVG path</label>
                         <input value={icon} onChange={e => setIcon(e.target.value)} placeholder="Optional SVG icon" className={inputClass} />
-                    </div>
-                    <div>
-                        <label className={labelClass}>Order</label>
-                        <input type="number" value={order} onChange={e => setOrder(parseInt(e.target.value) || 0)} className={inputClass} />
                     </div>
                     <div className="flex items-end">
                         <label className="flex items-center gap-2 cursor-pointer pb-2">

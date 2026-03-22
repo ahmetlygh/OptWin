@@ -99,7 +99,7 @@ const ALWAYS_ALLOWED = [
     '/assets',
 ];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Pass pathname to server components via header

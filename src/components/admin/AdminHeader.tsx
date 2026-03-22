@@ -8,6 +8,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, ExternalLink, Clock, Loader2, ChevronRight, X, AlertTriangle, Languages } from "lucide-react";
 import { AdminConfirmModal } from "./AdminConfirmModal";
+import { AdminLangPicker } from "./AdminLangPicker";
 
 interface AdminHeaderProps {
     user: {
@@ -65,7 +66,24 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         fetch("/api/admin/maintenance").then(r => r.json()).then(d => {
             setMaintenance(d.maintenance === true);
             setMaintenanceLoading(false);
+            window.dispatchEvent(new CustomEvent('optwin:set-maintenance', { detail: d.maintenance === true }));
         }).catch(() => setMaintenanceLoading(false));
+    }, []);
+
+    useEffect(() => {
+        const openModalHandler = () => openMaintenanceModal();
+        const toggleOffHandler = () => setShowMaintenanceOff(true);
+        const setMaintenanceHandler = (e: any) => setMaintenance(e.detail);
+
+        window.addEventListener('optwin:open-maintenance-modal', openModalHandler);
+        window.addEventListener('optwin:open-maintenance-off', toggleOffHandler);
+        window.addEventListener('optwin:set-maintenance', setMaintenanceHandler);
+        
+        return () => {
+            window.removeEventListener('optwin:open-maintenance-modal', openModalHandler);
+            window.removeEventListener('optwin:open-maintenance-off', toggleOffHandler);
+            window.removeEventListener('optwin:set-maintenance', setMaintenanceHandler);
+        };
     }, []);
 
     const toggleMaintenance = async (enabled: boolean) => {
@@ -90,7 +108,10 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 body: JSON.stringify({ enabled, reason: enabled ? JSON.stringify(mReasons) : "", estimatedEnd: enabled ? estimatedEnd : "" }),
             });
             const data = await res.json();
-            if (data.success) setMaintenance(data.maintenance);
+            if (data.success) {
+                setMaintenance(data.maintenance);
+                window.dispatchEvent(new CustomEvent('optwin:set-maintenance', { detail: data.maintenance }));
+            }
         } catch { /* ignore */ }
         setMaintenanceLoading(false);
         setShowMaintenanceOn(false);
@@ -300,22 +321,11 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                             <div className="mb-4">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
-                                    <div className="flex gap-0.5">
-                                        {REASON_LANGS.map(l => (
-                                            <button
-                                                key={l}
-                                                type="button"
-                                                onClick={() => setMReasonLang(l)}
-                                                className={`h-5 px-1.5 rounded text-[9px] font-bold transition-all ${
-                                                    mReasonLang === l
-                                                        ? "bg-[#6b5be6]/15 text-[#6b5be6] border border-[#6b5be6]/20"
-                                                        : mReasons[l] ? "bg-white/[0.04] text-white/40 border border-white/[0.06]" : "text-white/20 border border-transparent hover:text-white/40"
-                                                }`}
-                                            >
-                                                {REASON_LANG_LABELS[l]}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <AdminLangPicker
+                                        value={mReasonLang}
+                                        onChange={setMReasonLang}
+                                        availableLangs={[...REASON_LANGS]}
+                                    />
                                 </div>
                                 <textarea
                                     value={mReasons[mReasonLang] || ""}

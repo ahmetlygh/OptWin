@@ -52,16 +52,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid input" }, { status: 400 });
         }
 
-        const { slug, icon, order, enabled, translations } = parsed.data;
+        let finalOrder = parsed.data.order;
+        if (finalOrder === 0) {
+            const maxCat = await prisma.category.findFirst({
+                orderBy: { order: 'desc' },
+                select: { order: true }
+            });
+            finalOrder = maxCat ? maxCat.order + 1 : 1;
+        }
 
         const category = await prisma.category.create({
             data: {
-                slug,
-                icon,
-                order,
-                enabled,
+                slug: parsed.data.slug,
+                icon: parsed.data.icon,
+                enabled: parsed.data.enabled,
+                order: finalOrder,
                 translations: {
-                    create: translations.map(t => ({
+                    create: parsed.data.translations.map((t: any) => ({
                         lang: t.lang,
                         name: t.name,
                     })),
@@ -128,12 +135,16 @@ export async function DELETE(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const force = searchParams.get("force") === "true";
+
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
     // Check if category has features
-    const count = await prisma.feature.count({ where: { categoryId: id } });
-    if (count > 0) {
-        return NextResponse.json({ error: "Cannot delete category with features. Move or delete features first." }, { status: 400 });
+    if (!force) {
+        const count = await prisma.feature.count({ where: { categoryId: id } });
+        if (count > 0) {
+            return NextResponse.json({ error: "Cannot delete category with features. Move or delete features first.", hasFeatures: true }, { status: 400 });
+        }
     }
 
     try {

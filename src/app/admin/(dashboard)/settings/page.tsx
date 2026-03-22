@@ -263,15 +263,17 @@ export default function SettingsPage() {
     const [contentSaving, setContentSaving] = useState(false);
     const [contentSaved, setContentSaved] = useState(false);
     const [contentError, setContentError] = useState("");
+    const [dangerLoading, setDangerLoading] = useState<string | null>(null);
 
-    // ─── CATEGORIES state ───────────────────────────────────────────────────
-    const [categories, setCategories] = useState<CategoryData[]>([]);
-    const [originalCategories, setOriginalCategories] = useState<CategoryData[]>([]);
-    const [catLoading, setCatLoading] = useState(true);
-    const [catSaving, setCatSaving] = useState(false);
-    const [catSaved, setCatSaved] = useState(false);
-    const [catError, setCatError] = useState("");
-    const [catLang, setCatLang] = useState("en");
+    // ─── MAINTENANCE state (Synced from Header) ─────────────────────────────
+    const [maintenance, setMaintenance] = useState(false);
+    useEffect(() => {
+        const handler = (e: any) => setMaintenance(e.detail);
+        window.addEventListener('optwin:set-maintenance', handler);
+        return () => window.removeEventListener('optwin:set-maintenance', handler);
+    }, []);
+
+
 
     // ─── Fetch settings ─────────────────────────────────────────────────────
     const fetchSettings = useCallback(async () => {
@@ -317,15 +319,6 @@ export default function SettingsPage() {
             setContentLoading(false);
         }
     }, []);
-
-    // ─── Fetch maintenance ───────────────────────────────────────────────────
-    useEffect(() => {
-        fetch("/api/admin/maintenance").then(r => r.json()).then(d => {
-            setMaintenance(d.maintenance === true);
-            setMaintenanceLoading(false);
-        }).catch(() => setMaintenanceLoading(false));
-    }, []);
-
     useEffect(() => {
         fetchSettings();
         fetchTranslations();
@@ -420,60 +413,7 @@ export default function SettingsPage() {
         }
     };
 
-    // ─── Maintenance toggle ──────────────────────────────────────────────────
-    const toggleMaintenance = async (enabled: boolean) => {
-        setMaintenanceLoading(true);
-        try {
-            let estimatedEnd = "";
-            if (enabled) {
-                if (mTimeMode === "duration") {
-                    const mins = mCustom ? parseInt(mCustomMinutes) || 0 : (mMinutes || 0);
-                    if (mins > 0) {
-                        const end = new Date(Date.now() + mins * 60000);
-                        estimatedEnd = end.toISOString();
-                    }
-                } else if (mTimeMode === "datetime" && mDate && mTime) {
-                    const localStr = `${mDate}T${mTime}:00+03:00`;
-                    estimatedEnd = new Date(localStr).toISOString();
-                }
-            }
-            const res = await fetch("/api/admin/maintenance", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enabled, reason: enabled ? JSON.stringify(mReasons) : "", estimatedEnd: enabled ? estimatedEnd : "" }),
-            });
-            const data = await res.json();
-            if (data.success) setMaintenance(data.maintenance);
-        } catch { /* ignore */ }
-        setMaintenanceLoading(false);
-        setShowMaintenanceOn(false);
-        setShowMaintenanceOff(false);
-        if (!enabled) { setMReasons(Object.fromEntries(REASON_LANGS.map(l => [l, ""]))); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); }
-    };
 
-    const openMaintenanceModal = () => {
-        setMReasons(Object.fromEntries(REASON_LANGS.map(l => [l, ""]))); setMReasonLang("en"); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
-        setShowMaintenanceOn(true);
-    };
-
-    const switchToDatetime = () => {
-        setMTimeMode("datetime");
-        const utc3Now = new Date(Date.now() + 3 * 3600000);
-        const plusOne = new Date(utc3Now.getTime() + 3600000);
-        const dateStr = plusOne.toISOString().split("T")[0];
-        const hh = plusOne.getUTCHours().toString().padStart(2, "0");
-        const mm = plusOne.getUTCMinutes().toString().padStart(2, "0");
-        setMDate(dateStr);
-        setMTime(`${hh}:${mm}`);
-    };
-
-    // ESC to close maintenance modal
-    useEffect(() => {
-        if (!showMaintenanceOn) return;
-        const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setShowMaintenanceOn(false); };
-        window.addEventListener("keydown", handler);
-        return () => window.removeEventListener("keydown", handler);
-    }, [showMaintenanceOn]);
 
     // ─── Danger zone actions ─────────────────────────────────────────────────
     const handleDangerAction = async (action: string) => {
@@ -514,19 +454,10 @@ export default function SettingsPage() {
         }));
     };
 
-    const updateCatTranslation = (catId: string, lang: string, name: string) => {
-        setCategories(prev => prev.map(c => {
-            if (c.id !== catId) return c;
-            const existing = c.translations.find(t => t.lang === lang);
-            if (existing) {
-                return { ...c, translations: c.translations.map(t => t.lang === lang ? { ...t, name } : t) };
-            }
-            return { ...c, translations: [...c.translations, { lang, name }] };
-        }));
-    };
+
 
     // Loading
-    const isLoading = settingsLoading || contentLoading || catLoading;
+    const isLoading = settingsLoading || contentLoading;
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -536,13 +467,13 @@ export default function SettingsPage() {
     }
 
     // Current tab change detection
-    const currentTabChanged = activeTab === "settings" ? settingsChanged : activeTab === "content" ? contentChanged : catChanged;
-    const currentError = activeTab === "settings" ? settingsError : activeTab === "content" ? contentError : catError;
-    const currentSaving = activeTab === "settings" ? settingsSaving : activeTab === "content" ? contentSaving : catSaving;
-    const currentSaved = activeTab === "settings" ? settingsSaved : activeTab === "content" ? contentSaved : catSaved;
+    const currentTabChanged = activeTab === "settings" ? settingsChanged : contentChanged;
+    const currentError = activeTab === "settings" ? settingsError : contentError;
+    const currentSaving = activeTab === "settings" ? settingsSaving : contentSaving;
+    const currentSaved = activeTab === "settings" ? settingsSaved : contentSaved;
 
-    const handleCurrentSave = activeTab === "settings" ? handleSettingsSave : activeTab === "content" ? handleContentSave : handleCatSave;
-    const handleCurrentCancel = activeTab === "settings" ? () => setSettings({ ...originalSettings }) : activeTab === "content" ? () => setTranslations(JSON.parse(JSON.stringify(originalTranslations))) : () => setCategories(JSON.parse(JSON.stringify(originalCategories)));
+    const handleCurrentSave = activeTab === "settings" ? handleSettingsSave : handleContentSave;
+    const handleCurrentCancel = activeTab === "settings" ? () => setSettings({ ...originalSettings }) : () => setTranslations(JSON.parse(JSON.stringify(originalTranslations)));
 
     return (
         <motion.div
@@ -555,7 +486,7 @@ export default function SettingsPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 flex items-center justify-center">
-                        <Settings size={18} className="text-[#6b5be6]" />
+                        <SettingsIcon size={18} className="text-[#6b5be6]" />
                     </div>
                     <div>
                         <h1 className="text-2xl font-black text-white tracking-tight">Ayarlar</h1>
@@ -594,11 +525,11 @@ export default function SettingsPage() {
                         <ExternalLink size={13} /> Önizleme
                     </button>
 
-                    {/* Lang picker for content & categories */}
-                    {(activeTab === "content" || activeTab === "categories") && (
+                    {/* Lang picker for content */}
+                    {activeTab === "content" && (
                         <AdminLangPicker
-                            value={activeTab === "content" ? activeLang : catLang}
-                            onChange={activeTab === "content" ? setActiveLang : setCatLang}
+                            value={activeLang}
+                            onChange={setActiveLang}
                             availableLangs={LANGS}
                         />
                     )}
@@ -628,8 +559,7 @@ export default function SettingsPage() {
                         <span className="relative z-10">{tab.label}</span>
                         {/* Change indicator */}
                         {((tab.id === "settings" && settingsChanged) ||
-                          (tab.id === "content" && contentChanged) ||
-                          (tab.id === "categories" && catChanged)) && (
+                          (tab.id === "content" && contentChanged)) && (
                             <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-[#6b5be6]" />
                         )}
                     </button>
@@ -646,6 +576,33 @@ export default function SettingsPage() {
             {/* ═══ TAB: SETTINGS ═══════════════════════════════════════════════ */}
             {activeTab === "settings" && (
                 <div className="space-y-4">
+                    {/* Maintenance Mode (Linked to Header) */}
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
+                        <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between gap-3">
+                            <div className="flex flex-1 items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/10 text-red-500"><ShieldAlert size={16} /></div>
+                                <div>
+                                    <h2 className="text-sm font-bold text-white">Bakım Modu</h2>
+                                    <p className="text-[11px] text-white/25">Siteyi bakım moduna alın veya normal moda döndürün.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${maintenance ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
+                                    {maintenance ? '● Bakımda' : '● Çevrimiçi'}
+                                </span>
+                                <button
+                                    onClick={() => maintenance ? window.dispatchEvent(new CustomEvent('optwin:open-maintenance-off')) : window.dispatchEvent(new CustomEvent('optwin:open-maintenance-modal'))}
+                                    className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${maintenance ? 'bg-red-500' : 'bg-white/[0.06]'}`}
+                                >
+                                    <motion.div
+                                        animate={{ x: maintenance ? 24 : 2 }}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                        className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm"
+                                    />
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
                     {SETTING_GROUPS.map((group, gi) => (
                         <motion.div
                             key={group.id}
@@ -752,16 +709,23 @@ export default function SettingsPage() {
                                 <button
                                     key={section.id}
                                     onClick={() => setActiveContentSection(section.id)}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
+                                    className={`relative z-0 w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
                                         activeContentSection === section.id
-                                            ? "bg-[#6b5be6]/10 text-white border border-[#6b5be6]/15"
+                                            ? "text-white"
                                             : "text-white/35 hover:text-white/60 hover:bg-white/[0.03]"
                                     }`}
                                 >
-                                    <span style={{ color: activeContentSection === section.id ? section.color : undefined }} className={activeContentSection !== section.id ? "text-white/20" : ""}>
+                                    {activeContentSection === section.id && (
+                                        <motion.div
+                                            layoutId="contentSidebarTab"
+                                            className="absolute inset-0 -z-10 rounded-lg bg-[#6b5be6]/10 border border-[#6b5be6]/15"
+                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                        />
+                                    )}
+                                    <span style={{ color: activeContentSection === section.id ? section.color : undefined }} className={`relative z-10 ${activeContentSection !== section.id ? "text-white/20" : ""}`}>
                                         {section.icon}
                                     </span>
-                                    {section.title}
+                                    <span className="relative z-10">{section.title}</span>
                                 </button>
                             ))}
                         </div>
@@ -821,44 +785,6 @@ export default function SettingsPage() {
                 </div>
             )}
 
-            {/* ═══ TAB: CATEGORIES ═════════════════════════════════════════════ */}
-            {activeTab === "categories" && (
-                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
-                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500"><FolderOpen size={16} /></div>
-                            <div>
-                                <h2 className="text-sm font-bold text-white">Kategori İsimleri</h2>
-                                <p className="text-[11px] text-white/25">Her dil için kategori isimlerini düzenleyin</p>
-                            </div>
-                        </div>
-                        <span className="text-[9px] text-white/15 font-mono">{categories.length} kategori</span>
-                    </div>
-                    <div className="divide-y divide-white/[0.03]">
-                        {categories.sort((a, b) => a.order - b.order).map((cat) => {
-                            const currentName = cat.translations.find(t => t.lang === catLang)?.name || "";
-                            const origCat = originalCategories.find(c => c.id === cat.id);
-                            const origName = origCat?.translations.find(t => t.lang === catLang)?.name || "";
-                            const changed = currentName !== origName;
-                            return (
-                                <div key={cat.id} className={`px-5 py-3 flex items-center gap-4 transition-colors ${changed ? "bg-[#6b5be6]/[0.03]" : "hover:bg-white/[0.01]"}`}>
-                                    <div className="w-[180px] shrink-0">
-                                        <span className="text-[11px] font-mono font-bold text-white/30">{cat.slug}</span>
-                                        {changed && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#6b5be6] inline-block" />}
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={currentName}
-                                        onChange={e => updateCatTranslation(cat.id, catLang, e.target.value)}
-                                        placeholder={`${cat.slug} adı (${catLang})`}
-                                        className="flex-1 bg-white/[0.02] border border-white/[0.05] hover:border-white/[0.10] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 placeholder-white/15 focus:outline-none transition-all"
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </motion.div>
+            {/* ═══ TAB: CATEGORIES ═════════════════════════════════════════════ */}        </motion.div>
     );
 }

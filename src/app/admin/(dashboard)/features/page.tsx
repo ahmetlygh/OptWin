@@ -859,22 +859,7 @@ export default function AdminFeaturesPage() {
                                         className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">Sıra</label>
-                                        <input
-                                            type="number"
-                                            value={newCatOrder || ""}
-                                            onChange={e => setNewCatOrder(parseInt(e.target.value) || 0)}
-                                            placeholder={`${categories.length + 1}`}
-                                            className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        />
-                                        <p className="text-[9px] text-white/15 mt-0.5">Aynı sıra varsa mevcut kategoriler kaydırılır</p>
-                                    </div>
-                                    <div className="flex items-end pb-6">
-                                        <p className="text-[9px] text-white/15">Boş = #{categories.length + 1} (sona)</p>
-                                    </div>
-                                </div>
+
                                 {/* O7: Language picker + single input + translate */}
                                 <div>
                                     <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">Kategori İsmi</label>

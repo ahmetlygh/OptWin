@@ -551,20 +551,19 @@ body.theme-ready nav {
 
 /* ============================================================
    OPTWIN SPINNER — GPU-accelerated, flicker-free
-   Uses 'rotate' property for pure compositor animation, avoiding
-   sub-pixel rounding that causes jitter on 'transform: rotate()'.
    ============================================================ */
 @keyframes optwinSpin {
-  from { rotate: 0deg; }
-  to { rotate: 360deg; }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .optwin-spinner {
-  animation: optwinSpin 2.5s linear infinite;
-  will-change: rotate;
-  transform: translateZ(0);
+  animation: optwinSpin 2s linear infinite;
+  will-change: transform;
+  transform-origin: center center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  contain: layout style;
-  perspective: 1000px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
