@@ -151,6 +151,24 @@ const de = {
     "terms.modificationsDesc": "Wir behalten uns das Recht vor, diese Bedingungen jederzeit zu ändern. Die fortgesetzte Nutzung gilt als Zustimmung.",
     "terms.openSource": "Open Source",
     "terms.openSourceDesc": "OptWins Quellcode ist auf GitHub öffentlich verfügbar. Sie können das Projekt frei inspizieren, forken und beitragen.",
+
+    "feature.badge.new": "Neu",
+    "feature.risk.medium": "Mittel",
+    "feature.risk.high": "Hohes Risiko",
+    "ui.loading": "Wird geladen...",
+    "hero.title.text": "Optimieren Sie Ihr Windows-Erlebnis",
+    "hero.title.highlight": "Optimieren",
+    "maintenance.msg": "Unsere Website befindet sich derzeit in Wartung.",
+    "maintenance.apology": "Wir entschuldigen uns fuer die Unannehmlichkeiten.",
+    "maintenance.reasonLabel": "Grund:",
+    "maintenance.estLabel": "Voraussichtliches Ende",
+    "maintenance.days": "Tage",
+    "maintenance.hours": "Std",
+    "maintenance.min": "Min",
+    "maintenance.sec": "Sek",
+    "maintenance.est": "Geschaetzte Zeit",
+    "maintenance.wip": "Arbeiten im Gange...",
+    "maintenance.loading": "Wird geladen...",
 } as const;
 
 export default de;

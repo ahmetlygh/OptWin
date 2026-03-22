@@ -66,8 +66,8 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
         { label: "Duyurular", href: "/admin/announcements", icon: <Megaphone size={17} />, disabled: true },
         { label: "İstatistikler", href: "/admin/stats", icon: <BarChart3 size={17} />, disabled: true },
         { label: "Dil Yönetimi", href: "/admin/languages", icon: <Globe2 size={17} />, disabled: true },
-        { label: "Ayarlar", href: "/admin/settings", icon: <Settings size={17} />, disabled: true },
         { label: "Görünüm", href: "/admin/appearance", icon: <Palette size={17} />, disabled: true },
+        { label: "Ayarlar", href: "/admin/settings", icon: <Settings size={17} /> },
     ];
 
     const isActive = (href: string) => {

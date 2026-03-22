@@ -892,13 +892,6 @@ export default function ScriptDefaultsPage() {
                         </div>
                         <div className="flex items-center gap-1.5">
                             <span className="text-[9px] text-white/15 font-mono">{previewLines.length} lines</span>
-                            <button
-                                onClick={handleDownloadPreview}
-                                className="h-6 px-2 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/10 transition-all flex items-center gap-1"
-                            >
-                                <Download size={9} />
-                                .bat
-                            </button>
                         </div>
                     </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, memo } from "react";
 import { useOptWinStore } from "@/store/useOptWinStore";
+import { useTranslation } from "@/i18n/useTranslation";
 import { Feature } from "@/types/feature";
 import { HighlightText } from "../shared/HighlightText";
 import { FeatureIcon, CheckIcon, GlobeIcon, InfoIcon } from "../shared/Icons";
@@ -16,6 +17,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     const setDnsModalOpen = useOptWinStore(state => state.setDnsModalOpen);
     const dnsProvider = useOptWinStore(state => state.dnsProvider);
     const lang = useOptWinStore(state => state.lang);
+    const { t } = useTranslation();
     const showDescriptions = useOptWinStore(state => state.showDescriptions);
     const [localShowDesc, setLocalShowDesc] = useState(false);
 
@@ -40,9 +42,6 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     const desc = getTranslation("desc");
 
     // New badge logic
-    const newBadgeLabels: Record<string, string> = {
-        en: "New", tr: "Yeni", de: "Neu", fr: "Nouveau", zh: "新", es: "Nuevo", hi: "नया",
-    };
     const isNewBadgeVisible = feature.newBadge && (
         !feature.newBadgeExpiry || new Date(feature.newBadgeExpiry) > new Date()
     );
@@ -92,17 +91,17 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                         </h4>
                         {isNewBadgeVisible && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-[var(--accent-color)]/15 border-[var(--accent-color)]/30 text-[var(--accent-color)] pointer-events-none animate-pulse leading-none">
-                                {newBadgeLabels[lang] || newBadgeLabels.en}
+                                {t["feature.badge.new"]}
                             </span>
                         )}
                         {!feature.noRisk && feature.risk === "medium" && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 border-amber-500/25 text-amber-400 pointer-events-none leading-none">
-                                {{ en: "Medium", tr: "Orta Risk", de: "Mittel", fr: "Moyen", es: "Medio", zh: "中等", hi: "मध्यम" }[lang] || "Medium"}
+                                {t["feature.risk.medium"]}
                             </span>
                         )}
                         {!feature.noRisk && feature.risk === "high" && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-red-500/10 border-red-500/25 text-red-400 pointer-events-none leading-none">
-                                {{ en: "High Risk", tr: "Yüksek Risk", de: "Hoch", fr: "Élevé", es: "Alto", zh: "高风险", hi: "उच्च" }[lang] || "High Risk"}
+                                {t["feature.risk.high"]}
                             </span>
                         )}
                         {!showDescriptions && (

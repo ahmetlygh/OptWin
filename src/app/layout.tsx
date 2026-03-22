@@ -5,6 +5,7 @@ import { ClientProviders } from "@/components/providers/ClientProviders";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { isMaintenanceMode } from "@/lib/maintenance";
 import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -51,7 +52,14 @@ export default async function RootLayout({
     const headersList = await headers();
     const pathname = headersList.get("x-next-pathname") || "";
     const isAdmin = pathname.startsWith("/admin");
-    const maintenance = isAdmin ? false : await isMaintenanceMode();
+    const [maintenance, session] = await Promise.all([
+        isAdmin ? Promise.resolve(false) : isMaintenanceMode(),
+        auth(),
+    ]);
+    const adminSession = session?.isAdmin ? {
+        name: session.user?.name || null,
+        image: session.user?.image || null,
+    } : null;
 
     return (
         <html lang="en" suppressHydrationWarning>
@@ -81,7 +89,7 @@ export default async function RootLayout({
                     }}
                 />
                 <ClientProviders>
-                    <PublicShell serverMaintenance={maintenance}>
+                    <PublicShell serverMaintenance={maintenance} adminSession={adminSession}>
                         {children}
                     </PublicShell>
                 </ClientProviders>

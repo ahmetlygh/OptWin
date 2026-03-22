@@ -6,7 +6,7 @@ import { getTranslation, type TranslationKeys } from "@/i18n";
 
 /**
  * React hook for translations.
- * Returns `t` object with all translation keys, and `lang` for the current language.
+ * Priority: DB translations (UiTranslation table) → Static locale file → key itself
  *
  * Usage:
  *   const { t, lang } = useTranslation();
@@ -14,7 +14,26 @@ import { getTranslation, type TranslationKeys } from "@/i18n";
  */
 export function useTranslation() {
     const lang = useOptWinStore((state) => state.lang);
-    const t = useMemo(() => getTranslation(lang), [lang]);
+    const dbTranslations = useOptWinStore((state) => state.dbTranslations);
+
+    const t = useMemo(() => {
+        const staticTranslations = getTranslation(lang);
+        // Merge: DB translations override static ones
+        // Use a Proxy to provide dynamic key access with fallback chain
+        return new Proxy({} as Record<TranslationKeys, string>, {
+            get(_target, prop: string) {
+                // 1. DB translation (highest priority — admin editable)
+                if (dbTranslations[prop]) return dbTranslations[prop];
+                // 2. Static locale file (bundled fallback)
+                if ((staticTranslations as Record<string, string>)[prop]) {
+                    return (staticTranslations as Record<string, string>)[prop];
+                }
+                // 3. Key itself (development fallback)
+                return prop;
+            },
+        });
+    }, [lang, dbTranslations]);
+
     return { t, lang };
 }
 

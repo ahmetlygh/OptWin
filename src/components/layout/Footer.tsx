@@ -1,12 +1,39 @@
 "use client";
 
 import { useTranslation } from "@/i18n/useTranslation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { GithubIcon, HeartIcon } from "../shared/Icons";
 
+interface PublicSettings {
+    github_url?: string;
+    contact_email?: string;
+    author_name?: string;
+    author_url?: string;
+    copyright_text?: string;
+    copyright_year?: string;
+}
+
 export function Footer() {
     const { t } = useTranslation();
+    const [settings, setSettings] = useState<PublicSettings>({});
+
+    useEffect(() => {
+        fetch("/api/public-settings")
+            .then(r => r.json())
+            .then(d => { if (d.success) setSettings(d.settings); })
+            .catch(() => {});
+    }, []);
+
+    const githubUrl = settings.github_url || "https://github.com/ahmetlygh/OptWin";
+    const contactEmail = settings.contact_email || "contact@optwin.tech";
+    const authorName = settings.author_name || "ahmetly_";
+    const authorUrl = settings.author_url || "https://www.ahmetly.com";
+    const copyrightText = settings.copyright_text || "OptWin";
+    const copyrightYear = settings.copyright_year || new Date().getFullYear().toString();
+    const currentYear = new Date().getFullYear().toString();
+    const yearDisplay = copyrightYear !== currentYear ? `${copyrightYear}-${currentYear}` : copyrightYear;
 
     return (
         <footer className="w-full mt-4 border-t border-[var(--border-color)] bg-[var(--card-bg)]/80 backdrop-blur-lg">
@@ -34,17 +61,17 @@ export function Footer() {
                             <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{t["footer.support"]}</span>
                             <a href="/#about" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["nav.about"]}</a>
                             <Link href="/contact" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{t["footer.contactUs"]}</Link>
-                            <a href="mailto:contact@optwin.tech" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">contact@optwin.tech</a>
+                            <a href={`mailto:${contactEmail}`} className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors">{contactEmail}</a>
                         </div>
                     </div>
                 </div>
 
                 {/* Bottom */}
                 <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <span className="text-[11px] text-[var(--text-secondary)]">© {new Date().getFullYear()} OptWin. {t["footer.allRights"]}</span>
+                    <span className="text-[11px] text-[var(--text-secondary)]">© {yearDisplay} {copyrightText}. {t["footer.allRights"]}</span>
                     <div className="text-[11px] text-[var(--text-secondary)] flex items-center gap-3">
                         <a
-                            href="https://github.com/ahmetlygh/OptWin"
+                            href={githubUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 hover:text-[var(--accent-color)] transition-colors"
@@ -54,12 +81,12 @@ export function Footer() {
                         <span className="flex items-center gap-1">
                             Made with <HeartIcon size={11} className="text-red-500 inline-block" /> by{" "}
                             <a
-                                href="https://www.ahmetly.com"
+                                href={authorUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[var(--accent-color)] hover:text-purple-400 font-semibold transition-colors"
                             >
-                                ahmetly_
+                                {authorName}
                             </a>
                         </span>
                     </div>

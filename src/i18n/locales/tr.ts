@@ -151,6 +151,24 @@ const tr = {
     "terms.modificationsDesc": "Bu şartları herhangi bir zamanda değiştirme hakkını saklı tutarız. OptWin'in kullanılmaya devam edilmesi, güncellenmiş şartların kabul edildiği anlamına gelir.",
     "terms.openSource": "Açık Kaynak",
     "terms.openSourceDesc": "OptWin'in kaynak kodu GitHub'da herkese açıktır. Projeyi incelemek, çatallamak ve katkıda bulunmakta özgürsünüz.",
+
+    "feature.badge.new": "Yeni",
+    "feature.risk.medium": "Orta Risk",
+    "feature.risk.high": "Yüksek Risk",
+    "ui.loading": "Yükleniyor...",
+    "hero.title.text": "Windows Deneyiminizi Hızlandırın",
+    "hero.title.highlight": "Hızlandırın",
+    "maintenance.msg": "Sitemiz şu anda bakımdadır. Ekibimiz en iyi deneyimi sunmak için çalışıyor.",
+    "maintenance.apology": "Verdiğimiz rahatsızlık için özür dileriz.",
+    "maintenance.reasonLabel": "Sebep:",
+    "maintenance.estLabel": "Tahmini Bitiş",
+    "maintenance.days": "Gün",
+    "maintenance.hours": "Saat",
+    "maintenance.min": "Dk",
+    "maintenance.sec": "Sn",
+    "maintenance.est": "Tahmini süre — daha erken veya geç bitebilir",
+    "maintenance.wip": "Çalışmalar devam ediyor...",
+    "maintenance.loading": "Yükleniyor...",
 } as const;
 
 export default tr;

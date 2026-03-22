@@ -7,8 +7,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDownIcon, SunIcon, MoonIcon, HeartIcon } from "../shared/Icons";
 import { USFlag, TRFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "../shared/Flags";
+import { ShieldCheck, LogOut, PanelLeft } from "lucide-react";
+import { signOut } from "next-auth/react";
 
-export function Header() {
+interface HeaderProps {
+    adminSession?: { name: string | null; image: string | null } | null;
+}
+
+export function Header({ adminSession = null }: HeaderProps) {
     const { lang, setLang, theme, toggleTheme, setSupportModalOpen } = useOptWinStore();
     const { t } = useTranslation();
     const mounted = useSyncExternalStore(
@@ -20,6 +26,11 @@ export function Header() {
     const [isLangClosing, setIsLangClosing] = useState(false);
     const langRef = useRef<HTMLDivElement>(null);
 
+    // Admin dropdown
+    const [isAdminOpen, setIsAdminOpen] = useState(false);
+    const [isAdminClosing, setIsAdminClosing] = useState(false);
+    const adminRef = useRef<HTMLDivElement>(null);
+
     const closeLangDropdown = useCallback(() => {
         if (!isLangOpen) return;
         setIsLangClosing(true);
@@ -29,15 +40,27 @@ export function Header() {
         }, 150);
     }, [isLangOpen]);
 
+    const closeAdminDropdown = useCallback(() => {
+        if (!isAdminOpen) return;
+        setIsAdminClosing(true);
+        setTimeout(() => {
+            setIsAdminOpen(false);
+            setIsAdminClosing(false);
+        }, 150);
+    }, [isAdminOpen]);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (langRef.current && !langRef.current.contains(event.target as Node)) {
                 closeLangDropdown();
             }
+            if (adminRef.current && !adminRef.current.contains(event.target as Node)) {
+                closeAdminDropdown();
+            }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [closeLangDropdown]);
+    }, [closeLangDropdown, closeAdminDropdown]);
 
     const toggleLangDropdown = () => {
         if (isLangOpen) {
@@ -45,6 +68,15 @@ export function Header() {
         } else {
             setIsLangOpen(true);
             setIsLangClosing(false);
+        }
+    };
+
+    const toggleAdminDropdown = () => {
+        if (isAdminOpen) {
+            closeAdminDropdown();
+        } else {
+            setIsAdminOpen(true);
+            setIsAdminClosing(false);
         }
     };
 
@@ -171,6 +203,71 @@ export function Header() {
                             </div>
                         ) : null}
                     </button>
+
+                    {/* Admin Profile Badge — only shown when logged in as admin */}
+                    {mounted && adminSession && (
+                        <div className="relative" ref={adminRef}>
+                            <button
+                                onClick={toggleAdminDropdown}
+                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[var(--accent-color)]/8 hover:bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/15 hover:border-[var(--accent-color)]/30 transition-all duration-200 group"
+                            >
+                                {adminSession.image ? (
+                                    <Image
+                                        src={adminSession.image}
+                                        alt={adminSession.name || "Admin"}
+                                        width={22}
+                                        height={22}
+                                        className="rounded-full ring-1 ring-[var(--accent-color)]/30"
+                                    />
+                                ) : (
+                                    <div className="w-[22px] h-[22px] rounded-full bg-[var(--accent-color)]/20 flex items-center justify-center">
+                                        <ShieldCheck size={12} className="text-[var(--accent-color)]" />
+                                    </div>
+                                )}
+                                <span className="hidden sm:inline text-xs font-bold text-[var(--accent-color)]">
+                                    Yönetici
+                                </span>
+                                <ChevronDownIcon
+                                    size={13}
+                                    className={`text-[var(--accent-color)]/50 transition-transform duration-250 ${isAdminOpen ? 'rotate-180' : 'rotate-0'}`}
+                                />
+                            </button>
+
+                            {isAdminOpen && (
+                                <div className={`absolute right-0 mt-2 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden ${isAdminClosing ? 'dropdown-exit' : 'dropdown-enter'}`}>
+                                    <div className="px-4 py-3 border-b border-[var(--border-color)]">
+                                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">
+                                            {adminSession.name || "Admin"}
+                                        </p>
+                                        <p className="text-[10px] text-[var(--accent-color)] font-medium mt-0.5 flex items-center gap-1">
+                                            <ShieldCheck size={10} />
+                                            Yönetici Hesabı
+                                        </p>
+                                    </div>
+                                    <div className="py-1">
+                                        <Link
+                                            href="/admin"
+                                            onClick={() => closeAdminDropdown()}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)] transition-colors"
+                                        >
+                                            <PanelLeft size={15} />
+                                            Yönetici Paneli
+                                        </Link>
+                                        <button
+                                            onClick={() => {
+                                                closeAdminDropdown();
+                                                signOut({ callbackUrl: "/" });
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                                        >
+                                            <LogOut size={15} />
+                                            Çıkış Yap
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* MobileNav removed per user request */}
                 </div>

@@ -21,9 +21,9 @@ function TransitionSpinner() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-[9999] bg-[#08080d] flex items-center justify-center"
         >
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+            <div className="optwin-spinner">
                 <Settings size={32} className="text-[#6b5be6]" />
-            </motion.div>
+            </div>
         </motion.div>
     );
 }
@@ -40,7 +40,7 @@ function AmbientBackground() {
 }
 
 /* ── Public Shell ─────────────────────────────────────────────── */
-export function PublicShell({ children, serverMaintenance = false }: { children: React.ReactNode; serverMaintenance?: boolean }) {
+export function PublicShell({ children, serverMaintenance = false, adminSession = null }: { children: React.ReactNode; serverMaintenance?: boolean; adminSession?: { name: string | null; image: string | null } | null }) {
     const pathname = usePathname();
     const isAdmin = pathname.startsWith("/admin");
     const [maintenance, setMaintenance] = useState(serverMaintenance);
@@ -107,7 +107,7 @@ export function PublicShell({ children, serverMaintenance = false }: { children:
                         <AmbientBackground />
 
                         <div className="flex flex-col min-h-screen relative">
-                            <Header />
+                            <Header adminSession={adminSession} />
                             <main className="flex-1 w-full max-w-[1200px] mx-auto pt-6 pb-12 px-6">
                                 {children}
                             </main>

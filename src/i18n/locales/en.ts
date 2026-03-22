@@ -169,6 +169,31 @@ const en = {
     "terms.modificationsDesc": "We reserve the right to modify these terms at any time. Continued use of OptWin constitutes acceptance of the updated terms.",
     "terms.openSource": "Open Source",
     "terms.openSourceDesc": "OptWin's source code is publicly available on GitHub. You are free to inspect, fork, and contribute to the project.",
+
+    // Feature badges (DB-driven, these are fallback defaults)
+    "feature.badge.new": "New",
+    "feature.risk.medium": "Medium",
+    "feature.risk.high": "High Risk",
+
+    // Loading
+    "ui.loading": "Loading...",
+
+    // Hero Title parts (JSON format for structured data)
+    "hero.title.text": "Optimize your Windows Experience",
+    "hero.title.highlight": "Optimize",
+
+    // Maintenance overlay
+    "maintenance.msg": "Our site is currently under maintenance. Our team is working to provide the best experience.",
+    "maintenance.apology": "We apologize for the inconvenience.",
+    "maintenance.reasonLabel": "Reason:",
+    "maintenance.estLabel": "Estimated Completion",
+    "maintenance.days": "Days",
+    "maintenance.hours": "Hours",
+    "maintenance.min": "Min",
+    "maintenance.sec": "Sec",
+    "maintenance.est": "Estimated time — may finish earlier or later",
+    "maintenance.wip": "Work in progress...",
+    "maintenance.loading": "Loading...",
 } as const;
 
 export type TranslationKeys = keyof typeof en;

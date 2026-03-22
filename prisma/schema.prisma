@@ -195,6 +195,22 @@ model VisitDedup {
   @@map("visit_dedup")
 }
 
+model PageContent {
+  id           String   @id @default(cuid())
+  pageSlug     String   // "privacy" | "terms"
+  lang         String
+  disclaimer   String?  // Translation disclaimer text
+  lastUpdated  String   // "March 2026" etc.
+  sectionOrder Int      // 0, 1, 2...
+  title        String   // Section title
+  content      String   // JSON array of paragraphs: ["paragraph1", "paragraph2"]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([pageSlug, lang, sectionOrder])
+  @@map("page_contents")
+}
+
 enum RiskLevel {
   low
   medium

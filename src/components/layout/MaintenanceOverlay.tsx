@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, ChevronDown, Globe } from "lucide-react";
 import Image from "next/image";
 
-/* ── SVG Flag icons (cross-browser) ──────── */
-const FlagSvg: Record<string, React.ReactNode> = {
+/* ── SVG Flag icons (visual only — not translatable) ──────── */
+const FLAG_SVG: Record<string, React.ReactNode> = {
     tr: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#E30A17" width="30" height="20"/><circle cx="11" cy="10" r="6" fill="white"/><circle cx="13" cy="10" r="5" fill="#E30A17"/><polygon fill="white" points="17,10 14.09,8.09 15.18,11.45 13.09,9.54 16.45,10.73"/></svg>,
     en: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#012169" width="30" height="20"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="white" strokeWidth="4"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="#C8102E" strokeWidth="2"/><path d="M15,0 V20 M0,10 H30" stroke="white" strokeWidth="6"/><path d="M15,0 V20 M0,10 H30" stroke="#C8102E" strokeWidth="3"/></svg>,
     de: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#000" width="30" height="6.67"/><rect fill="#DD0000" y="6.67" width="30" height="6.67"/><rect fill="#FFCC00" y="13.33" width="30" height="6.67"/></svg>,
@@ -16,40 +16,53 @@ const FlagSvg: Record<string, React.ReactNode> = {
     hi: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#FF9933" width="30" height="6.67"/><rect fill="white" y="6.67" width="30" height="6.67"/><rect fill="#138808" y="13.33" width="30" height="6.67"/><circle cx="15" cy="10" r="2" fill="none" stroke="#000080" strokeWidth="0.5"/></svg>,
 };
 
-/* ── Maintenance i18n ──────── */
-const ML: Record<string, {
-    label: string; flag: React.ReactNode;
-    msg: string; apology: string; reasonLabel: string;
-    estLabel: string; days: string; hours: string; min: string; sec: string;
-    est: string; wip: string; loading: string;
-}> = {
-    tr: { label: "Türkçe", flag: FlagSvg.tr, msg: "Sitemiz şu anda bakımdadır. Ekibimiz en iyi deneyimi sunmak için çalışıyor.", apology: "Verdiğimiz rahatsızlık için özür dileriz.", reasonLabel: "Sebep:", estLabel: "Tahmini Bitiş", days: "Gün", hours: "Saat", min: "Dk", sec: "Sn", est: "Tahmini süre — daha erken veya geç bitebilir", wip: "Çalışmalar devam ediyor...", loading: "Yükleniyor..." },
-    en: { label: "English", flag: FlagSvg.en, msg: "Our site is currently under maintenance. Our team is working to provide the best experience.", apology: "We apologize for the inconvenience.", reasonLabel: "Reason:", estLabel: "Estimated Completion", days: "Days", hours: "Hours", min: "Min", sec: "Sec", est: "Estimated time — may finish earlier or later", wip: "Work in progress...", loading: "Loading..." },
-    de: { label: "Deutsch", flag: FlagSvg.de, msg: "Unsere Website befindet sich derzeit in Wartung. Unser Team arbeitet daran, das beste Erlebnis zu bieten.", apology: "Wir entschuldigen uns für die Unannehmlichkeiten.", reasonLabel: "Grund:", estLabel: "Voraussichtliches Ende", days: "Tage", hours: "Std", min: "Min", sec: "Sek", est: "Geschätzte Zeit — kann früher oder später enden", wip: "Arbeiten im Gange...", loading: "Wird geladen..." },
-    fr: { label: "Français", flag: FlagSvg.fr, msg: "Notre site est actuellement en maintenance. Notre équipe travaille pour offrir la meilleure expérience.", apology: "Nous nous excusons pour la gêne occasionnée.", reasonLabel: "Raison :", estLabel: "Fin estimée", days: "Jours", hours: "Heures", min: "Min", sec: "Sec", est: "Temps estimé — peut finir plus tôt ou plus tard", wip: "Travaux en cours...", loading: "Chargement..." },
-    es: { label: "Español", flag: FlagSvg.es, msg: "Nuestro sitio está en mantenimiento. Nuestro equipo trabaja para ofrecer la mejor experiencia.", apology: "Pedimos disculpas por las molestias.", reasonLabel: "Razón:", estLabel: "Finalización estimada", days: "Días", hours: "Horas", min: "Min", sec: "Seg", est: "Tiempo estimado — puede terminar antes o después", wip: "Trabajos en curso...", loading: "Cargando..." },
-    zh: { label: "中文", flag: FlagSvg.zh, msg: "我们的网站正在维护中。我们的团队正在努力提供最佳体验。", apology: "对此给您带来的不便，我们深表歉意。", reasonLabel: "原因：", estLabel: "预计完成时间", days: "天", hours: "时", min: "分", sec: "秒", est: "预计时间 - 可能提前或延迟完成", wip: "工作正在进行中...", loading: "加载中..." },
-    hi: { label: "हिन्दी", flag: FlagSvg.hi, msg: "हमारी साइट वर्तमान में रखरखाव में है। हमारी टीम सर्वोत्तम अनुभव प्रदान करने के लिए काम कर रही है।", apology: "असुविधा के लिए हम क्षमा चाहते हैं।", reasonLabel: "कारण:", estLabel: "अनुमानित समाप्ति", days: "दिन", hours: "घंटे", min: "मिनट", sec: "सेकंड", est: "अनुमानित समय — पहले या बाद में समाप्त हो सकता है", wip: "कार्य प्रगति पर है...", loading: "लोड हो रहा है..." },
-};
-const ML_KEYS = Object.keys(ML);
+/* ── Language metadata (non-translatable config) ──────── */
+const LANGS = [
+    { code: "tr", label: "Türkçe" },
+    { code: "en", label: "English" },
+    { code: "de", label: "Deutsch" },
+    { code: "fr", label: "Français" },
+    { code: "es", label: "Español" },
+    { code: "zh", label: "中文" },
+    { code: "hi", label: "हिन्दी" },
+];
+
+/* UTC offsets per language (will be DB-driven in Faz 9) */
 const UTC_OFFSET: Record<string, number> = { tr: 3, en: 0, de: 1, fr: 1, es: 1, zh: 8, hi: 5.5 };
 
 export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | null; estimatedEnd?: string | null }) {
     const [lang, setLang] = useState("en");
     const [langOpen, setLangOpen] = useState(false);
     const [tick, setTick] = useState(0);
+    const [translations, setTranslations] = useState<Record<string, string>>({});
     const langRef = useRef<HTMLDivElement>(null);
 
+    // Safe translation getter with static fallback
+    const mt = useCallback((key: string, fallback: string) => {
+        return translations[key] || fallback;
+    }, [translations]);
+
+    // Load language from localStorage
     useEffect(() => {
         const stored = localStorage.getItem("optwin-lang");
-        if (stored && ML[stored]) setLang(stored);
+        if (stored && LANGS.some(l => l.code === stored)) setLang(stored);
     }, []);
 
+    // Fetch translations from DB API when language changes
+    useEffect(() => {
+        fetch(`/api/ui-translations?lang=${lang}`)
+            .then(r => r.ok ? r.json() : {})
+            .then(data => setTranslations(data))
+            .catch(() => { /* static fallback will be used */ });
+    }, [lang]);
+
+    // Tick for countdown
     useEffect(() => {
         const timer = setInterval(() => setTick(t => t + 1), 1000);
         return () => clearInterval(timer);
     }, []);
 
+    // Close dropdown on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
@@ -58,7 +71,6 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    const t = ML[lang] || ML.tr;
     void tick;
 
     // Countdown calculation
@@ -95,6 +107,8 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
         } catch { endDateStr = new Date(estimatedEnd).toLocaleString(); }
     }
 
+    const currentLang = LANGS.find(l => l.code === lang) || LANGS[1];
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -116,16 +130,16 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
             <div ref={langRef} className="absolute top-6 right-6 z-20">
                 <button onClick={() => setLangOpen(!langOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-white/40 hover:text-white/60 transition-all">
                     <Globe size={12} className="text-white/25" />
-                    <span>{t.flag}</span>
-                    <span>{t.label}</span>
+                    <span>{FLAG_SVG[lang]}</span>
+                    <span>{currentLang.label}</span>
                     <ChevronDown size={11} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
                 </button>
                 <AnimatePresence>
                     {langOpen && (
                         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }} className="absolute right-0 mt-1 min-w-[140px] bg-[#13131d] border border-white/[0.06] rounded-lg shadow-xl overflow-hidden">
-                            {ML_KEYS.map(code => (
+                            {LANGS.map(({ code, label }) => (
                                 <button key={code} onClick={() => { setLang(code); setLangOpen(false); localStorage.setItem("optwin-lang", code); }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${lang === code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
-                                    <span>{ML[code].flag}</span><span>{ML[code].label}</span>
+                                    <span>{FLAG_SVG[code]}</span><span>{label}</span>
                                 </button>
                             ))}
                         </motion.div>
@@ -145,12 +159,18 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="mb-4">
                     <Settings size={68} className="text-[#6b5be6]/35" strokeWidth={1.5} />
                 </motion.div>
-                <p className="text-white/30 text-sm font-medium mb-6 animate-pulse">{t.loading}</p>
+                <p className="text-white/30 text-sm font-medium mb-6 animate-pulse">
+                    {mt("maintenance.loading", "Loading...")}
+                </p>
 
                 {/* Message card */}
                 <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl px-6 py-5 mb-6 max-w-[460px] w-full backdrop-blur-sm">
-                    <p className="text-white/50 text-[18px] leading-[1.7] mb-2">{t.msg}</p>
-                    <p className="text-white/25 text-[15px] leading-[1.7]">{t.apology}</p>
+                    <p className="text-white/50 text-[18px] leading-[1.7] mb-2">
+                        {mt("maintenance.msg", "Our site is currently under maintenance.")}
+                    </p>
+                    <p className="text-white/25 text-[15px] leading-[1.7]">
+                        {mt("maintenance.apology", "We apologize for the inconvenience.")}
+                    </p>
                 </div>
 
                 {/* Reason — per language */}
@@ -162,7 +182,9 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                     if (!localReason) return null;
                     return (
                         <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
-                            <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">{t.reasonLabel}</p>
+                            <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">
+                                {mt("maintenance.reasonLabel", "Reason:")}
+                            </p>
                             <p className="text-[15px] text-white/30 leading-relaxed">{localReason}</p>
                         </div>
                     );
@@ -176,7 +198,9 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                 </div>
 
                 {/* WIP text below bar */}
-                <p className="text-[13px] text-white/18 font-medium mb-3 tracking-wide">{t.wip}</p>
+                <p className="text-[13px] text-white/18 font-medium mb-3 tracking-wide">
+                    {mt("maintenance.wip", "Work in progress...")}
+                </p>
 
                 {/* Live clock with UTC offset */}
                 <p className="text-[13px] text-white/14 font-mono tabular-nums mb-6">
@@ -188,7 +212,7 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                         const mm = local.getUTCMinutes().toString().padStart(2, '0');
                         const ss = local.getUTCSeconds().toString().padStart(2, '0');
                         const sign = offset >= 0 ? '+' : '';
-                        const utcLabel = Number.isInteger(offset) ? `UTC${sign}${offset}` : `UTC${sign}${offset}`;
+                        const utcLabel = `UTC${sign}${offset}`;
                         return `${hh}:${mm}:${ss}  ${utcLabel}`;
                     })()}
                 </p>
@@ -196,13 +220,15 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                 {/* Countdown */}
                 {hasCountdown && (
                     <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl px-6 py-5 mb-5 max-w-[460px] w-full">
-                        <p className="text-[13px] font-bold text-white/25 uppercase tracking-wider mb-4">{t.estLabel}</p>
+                        <p className="text-[13px] font-bold text-white/25 uppercase tracking-wider mb-4">
+                            {mt("maintenance.estLabel", "Estimated Completion")}
+                        </p>
                         <div className="flex gap-3 justify-center mb-3">
                             {[
-                                { v: cd.d, u: t.days },
-                                { v: cd.h, u: t.hours },
-                                { v: cd.m, u: t.min },
-                                { v: cd.s, u: t.sec },
+                                { v: cd.d, u: mt("maintenance.days", "Days") },
+                                { v: cd.h, u: mt("maintenance.hours", "Hours") },
+                                { v: cd.m, u: mt("maintenance.min", "Min") },
+                                { v: cd.s, u: mt("maintenance.sec", "Sec") },
                             ].map((item, i) => (
                                 <div key={i} className="bg-[#6b5be6]/[0.07] border border-[#6b5be6]/[0.14] rounded-xl px-4 py-3 min-w-[72px] text-center">
                                     <p className="text-3xl font-extrabold text-[#6b5be6]/70 font-mono tabular-nums">{item.v}</p>
@@ -211,7 +237,9 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                             ))}
                         </div>
                         <p className="text-[14px] text-white/18">{endDateStr}</p>
-                        <p className="text-[11px] text-white/10 italic mt-1">{t.est}</p>
+                        <p className="text-[11px] text-white/10 italic mt-1">
+                            {mt("maintenance.est", "Estimated time — may finish earlier or later")}
+                        </p>
                     </div>
                 )}
             </motion.div>

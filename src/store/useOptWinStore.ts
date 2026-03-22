@@ -14,6 +14,11 @@ interface OptWinState {
     setTheme: (theme: Theme) => void;
     toggleTheme: () => void;
 
+    // DB-driven translations
+    dbTranslations: Record<string, string>;
+    translationsLoaded: boolean;
+    loadTranslations: (lang: string) => Promise<void>;
+
     // Feature selection
     selectedFeatures: Set<string>;
     toggleFeature: (slug: string) => void;
@@ -65,6 +70,21 @@ export const useOptWinStore = create<OptWinState>()(
             searchQuery: "",
             showDescriptions: true,
             collapsedCategories: new Set<string>(),
+            dbTranslations: {},
+            translationsLoaded: false,
+
+            // Load translations from DB API
+            loadTranslations: async (lang: string) => {
+                try {
+                    const res = await fetch(`/api/ui-translations?lang=${lang}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        set({ dbTranslations: data, translationsLoaded: true });
+                    }
+                } catch {
+                    // Silently fail — static fallback will be used
+                }
+            },
 
             // Language
             setLang: (lang) => set({ lang }),

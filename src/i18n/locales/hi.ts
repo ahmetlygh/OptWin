@@ -151,6 +151,24 @@ const hi = {
     "terms.modificationsDesc": "हम किसी भी समय इन शर्तों को संशोधित करने का अधिकार सुरक्षित रखते हैं। OptWin का निरंतर उपयोग अद्यतन शर्तों की स्वीकृति है।",
     "terms.openSource": "ओपन सोर्स",
     "terms.openSourceDesc": "OptWin का स्रोत कोड GitHub पर सार्वजनिक रूप से उपलब्ध है। आप परियोजना का निरीक्षण, फोर्क और योगदान करने के लिए स्वतंत्र हैं।",
+
+    "feature.badge.new": "नया",
+    "feature.risk.medium": "मध्यम",
+    "feature.risk.high": "उच्च जोखिम",
+    "ui.loading": "लोड हो रहा है...",
+    "hero.title.text": "अपने Windows अनुभव को बेहतर बनाएं",
+    "hero.title.highlight": "बेहतर बनाएं",
+    "maintenance.msg": "हमारी साइट वर्तमान में रखरखाव में है। हमारी टीम सर्वोत्तम अनुभव प्रदान करने के लिए काम कर रही है।",
+    "maintenance.apology": "असुविधा के लिए हम क्षमा चाहते हैं।",
+    "maintenance.reasonLabel": "कारण:",
+    "maintenance.estLabel": "अनुमानित समापन",
+    "maintenance.days": "दिन",
+    "maintenance.hours": "घंटे",
+    "maintenance.min": "मिनट",
+    "maintenance.sec": "सेकंड",
+    "maintenance.est": "अनुमानित समय - पहले या बाद में पूरा हो सकता है",
+    "maintenance.wip": "कार्य प्रगति पर है...",
+    "maintenance.loading": "लोड हो रहा है...",
 } as const;
 
 export default hi;

@@ -542,3 +542,29 @@ body.theme-ready nav {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
 }
+
+/* Loading overlay fade-out */
+@keyframes fadeOutOverlay {
+  0% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+/* ============================================================
+   OPTWIN SPINNER — GPU-accelerated, flicker-free
+   Uses 'rotate' property for pure compositor animation, avoiding
+   sub-pixel rounding that causes jitter on 'transform: rotate()'.
+   ============================================================ */
+@keyframes optwinSpin {
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
+}
+
+.optwin-spinner {
+  animation: optwinSpin 2.5s linear infinite;
+  will-change: rotate;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  contain: layout style;
+  perspective: 1000px;
+}

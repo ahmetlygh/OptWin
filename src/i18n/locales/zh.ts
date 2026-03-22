@@ -151,6 +151,24 @@ const zh = {
     "terms.modificationsDesc": "我们保留随时修改这些条款的权利。继续使用 OptWin 即表示接受更新的条款。",
     "terms.openSource": "开源",
     "terms.openSourceDesc": "OptWin 的源代码在 GitHub 上公开可用。您可以自由检查、分叉和贡献该项目。",
+
+    "feature.badge.new": "新",
+    "feature.risk.medium": "中等",
+    "feature.risk.high": "高风险",
+    "ui.loading": "加载中...",
+    "hero.title.text": "优化你的 Windows 体验",
+    "hero.title.highlight": "优化",
+    "maintenance.msg": "我们的网站正在维护中。我们的团队正在努力提供最佳体验。",
+    "maintenance.apology": "对此给您带来的不便，我们深表歉意。",
+    "maintenance.reasonLabel": "原因：",
+    "maintenance.estLabel": "预计完成时间",
+    "maintenance.days": "天",
+    "maintenance.hours": "时",
+    "maintenance.min": "分",
+    "maintenance.sec": "秒",
+    "maintenance.est": "预计时间 - 可能提前或延迟完成",
+    "maintenance.wip": "工作正在进行中...",
+    "maintenance.loading": "加载中...",
 } as const;
 
 export default zh;
