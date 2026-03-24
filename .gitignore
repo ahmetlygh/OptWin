@@ -46,6 +46,8 @@ OptWin-Phases.md
 implementation_summary.md
 Hardcoded.md
 Debug.md
+OPTIMIZATIONS.md
+.gitignore
 
 # env files (.env.example is committed)
 .env
