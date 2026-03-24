@@ -62,10 +62,17 @@ export default async function RootLayout({
     const headersList = await headers();
     const pathname = headersList.get("x-next-pathname") || "";
     const isAdmin = pathname.startsWith("/admin");
+    const PUBLIC_KEYS = [
+        "site_url", "site_name", "site_description", "site_keywords", "site_version", 
+        "site_logo_url", "site_favicon_url", "github_url", "bmc_url", "contact_email", 
+        "author_name", "author_url", "bmc_widget_enabled", "copyright_text", "copyright_year",
+        "default_lang", "default_theme", "theme_primary_color",
+    ];
+
     const [maintenance, session, settings] = await Promise.all([
         isAdmin ? Promise.resolve(false) : isMaintenanceMode(),
         auth(),
-        getSettings(["site_name", "author_name", "author_url", "site_description"])
+        getSettings(PUBLIC_KEYS)
     ]);
     const adminSession = session?.isAdmin ? {
         name: session.user?.name || null,
@@ -76,10 +83,14 @@ export default async function RootLayout({
     const authorName = settings.author_name || "ahmetly_";
     const authorUrl = settings.author_url || "https://www.ahmetly.com";
     const siteDescription = settings.site_description || "Free, open-source browser-based Windows optimizer. Select from 60+ optimizations and generate a custom PowerShell script.";
+    const themePrimaryColor = settings.theme_primary_color || null;
 
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={`${inter.variable} antialiased selection:bg-[#6c5ce7] selection:text-white`}>
+                {themePrimaryColor && (
+                    <style dangerouslySetInnerHTML={{ __html: `:root { --accent-color: ${themePrimaryColor}; }` }} />
+                )}
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{
@@ -104,8 +115,8 @@ export default async function RootLayout({
                         }),
                     }}
                 />
-                <ClientProviders>
-                    <PublicShell serverMaintenance={maintenance} adminSession={adminSession}>
+                <ClientProviders serverSettings={settings}>
+                    <PublicShell serverMaintenance={maintenance} adminSession={adminSession} serverSettings={settings}>
                         {children}
                     </PublicShell>
                 </ClientProviders>

@@ -12,9 +12,10 @@ import { signOut } from "next-auth/react";
 
 interface HeaderProps {
     adminSession?: { name: string | null; image: string | null } | null;
+    serverSettings?: Record<string, string>;
 }
 
-export function Header({ adminSession = null }: HeaderProps) {
+export function Header({ adminSession = null, serverSettings = {} }: HeaderProps) {
     const { lang, setLang, theme, toggleTheme, setSupportModalOpen } = useOptWinStore();
     const { t } = useTranslation();
     const mounted = useSyncExternalStore(
@@ -32,14 +33,7 @@ export function Header({ adminSession = null }: HeaderProps) {
     const adminRef = useRef<HTMLDivElement>(null);
 
     // Dynamic Site Name
-    const [siteName, setSiteName] = useState("OptWin");
-
-    useEffect(() => {
-        fetch("/api/public-settings")
-            .then(r => r.json())
-            .then(d => { if (d.success && d.settings.site_name) setSiteName(d.settings.site_name); })
-            .catch(() => {});
-    }, []);
+    const [siteName] = useState(serverSettings.site_name || "OptWin");
 
     const closeLangDropdown = useCallback(() => {
         if (!isLangOpen) return;

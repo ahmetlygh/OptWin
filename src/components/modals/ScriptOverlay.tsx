@@ -9,7 +9,11 @@ import { MonitorCog, MessageSquare } from "lucide-react";
 
 const SUPPORT_SHOWN_KEY = "optwin-support-shown";
 
-export function ScriptOverlay() {
+interface ScriptOverlayProps {
+    serverSettings?: Record<string, string>;
+}
+
+export function ScriptOverlay({ serverSettings = {} }: ScriptOverlayProps) {
     const {
         isScriptOverlayOpen, setScriptOverlayOpen,
         previewCode, showToast
@@ -19,15 +23,8 @@ export function ScriptOverlay() {
     const { isVisible, isMounted, phase, containerRef } = useModalPhase(isScriptOverlayOpen, handleClose);
     const [supportPhase, setSupportPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
     const [isDownloading, setIsDownloading] = useState(false);
-    const [settings, setSettings] = useState<Record<string, string>>({});
-
-    // Fetch settings once
-    useEffect(() => {
-        fetch("/api/public-settings")
-            .then(r => r.json())
-            .then(d => { if (d.success) setSettings(d.settings); })
-            .catch(() => {});
-    }, []);
+    
+    const settings = serverSettings;
 
     // Reset support prompt when overlay closes
     useEffect(() => {

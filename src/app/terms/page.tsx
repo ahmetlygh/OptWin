@@ -14,19 +14,7 @@ interface PageSection {
     lastUpdated: string;
 }
 
-// Static fallback content
-const FALLBACK: Record<string, { disclaimer?: string; lastUpdated: string; sections: { title: string; content: string[] }[] }> = {
-    en: {
-        lastUpdated: "March 2026",
-        sections: [
-            { title: "1. Acceptance of Terms", content: ["By accessing and using OptWin, you agree to be bound by these Terms of Service."] },
-            { title: "2. Description of Service", content: ["OptWin is a free, open-source Windows optimization tool that generates PowerShell scripts."] },
-            { title: "3. Disclaimer", content: ["OptWin is provided 'as is' without warranty of any kind. Always create a system restore point before running any script."] },
-            { title: "4. Limitation of Liability", content: ["We are not liable for any damages arising from the use of this Service or generated scripts."] },
-            { title: "5. Contact", content: ["If you have questions, please contact us via the Contact page."] },
-        ],
-    },
-};
+// No static fallback content anymore. Fetched fully from API.
 
 export default function Terms() {
     const lang = useOptWinStore((s) => s.lang);
@@ -49,16 +37,16 @@ export default function Terms() {
             .finally(() => setLoading(false));
     }, [lang]);
 
-    const fallback = FALLBACK[lang] || FALLBACK.en;
+    // Use DB data only
     const disclaimer = dbData?.[0]?.disclaimer || undefined;
-    const lastUpdated = dbData?.[0]?.lastUpdated || fallback.lastUpdated;
+    const lastUpdated = dbData?.[0]?.lastUpdated || "2026";
 
     const sections = dbData
         ? dbData.map(s => ({
             title: s.title,
             content: (() => { try { return JSON.parse(s.content); } catch { return [s.content]; } })() as string[]
         }))
-        : fallback.sections;
+        : [];
 
     return (
         <div className="flex flex-col items-center w-full animate-fade-in-up mt-8 mb-16">

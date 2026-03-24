@@ -13,7 +13,7 @@ const LOADING_TEXT: Record<string, string> = {
     fr: "Chargement...", es: "Cargando...", zh: "加载中...", hi: "लोड हो रहा है...",
 };
 
-export function ClientProviders({ children }: { children: React.ReactNode }) {
+export function ClientProviders({ children, serverSettings = {} }: { children: React.ReactNode; serverSettings?: Record<string, string> }) {
     const theme = useOptWinStore((state) => state.theme);
     const lang = useOptWinStore((state) => state.lang);
     const loadTranslations = useOptWinStore((state) => state.loadTranslations);
@@ -115,7 +115,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
                 <>
                     <WarningModal />
                     <RestorePointModal />
-                    <ScriptOverlay />
+                    <ScriptOverlay serverSettings={serverSettings} />
                     <Toast />
                 </>
             )}

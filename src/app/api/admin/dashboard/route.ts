@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
+import { settingsService } from "@/lib/settingsService";
 
 export async function GET() {
     if (!(await checkAdmin())) return unauthorizedResponse();
+
+    const limitSetting = await settingsService.getSetting("admin_dashboard_limit", "5");
+    const limit = parseInt(limitSetting, 10) || 5;
 
     const [
         stats,
@@ -24,7 +28,7 @@ export async function GET() {
         prisma.contactMessage.findMany({
             where: { deleted: false },
             orderBy: { createdAt: "desc" },
-            take: 5,
+            take: limit,
             select: { id: true, name: true, subject: true, read: true, createdAt: true },
         }),
         prisma.dnsProvider.count({ where: { enabled: true } }),

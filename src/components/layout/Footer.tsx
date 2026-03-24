@@ -16,16 +16,13 @@ interface PublicSettings {
     copyright_year?: string;
 }
 
-export function Footer() {
-    const { t } = useTranslation();
-    const [settings, setSettings] = useState<PublicSettings>({});
+interface FooterProps {
+    serverSettings?: Record<string, string>;
+}
 
-    useEffect(() => {
-        fetch("/api/public-settings")
-            .then(r => r.json())
-            .then(d => { if (d.success) setSettings(d.settings); })
-            .catch(() => {});
-    }, []);
+export function Footer({ serverSettings = {} }: FooterProps) {
+    const { t } = useTranslation();
+    const settings = serverSettings;
 
     const siteName = settings.site_name || "";
     const githubUrl = settings.github_url || "";

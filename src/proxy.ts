@@ -1,5 +1,4 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 /* ═══════════════════════════════════════════════════════════════
    Rate Limiting — In-memory sliding window
@@ -55,34 +54,28 @@ function checkRateLimit(key: string, config: RateLimitConfig): { allowed: boolea
     return { allowed: true, remaining: config.maxRequests - entry.count };
 }
 
+import { redisCache } from "@/lib/redis";
+
 /* ═══════════════════════════════════════════════════════════════
-   Maintenance Mode — In-memory cache with self-fetch
+   Maintenance Mode — Redis Direct Fetch
    ═══════════════════════════════════════════════════════════════ */
 
 interface MaintenanceInfo { active: boolean; reason: string; estimatedEnd: string }
-let maintenanceCache: { value: MaintenanceInfo; time: number } | null = null;
-const CACHE_TTL = 15000;
 
 async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
-    const now = Date.now();
-    if (maintenanceCache && now - maintenanceCache.time < CACHE_TTL) {
-        return maintenanceCache.value;
-    }
     try {
-        const res = await fetch(`${origin}/api/maintenance`, {
-            cache: 'no-store',
-            headers: { 'x-middleware-internal': '1' },
-        });
-        const data = await res.json();
-        const val: MaintenanceInfo = {
-            active: data.maintenance === true,
-            reason: data.reason || '',
-            estimatedEnd: data.estimatedEnd || '',
+        // middleware standalone environment without strict Edge limitations allows native net streams locally/docker
+        const active = await redisCache.get("setting:maintenanceMode");
+        const reason = await redisCache.get("setting:maintenanceReason");
+        const time = await redisCache.get("setting:maintenanceTime");
+
+        return {
+            active: active === "true",
+            reason: reason || "",
+            estimatedEnd: time || "",
         };
-        maintenanceCache = { value: val, time: now };
-        return val;
     } catch {
-        return maintenanceCache?.value ?? { active: false, reason: '', estimatedEnd: '' };
+        return { active: false, reason: '', estimatedEnd: '' };
     }
 }
 
@@ -99,108 +92,125 @@ const ALWAYS_ALLOWED = [
     '/assets',
 ];
 
-export async function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl;
+export default async function proxy(request: NextRequest) {
+    try {
+        const { pathname } = request.nextUrl;
 
-    // Pass pathname to server components via header
-    const response = NextResponse.next();
-    response.headers.set('x-next-pathname', pathname);
+        // Pass pathname to server components via header safely
+        const response = NextResponse.next();
+        response.headers.set('x-next-pathname', pathname || '/');
 
-    const isApiRequest = pathname.startsWith('/api');
+        const isApiRequest = pathname.startsWith('/api');
 
-    // ── CORS for API routes ──
-    if (isApiRequest) {
-        const origin = request.headers.get('origin') || '';
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://optwin.tech';
-        const allowedOrigins = [
-            siteUrl,
-            siteUrl.replace('https://', 'https://www.'),
-            'http://localhost:3000',
-        ];
-        const corsOrigin = allowedOrigins.includes(origin) ? origin : '';
-
-        if (corsOrigin) {
-            response.headers.set('Access-Control-Allow-Origin', corsOrigin);
-            response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-            response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        // Safe retrieval of site URL through Redis fallback
+        let siteUrl = "";
+        try {
+            const cachedUrl = await redisCache.get("setting:site_url");
+            siteUrl = cachedUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://optwin.tech';
+        } catch {
+            siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://optwin.tech';
         }
+        const targetUrl = siteUrl || '/'; // graceful fallback to prevent charCodeAt parsing error
 
-        if (request.method === 'OPTIONS') {
-            const optionsResponse = new NextResponse(null, { status: 200 });
+        // ── CORS for API routes ──
+        if (isApiRequest) {
+            const origin = request.headers.get('origin') || '';
+            const allowedOrigins = [
+                targetUrl,
+                targetUrl.replace('https://', 'https://www.'),
+                'http://localhost:3000',
+            ];
+
+            // Safe startsWith checks
+            const corsOrigin = allowedOrigins.some(o => o && origin.startsWith(o)) ? origin : '';
+
             if (corsOrigin) {
-                optionsResponse.headers.set('Access-Control-Allow-Origin', corsOrigin);
-                optionsResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-                optionsResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                response.headers.set('Access-Control-Allow-Origin', corsOrigin);
+                response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+                response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
             }
-            return optionsResponse;
-        }
 
-        // ── Rate Limiting (public API only, skip admin & auth) ──
-        if (!pathname.startsWith('/api/admin/') && !pathname.startsWith('/api/auth/')) {
-            const matchedPath = Object.keys(RATE_LIMITS).find(p => pathname.startsWith(p));
-            if (matchedPath) {
-                const rlConfig = RATE_LIMITS[matchedPath];
-                const ip = getClientIp(request);
-                const key = `${matchedPath}:${ip}`;
-                const { allowed, remaining } = checkRateLimit(key, rlConfig);
-
-                if (!allowed) {
-                    return NextResponse.json(
-                        { error: 'Too many requests. Please try again later.' },
-                        {
-                            status: 429,
-                            headers: {
-                                'Retry-After': '60',
-                                'X-RateLimit-Limit': rlConfig.maxRequests.toString(),
-                                'X-RateLimit-Remaining': '0',
-                            },
-                        }
-                    );
+            if (request.method === 'OPTIONS') {
+                const optionsResponse = new NextResponse(null, { status: 200 });
+                if (corsOrigin) {
+                    optionsResponse.headers.set('Access-Control-Allow-Origin', corsOrigin);
+                    optionsResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+                    optionsResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
                 }
+                return optionsResponse;
+            }
 
-                response.headers.set('X-RateLimit-Limit', rlConfig.maxRequests.toString());
-                response.headers.set('X-RateLimit-Remaining', remaining.toString());
+            // ── Rate Limiting (public API only, skip admin & auth) ──
+            if (!pathname.startsWith('/api/admin/') && !pathname.startsWith('/api/auth/')) {
+                const matchedPath = Object.keys(RATE_LIMITS).find(p => p && pathname.startsWith(p));
+                if (matchedPath) {
+                    const rlConfig = RATE_LIMITS[matchedPath];
+                    const ip = getClientIp(request);
+                    const key = `${matchedPath}:${ip}`;
+                    const { allowed, remaining } = checkRateLimit(key, rlConfig);
+
+                    if (!allowed) {
+                        return NextResponse.json(
+                            { error: 'Too many requests. Please try again later.' },
+                            {
+                                status: 429,
+                                headers: {
+                                    'Retry-After': '60',
+                                    'X-RateLimit-Limit': rlConfig.maxRequests.toString(),
+                                    'X-RateLimit-Remaining': '0',
+                                },
+                            }
+                        );
+                    }
+
+                    response.headers.set('X-RateLimit-Limit', rlConfig.maxRequests.toString());
+                    response.headers.set('X-RateLimit-Remaining', remaining.toString());
+                }
             }
         }
-    }
 
-    // Check if path is always allowed (skip maintenance check)
-    const isAllowed = ALWAYS_ALLOWED.some(p => pathname.startsWith(p));
-    if (isAllowed) return response;
+        // Check if path is always allowed (skip maintenance check)
+        const isAllowed = ALWAYS_ALLOWED.some(p => p && pathname.startsWith(p));
+        if (isAllowed) return response;
 
-    // ── Maintenance mode: block ALL public routes ──
-    const mInfo = await checkMaintenance(request.nextUrl.origin);
+        // ── Maintenance mode: block ALL public routes ──
+        const mInfo = await checkMaintenance(request.nextUrl.origin || '/');
 
-    if (mInfo.active) {
-        if (!isApiRequest) {
-            return new NextResponse(buildMaintenanceHtml(mInfo.reason, mInfo.estimatedEnd), {
-                status: 503,
-                headers: {
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Retry-After': '300',
-                    'Cache-Control': 'no-store, no-cache, must-revalidate',
-                    'X-Robots-Tag': 'noindex',
-                },
-            });
+        if (mInfo.active) {
+            if (!isApiRequest) {
+                return new NextResponse(buildMaintenanceHtml(mInfo.reason, mInfo.estimatedEnd), {
+                    status: 503,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Retry-After': '300',
+                        'Cache-Control': 'no-store, no-cache, must-revalidate',
+                        'X-Robots-Tag': 'noindex',
+                    },
+                });
+            }
+
+            return NextResponse.json(
+                { error: 'Service Unavailable', maintenance: true },
+                {
+                    status: 503,
+                    headers: {
+                        'Retry-After': '300',
+                        'Cache-Control': 'no-store',
+                    },
+                }
+            );
         }
 
-        return NextResponse.json(
-            { error: 'Service Unavailable', maintenance: true },
-            {
-                status: 503,
-                headers: {
-                    'Retry-After': '300',
-                    'Cache-Control': 'no-store',
-                },
-            }
-        );
+        return response;
+    } catch (error) {
+        console.error("Proxy Error:", error);
+        return NextResponse.next();
     }
-
-    return response;
 }
 
 export const config = {
     matcher: [
+        '/admin/:path*',
         '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 };

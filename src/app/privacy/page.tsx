@@ -14,20 +14,7 @@ interface PageSection {
     lastUpdated: string;
 }
 
-// Static fallback content — used until DB data loads
-const FALLBACK: Record<string, { disclaimer?: string; lastUpdated: string; sections: { title: string; content: string[] }[] }> = {
-    en: {
-        lastUpdated: "March 2026",
-        sections: [
-            { title: "1. Introduction", content: ["OptWin is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our website and application."] },
-            { title: "2. Information We Collect", content: ["We track anonymous page visit counts solely for homepage statistics. No IP addresses or device identifiers are stored. We use only essential cookies for theme and language preferences."] },
-            { title: "3. How We Use Your Information", content: ["To display anonymous aggregated statistics. To remember your preferences. To generate optimization scripts. We do not sell or share your data."] },
-            { title: "4. Generated Scripts", content: ["All scripts are generated on our server and sent directly to your browser. We do not store or analyze any generated scripts."] },
-            { title: "5. Data Security", content: ["HTTPS encryption for all data. No personal data collected. Regular security audits."] },
-            { title: "6. Contact Us", content: ["If you have questions, please contact us via the Contact page."] },
-        ],
-    },
-};
+// No static fallback content anymore. Fetched fully from API.
 
 export default function Privacy() {
     const lang = useOptWinStore((s) => s.lang);
@@ -50,17 +37,16 @@ export default function Privacy() {
             .finally(() => setLoading(false));
     }, [lang]);
 
-    // Use DB data if available, otherwise static fallback
-    const fallback = FALLBACK[lang] || FALLBACK.en;
+    // Use DB data only
     const disclaimer = dbData?.[0]?.disclaimer || (lang !== "en" ? t["privacy.intro"] : undefined);
-    const lastUpdated = dbData?.[0]?.lastUpdated || fallback.lastUpdated;
+    const lastUpdated = dbData?.[0]?.lastUpdated || "2026";
 
     const sections = dbData
         ? dbData.map(s => ({
             title: s.title,
             content: (() => { try { return JSON.parse(s.content); } catch { return [s.content]; } })() as string[]
         }))
-        : fallback.sections;
+        : [];
 
     return (
         <div className="flex flex-col items-center w-full animate-fade-in-up mt-8 mb-16">

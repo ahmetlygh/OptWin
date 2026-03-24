@@ -635,10 +635,18 @@ export default function SettingsPage() {
                                                         <motion.div animate={{ x: value === "true" ? 24 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm" />
                                                     </button>
                                                 ) : field.type === "select" ? (
-                                                    <select value={value} onChange={e => updateSetting(field.key, e.target.value)} className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.10] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 focus:outline-none transition-all appearance-none cursor-pointer">
-                                                        <option value="" className="bg-[#0d0d14]">Seçin...</option>
-                                                        {field.options?.map(opt => <option key={opt.value} value={opt.value} className="bg-[#0d0d14]">{opt.label}</option>)}
-                                                    </select>
+                                                    field.key === "default_lang" ? (
+                                                        <AdminLangPicker
+                                                            value={value || "en"}
+                                                            onChange={v => updateSetting(field.key, v)}
+                                                            variant="form"
+                                                        />
+                                                    ) : (
+                                                        <select value={value} onChange={e => updateSetting(field.key, e.target.value)} className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.10] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 focus:outline-none transition-all appearance-none cursor-pointer">
+                                                            <option value="" className="bg-[#0d0d14]">Seçin...</option>
+                                                            {field.options?.map(opt => <option key={opt.value} value={opt.value} className="bg-[#0d0d14]">{opt.label}</option>)}
+                                                        </select>
+                                                    )
                                                 ) : field.type === "textarea" ? (
                                                     <textarea value={value} onChange={e => updateSetting(field.key, e.target.value)} placeholder={field.placeholder} rows={2} className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.10] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 placeholder-white/15 focus:outline-none transition-all resize-none font-mono" />
                                                 ) : (

@@ -114,7 +114,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
             value: `${data.enabledFeaturesCount}`,
             subtext: `${data.featuresCount} toplam`,
             icon: <Puzzle size={18} />,
-            color: "#6b5be6",
+            color: "var(--accent-color)",
             glow: "rgba(107,91,230,0.12)",
         },
         {
@@ -260,7 +260,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                             </div>
                             <Link
                                 href="/admin/features"
-                                className="text-[10px] font-medium text-[#6b5be6]/60 hover:text-[#6b5be6] transition-colors"
+                                className="text-[10px] font-medium text-[var(--accent-color)]/60 hover:text-[var(--accent-color)] transition-colors"
                             >
                                 Tümünü gör
                             </Link>
@@ -279,7 +279,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                                     >
                                         {/* Progress bar background */}
                                         <div
-                                            className="absolute inset-y-0 left-0 bg-[#6b5be6]/[0.04] rounded-xl transition-all duration-700"
+                                            className="absolute inset-y-0 left-0 bg-[var(--accent-color)]/[0.04] rounded-xl transition-all duration-700"
                                             style={{ width: `${pct}%` }}
                                         />
                                         <div className="relative z-10 flex items-center justify-between">
@@ -287,7 +287,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                                                 <p className="text-sm text-white/70 font-medium truncate">{f.title}</p>
                                                 <p className="text-[10px] text-white/15 mt-0.5">{f.category}</p>
                                             </div>
-                                            <span className="text-xs font-bold text-[#6b5be6]/60 tabular-nums ml-3 shrink-0">
+                                            <span className="text-xs font-bold text-[var(--accent-color)]/60 tabular-nums ml-3 shrink-0">
                                                 {f.selectCount.toLocaleString()}
                                             </span>
                                         </div>
@@ -364,7 +364,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                     <h3 className="text-sm font-bold text-white/70 mb-4">Hızlı İşlemler</h3>
                     <div className="space-y-2">
                         {[
-                            { label: "Özellikleri Yönet", desc: "Optimizasyonları düzenle, aç/kapat", href: "/admin/features", color: "#6b5be6" },
+                            { label: "Özellikleri Yönet", desc: "Optimizasyonları düzenle, aç/kapat", href: "/admin/features", color: "var(--accent-color)" },
                             { label: "Script Ayarları", desc: "Tüm diller için script metinlerini düzenle", href: "/admin/script-defaults", color: "#10b981" },
                         ].map((action, i) => (
                             <motion.div

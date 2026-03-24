@@ -40,7 +40,7 @@ function AmbientBackground() {
 }
 
 /* ── Public Shell ─────────────────────────────────────────────── */
-export function PublicShell({ children, serverMaintenance = false, adminSession = null }: { children: React.ReactNode; serverMaintenance?: boolean; adminSession?: { name: string | null; image: string | null } | null }) {
+export function PublicShell({ children, serverMaintenance = false, adminSession = null, serverSettings = {} }: { children: React.ReactNode; serverMaintenance?: boolean; adminSession?: { name: string | null; image: string | null } | null; serverSettings?: Record<string, string> }) {
     const pathname = usePathname();
     const isAdmin = pathname.startsWith("/admin");
     const [maintenance, setMaintenance] = useState(serverMaintenance);
@@ -107,14 +107,14 @@ export function PublicShell({ children, serverMaintenance = false, adminSession 
                         <AmbientBackground />
 
                         <div className="flex flex-col min-h-screen relative">
-                            <Header adminSession={adminSession} />
+                            <Header adminSession={adminSession} serverSettings={serverSettings} />
                             <main className="flex-1 w-full max-w-[1200px] mx-auto pt-6 pb-12 px-6">
                                 {children}
                             </main>
-                            <Footer />
+                            <Footer serverSettings={serverSettings} />
                         </div>
 
-                        <SupportModal />
+                        <SupportModal serverSettings={serverSettings} />
                         <ScrollToTop />
                         <ScrollRestorer />
                     </>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { settingsService } from "@/lib/settingsService";
 
 /**
  * GET /api/public-settings — public endpoint to fetch non-sensitive site settings
@@ -11,6 +11,8 @@ const PUBLIC_KEYS = [
     "site_description",
     "site_keywords",
     "site_version",
+    "site_logo_url",
+    "site_favicon_url",
     "github_url",
     "bmc_url",
     "contact_email",
@@ -21,17 +23,18 @@ const PUBLIC_KEYS = [
     "copyright_year",
     "default_lang",
     "default_theme",
+    "theme_primary_color",
 ];
 
 export async function GET() {
     try {
-        const settings = await prisma.siteSetting.findMany({
-            where: { key: { in: PUBLIC_KEYS } },
-        });
-        const map: Record<string, string> = {};
-        settings.forEach(s => { map[s.key] = s.value; });
-        return NextResponse.json({ success: true, settings: map });
+        const map = await settingsService.getSettings(PUBLIC_KEYS);
+        // Exclude undefined/null fields for backwards compatibility or simply send map
+        const filteredMap = Object.fromEntries(
+            Object.entries(map).filter(([_, val]) => val !== undefined && val !== null)
+        );
+        return NextResponse.json({ success: true, settings: filteredMap });
     } catch {
-        return NextResponse.json({ success: true, settings: {} });
+        return NextResponse.json({ success: false, settings: {} });
     }
 }

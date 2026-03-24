@@ -1,48 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { unstable_cache } from "next/cache";
-
-/**
- * GET /api/page-content?page=privacy&lang=en
- * Returns page sections ordered by sectionOrder for the given page and language.
- * Falls back to English if no content exists for the requested language.
- */
-
-const getPageContent = unstable_cache(
-    async (pageSlug: string, lang: string) => {
-        // Try requested language
-        let sections = await prisma.pageContent.findMany({
-            where: { pageSlug, lang },
-            orderBy: { sectionOrder: "asc" },
-            select: {
-                sectionOrder: true,
-                title: true,
-                content: true,
-                disclaimer: true,
-                lastUpdated: true,
-            },
-        });
-
-        // Fallback to English if no content for requested language
-        if (sections.length === 0 && lang !== "en") {
-            sections = await prisma.pageContent.findMany({
-                where: { pageSlug, lang: "en" },
-                orderBy: { sectionOrder: "asc" },
-                select: {
-                    sectionOrder: true,
-                    title: true,
-                    content: true,
-                    disclaimer: true,
-                    lastUpdated: true,
-                },
-            });
-        }
-
-        return sections;
-    },
-    ["page-content"],
-    { revalidate: 60, tags: ["page-content"] }
-);
+import { settingsService } from "@/lib/settingsService";
 
 export async function GET(req: NextRequest) {
     const pageSlug = req.nextUrl.searchParams.get("page");
@@ -53,7 +10,27 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const sections = await getPageContent(pageSlug, lang);
+        const key = pageSlug === "privacy" ? "privacy_policy_content" : "terms_content";
+        const contentObj = await settingsService.getSetting(key);
+        
+        if (!contentObj) {
+            return NextResponse.json([], { status: 200 });
+        }
+
+        const langContent = contentObj[lang] || contentObj["en"];
+        
+        if (!langContent || !langContent.sections) {
+            return NextResponse.json([], { status: 200 });
+        }
+        
+        const sections = langContent.sections.map((sec: any, idx: number) => ({
+            sectionOrder: idx,
+            title: sec.title,
+            content: JSON.stringify(sec.content),
+            disclaimer: langContent.disclaimer || null,
+            lastUpdated: langContent.lastUpdated || ""
+        }));
+
         return NextResponse.json(sections, {
             headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
         });

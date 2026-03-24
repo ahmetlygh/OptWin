@@ -6,20 +6,18 @@ import { useState, useEffect } from "react";
 import { useModalPhase } from "@/hooks/useModalPhase";
 import { XIcon, HeartIcon, CoffeeIcon, StarIcon, UsersIcon, ExternalLinkIcon, CheckIcon } from "../shared/Icons";
 
-export function SupportModal() {
+interface SupportModalProps {
+    serverSettings?: Record<string, string>;
+}
+
+export function SupportModal({ serverSettings = {} }: SupportModalProps) {
     const { isSupportModalOpen, setSupportModalOpen } = useOptWinStore();
     const { t } = useTranslation();
     const handleClose = () => setSupportModalOpen(false);
     const { isVisible, isMounted, phase, containerRef } = useModalPhase(isSupportModalOpen, handleClose);
     const [copied, setCopied] = useState(false);
-    const [settings, setSettings] = useState<Record<string, string>>({});
-
-    useEffect(() => {
-        fetch("/api/public-settings")
-            .then(r => r.json())
-            .then(d => { if (d.success) setSettings(d.settings); })
-            .catch(() => {});
-    }, []);
+    
+    const settings = serverSettings;
 
     if (!isMounted) return null;
 
