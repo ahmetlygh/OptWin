@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getSettings } from "@/lib/settings";
 
 // GET /api/maintenance — public endpoint to check maintenance status
 export async function GET() {
     try {
-        const settings = await prisma.siteSetting.findMany({
-            where: {
-                key: { in: ["maintenanceMode", "maintenanceReason", "maintenanceEstimatedEnd"] },
-            },
-        });
-        const map = Object.fromEntries(settings.map(s => [s.key, s.value]));
+        const settings = await getSettings(["maintenanceMode", "maintenanceReason", "maintenanceEstimatedEnd"]);
+        
         return NextResponse.json({
-            maintenance: map.maintenanceMode === "true",
-            reason: map.maintenanceReason || null,
-            estimatedEnd: map.maintenanceEstimatedEnd || null,
+            maintenance: settings.maintenanceMode === "true",
+            reason: settings.maintenanceReason || null,
+            estimatedEnd: settings.maintenanceEstimatedEnd || null,
         });
     } catch {
         return NextResponse.json({ maintenance: false, reason: null, estimatedEnd: null });

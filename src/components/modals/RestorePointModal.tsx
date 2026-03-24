@@ -25,7 +25,7 @@ export function RestorePointModal() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    features: Array.from(selectedFeatures),
+                    features: Object.keys(selectedFeatures),
                     dnsProvider, lang, createRestorePoint
                 })
             });

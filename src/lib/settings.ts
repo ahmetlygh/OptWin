@@ -1,17 +1,18 @@
 import { SettingKey } from "@/types/admin";
 import { settingsService } from "./settingsService";
+import { cache } from "react";
 
 /**
  * Fetches a single site setting by its key with an optional default value
  */
-export async function getSetting<T = string>(key: SettingKey | string, defaultValue: T = "" as unknown as T): Promise<T> {
+export const getSetting = cache(async <T = string>(key: SettingKey | string, defaultValue: T = "" as unknown as T): Promise<T> => {
     return await settingsService.getSetting<T>(key, defaultValue);
-}
+});
 
 /**
  * Fetches multiple settings at once and returns them as an object
  */
-export async function getSettings(keys: (SettingKey | string)[]): Promise<Record<string, string>> {
+export const getSettings = cache(async (keys: (SettingKey | string)[]): Promise<Record<string, string>> => {
     try {
         const fetched = await settingsService.getSettings<Record<string, any>>(keys as string[]);
         const result: Record<string, string> = {};
@@ -24,4 +25,4 @@ export async function getSettings(keys: (SettingKey | string)[]): Promise<Record
         console.error("Failed to fetch settings:", err);
         return Object.fromEntries(keys.map(k => [k as string, ""]));
     }
-}
+});

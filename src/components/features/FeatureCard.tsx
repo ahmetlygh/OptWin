@@ -12,7 +12,7 @@ interface FeatureCardProps {
 }
 
 export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardProps) {
-    const isSelected = useOptWinStore(state => state.selectedFeatures.has(feature.slug));
+    const isSelected = useOptWinStore(state => !!state.selectedFeatures[feature.slug]);
     const toggleFeature = useOptWinStore(state => state.toggleFeature);
     const setDnsModalOpen = useOptWinStore(state => state.setDnsModalOpen);
     const dnsProvider = useOptWinStore(state => state.dnsProvider);

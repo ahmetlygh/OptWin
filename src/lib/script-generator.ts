@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { toPowerShellSafe, escapeForPsString } from "./powershell-safe";
+import { redisCache } from "./redis";
 
 type ScriptParams = {
     features: string[];
@@ -9,6 +10,10 @@ type ScriptParams = {
 };
 
 async function getLabelsFromDb(lang: string): Promise<Record<string, string>> {
+    const cacheKey = `optwin:cache:labels:${lang}`;
+    const cached = await redisCache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
     const [langLabels, enLabels] = await Promise.all([
         prisma.scriptLabel.findMany({ where: { lang } }),
         lang !== "en" ? prisma.scriptLabel.findMany({ where: { lang: "en" } }) : Promise.resolve([]),
@@ -20,6 +25,8 @@ async function getLabelsFromDb(lang: string): Promise<Record<string, string>> {
     const result: Record<string, string> = { ...enMap };
     for (const l of langLabels) result[l.key] = l.value;
 
+    // Cache script labels for 7 days
+    await redisCache.set(cacheKey, JSON.stringify(result), 604800);
     return result;
 }
 
@@ -29,13 +36,20 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const supportedLangs = ["en", "tr", "de", "fr", "es", "zh", "hi"];
     const dbLang = supportedLangs.includes(lang) ? lang : "en";
 
-    // Parallelize: labels + features + DNS provider all at once
-    const [rawLabels, featuresDb, dnsData] = await Promise.all([
+    const featuresCacheKey = `optwin:cache:features_all:${dbLang}`;
+    let allEnabledFeatures;
+    const cachedFeatures = await redisCache.get(featuresCacheKey);
+    
+    // Parallelize static dependencies securely utilizing Redis caching
+    const [rawLabels, fetchedFeatures, dnsData] = await Promise.all([
         getLabelsFromDb(lang),
-        prisma.feature.findMany({
-            where: { slug: { in: features }, enabled: true, category: { enabled: true } },
+        cachedFeatures ? Promise.resolve(JSON.parse(cachedFeatures)) : prisma.feature.findMany({
+            where: { enabled: true, category: { enabled: true } },
             include: { commands: { where: { lang: dbLang } } },
             orderBy: { order: 'asc' }
+        }).then(res => {
+            redisCache.set(featuresCacheKey, JSON.stringify(res), 604800).catch(() => {});
+            return res;
         }),
         features.includes('changeDNS') && dnsProvider
             ? Promise.all([
@@ -47,6 +61,9 @@ export async function generateScript(params: ScriptParams): Promise<string> {
             ])
             : Promise.resolve([null, null] as const),
     ]);
+
+    // Filter features in-memory to prevent combinatorial cache explosion
+    const featuresDb = fetchedFeatures.filter((f: any) => features.includes(f.slug));
 
     const resolved: Record<string, string> = {};
     for (const [k, v] of Object.entries(rawLabels)) {
@@ -201,7 +218,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const failLabel = labels.fail || 'FAILED';
     const skippedLabel = labels.skipped || 'SKIPPED';
 
-    featuresDb.forEach(feat => {
+    featuresDb.forEach((feat: any) => {
         if (feat.slug === 'changeDNS') return;
         const cmd = feat.commands[0];
         if (cmd) {
@@ -209,7 +226,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
             ps.push('try {');
             // Indent all command lines and add -ErrorAction Stop to known cmdlets
             const cmdLines = cmd.command.trim().split(/\r?\n/);
-            cmdLines.forEach(line => {
+            cmdLines.forEach((line: string) => {
                 ps.push('    ' + line);
             });
             ps.push('    Write-Host "      ' + labels.done + '" -ForegroundColor Green');

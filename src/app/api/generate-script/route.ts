@@ -35,12 +35,18 @@ export async function POST(req: Request) {
             createRestorePoint,
         });
 
-        // Increment selectCount for each selected feature (fire and forget)
+        // Increment selectCount for each selected feature in Redis (fire and forget)
         if (features.length > 0) {
-            prisma.feature.updateMany({
-                where: { slug: { in: features } },
-                data: { selectCount: { increment: 1 } },
-            }).catch(() => {});
+            const { redisClient } = await import("@/lib/redis"); // Lazy to preserve edge compatibility if any
+            if (redisClient.status === "ready" || redisClient.status === "connecting") {
+                const pipeline = redisClient.pipeline();
+                features.forEach(slug => {
+                    pipeline.hincrby("optwin:stats:features", slug, 1);
+                });
+                // Track total scripts generated separately via a counter
+                pipeline.incr("optwin:stats:total_scripts_generated");
+                pipeline.exec().catch(() => {});
+            }
         }
 
         return NextResponse.json({ script: scriptString });

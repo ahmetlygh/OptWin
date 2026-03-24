@@ -47,24 +47,24 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
     };
 
     const getSelectedCount = (cat: CategoryData) => {
-        return cat.features.filter(f => selectedFeatures.has(f.slug)).length;
+        return cat.features.filter(f => !!selectedFeatures[f.slug]).length;
     };
 
     // Check "effectively all selected" — skip mutually exclusive features
     const isEffectivelyAllSelected = (cat: CategoryData) => {
         const selectableFeatures = cat.features.filter(f => {
             // If ultimatePerformance is selected, highPerformance can't be selected (mutual exclusion)
-            if (f.slug === "highPerformance" && selectedFeatures.has("ultimatePerformance")) return false;
-            if (f.slug === "ultimatePerformance" && selectedFeatures.has("highPerformance")) return false;
+            if (f.slug === "highPerformance" && !!selectedFeatures["ultimatePerformance"]) return false;
+            if (f.slug === "ultimatePerformance" && !!selectedFeatures["highPerformance"]) return false;
             return true;
         });
-        return selectableFeatures.every(f => selectedFeatures.has(f.slug));
+        return selectableFeatures.every(f => !!selectedFeatures[f.slug]);
     };
 
     const selectAllInCategory = (cat: CategoryData, e: React.MouseEvent) => {
         e.stopPropagation();
         cat.features.forEach(f => {
-            if (!selectedFeatures.has(f.slug)) {
+            if (!selectedFeatures[f.slug]) {
                 toggleFeature(f.slug);
             }
         });
@@ -73,7 +73,7 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
     const deselectAllInCategory = (cat: CategoryData, e: React.MouseEvent) => {
         e.stopPropagation();
         cat.features.forEach(f => {
-            if (selectedFeatures.has(f.slug)) {
+            if (selectedFeatures[f.slug]) {
                 toggleFeature(f.slug);
             }
         });

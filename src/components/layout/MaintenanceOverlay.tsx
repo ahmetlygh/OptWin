@@ -42,10 +42,24 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
         return translations[key] || fallback;
     }, [translations]);
 
-    // Load language from localStorage
+    // Load language gracefully from cookies or local storage fallback
     useEffect(() => {
-        const stored = localStorage.getItem("optwin-lang");
-        if (stored && LANGS.some(l => l.code === stored)) setLang(stored);
+        let detected = "en";
+        // 1. Try to read from document.cookie (NEXT_LOCALE)
+        const match = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]*)/);
+        if (match && match[1]) {
+            detected = match[1];
+        } else {
+            // 2. Try to read from Zustand persist store fallback
+            try {
+                const store = localStorage.getItem("optwin-store");
+                if (store) {
+                    const parsed = JSON.parse(store);
+                    if (parsed?.state?.lang) detected = parsed.state.lang;
+                }
+            } catch { /* empty */ }
+        }
+        if (LANGS.some(l => l.code === detected)) setLang(detected);
     }, []);
 
     // Fetch translations from DB API when language changes
@@ -138,7 +152,11 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                     {langOpen && (
                         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }} className="absolute right-0 mt-1 min-w-[140px] bg-[#13131d] border border-white/[0.06] rounded-lg shadow-xl overflow-hidden">
                             {LANGS.map(({ code, label }) => (
-                                <button key={code} onClick={() => { setLang(code); setLangOpen(false); localStorage.setItem("optwin-lang", code); }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${lang === code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
+                                <button key={code} onClick={() => { 
+                                    setLang(code); 
+                                    setLangOpen(false); 
+                                    document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000`;
+                                }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${lang === code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
                                     <span>{FLAG_SVG[code]}</span><span>{label}</span>
                                 </button>
                             ))}
@@ -155,13 +173,10 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                     <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">{mt("maintenance.siteName", "OptWin")}</h1>
                 </div>
 
-                {/* Spinning gear + loading text */}
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="mb-4">
+                {/* Spinning gear */}
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="mb-6">
                     <Settings size={68} className="text-[#6b5be6]/35" strokeWidth={1.5} />
                 </motion.div>
-                <p className="text-white/30 text-sm font-medium mb-6 animate-pulse">
-                    {mt("maintenance.loading", "Loading...")}
-                </p>
 
                 {/* Message card */}
                 <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl px-6 py-5 mb-6 max-w-[460px] w-full backdrop-blur-sm">

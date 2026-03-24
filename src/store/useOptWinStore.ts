@@ -17,10 +17,11 @@ interface OptWinState {
     // DB-driven translations
     dbTranslations: Record<string, string>;
     translationsLoaded: boolean;
+    activeLangRequest: string;
     loadTranslations: (lang: string) => Promise<void>;
 
     // Feature selection
-    selectedFeatures: Set<string>;
+    selectedFeatures: Record<string, boolean>;
     toggleFeature: (slug: string) => void;
     selectFeatures: (slugs: string[]) => void;
     clearFeatures: () => void;
@@ -65,7 +66,7 @@ export const useOptWinStore = create<OptWinState>()(
             // Defaults
             lang: "en",
             theme: "dark",
-            selectedFeatures: new Set<string>(),
+            selectedFeatures: {},
             dnsProvider: "cloudflare",
             searchQuery: "",
             showDescriptions: true,
@@ -74,15 +75,19 @@ export const useOptWinStore = create<OptWinState>()(
             translationsLoaded: false,
 
             // Load translations from DB API
+            activeLangRequest: "",
             loadTranslations: async (lang: string) => {
+                if (get().activeLangRequest === lang && get().translationsLoaded) return;
+                set({ activeLangRequest: lang }); // Optimistic lock for strict mode
                 try {
                     const res = await fetch(`/api/ui-translations?lang=${lang}`);
                     if (res.ok) {
                         const data = await res.json();
-                        set({ dbTranslations: data, translationsLoaded: true });
+                        set({ dbTranslations: data, translationsLoaded: true, activeLangRequest: lang });
                     }
                 } catch {
                     // Silently fail — static fallback will be used
+                    set({ activeLangRequest: "" });
                 }
             },
 
@@ -112,20 +117,20 @@ export const useOptWinStore = create<OptWinState>()(
             // Features
             toggleFeature: (slug) =>
                 set((state) => {
-                    const next = new Set(state.selectedFeatures);
+                    const next = { ...state.selectedFeatures };
 
                     // Mutual exclusion: highPerformance ↔ ultimatePerformance
-                    if (slug === "highPerformance" && !next.has(slug)) {
-                        next.delete("ultimatePerformance");
+                    if (slug === "highPerformance" && !next[slug]) {
+                        delete next["ultimatePerformance"];
                     }
-                    if (slug === "ultimatePerformance" && !next.has(slug)) {
-                        next.delete("highPerformance");
+                    if (slug === "ultimatePerformance" && !next[slug]) {
+                        delete next["highPerformance"];
                     }
 
-                    if (next.has(slug)) {
-                        next.delete(slug);
+                    if (next[slug]) {
+                        delete next[slug];
                     } else {
-                        next.add(slug);
+                        next[slug] = true;
                         if (slug === "changeDNS") {
                             setTimeout(() => get().setDnsModalOpen(true), 10);
                         }
@@ -135,13 +140,15 @@ export const useOptWinStore = create<OptWinState>()(
                 }),
 
             selectFeatures: (slugs) =>
-                set(() => ({
-                    selectedFeatures: new Set(slugs),
-                })),
+                set(() => {
+                    const obj: Record<string, boolean> = {};
+                    slugs.forEach(s => obj[s] = true);
+                    return { selectedFeatures: obj };
+                }),
 
             clearFeatures: () =>
                 set(() => ({
-                    selectedFeatures: new Set<string>(),
+                    selectedFeatures: {},
                 })),
 
             // DNS
@@ -193,31 +200,22 @@ export const useOptWinStore = create<OptWinState>()(
                 theme: state.theme,
                 selectedFeatures: state.selectedFeatures,
                 dnsProvider: state.dnsProvider,
-            }),
-            // Serialize Set<string> ↔ Array<string> for localStorage
+            } as unknown as OptWinState),
             storage: {
                 getItem: (name) => {
                     const str = localStorage.getItem(name);
                     if (!str) return null;
+                    // For backwards compatibility: Convert old Array-based selectedFeatures to Object
                     const parsed = JSON.parse(str);
-                    if (parsed?.state?.selectedFeatures) {
-                        parsed.state.selectedFeatures = new Set(
-                            parsed.state.selectedFeatures
-                        );
+                    if (parsed?.state?.selectedFeatures && Array.isArray(parsed.state.selectedFeatures)) {
+                        const obj: Record<string, boolean> = {};
+                        parsed.state.selectedFeatures.forEach((k: string) => obj[k] = true);
+                        parsed.state.selectedFeatures = obj;
                     }
                     return parsed;
                 },
                 setItem: (name, value) => {
-                    const toStore = {
-                        ...value,
-                        state: {
-                            ...value.state,
-                            selectedFeatures: Array.from(
-                                value.state.selectedFeatures as Set<string>
-                            ),
-                        },
-                    };
-                    localStorage.setItem(name, JSON.stringify(toStore));
+                    localStorage.setItem(name, JSON.stringify(value));
                 },
                 removeItem: (name) => localStorage.removeItem(name),
             },

@@ -81,7 +81,7 @@ export function PublicShell({ children, serverMaintenance = false, adminSession 
         if (!serverMaintenance) {
             check();
         }
-        const poll = setInterval(check, 30000);
+        const poll = setInterval(check, 5000);
         return () => clearInterval(poll);
     }, [isAdmin, serverMaintenance]);
 

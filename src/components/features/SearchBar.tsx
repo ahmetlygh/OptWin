@@ -8,7 +8,7 @@ import { Eye } from "lucide-react";
 export function SearchBar() {
     const searchQuery = useOptWinStore(state => state.searchQuery);
     const setSearchQuery = useOptWinStore(state => state.setSearchQuery);
-    const selectedCount = useOptWinStore(state => state.selectedFeatures.size);
+    const selectedCount = useOptWinStore(state => Object.keys(state.selectedFeatures).length);
     const showDescriptions = useOptWinStore(state => state.showDescriptions);
     const toggleDescriptions = useOptWinStore(state => state.toggleDescriptions);
     const { t } = useTranslation();

@@ -10,15 +10,18 @@ import { NextRequest, NextResponse } from 'next/server';
 type RateLimitEntry = { count: number; resetAt: number };
 const rateLimitMap = new Map<string, RateLimitEntry>();
 const RL_CLEANUP_INTERVAL = 5 * 60 * 1000;
-let lastRLCleanup = Date.now();
 
 function cleanupRateLimit() {
     const now = Date.now();
-    if (now - lastRLCleanup < RL_CLEANUP_INTERVAL) return;
-    lastRLCleanup = now;
     for (const [key, entry] of rateLimitMap.entries()) {
         if (now > entry.resetAt) rateLimitMap.delete(key);
     }
+}
+
+// Background cleanup independent of user requests 
+if (typeof setInterval !== "undefined") {
+    const timer = setInterval(cleanupRateLimit, RL_CLEANUP_INTERVAL);
+    if (timer.unref) timer.unref(); // Prevent blocking process exit
 }
 
 type RateLimitConfig = { maxRequests: number; windowMs: number };
@@ -37,7 +40,6 @@ function getClientIp(req: NextRequest): string {
 }
 
 function checkRateLimit(key: string, config: RateLimitConfig): { allowed: boolean; remaining: number } {
-    cleanupRateLimit();
     const now = Date.now();
     const entry = rateLimitMap.get(key);
 
