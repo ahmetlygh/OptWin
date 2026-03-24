@@ -30,6 +30,12 @@ export function RestorePointModal() {
                 })
             });
             const data = await res.json();
+            
+            if (res.status === 503 && data.maintenance) {
+                window.location.reload();
+                return;
+            }
+
             if (data.script) {
                 setPreviewCode(data.script);
                 setRestoreModalOpen(false);

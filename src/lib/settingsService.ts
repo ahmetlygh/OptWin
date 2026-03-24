@@ -10,7 +10,8 @@ export const settingsService = {
         const start = performance.now();
         try {
             // 1. Önce Redis'ten dene
-            const cachedValue = await redisCache.get(`setting:${key}`);
+            const cacheKey = `optwin:setting:${key}`;
+            const cachedValue = await redisCache.get(cacheKey);
             if (cachedValue !== null) {
                 const time = (performance.now() - start).toFixed(2);
                 console.log(`[Settings] Fetching '${key}' from Redis - Time: ${time}ms`);
@@ -28,7 +29,7 @@ export const settingsService = {
 
             if (record) {
                 const valueToCache = record.value;
-                await redisCache.set(`setting:${key}`, valueToCache, 86400); // 24H TTL
+                await redisCache.set(cacheKey, valueToCache, 86400); // 24H TTL
                 const time = (performance.now() - start).toFixed(2);
                 console.log(`[Settings] Fetching '${key}' from DB - Time: ${time}ms`);
                 try {
@@ -58,7 +59,7 @@ export const settingsService = {
         try {
             if (!keys.length) return result as T;
             
-            const redisKeys = keys.map(k => `setting:${k}`);
+            const redisKeys = keys.map(k => `optwin:setting:${k}`);
             const cachedValues = await redisCache.mget(redisKeys);
             
             const missingKeys: string[] = [];
@@ -84,7 +85,7 @@ export const settingsService = {
                 const toCache: {key: string, value: string}[] = [];
 
                 records.forEach(record => {
-                    toCache.push({ key: `setting:${record.key}`, value: record.value });
+                    toCache.push({ key: `optwin:setting:${record.key}`, value: record.value });
                     try {
                         result[record.key] = JSON.parse(record.value);
                     } catch {
@@ -143,11 +144,47 @@ export const settingsService = {
             });
 
             // Redis'ten cash'i uçur.
-            await redisCache.del(`setting:${key}`);
+            await redisCache.del(`optwin:setting:${key}`);
             
             return true;
         } catch (error) {
             console.error(`[SettingsService] updateSetting error for key: ${key}`, error);
+            return false;
+        }
+    },
+
+    /**
+     * Çoklu ayarlar için hem DB'yi günceller hem de Redis cache keylerini array olarak siler.
+     */
+    async updateSettings(settings: { key: string; value: any; type?: string; description?: string }[]): Promise<boolean> {
+        if (!settings.length) return true;
+        try {
+            await prisma.$transaction(
+                settings.map((s) => {
+                    const stringValue = typeof s.value === "string" ? s.value : JSON.stringify(s.value);
+                    return prisma.siteSetting.upsert({
+                        where: { key: s.key },
+                        update: {
+                            value: stringValue,
+                            ...(s.type && { type: s.type }),
+                            ...(s.description && { description: s.description }),
+                        },
+                        create: {
+                            key: s.key,
+                            value: stringValue,
+                            type: s.type || "string",
+                            description: s.description || "",
+                        },
+                    });
+                })
+            );
+
+            const redisKeys = settings.map((s) => `optwin:setting:${s.key}`);
+            await redisCache.del(redisKeys);
+
+            return true;
+        } catch (error) {
+            console.error(`[SettingsService] updateSettings bulk error:`, error);
             return false;
         }
     }

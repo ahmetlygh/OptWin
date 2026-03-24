@@ -87,14 +87,27 @@ export const useOptWinStore = create<OptWinState>()(
             },
 
             // Language
-            setLang: (lang) => set({ lang }),
+            setLang: (lang) => {
+                if (typeof window !== "undefined") {
+                    document.cookie = `NEXT_LOCALE=${lang}; path=/; max-age=31536000`;
+                }
+                set({ lang });
+            },
 
             // Theme
-            setTheme: (theme) => set({ theme }),
-            toggleTheme: () =>
-                set((state) => ({
-                    theme: state.theme === "dark" ? "light" : "dark",
-                })),
+            setTheme: (theme) => {
+                if (typeof window !== "undefined") {
+                    document.cookie = `NEXT_THEME=${theme}; path=/; max-age=31536000`;
+                }
+                set({ theme });
+            },
+            toggleTheme: () => {
+                const newTheme = get().theme === "dark" ? "light" : "dark";
+                if (typeof window !== "undefined") {
+                    document.cookie = `NEXT_THEME=${newTheme}; path=/; max-age=31536000`;
+                }
+                set({ theme: newTheme });
+            },
 
             // Features
             toggleFeature: (slug) =>

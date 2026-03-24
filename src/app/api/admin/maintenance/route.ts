@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
+import { settingsService } from "@/lib/settingsService";
 
 const maintenanceSchema = z.object({
     enabled: z.boolean(),
@@ -42,23 +43,10 @@ export async function PUT(req: Request) {
         }
         const { enabled, reason, estimatedEnd } = parsed.data;
 
-        // Upsert all three settings
-        await Promise.all([
-            prisma.siteSetting.upsert({
-                where: { key: "maintenanceMode" },
-                create: { key: "maintenanceMode", value: enabled ? "true" : "false", type: "boolean", description: "Site bakım modu" },
-                update: { value: enabled ? "true" : "false" },
-            }),
-            prisma.siteSetting.upsert({
-                where: { key: "maintenanceReason" },
-                create: { key: "maintenanceReason", value: reason, type: "string", description: "Bakım sebebi" },
-                update: { value: reason },
-            }),
-            prisma.siteSetting.upsert({
-                where: { key: "maintenanceEstimatedEnd" },
-                create: { key: "maintenanceEstimatedEnd", value: estimatedEnd, type: "string", description: "Tahmini bitiş zamanı (ISO UTC)" },
-                update: { value: estimatedEnd },
-            }),
+        await settingsService.updateSettings([
+            { key: "maintenanceMode", value: enabled ? "true" : "false", type: "boolean", description: "Site bakım modu" },
+            { key: "maintenanceReason", value: reason, type: "string", description: "Bakım sebebi" },
+            { key: "maintenanceEstimatedEnd", value: estimatedEnd, type: "string", description: "Tahmini bitiş zamanı (ISO UTC)" }
         ]);
 
         return NextResponse.json({ success: true, maintenance: enabled, reason, estimatedEnd });

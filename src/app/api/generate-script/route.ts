@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { generateScript } from "@/lib/script-generator";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { checkMaintenanceStatus } from "@/lib/maintenance";
 
 const SUPPORTED_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"] as const;
 
@@ -13,6 +14,9 @@ const scriptRequestSchema = z.object({
 });
 
 export async function POST(req: Request) {
+    const maintenanceBlock = await checkMaintenanceStatus();
+    if (maintenanceBlock) return maintenanceBlock;
+
     try {
         const body = await req.json();
         const parsed = scriptRequestSchema.safeParse(body);

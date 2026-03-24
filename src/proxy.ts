@@ -65,9 +65,9 @@ interface MaintenanceInfo { active: boolean; reason: string; estimatedEnd: strin
 async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
     try {
         // middleware standalone environment without strict Edge limitations allows native net streams locally/docker
-        const active = await redisCache.get("setting:maintenanceMode");
-        const reason = await redisCache.get("setting:maintenanceReason");
-        const time = await redisCache.get("setting:maintenanceTime");
+        const active = await redisCache.get("optwin:setting:maintenanceMode");
+        const reason = await redisCache.get("optwin:setting:maintenanceReason");
+        const time = await redisCache.get("optwin:setting:maintenanceEstimatedEnd");
 
         return {
             active: active === "true",
@@ -105,12 +105,12 @@ export default async function proxy(request: NextRequest) {
         // Safe retrieval of site URL through Redis fallback
         let siteUrl = "";
         try {
-            const cachedUrl = await redisCache.get("setting:site_url");
+            const cachedUrl = await redisCache.get("optwin:setting:site_url");
             siteUrl = cachedUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://optwin.tech';
         } catch {
             siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://optwin.tech';
         }
-        const targetUrl = siteUrl || '/'; // graceful fallback to prevent charCodeAt parsing error
+        const targetUrl = siteUrl || 'https://optwin.tech'; // graceful fallback to prevent charCodeAt parsing error
 
         // ── CORS for API routes ──
         if (isApiRequest) {

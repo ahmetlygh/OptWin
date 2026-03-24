@@ -38,10 +38,15 @@ export const redisCache = {
             console.warn(`[Redis SET Error] ${key}`);
         }
     },
-    async del(key: string): Promise<void> {
+    async del(key: string | string[]): Promise<void> {
+        if (!key || (Array.isArray(key) && key.length === 0)) return;
         try {
             if (redisClient.status !== "ready" && redisClient.status !== "connecting") return;
-            await redisClient.del(key);
+            if (Array.isArray(key)) {
+                await redisClient.del(...key);
+            } else {
+                await redisClient.del(key);
+            }
         } catch (e) {
             console.warn(`[Redis DEL Error] ${key}`);
         }

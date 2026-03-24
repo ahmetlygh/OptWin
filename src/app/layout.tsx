@@ -4,7 +4,7 @@ import "./globals.css";
 import { ClientProviders } from "@/components/providers/ClientProviders";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { isMaintenanceMode } from "@/lib/maintenance";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 
@@ -79,6 +79,10 @@ export default async function RootLayout({
         image: session.user?.image || null,
     } : null;
 
+    const cookieStore = await cookies();
+    const locale = cookieStore.get("NEXT_LOCALE")?.value || settings.default_lang || "en";
+    const theme = cookieStore.get("NEXT_THEME")?.value || settings.default_theme || "dark";
+
     const siteName = settings.site_name || "OptWin";
     const authorName = settings.author_name || "ahmetly_";
     const authorUrl = settings.author_url || "https://www.ahmetly.com";
@@ -86,8 +90,8 @@ export default async function RootLayout({
     const themePrimaryColor = settings.theme_primary_color || null;
 
     return (
-        <html lang="en" suppressHydrationWarning>
-            <body className={`${inter.variable} antialiased selection:bg-[#6c5ce7] selection:text-white`}>
+        <html lang={locale} className={theme} suppressHydrationWarning>
+            <body className={`${inter.variable} antialiased selection:bg-[#6c5ce7] selection:text-white theme-ready`}>
                 {themePrimaryColor && (
                     <style dangerouslySetInnerHTML={{ __html: `:root { --accent-color: ${themePrimaryColor}; }` }} />
                 )}

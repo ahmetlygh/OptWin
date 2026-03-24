@@ -21,6 +21,35 @@ export const isMaintenanceMode = unstable_cache(
 );
 
 /**
+ * Reusable utility to check maintenance status directly inside API routes.
+ * Bypasses unstable_cache to read the latest DB state, providing a strict 503 guard.
+ */
+export async function checkMaintenanceStatus() {
+    try {
+        const setting = await prisma.siteSetting.findUnique({
+            where: { key: "maintenanceMode" },
+        });
+        const active = setting?.value === "true";
+        if (active) {
+            return new Response(
+                JSON.stringify({ error: "Service Unavailable", maintenance: true }),
+                {
+                    status: 503,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Retry-After": "300",
+                        "Cache-Control": "no-store",
+                    },
+                }
+            );
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Invalidate the maintenance cache.
  * After Next.js 16 stabilizes revalidateTag, switch to that.
  * For now, the 2-second TTL ensures fast staleness expiry.
