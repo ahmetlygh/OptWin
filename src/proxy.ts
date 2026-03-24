@@ -81,6 +81,26 @@ async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
     }
 }
 
+/* ── Locales ── */
+const LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
+const DEFAULT_LOCALE = 'en';
+
+function getPreferredLocale(request: NextRequest): string {
+    // 1. Explicit user choice via strictly synced Cookie
+    const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+    if (cookieLocale && LOCALES.includes(cookieLocale)) return cookieLocale;
+    
+    // 2. Browser default
+    const acceptLang = request.headers.get('accept-language');
+    if (acceptLang) {
+        const browserMatch = acceptLang.split(',').map(l => l.trim().split(';')[0].slice(0, 2)).find(code => LOCALES.includes(code));
+        if (browserMatch) return browserMatch;
+    }
+    
+    // 3. Fallback
+    return DEFAULT_LOCALE;
+}
+
 /* ── Paths that are ALWAYS allowed (even during maintenance) ── */
 const ALWAYS_ALLOWED = [
     '/admin',
@@ -88,6 +108,15 @@ const ALWAYS_ALLOWED = [
     '/api/auth',
     '/api/maintenance',
     '/api/system',
+    '/_next',
+    '/favicon.ico',
+    '/optwin.png',
+    '/assets',
+];
+
+const LOCALE_BYPASS = [
+    '/admin',
+    '/api',
     '/_next',
     '/favicon.ico',
     '/optwin.png',
@@ -103,6 +132,19 @@ export default async function proxy(request: NextRequest) {
         response.headers.set('x-next-pathname', pathname || '/');
 
         const isApiRequest = pathname.startsWith('/api');
+        
+        // ── Segment-based Locale Redirection ──
+        const isBypassed = LOCALE_BYPASS.some(p => pathname.startsWith(p) || pathname === p);
+        const hasLocaleSegment = LOCALES.some(locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`);
+        
+        if (!isBypassed && !hasLocaleSegment) {
+            const locale = getPreferredLocale(request);
+            // Construct strictly matched segment paths: / -> /en, /privacy -> /en/privacy
+            const newSegments = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;
+            const redirectUrl = new URL(newSegments, request.url);
+            request.nextUrl.searchParams.forEach((val, key) => redirectUrl.searchParams.append(key, val));
+            return NextResponse.redirect(redirectUrl);
+        }
 
         // Safe retrieval of site URL through Redis fallback
         let siteUrl = "";

@@ -3,6 +3,7 @@
 import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDownIcon, SunIcon, MoonIcon, HeartIcon } from "../shared/Icons";
@@ -18,6 +19,9 @@ interface HeaderProps {
 export function Header({ adminSession = null, serverSettings = {} }: HeaderProps) {
     const { lang, setLang, theme, toggleTheme, setSupportModalOpen } = useOptWinStore();
     const { t } = useTranslation();
+    const router = useRouter();
+    const pathname = usePathname();
+    
     const mounted = useSyncExternalStore(
         () => () => {},
         () => true,
@@ -43,6 +47,19 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
             setIsLangClosing(false);
         }, 150);
     }, [isLangOpen]);
+
+    const handleLangSwitch = (newLang: Lang) => {
+        setLang(newLang);
+        closeLangDropdown();
+        if (pathname) {
+            const segments = pathname.split('/');
+            const LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
+            if (segments.length > 1 && LOCALES.includes(segments[1])) {
+                segments[1] = newLang;
+                router.replace(segments.join('/') || '/');
+            }
+        }
+    };
 
     const closeAdminDropdown = useCallback(() => {
         if (!isAdminOpen) return;
@@ -174,10 +191,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                         {languages.map((l) => (
                                             <button
                                                 key={l.code}
-                                                onClick={() => {
-                                                    setLang(l.code);
-                                                    closeLangDropdown();
-                                                }}
+                                                onClick={() => handleLangSwitch(l.code)}
                                                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${lang === l.code ? 'bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-bold' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]'}`}
                                             >
                                                 <span>{l.flag}</span>
