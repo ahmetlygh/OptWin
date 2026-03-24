@@ -111,9 +111,10 @@ export async function middleware(request: NextRequest) {
     // ── CORS for API routes ──
     if (isApiRequest) {
         const origin = request.headers.get('origin') || '';
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://optwin.tech';
         const allowedOrigins = [
-            'https://optwin.tech',
-            'https://www.optwin.tech',
+            siteUrl,
+            siteUrl.replace('https://', 'https://www.'),
             'http://localhost:3000',
         ];
         const corsOrigin = allowedOrigins.includes(origin) ? origin : '';

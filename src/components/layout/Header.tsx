@@ -31,6 +31,16 @@ export function Header({ adminSession = null }: HeaderProps) {
     const [isAdminClosing, setIsAdminClosing] = useState(false);
     const adminRef = useRef<HTMLDivElement>(null);
 
+    // Dynamic Site Name
+    const [siteName, setSiteName] = useState("OptWin");
+
+    useEffect(() => {
+        fetch("/api/public-settings")
+            .then(r => r.json())
+            .then(d => { if (d.success && d.settings.site_name) setSiteName(d.settings.site_name); })
+            .catch(() => {});
+    }, []);
+
     const closeLangDropdown = useCallback(() => {
         if (!isLangOpen) return;
         setIsLangClosing(true);
@@ -109,10 +119,10 @@ export function Header({ adminSession = null }: HeaderProps) {
                 <div className="flex items-center gap-3">
                     <Link href="/" onClick={handleLogoClick} className="flex items-center gap-3 group cursor-pointer">
                         <div className="h-9 w-auto flex items-center justify-center">
-                            <Image src="/optwin.png" alt="OptWin Logo" width={36} height={36} className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
+                            <Image src="/optwin.png" alt={`${siteName} Logo`} width={36} height={36} className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <h1 className="text-2xl font-black tracking-tight bg-clip-text text-transparent text-gradient mt-0.5">
-                            OptWin
+                            {siteName}
                         </h1>
                     </Link>
                 </div>

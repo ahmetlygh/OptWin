@@ -91,11 +91,15 @@ const SETTING_GROUPS: SettingGroup[] = [
         icon: <SettingsIcon size={18} />,
         color: "#6b5be6",
         fields: [
+            { key: "site_name", label: "Site Adı", description: "Header, Footer ve tüm sayfalarda görünen site ismi.", type: "text", placeholder: "OptWin" },
+            { key: "site_url", label: "Site URL", description: "SEO meta etiketlerinde ve paylaşımlarda kullanılan tam site adresi.", type: "url", placeholder: "https://optwin.tech", icon: <Globe size={14} /> },
+            { key: "site_description", label: "Site Açıklaması", description: "Arama motorları için SEO site açıklaması.", type: "text", placeholder: "Free, open-source browser-based Windows optimizer..." },
+            { key: "site_keywords", label: "Anahtar Kelimeler", description: "SEO için virgülle ayrılmış anahtar kelimeler.", type: "text", placeholder: "windows optimizer, powershell, pc tweaks" },
             { key: "site_version", label: "Site Sürümü", description: "Footer ve admin panelinde görünen sürüm numarası.", type: "text", placeholder: "1.3.0" },
-            { key: "default_lang", label: "Varsayılan Dil", description: "Yeni ziyaretçilerin göreceği varsayılan dil.", type: "select", options: [{ value: "en", label: "English" }, { value: "tr", label: "Türkçe" }, { value: "de", label: "Deutsch" }, { value: "fr", label: "Français" }, { value: "es", label: "Español" }, { value: "zh", label: "中文" }, { value: "hi", label: "हिन्दी" }] },
+            { key: "default_lang", label: "Varsayılan Dil", description: "Yeni ziyaretçilerin göreceği varsayılan dil.", type: "select", options: REASON_LANGS.map(code => ({ value: code, label: REASON_LANG_LABELS[code] })) },
             { key: "default_theme", label: "Varsayılan Tema", description: "Yeni ziyaretçilerin göreceği varsayılan tema.", type: "select", icon: <Palette size={14} />, options: [{ value: "dark", label: "Koyu" }, { value: "light", label: "Açık" }] },
             { key: "copyright_text", label: "Copyright Metni", description: "Footer'da görünen telif hakkı metni. Örn: OptWin", type: "text", placeholder: "OptWin" },
-            { key: "copyright_year", label: "Copyright Yılı", description: "Telif hakkı başlangıç yılı. Boş bırakılırsa mevcut yıl kullanılır.", type: "text", placeholder: "2024" },
+            { key: "copyright_year", label: "Copyright Yılı", description: "Footer'da görünen telif hakkı yılı. Girdiğiniz değer aynen gösterilir.", type: "text", placeholder: "2026" },
         ],
     },
     {
@@ -516,14 +520,6 @@ export default function SettingsPage() {
                         )}
                     </AnimatePresence>
 
-                    {/* Preview button for 6.10 */}
-                    <button
-                        onClick={() => window.open("/", "_blank")}
-                        className="h-9 px-3 rounded-xl text-xs font-medium text-white/30 hover:text-white/70 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.04] transition-all flex items-center gap-1.5"
-                        title="Siteyi yeni sekmede aç"
-                    >
-                        <ExternalLink size={13} /> Önizleme
-                    </button>
 
                     {/* Lang picker for content */}
                     {activeTab === "content" && (

@@ -19,6 +19,15 @@ export function ScriptOverlay() {
     const { isVisible, isMounted, phase, containerRef } = useModalPhase(isScriptOverlayOpen, handleClose);
     const [supportPhase, setSupportPhase] = useState<"hidden" | "entering" | "visible" | "exiting">("hidden");
     const [isDownloading, setIsDownloading] = useState(false);
+    const [settings, setSettings] = useState<Record<string, string>>({});
+
+    // Fetch settings once
+    useEffect(() => {
+        fetch("/api/public-settings")
+            .then(r => r.json())
+            .then(d => { if (d.success) setSettings(d.settings); })
+            .catch(() => {});
+    }, []);
 
     // Reset support prompt when overlay closes
     useEffect(() => {
@@ -42,7 +51,8 @@ export function ScriptOverlay() {
         a.href = url;
         const now = new Date();
         const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
-        a.download = `OptWin_${ts}.bat`;
+        const siteName = settings.site_name || "OptWin";
+        a.download = `${siteName}_${ts}.bat`;
         a.click();
         URL.revokeObjectURL(url);
         setIsDownloading(false);
@@ -156,7 +166,7 @@ export function ScriptOverlay() {
                 <div className="w-full md:w-[72%] p-4 md:p-6 flex flex-col min-h-0 bg-[var(--card-bg)]">
                     <div className="flex items-center justify-between bg-[var(--bg-color)]/50 border border-[var(--border-color)] rounded-t-xl px-4 py-3 shrink-0 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
                         <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
-                            <MonitorCog size={14} className="text-purple-500" /> OptWin.bat
+                            <MonitorCog size={14} className="text-purple-500" /> {settings.site_name || "OptWin"}.bat
                         </div>
                         <button
                             onClick={handleCopy}
@@ -195,7 +205,7 @@ export function ScriptOverlay() {
                             </p>
                             <div className="flex flex-col gap-2.5">
                                 <a
-                                    href="https://www.buymeacoffee.com/ahmetly_"
+                                    href={settings.bmc_url || "#"}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={() => { localStorage.setItem(SUPPORT_SHOWN_KEY, "1"); }}

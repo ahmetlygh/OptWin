@@ -90,8 +90,6 @@ export default function ScriptDefaultsPage() {
     const [originalKeyOrder, setOriginalKeyOrder] = useState<Record<string, number>>({});
     const newKeyRef = useRef<HTMLInputElement>(null);
     const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
-    const [resetting, setResetting] = useState(false);
-    const [showResetModal, setShowResetModal] = useState(false);
     const unsavedCtx = useUnsavedChanges();
 
     // Build initial order from LABEL_DESCRIPTIONS positions
@@ -239,27 +237,6 @@ export default function ScriptDefaultsPage() {
         setLineOverrides(JSON.parse(JSON.stringify(originalLineOverrides)));
         setDeletedPreviewLines(JSON.parse(JSON.stringify(originalDeletedPreviewLines)));
         setEditingLineKey(null);
-    };
-
-    const handleReset = async () => {
-        setShowResetModal(false);
-        setResetting(true);
-        try {
-            const res = await fetch("/api/admin/script-labels/reset", { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-                await fetchLabels();
-                setLineOverrides({});
-                setSaved(true);
-                setTimeout(() => setSaved(false), 2000);
-            } else {
-                setError(data.error || "Sıfırlama başarısız");
-            }
-        } catch {
-            setError("Sıfırlama sırasında hata oluştu");
-        } finally {
-            setResetting(false);
-        }
     };
 
     // Register callbacks for sidebar navigation guard
@@ -690,15 +667,6 @@ export default function ScriptDefaultsPage() {
                         )}
                     </AnimatePresence>
 
-                    <button
-                        onClick={() => setShowResetModal(true)}
-                        disabled={resetting}
-                        className="h-9 px-3 rounded-xl text-xs font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5 disabled:opacity-50"
-                        title="Tüm etiketleri varsayılana sıfırla"
-                    >
-                        {resetting ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-                        Sıfırla
-                    </button>
                     <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages} />
                 </div>
             </div>
@@ -1141,18 +1109,6 @@ export default function ScriptDefaultsPage() {
                 description={`"${deleteConfirmKey}" anahtarını silmek istediğinize emin misiniz? Bu işlem tüm dillerden kalıcı olarak silinecektir.`}
                 confirmText="Evet, Sil"
                 cancelText="Hayır"
-                variant="danger"
-            />
-
-            {/* Reset Confirm Modal */}
-            <AdminConfirmModal
-                open={showResetModal}
-                onClose={() => setShowResetModal(false)}
-                onConfirm={handleReset}
-                title="Script Etiketlerini Sıfırla"
-                description="Tüm script etiketleri varsayılan değerlerine sıfırlanacak. Bu işlem mevcut tüm dillerdeki özelleştirmelerinizi silecek ve geri alınamaz."
-                confirmText="Evet, Sıfırla"
-                cancelText="Vazgeç"
                 variant="danger"
             />
 

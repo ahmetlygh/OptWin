@@ -2,7 +2,7 @@
 
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useModalPhase } from "@/hooks/useModalPhase";
 import { XIcon, HeartIcon, CoffeeIcon, StarIcon, UsersIcon, ExternalLinkIcon, CheckIcon } from "../shared/Icons";
 
@@ -12,11 +12,23 @@ export function SupportModal() {
     const handleClose = () => setSupportModalOpen(false);
     const { isVisible, isMounted, phase, containerRef } = useModalPhase(isSupportModalOpen, handleClose);
     const [copied, setCopied] = useState(false);
+    const [settings, setSettings] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        fetch("/api/public-settings")
+            .then(r => r.json())
+            .then(d => { if (d.success) setSettings(d.settings); })
+            .catch(() => {});
+    }, []);
 
     if (!isMounted) return null;
 
+    const siteUrl = settings.site_url || "";
+    const bmcUrl = settings.bmc_url || "";
+    const githubUrl = settings.github_url || "";
+
     const handleCopyLink = () => {
-        navigator.clipboard.writeText("https://optwin.tech");
+        if (siteUrl) navigator.clipboard.writeText(siteUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -27,14 +39,14 @@ export function SupportModal() {
             text: t["support.way1"],
             color: "text-amber-500",
             bg: "bg-amber-500/10",
-            onClick: () => window.open("https://www.buymeacoffee.com/ahmetly_", "_blank"),
+            onClick: () => bmcUrl && window.open(bmcUrl, "_blank"),
         },
         {
             icon: <StarIcon size={20} />,
             text: t["support.way2"],
             color: "text-yellow-500",
             bg: "bg-yellow-500/10",
-            onClick: () => window.open("https://github.com/ahmetlygh/OptWin", "_blank"),
+            onClick: () => githubUrl && window.open(githubUrl, "_blank"),
         },
         {
             icon: copied ? <CheckIcon size={20} /> : <UsersIcon size={20} />,
@@ -106,16 +118,18 @@ export function SupportModal() {
 
                     {/* CTA */}
                     <div className="flex flex-col gap-3 w-full animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-                        <a
-                            href="https://www.buymeacoffee.com/ahmetly_"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 transition-all duration-300"
-                        >
-                            <CoffeeIcon size={18} />
-                            {t["support.buyMeCoffee"]}
-                            <ExternalLinkIcon size={14} className="opacity-60" />
-                        </a>
+                        {bmcUrl && (
+                            <a
+                                href={bmcUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 transition-all duration-300"
+                            >
+                                <CoffeeIcon size={18} />
+                                {t["support.buyMeCoffee"]}
+                                <ExternalLinkIcon size={14} className="opacity-60" />
+                            </a>
+                        )}
                         <button
                             onClick={handleClose}
                             className="w-full py-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium text-sm rounded-xl transition-all"

@@ -44,6 +44,7 @@ start*.md
 OptWin-Analyze.md
 OptWin-Phases.md
 implementation_summary.md
+Hardcoded.md
 
 # env files (.env.example is committed)
 .env

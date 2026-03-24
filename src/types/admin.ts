@@ -25,19 +25,5 @@ export interface AdminDashboardStats {
     totalCategories: number;
 }
 
-// Known setting keys for type safety
-export type SettingKey =
-    | "maintenanceMode"
-    | "site_version"
-    | "github_url"
-    | "bmc_url"
-    | "contact_email"
-    | "author_name"
-    | "author_url"
-    | "default_lang"
-    | "default_theme"
-    | "script_format"
-    | "bmc_widget_enabled"
-    | "footer_year"
-    | "footer_text_en"
-    | "footer_text_tr";
+// Known setting keys for type safety or loose strings
+export type SettingKey = string;

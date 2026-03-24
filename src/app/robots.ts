@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://optwin.tech";
+
     return {
         rules: [
             {
@@ -9,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: ["/admin/", "/api/"],
             },
         ],
-        sitemap: "https://optwin.tech/sitemap.xml",
+        sitemap: `${baseUrl}/sitemap.xml`,
     };
 }

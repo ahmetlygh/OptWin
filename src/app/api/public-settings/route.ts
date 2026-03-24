@@ -6,6 +6,10 @@ import { prisma } from "@/lib/db";
  * Used by Footer, Header, and other public components to read dynamic settings
  */
 const PUBLIC_KEYS = [
+    "site_url",
+    "site_name",
+    "site_description",
+    "site_keywords",
     "site_version",
     "github_url",
     "bmc_url",

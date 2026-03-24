@@ -151,8 +151,8 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative z-10 flex flex-col items-center text-center px-6 max-w-lg">
                 {/* Logo */}
                 <div className="flex items-center gap-4 mb-10 select-none">
-                    <Image src="/optwin.png" alt="OptWin" width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
-                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">OptWin</h1>
+                    <Image src="/optwin.png" alt={mt("maintenance.siteName", "OptWin")} width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
+                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">{mt("maintenance.siteName", "OptWin")}</h1>
                 </div>
 
                 {/* Spinning gear + loading text */}
@@ -246,7 +246,7 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
 
             {/* Copyright */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="absolute bottom-8 left-0 right-0 text-center">
-                <p className="text-[16px] text-white/13 font-medium">&copy; {new Date().getFullYear()} OptWin. All rights reserved.</p>
+                <p className="text-[16px] text-white/13 font-medium">&copy; {new Date().getFullYear()} {mt("maintenance.siteName", "OptWin")}. All rights reserved.</p>
             </motion.div>
         </motion.div>
     );
