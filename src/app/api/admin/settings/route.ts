@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
@@ -116,6 +117,9 @@ export async function PUT(req: Request) {
         if (!ok) {
             return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
         }
+
+        revalidateTag("ui-translations", "layout" as any);
+        revalidatePath("/", "layout");
 
         return NextResponse.json({ success: true });
     } catch (error: unknown) {

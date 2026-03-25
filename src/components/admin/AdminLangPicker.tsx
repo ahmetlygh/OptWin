@@ -26,9 +26,11 @@ interface AdminLangPickerProps {
     onChange: (code: string) => void;
     availableLangs?: string[];
     variant?: "header" | "form";
+    className?: string;
 }
 
-export function AdminLangPicker({ value, onChange, availableLangs, variant = "header" }: AdminLangPickerProps) {
+export function AdminLangPicker({ value, onChange, availableLangs, variant = "header", className = "" }: AdminLangPickerProps) {
+
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -56,7 +58,8 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
     const isForm = variant === "form";
 
     return (
-        <div ref={ref} className={`relative ${isForm ? "w-full" : ""}`}>
+        <div ref={ref} className={`relative ${isForm ? "w-full" : ""} ${className}`}>
+
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}

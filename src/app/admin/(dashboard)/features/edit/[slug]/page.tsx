@@ -21,6 +21,8 @@ import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
 import { generateScriptMessage } from "@/lib/powershell-safe";
 import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
+import { AdminActionBar } from "@/components/admin/AdminActionBar";
+import { Loader } from "@/components/shared/Loader";
 
 type Feature = {
     id: string;
@@ -75,8 +77,8 @@ export default function FeatureEditBySlugPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 size={24} className="text-[#6b5be6] animate-spin" />
+            <div className="flex items-center justify-center p-20">
+                <Loader />
             </div>
         );
     }
@@ -419,33 +421,13 @@ function SlugFeatureEditor({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <AnimatePresence>
-                        {hasChanges && (
-                            <motion.div
-                                initial={{ opacity: 0, x: -8, scale: 0.95 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
-                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                                className="flex items-center gap-2"
-                            >
-                                <button
-                                    onClick={() => setForm(buildInitialState())}
-                                    className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
-                                >
-                                    <RotateCcw size={13} />
-                                    İptal
-                                </button>
-                                <button
-                                    onClick={handleSubmit}
-                                    disabled={saving || !form.slug || !form.translations.en?.title}
-                                    className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
-                                >
-                                    {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                                    {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Kaydet"}
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    <AdminActionBar
+                        show={hasChanges}
+                        saving={saving}
+                        saved={saved}
+                        onSave={handleSubmit}
+                        onCancel={() => setForm(buildInitialState())}
+                    />
 
                     <motion.button
                         initial={{ opacity: 0 }}

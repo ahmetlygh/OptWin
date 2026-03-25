@@ -28,8 +28,11 @@ import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
-import { generateScriptMessage } from "@/lib/powershell-safe";
+import { AdminActionBar } from "@/components/admin/AdminActionBar";
+import { Loader } from "@/components/shared/Loader";
+import { generateScriptMessage, toPowerShellSafe } from "@/lib/powershell-safe";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
+import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 import {
     DndContext,
     closestCenter,
@@ -146,11 +149,12 @@ export default function AdminFeaturesPage() {
     const [features, setFeatures] = useState<Feature[]>([]);
     const [categories, setCategories] = useState<(Category & { _count?: { features: number } })[]>([]);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
     const [search, setSearch] = useState("");
+
     const [filterCategory, setFilterCategory] = useState("");
     const [filterRisk, setFilterRisk] = useState("");
-    const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
-    const [isCreating, setIsCreating] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
     // Category management
@@ -223,7 +227,6 @@ export default function AdminFeaturesPage() {
         fetchFeatures();
     };
 
-    // Build original orders snapshot — only on initial load or after save/cancel (not on local drag)
     const isLocalDrag = useRef(false);
     useEffect(() => {
         if (features.length === 0) return;
@@ -239,7 +242,6 @@ export default function AdminFeaturesPage() {
         setPendingOrders({});
     }, [features, categories]);
 
-    // DnD: reorder features within a category (local only, no API call)
     const handleFeatureDragEnd = (event: DragEndEvent, catId: string) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -252,7 +254,6 @@ export default function AdminFeaturesPage() {
         const reordered = arrayMove(catFeatures, oldIndex, newIndex);
         const updates = reordered.map((f, i) => ({ id: f.id, order: i + 1 }));
 
-        // Mark as local drag so useEffect doesn't rebuild originalOrders
         isLocalDrag.current = true;
         setFeatures(prev => {
             const others = prev.filter(f => f.categoryId !== catId);
@@ -261,7 +262,6 @@ export default function AdminFeaturesPage() {
         setPendingOrders(prev => ({ ...prev, [catId]: updates }));
     };
 
-    // Check if any category has pending order changes
     const hasOrderChanges = useMemo(() => {
         for (const catId of Object.keys(pendingOrders)) {
             const orig = originalOrders[catId];
@@ -275,36 +275,39 @@ export default function AdminFeaturesPage() {
         return false;
     }, [originalOrders, pendingOrders]);
 
-    // Wire unsaved changes guard — includes both order changes AND category name edits
     useEffect(() => {
         setHasUnsavedChanges(hasOrderChanges || catNameDirty);
     }, [hasOrderChanges, catNameDirty, setHasUnsavedChanges]);
 
-    // Save all pending order changes
     const saveAllOrders = useCallback(async () => {
-        const allUpdates: { id: string; order: number }[] = [];
-        for (const items of Object.values(pendingOrders)) {
-            allUpdates.push(...items);
+        setSaving(true);
+        try {
+            const allUpdates: { id: string; order: number }[] = [];
+            for (const items of Object.values(pendingOrders)) {
+                allUpdates.push(...items);
+            }
+            if (allUpdates.length === 0) return;
+            await fetch("/api/admin/reorder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "feature", items: allUpdates }),
+            });
+            const snapshot: Record<string, { id: string; order: number }[]> = {};
+            for (const cat of categories) {
+                snapshot[cat.id] = features
+                    .filter(f => f.categoryId === cat.id)
+                    .sort((a, b) => a.order - b.order)
+                    .map(f => ({ id: f.id, order: f.order }));
+            }
+            setOriginalOrders(snapshot);
+            setPendingOrders({});
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } finally {
+            setSaving(false);
         }
-        if (allUpdates.length === 0) return;
-        await fetch("/api/admin/reorder", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "feature", items: allUpdates }),
-        });
-        // Snapshot current state as new original
-        const snapshot: Record<string, { id: string; order: number }[]> = {};
-        for (const cat of categories) {
-            snapshot[cat.id] = features
-                .filter(f => f.categoryId === cat.id)
-                .sort((a, b) => a.order - b.order)
-                .map(f => ({ id: f.id, order: f.order }));
-        }
-        setOriginalOrders(snapshot);
-        setPendingOrders({});
     }, [pendingOrders, features, categories]);
 
-    // Cancel all pending order changes — restore original orders
     const cancelAllOrders = useCallback(() => {
         setFeatures(prev => {
             const restored = [...prev];
@@ -319,19 +322,48 @@ export default function AdminFeaturesPage() {
         setPendingOrders({});
     }, [originalOrders]);
 
-    // Register save/discard callbacks for unsaved changes modal
+    const saveCatNameInternal = async (catId: string) => {
+        setSaving(true);
+        try {
+            if (!editingCatValue.trim()) { setEditingCatName(null); setCatNameDirty(false); return; }
+            const cat = categories.find(c => c.id === catId);
+            if (!cat) return;
+            const existingTr = cat.translations.find(t => t.lang === displayLang);
+            const translations = existingTr
+                ? cat.translations.map(t => t.lang === displayLang ? { ...t, name: editingCatValue.trim() } : t)
+                : [...cat.translations, { lang: displayLang, name: editingCatValue.trim() }];
+            await fetch("/api/admin/categories", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: catId, translations: translations.map(t => ({ lang: t.lang, name: t.name })) }),
+            });
+            setCategories(prev => prev.map(c => c.id === catId ? { ...c, translations } : c));
+            setEditingCatName(null);
+            setCatNameDirty(false);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const cancelCatNameEdit = useCallback(() => {
+        setEditingCatName(null);
+        setEditingCatValue("");
+        setCatNameDirty(false);
+    }, []);
+
     useEffect(() => {
         onSave.current = async () => {
             if (hasOrderChanges) await saveAllOrders();
-            if (catNameDirty && editingCatName) { await saveCatName(editingCatName); }
+            if (catNameDirty && editingCatName) { await saveCatNameInternal(editingCatName); }
         };
         onDiscard.current = () => {
             if (hasOrderChanges) cancelAllOrders();
             if (catNameDirty) cancelCatNameEdit();
         };
-    }, [saveAllOrders, cancelAllOrders, onSave, onDiscard, hasOrderChanges, catNameDirty, editingCatName]);
+    }, [saveAllOrders, cancelAllOrders, onSave, onDiscard, hasOrderChanges, catNameDirty, editingCatName, cancelCatNameEdit]);
 
-    // DnD: reorder categories
     const handleCategoryDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -357,8 +389,6 @@ export default function AdminFeaturesPage() {
         setSavingCategory(true);
         try {
             const order = newCatOrder > 0 ? newCatOrder : categories.reduce((max, c) => Math.max(max, c.order), 0) + 1;
-
-            // O8: Shift existing categories if same order exists
             const conflict = categories.some(c => c.order === order);
             if (conflict) {
                 const shifted = categories
@@ -398,7 +428,6 @@ export default function AdminFeaturesPage() {
         }
     };
 
-    // N6: Translate category name from current language to all others
     const translateCatName = async () => {
         const sourceName = newCatNames[newCatLang];
         if (!sourceName?.trim()) return;
@@ -440,13 +469,9 @@ export default function AdminFeaturesPage() {
         return result;
     }, [features, filterCategory, filterRisk, search]);
 
-    const getCategoryName = (cat: Feature["category"]) =>
-        cat?.translations?.find(t => t.lang === "en")?.name || cat?.slug || "—";
-
     const getCatDisplayName = (cat: Category) =>
         cat.translations.find(t => t.lang === displayLang)?.name || cat.translations.find(t => t.lang === "en")?.name || cat.slug;
 
-    // M8: Toggle category collapse — persisted to localStorage
     const toggleCollapse = (catId: string) => {
         setCollapsedCategories(prev => {
             const next = new Set(prev);
@@ -456,7 +481,6 @@ export default function AdminFeaturesPage() {
         });
     };
 
-    // N5: Collapse all / Expand all
     const collapseAll = () => {
         const allIds = new Set(categories.map(c => c.id));
         setCollapsedCategories(allIds);
@@ -467,32 +491,6 @@ export default function AdminFeaturesPage() {
         try { localStorage.setItem("optwin-collapsed-cats", JSON.stringify([])); } catch { /* ignore */ }
     };
 
-    // N3: Save category name inline edit with save/cancel buttons
-    const saveCatName = async (catId: string) => {
-        if (!editingCatValue.trim()) { setEditingCatName(null); setCatNameDirty(false); return; }
-        const cat = categories.find(c => c.id === catId);
-        if (!cat) return;
-        const existingTr = cat.translations.find(t => t.lang === displayLang);
-        const translations = existingTr
-            ? cat.translations.map(t => t.lang === displayLang ? { ...t, name: editingCatValue.trim() } : t)
-            : [...cat.translations, { lang: displayLang, name: editingCatValue.trim() }];
-        await fetch("/api/admin/categories", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: catId, translations: translations.map(t => ({ lang: t.lang, name: t.name })) }),
-        });
-        setCategories(prev => prev.map(c => c.id === catId ? { ...c, translations } : c));
-        setEditingCatName(null);
-        setCatNameDirty(false);
-    };
-
-    const cancelCatNameEdit = () => {
-        setEditingCatName(null);
-        setEditingCatValue("");
-        setCatNameDirty(false);
-    };
-
-    // O6: Delete category
     const deleteCategory = async (catId: string, force = false) => {
         const res = await fetch(`/api/admin/categories?id=${catId}${force ? '&force=true' : ''}`, { method: "DELETE" });
         const data = await res.json();
@@ -517,7 +515,6 @@ export default function AdminFeaturesPage() {
         setCatNameDirty(false);
     };
 
-    // M9: Toggle category enabled/disabled
     const toggleCatEnabled = async (e: React.MouseEvent, cat: Category) => {
         e.stopPropagation();
         const newEnabled = !cat.enabled;
@@ -529,7 +526,6 @@ export default function AdminFeaturesPage() {
         });
     };
 
-    // Group features by category
     const groupedFeatures = useMemo(() => {
         const sorted = [...categories].sort((a, b) => a.order - b.order);
         return sorted.map(cat => ({
@@ -538,49 +534,13 @@ export default function AdminFeaturesPage() {
         })).filter(g => g.features.length > 0 || !search);
     }, [categories, filtered, search]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 size={24} className="text-[#6b5be6] animate-spin" />
-            </div>
-        );
-    }
+    if (loading) return <div className="flex items-center justify-center p-20"><Loader /></div>;
 
-    if (editingFeature || isCreating) {
-        return (
-            <FeatureEditor
-                feature={editingFeature}
-                categories={categories}
-                isCreating={isCreating}
-                onSave={() => { setEditingFeature(null); setIsCreating(false); fetchFeatures(); }}
-                onCancel={() => { setEditingFeature(null); setIsCreating(false); }}
-                onDelete={(id) => { setEditingFeature(null); setIsCreating(false); handleDelete(id); }}
-            />
-        );
-    }
-
-    const categoryOptions = [
-        { value: "", label: "Tüm Kategoriler" },
-        ...categories.map(c => ({
-            value: c.id,
-            label: c.translations.find(t => t.lang === "en")?.name || c.slug,
-        })),
-    ];
-
-    const riskOptions = [
-        { value: "", label: "Tüm Risk Seviyeleri" },
-        { value: "low", label: "Düşük" },
-        { value: "medium", label: "Orta" },
-        { value: "high", label: "Yüksek" },
-    ];
+    const categoryOptions = [{ value: "", label: "Tüm Kategoriler" }, ...categories.map(c => ({ value: c.id, label: c.translations.find(t => t.lang === "en")?.name || c.slug }))];
+    const riskOptions = [{ value: "", label: "Tüm Risk Seviyeleri" }, { value: "low", label: "Düşük" }, { value: "medium", label: "Orta" }, { value: "high", label: "Yüksek" }];
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-5"
-        >
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -590,64 +550,23 @@ export default function AdminFeaturesPage() {
                     <div>
                         <h1 className="text-2xl font-black text-white tracking-tight">Özellikler</h1>
                         <p className="text-xs text-white/30 mt-0.5">
-                            {features.filter(f => f.enabled && categories.find(c => c.id === f.categoryId)?.enabled).length} / {features.length} aktif özellik · {categories.filter(c => c.enabled).length} / {categories.length} kategori
+                            {features.filter(f => f.enabled && categories.find(c => c.id === f.categoryId)?.enabled).length} / {features.length} aktif özellik
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* O5: Save/Cancel LEFT of collapse/expand */}
-                    <AnimatePresence>
-                        {(hasOrderChanges || catNameDirty) && (
-                            <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} className="flex items-center gap-1.5">
-                                <button onClick={() => { if (catNameDirty) cancelCatNameEdit(); else cancelAllOrders(); }} className="h-8 px-3 bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 text-xs font-medium rounded-lg transition-all border border-white/[0.04] flex items-center gap-1.5">
-                                    <RotateCcw size={12} /> İptal
-                                </button>
-                                <button onClick={() => { if (catNameDirty && editingCatName) saveCatName(editingCatName); else saveAllOrders(); }} className="h-8 px-3 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-lg shadow-[#6b5be6]/20">
-                                    <Save size={12} /> Kaydet
-                                </button>
-                                <div className="w-px h-5 bg-white/[0.06] mx-1" />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* O4: Collapse/Expand all — with text labels */}
-                    <button onClick={expandAll} title="Tümünü Genişlet" className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.05] text-white/25 hover:text-white/50 border border-white/[0.04] transition-all text-[10px] font-medium">
-                        <ChevronsUpDown size={13} /> Genişlet
-                    </button>
-                    <button onClick={collapseAll} title="Tümünü Daralt" className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.05] text-white/25 hover:text-white/50 border border-white/[0.04] transition-all text-[10px] font-medium">
-                        <ChevronsDownUp size={13} /> Daralt
-                    </button>
-
-                    <div className="w-px h-5 bg-white/[0.06]" />
-
-                    {/* M9: Language picker */}
+                    <AdminActionBar
+                        show={hasOrderChanges || catNameDirty}
+                        saving={saving}
+                        saved={saved}
+                        onSave={() => { if (catNameDirty && editingCatName) saveCatNameInternal(editingCatName); else saveAllOrders(); }}
+                        onCancel={() => { if (catNameDirty) cancelCatNameEdit(); else cancelAllOrders(); }}
+                        saveText={catNameDirty ? "İsim Kaydet" : "Sıralamayı Kaydet"}
+                    />
                     <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
-
-                    <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }}
-                        className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"
-                    >
-                        <ArrowUpDown size={14} />
-                        Kategorileri Sırala
-                    </motion.button>
-                    <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setShowNewCategory(true)}
-                        className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"
-                    >
-                        <FolderPlus size={14} />
-                        Yeni Kategori
-                    </motion.button>
-                    <motion.button
-                        whileHover={{ y: -1 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setIsCreating(true)}
-                        className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-sm rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
-                    >
-                        <Plus size={15} />
-                        Yeni Özellik
-                    </motion.button>
+                    <motion.button onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }} className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"><ArrowUpDown size={14} /> Kategorileri Sırala</motion.button>
+                    <motion.button onClick={() => setShowNewCategory(true)} className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"><FolderPlus size={14} /> Yeni Kategori</motion.button>
+                    <motion.button onClick={() => router.push("/admin/features/new")} className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"><Plus size={15} /> Yeni Özellik</motion.button>
                 </div>
             </div>
 
@@ -655,1005 +574,69 @@ export default function AdminFeaturesPage() {
             <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/15" />
-                    <input
-                        type="text"
-                        placeholder="Özellik ara..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="w-full h-9 pl-9 pr-4 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
-                    />
+                    <input type="text" placeholder="Özellik ara..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-9 pl-9 pr-4 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors" />
                 </div>
-                <AdminSelect
-                    options={categoryOptions}
-                    value={filterCategory}
-                    onChange={setFilterCategory}
-                    placeholder="Tüm Kategoriler"
-                    className="w-full sm:w-[200px]"
-                />
-                <AdminSelect
-                    options={riskOptions}
-                    value={filterRisk}
-                    onChange={setFilterRisk}
-                    placeholder="Tüm Risk Seviyeleri"
-                    className="w-full sm:w-[180px]"
-                />
+                <AdminSelect options={categoryOptions} value={filterCategory} onChange={setFilterCategory} placeholder="Tüm Kategoriler" className="w-[200px]" />
+                <AdminSelect options={riskOptions} value={filterRisk} onChange={setFilterRisk} placeholder="Tüm Risk" className="w-[150px]" />
             </div>
 
-            {/* Features grouped by category */}
+            {/* Content */}
             <div className="space-y-4">
                 {groupedFeatures.map(({ category: cat, features: catFeatures }) => {
                     const isCollapsed = collapsedCategories.has(cat.id);
                     return (
-                    <div key={cat.id} className={`rounded-2xl border bg-white/[0.015] overflow-hidden transition-colors ${cat.enabled ? "border-white/[0.04]" : "border-white/[0.02] opacity-60"}`}>
-                        {/* Category header — clickable to collapse */}
-                        <div
-                            className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer select-none group"
-                            onClick={() => toggleCollapse(cat.id)}
-                        >
-                            <ChevronRight size={14} className={`text-[#6b5be6]/60 transition-transform duration-200 ${isCollapsed ? "" : "rotate-90"}`} />
-
-                            {/* O3: Editable category name — edit button RIGHT NEXT to name */}
-                            {editingCatName === cat.id ? (
-                                <input
-                                    ref={catNameRef}
-                                    autoFocus
-                                    value={editingCatValue}
-                                    onChange={e => {
-                                        setEditingCatValue(e.target.value);
-                                        setCatNameDirty(e.target.value.trim() !== originalCatValue);
-                                    }}
-                                    onKeyDown={e => {
-                                        if (e.key === "Enter") saveCatName(cat.id);
-                                        if (e.key === "Escape") cancelCatNameEdit();
-                                    }}
-                                    onClick={e => e.stopPropagation()}
-                                    className="text-[11px] font-bold text-white/70 tracking-wider bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2 py-0.5 focus:outline-none max-w-[200px]"
-                                />
-                            ) : (
-                                <>
-                                    <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider group-hover:text-white/70 transition-colors">
-                                        {getCatDisplayName(cat)}
-                                    </span>
-                                    {/* O3: Edit button — immediately after name */}
-                                    <button
-                                        onClick={(e) => startCatNameEdit(e, cat.id)}
-                                        className="size-6 flex items-center justify-center rounded-md text-white/0 group-hover:text-white/25 hover:!text-white/50 hover:!bg-white/[0.04] transition-all shrink-0"
-                                        title="Yeniden Adlandır"
-                                    >
-                                        <Pencil size={11} />
-                                    </button>
-                                </>
-                            )}
-
-                            <span className="flex-1" />
-                            <span className="text-[10px] text-white/20 shrink-0">{catFeatures.length} özellik</span>
-
-                            {/* Category enable/disable toggle */}
-                            <button
-                                onClick={(e) => toggleCatEnabled(e, cat)}
-                                className={`w-8 h-[18px] rounded-full transition-all duration-300 relative shrink-0 ${cat.enabled ? "bg-emerald-500/70" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${cat.enabled ? "left-[17px]" : "left-[3px]"}`} />
-                            </button>
-
-                            {/* P9: Delete category button — always visible + hover animation */}
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setMoveCatTarget(""); setDeleteCatId(cat.id); }}
-                                className="size-6 flex items-center justify-center rounded-md text-white/15 hover:text-red-400 hover:bg-red-500/10 hover:scale-110 active:scale-95 transition-all duration-200 shrink-0"
-                                title="Kategoriyi Sil"
-                            >
-                                <Trash2 size={11} />
-                            </button>
-                        </div>
-
-                        {/* Collapsible feature rows */}
-                        <AnimatePresence initial={false}>
-                            {!isCollapsed && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.25, ease: "easeInOut" }}
-                                    className="overflow-hidden"
-                                >
-                                    {catFeatures.length > 0 ? (
-                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleFeatureDragEnd(e, cat.id)}>
-                                            <SortableContext items={catFeatures.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                                                {catFeatures.map(f => (
-                                                    <SortableFeatureRow
-                                                        key={f.id}
-                                                        feature={f}
-                                                        lang={displayLang}
-                                                        onClick={() => router.push(`/admin/features/edit/${f.slug}`)}
-                                                        onToggle={(e) => toggleEnabled(e, f)}
-                                                    />
-                                                ))}
-                                            </SortableContext>
-                                        </DndContext>
-                                    ) : (
-                                        <div className="text-center py-6 text-white/15 text-xs">Bu kategoride özellik yok</div>
-                                    )}
+                        <div key={cat.id} className={`rounded-2xl border bg-white/[0.015] overflow-hidden transition-colors ${cat.enabled ? "border-white/[0.04]" : "border-white/[0.02] opacity-60"}`}>
+                            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer group" onClick={() => toggleCollapse(cat.id)}>
+                                <ChevronRight size={14} className={`text-[#6b5be6]/60 transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
+                                {editingCatName === cat.id ? (
+                                    <input autoFocus value={editingCatValue} onChange={e => { setEditingCatValue(e.target.value); setCatNameDirty(e.target.value.trim() !== originalCatValue); }} onKeyDown={e => { if (e.key === "Enter") saveCatNameInternal(cat.id); if (e.key === "Escape") cancelCatNameEdit(); }} onClick={e => e.stopPropagation()} className="text-[11px] font-bold text-white/70 bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2" />
+                                ) : (
+                                    <><span className="text-[11px] font-bold text-white/50 uppercase tracking-wider">{getCatDisplayName(cat)}</span><button onClick={(e) => startCatNameEdit(e, cat.id)} className="size-6 flex items-center justify-center rounded-md text-white/0 group-hover:text-white/25 hover:!text-white/50 transition-all"><Pencil size={11} /></button></>
+                                )}
+                                <span className="flex-1" /><span className="text-[10px] text-white/20">{catFeatures.length} özellik</span>
+                                <button onClick={(e) => toggleCatEnabled(e, cat)} className={`w-8 h-[18px] rounded-full relative transition-colors ${cat.enabled ? "bg-emerald-500/70" : "bg-white/[0.06]"}`}><span className={`absolute top-[2px] w-3 h-3 rounded-full bg-white transition-all ${cat.enabled ? "left-[17px]" : "left-[3px]"}`} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); setDeleteCatId(cat.id); }} className="size-6 flex items-center justify-center text-white/15 hover:text-red-400 transition-colors"><Trash2 size={11} /></button>
+                            </div>
+                            <AnimatePresence>{!isCollapsed && (
+                                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
+                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleFeatureDragEnd(e, cat.id)}>
+                                        <SortableContext items={catFeatures.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                                            {catFeatures.map(f => (
+                                                <SortableFeatureRow key={f.id} feature={f} lang={displayLang} onClick={() => router.push(`/admin/features/edit/${f.slug}`)} onToggle={(e) => toggleEnabled(e, f)} />
+                                            ))}
+                                        </SortableContext>
+                                    </DndContext>
                                 </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                            )}</AnimatePresence>
+                        </div>
                     );
                 })}
-
-                {groupedFeatures.length === 0 && filtered.length === 0 && (
-                    <div className="text-center py-12 text-white/20">Özellik bulunamadı</div>
-                )}
             </div>
 
-            {/* Delete Confirm Modal */}
-            <AdminConfirmModal
-                open={!!deleteConfirm}
-                onClose={() => setDeleteConfirm(null)}
-                onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
-                title="Özelliği Sil"
-                description="Bu işlem geri alınamaz. Tüm çeviriler ve komutlar kalıcı olarak silinecektir."
-                confirmText="Sil"
-                cancelText="İptal"
-                variant="danger"
-            />
-
-            {/* Category Ordering Modal */}
+            {/* Modals */}
+            <AdminConfirmModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)} title="Sil" description="Emin misiniz?" />
             <AnimatePresence>
                 {showCategoryOrder && (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setShowCategoryOrder(false)}>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.92, y: 12 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.92, y: 12 }}
-                            transition={{ duration: 0.25 }}
-                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-md w-full mx-4 shadow-2xl"
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-white">Kategorileri Sırala</h3>
-                                <button onClick={() => setShowCategoryOrder(false)} className="p-1 text-white/30 hover:text-white/60"><X size={16} /></button>
-                            </div>
-                            <p className="text-xs text-white/30 mb-4">Sürükleyerek kategorilerin sırasını değiştirin. Kaydet&apos;e basana kadar değişiklikler uygulanmaz.</p>
-
-                            <div className="rounded-xl border border-white/[0.04] overflow-hidden mb-4 max-h-[400px] overflow-y-auto admin-scrollbar">
-                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
-                                    <SortableContext items={orderedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                                        {orderedCategories.map(cat => (
-                                            <SortableCategoryRow key={cat.id} cat={cat} getTrName={getCatDisplayName} />
-                                        ))}
-                                    </SortableContext>
-                                </DndContext>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-9 rounded-xl text-sm font-medium text-white/40 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all">
-                                    İptal
-                                </button>
-                                <button onClick={saveCategoryOrder} className="flex-1 h-9 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shadow-lg shadow-[#6b5be6]/20">
-                                    Kaydet
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowCategoryOrder(false)} />
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-6 w-full max-w-md">
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}><SortableContext items={orderedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                            <div className="space-y-1 mb-6">{orderedCategories.map(cat => <SortableCategoryRow key={cat.id} cat={cat} getTrName={getCatDisplayName} />)}</div>
+                        </SortableContext></DndContext>
+                        <div className="flex gap-2"><button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-9 bg-white/[0.03] rounded-xl text-white/40 text-sm">İptal</button><button onClick={saveCategoryOrder} className="flex-1 h-9 bg-[#6b5be6] rounded-xl text-white font-bold text-sm">Kaydet</button></div>
+                    </motion.div></div>
                 )}
-            </AnimatePresence>
-
-            {/* N6: New Category Modal — with language list, order, translate */}
-            <AnimatePresence>
                 {showNewCategory && (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setShowNewCategory(false)}>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.92, y: 12 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.92, y: 12 }}
-                            transition={{ duration: 0.25 }}
-                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-xl w-full mx-4 shadow-2xl"
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-white">Yeni Kategori</h3>
-                                <button onClick={() => setShowNewCategory(false)} className="p-1 text-white/30 hover:text-white/60"><X size={16} /></button>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">Slug (benzersiz ID)</label>
-                                    <input
-                                        value={newCatSlug}
-                                        onChange={e => setNewCatSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                                        placeholder="computer-optimization"
-                                        className="w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
-                                    />
-                                </div>
-
-                                {/* O7: Language picker + single input + translate */}
-                                <div>
-                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1">Kategori İsmi</label>
-                                    <div className="flex items-center gap-2">
-                                        <AdminLangPicker value={newCatLang} onChange={setNewCatLang} />
-                                        <input
-                                            value={newCatNames[newCatLang] || ""}
-                                            onChange={e => setNewCatNames(prev => ({ ...prev, [newCatLang]: e.target.value }))}
-                                            placeholder={`İsim (${LANG_NAMES[newCatLang] || newCatLang})`}
-                                            className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30 transition-colors"
-                                        />
-                                        <button
-                                            onClick={translateCatName}
-                                            disabled={translatingCat || !newCatNames[newCatLang]?.trim()}
-                                            className="shrink-0 h-9 px-3 rounded-xl text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
-                                        >
-                                            {translatingCat ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
-                                            {translatingCat ? "..." : "Çevir"}
-                                        </button>
-                                    </div>
-                                    {/* Show filled languages as small tags */}
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {Object.entries(newCatNames).filter(([, v]) => v.trim()).map(([l, v]) => (
-                                            <span key={l} className={`text-[9px] px-1.5 py-0.5 rounded ${l === newCatLang ? "bg-[#6b5be6]/15 text-[#6b5be6]" : "bg-white/[0.03] text-white/25"}`}>
-                                                {l.toUpperCase()}: {v.length > 20 ? v.slice(0, 20) + "…" : v}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={() => setShowNewCategory(false)} className="flex-1 h-9 rounded-xl text-sm font-medium text-white/40 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all">
-                                    İptal
-                                </button>
-                                <button
-                                    onClick={createCategory}
-                                    disabled={!newCatSlug || !newCatNames.en || savingCategory}
-                                    className="flex-1 h-9 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all shadow-lg shadow-[#6b5be6]/20 flex items-center justify-center gap-2"
-                                >
-                                    {savingCategory ? <Loader2 size={14} className="animate-spin" /> : <FolderPlus size={14} />}
-                                    {savingCategory ? "Oluşturuluyor..." : "Oluştur"}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowNewCategory(false)} />
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-6 w-full max-w-md space-y-4">
+                        <input value={newCatSlug} onChange={e => setNewCatSlug(e.target.value)} placeholder="Slug" className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-white" />
+                        <div className="flex gap-2"><input value={newCatNames.en} onChange={e => setNewCatNames(prev => ({ ...prev, en: e.target.value }))} placeholder="English Name" className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-white" /><button onClick={translateCatName} className="bg-emerald-500/10 text-emerald-400 px-4 rounded-xl text-xs font-bold">Çevir</button></div>
+                        <div className="flex gap-2"><button onClick={() => setShowNewCategory(false)} className="flex-1 h-10 bg-white/[0.03] rounded-xl text-white/40">İptal</button><button onClick={createCategory} className="flex-1 h-10 bg-[#6b5be6] rounded-xl text-white font-bold">Oluştur</button></div>
+                    </motion.div></div>
                 )}
             </AnimatePresence>
-
-            {/* P10: Delete category modal — with move option if has features */}
-            <AnimatePresence>
-                {deleteCatId && (() => {
-                    const cat = categories.find(c => c.id === deleteCatId);
-                    const linkedCount = features.filter(f => f.categoryId === deleteCatId).length;
-                    const otherCats = categories.filter(c => c.id !== deleteCatId);
-                    return (
-                        <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => { setDeleteCatId(null); setCascadeConfirmCat(false); }}>
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.92, y: 12 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.92, y: 12 }}
-                                transition={{ duration: 0.25 }}
-                                className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
-                                onClick={e => e.stopPropagation()}
-                            >
-                                <h3 className="text-lg font-bold text-white mb-2">Kategoriyi Sil</h3>
-                                {linkedCount > 0 ? (
-                                    <>
-                                        {!cascadeConfirmCat ? (
-                                            <>
-                                                <p className="text-sm text-white/40 mb-1">
-                                                    <span className="font-bold text-white/60">&quot;{cat ? getCatDisplayName(cat) : ""}&quot;</span> kategorisinde <span className="text-amber-400 font-bold">{linkedCount}</span> özellik bulunuyor.
-                                                </p>
-                                                <p className="text-sm text-white/30 mb-4">Önce özellikleri taşıyın veya hepsini silin.</p>
-                                                <div className="space-y-2">
-                                                    {otherCats.length > 0 && (
-                                                        <div className="flex items-center gap-2">
-                                                            <AdminSelect
-                                                                options={otherCats.map(oc => ({ value: oc.id, label: getCatDisplayName(oc) }))}
-                                                                value={moveCatTarget}
-                                                                onChange={setMoveCatTarget}
-                                                                placeholder="Hedef kategori seç..."
-                                                                className="flex-1"
-                                                            />
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (!moveCatTarget) return;
-                                                                    const res = await fetch("/api/admin/features", {
-                                                                        method: "PATCH",
-                                                                        headers: { "Content-Type": "application/json" },
-                                                                        body: JSON.stringify({ categoryId: deleteCatId, newCategoryId: moveCatTarget }),
-                                                                    });
-                                                                    const data = await res.json();
-                                                                    if (data.success || Object.keys(data).length > 0) {
-                                                                        const startOrder = data.startOrder ?? 1;
-                                                                        setFeatures(prev => {
-                                                                            let idx = 0;
-                                                                            return prev.map(f => {
-                                                                                if (f.categoryId === deleteCatId) {
-                                                                                    return { ...f, categoryId: moveCatTarget, order: startOrder + idx++ };
-                                                                                }
-                                                                                return f;
-                                                                            });
-                                                                        });
-                                                                        await deleteCategory(deleteCatId);
-                                                                        setMoveCatTarget("");
-                                                                    }
-                                                                }}
-                                                                disabled={!moveCatTarget}
-                                                                className="h-9 px-4 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] transition-all shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
-                                                            >
-                                                                Taşı & Sil
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex gap-2 pt-1">
-                                                        <button onClick={() => { setDeleteCatId(null); setCascadeConfirmCat(false); }} className="flex-1 h-9 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-medium rounded-xl transition-all text-sm border border-white/[0.04]">
-                                                            İptal
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setCascadeConfirmCat(true)}
-                                                            className="flex-1 h-9 bg-red-500/80 hover:bg-red-500 text-white font-medium rounded-xl transition-all text-sm"
-                                                        >
-                                                            Hepsini Sil
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 mt-4">
-                                                    <p className="text-sm text-red-400 font-bold mb-1">Bu işlem geri alınamaz!</p>
-                                                    <p className="text-[12.5px] text-red-400/80 leading-relaxed">Kategoriyi ve içindeki <b className="text-red-400">{linkedCount}</b> özelliği kalıcı olarak silmek istediğinize emin misiniz? Tüm özellik verileri çöpe gidecektir.</p>
-                                                </div>
-                                                <div className="flex gap-3">
-                                                    <button onClick={() => setCascadeConfirmCat(false)} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-medium rounded-xl transition-all text-sm border border-white/[0.04]">
-                                                        Geri Dön
-                                                    </button>
-                                                    <button
-                                                        onClick={() => { if (deleteCatId) deleteCategory(deleteCatId, true); }}
-                                                        className="flex-1 h-10 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-red-500/20"
-                                                    >
-                                                        Evet, Kalıcı Olarak Sil
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-sm text-white/40 mb-6">Bu kategoride özellik yok. Silmek istediğinize emin misiniz?</p>
-                                        <div className="flex gap-3">
-                                            <button onClick={() => { setDeleteCatId(null); setCascadeConfirmCat(false); }} className="flex-1 h-9 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-medium rounded-xl transition-all text-sm border border-white/[0.04]">
-                                                İptal
-                                            </button>
-                                            <button
-                                                onClick={() => { if (deleteCatId) deleteCategory(deleteCatId); }}
-                                                className="flex-1 h-9 bg-red-500/80 hover:bg-red-500 text-white font-medium rounded-xl transition-all text-sm"
-                                            >
-                                                Evet, Sil
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </motion.div>
-                        </div>
-                    );
-                })()}
-            </AnimatePresence>
-
-            {/* Translate toast */}
-            <AnimatePresence>
-                {translateToast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className="fixed top-4 right-4 z-[999] px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-sm font-medium shadow-lg backdrop-blur-xl"
-                    >
-                        ✓ {translateToast}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.div>
-    );
-}
-
-// ─── Feature Editor ──────────────────────────────────────────────────
-function FeatureEditor({
-    feature,
-    categories,
-    isCreating,
-    onSave,
-    onCancel,
-    onDelete,
-}: {
-    feature: Feature | null;
-    categories: Category[];
-    isCreating: boolean;
-    onSave: () => void;
-    onCancel: () => void;
-    onDelete: (id: string) => void;
-}) {
-    const availableLangs = useMemo(() => {
-        const ALL_LANGS = ["en", "tr", "de", "es", "fr", "hi", "zh"];
-        const langs = new Set<string>(ALL_LANGS);
-        if (feature) {
-            feature.translations.forEach(t => langs.add(t.lang));
-            feature.commands.forEach(c => langs.add(c.lang));
-        }
-        return Array.from(langs).sort();
-    }, [feature]);
-
-    const [translationLang, setTranslationLang] = useState("en");
-    const [commandLang, setCommandLang] = useState("en");
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [saved, setSaved] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [translating, setTranslating] = useState(false);
-    const [translatingScript, setTranslatingScript] = useState(false);
-    const [translateToast, setTranslateToast] = useState("");
-
-    const buildInitialState = useCallback(() => ({
-        slug: feature?.slug || "",
-        categoryId: feature?.categoryId || categories[0]?.id || "",
-        icon: feature?.icon || "settings",
-        iconType: feature?.iconType || "solid",
-        risk: feature?.risk || "low",
-        noRisk: feature?.noRisk || false,
-        order: feature?.order || 0,
-        enabled: feature?.enabled !== false,
-        newBadge: (feature as any)?.newBadge ?? false,
-        newBadgeExpiry: (feature as any)?.newBadgeExpiry || "",
-        translations: Object.fromEntries(
-            availableLangs.map(lang => [lang, {
-                title: feature?.translations.find(t => t.lang === lang)?.title || "",
-                desc: feature?.translations.find(t => t.lang === lang)?.desc || "",
-            }])
-        ),
-        commands: Object.fromEntries(
-            availableLangs.map(lang => [lang, {
-                command: feature?.commands.find(c => c.lang === lang)?.command || "",
-                scriptMessage: feature?.commands.find(c => c.lang === lang)?.scriptMessage || "",
-            }])
-        ),
-    }), [feature, categories, availableLangs]);
-
-    const [form, setForm] = useState(buildInitialState);
-    const [original, setOriginal] = useState(buildInitialState);
-
-    const hasChanges = JSON.stringify(form) !== JSON.stringify(original);
-
-    const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
-        setForm(prev => ({ ...prev, [key]: value }));
-    };
-
-    const updateTranslation = (lang: string, field: "title" | "desc", value: string) => {
-        setForm(prev => ({
-            ...prev,
-            translations: { ...prev.translations, [lang]: { ...prev.translations[lang], [field]: value } },
-        }));
-    };
-
-    const updateCommand = (lang: string, field: "command" | "scriptMessage", value: string) => {
-        setForm(prev => {
-            const updated = { ...prev.commands };
-            if (field === "command") {
-                // Command is language-independent — sync to all languages
-                for (const l of availableLangs) {
-                    updated[l] = { ...updated[l], command: value };
-                }
-            } else {
-                updated[lang] = { ...updated[lang], [field]: value };
-            }
-            return { ...prev, commands: updated };
-        });
-    };
-
-    const handleSubmit = async () => {
-        setSaving(true);
-        setError("");
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data: any = {
-                slug: form.slug, categoryId: form.categoryId, icon: form.icon, iconType: form.iconType,
-                risk: form.risk, noRisk: form.noRisk, order: form.order, enabled: form.enabled,
-                newBadge: form.newBadge, newBadgeExpiry: form.newBadgeExpiry || null,
-                translations: Object.entries(form.translations).map(([lang, t]) => ({ lang, title: t.title, desc: t.desc })),
-                commands: Object.entries(form.commands).map(([lang, c]) => ({ lang, command: c.command, scriptMessage: c.scriptMessage })),
-            };
-            if (!isCreating) data.id = feature!.id;
-
-            const res = await fetch("/api/admin/features", {
-                method: isCreating ? "POST" : "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            const result = await res.json();
-            if (result.success) {
-                setSaved(true);
-                setOriginal(JSON.parse(JSON.stringify(form)));
-                setTimeout(() => onSave(), 1200);
-            } else {
-                setError(result.error || "Kaydetme başarısız");
-            }
-        } catch {
-            setError("Özellik kaydedilemedi");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleCancel = () => {
-        if (hasChanges && !isCreating) {
-            setForm(buildInitialState());
-        }
-        onCancel();
-    };
-
-    const LANG_DISPLAY: Record<string, string> = { en: "EN", tr: "TR", zh: "ZH", es: "ES", hi: "HI", de: "DE", fr: "FR" };
-
-    const handleAutoTranslate = async () => {
-        const title = form.translations[translationLang]?.title;
-        const desc = form.translations[translationLang]?.desc;
-        if (!title && !desc) return;
-        setTranslating(true);
-        const otherLangs = availableLangs.filter(l => l !== translationLang);
-        const names: string[] = [];
-        try {
-            if (title) {
-                const res = await fetch("/api/admin/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: title, sourceLang: translationLang, targetLangs: otherLangs }) });
-                const data = await res.json();
-                if (data.success) Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => { updateTranslation(lang, "title", translated); if (!names.includes(LANG_DISPLAY[lang] || lang)) names.push(LANG_DISPLAY[lang] || lang); });
-            }
-            if (desc) {
-                const res = await fetch("/api/admin/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: desc, sourceLang: translationLang, targetLangs: otherLangs }) });
-                const data = await res.json();
-                if (data.success) Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => { updateTranslation(lang, "desc", translated); if (!names.includes(LANG_DISPLAY[lang] || lang)) names.push(LANG_DISPLAY[lang] || lang); });
-            }
-            if (names.length > 0) { setTranslateToast(`${names.join(", ")} dillerine çeviriler eklendi`); setTimeout(() => setTranslateToast(""), 3000); }
-        } catch { setError("Çeviri başarısız oldu"); } finally { setTranslating(false); }
-    };
-
-    const handleTranslateScriptMsg = async () => {
-        const msg = form.commands[commandLang]?.scriptMessage;
-        if (!msg) return;
-        setTranslatingScript(true);
-        const otherLangs = availableLangs.filter(l => l !== commandLang);
-        try {
-            const res = await fetch("/api/admin/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: msg, sourceLang: commandLang, targetLangs: otherLangs }) });
-            const data = await res.json();
-            if (data.success) {
-                Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => updateCommand(lang, "scriptMessage", translated));
-                const names = (data.translatedLangs || otherLangs).map((l: string) => LANG_DISPLAY[l] || l);
-                setTranslateToast(`Script mesajı ${names.join(", ")} dillerine çevrildi`); setTimeout(() => setTranslateToast(""), 3000);
-            }
-        } catch { setError("Script mesajı çevirisi başarısız"); } finally { setTranslatingScript(false); }
-    };
-
-    const categoryOptions = categories.map(c => ({
-        value: c.id,
-        label: c.translations.find(t => t.lang === "en")?.name || c.slug,
-    }));
-
-    const riskOptions = [
-        { value: "low", label: "Düşük Risk" },
-        { value: "medium", label: "Orta Risk" },
-        { value: "high", label: "Yüksek Risk" },
-    ];
-
-    const inputCls = "w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors";
-    const textareaCls = "w-full p-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors resize-none";
-    const labelCls = "block text-[10px] font-bold text-white/20 uppercase tracking-wider mb-1.5";
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="space-y-5"
-        >
-            {/* Header */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3">
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleCancel}
-                        className="size-9 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-all border border-white/[0.04]"
-                    >
-                        <ChevronLeft size={16} />
-                    </motion.button>
-                    <h1 className="text-2xl font-black text-white tracking-tight">
-                        {isCreating ? "Yeni Özellik" : "Özellik Düzenle"}
-                    </h1>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <AnimatePresence>
-                        {hasChanges && !isCreating && (
-                            <motion.div
-                                key="cancel-btn"
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <button
-                                    onClick={() => { setForm(buildInitialState()); setOriginal(buildInitialState()); }}
-                                    className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
-                                >
-                                    <RotateCcw size={13} />
-                                    İptal
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                    <AnimatePresence>
-                        {(hasChanges || isCreating) && (
-                            <motion.div
-                                key="save-btn"
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -8, scale: 0.95 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <button
-                                    onClick={handleSubmit}
-                                    disabled={saving || !form.slug || !form.translations.en?.title}
-                                    className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
-                                >
-                                {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                                {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : isCreating ? "Oluştur" : "Kaydet"}
-                            </button>
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-
-                    {/* Delete button — only when editing, now on the right */}
-                    {!isCreating && feature && (
-                        <motion.button
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            onClick={() => setShowDeleteModal(true)}
-                            className="h-9 px-3 rounded-xl text-sm font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
-                        >
-                            <Trash2 size={13} />
-                            Sil
-                        </motion.button>
-                    )}
-                </div>
-            </div>
-
-            {error && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/10 text-red-400 text-sm">
-                    <AlertCircle size={14} />
-                    {error}
-                    <button onClick={() => setError("")} className="ml-auto"><X size={14} /></button>
-                </div>
+            {deleteCatId && (
+                <AdminConfirmModal open={true} onClose={() => setDeleteCatId(null)} onConfirm={() => deleteCategory(deleteCatId)} title="Kategoriyi Sil" description="Bu kategoriyi ve içindeki tüm özellikleri silmek istediğinize emin misiniz?" confirmText="Sil" variant="danger" />
             )}
-
-            {/* Basic Information */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Temel Bilgiler</h3>
-                    <div className="flex items-center gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <span className="text-[10px] text-white/30 font-medium">Yeni Badge</span>
-                            <button
-                                type="button"
-                                onClick={() => updateField("newBadge", !form.newBadge)}
-                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[19px]" : "left-[3px]"}`} />
-                            </button>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <span className="text-[10px] text-white/30 font-medium">Risksiz</span>
-                            <button
-                                type="button"
-                                onClick={() => updateField("noRisk", !form.noRisk)}
-                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.noRisk ? "bg-blue-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.noRisk ? "left-[19px]" : "left-[3px]"}`} />
-                            </button>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <span className="text-[10px] text-white/30 font-medium">Aktif</span>
-                            <button
-                                type="button"
-                                onClick={() => updateField("enabled", !form.enabled)}
-                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
-                            >
-                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.enabled ? "left-[19px]" : "left-[3px]"}`} />
-                            </button>
-                        </label>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label className={labelCls}>Slug (benzersiz ID)</label>
-                        <input value={form.slug} onChange={e => {
-                            const sanitized = e.target.value
-                                .replace(/ğ/gi, 'g').replace(/Ğ/g, 'G')
-                                .replace(/ü/gi, 'u').replace(/Ü/g, 'U')
-                                .replace(/ş/gi, 's').replace(/Ş/g, 'S')
-                                .replace(/ı/g, 'i').replace(/İ/g, 'I')
-                                .replace(/ö/gi, 'o').replace(/Ö/g, 'O')
-                                .replace(/ç/gi, 'c').replace(/Ç/g, 'C')
-                                .replace(/\s+/g, '-')
-                                .replace(/[^a-zA-Z0-9\-_]/g, '');
-                            updateField("slug", sanitized);
-                        }} placeholder="disableTelemetry" className={inputCls} />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Kategori</label>
-                        <AdminSelect options={categoryOptions} value={form.categoryId} onChange={v => updateField("categoryId", v)} placeholder="Kategori seçin" />
-                    </div>
-                    <div>
-                        <label className={labelCls}>İkon</label>
-                        <AdminIconPicker value={form.icon} onChange={v => updateField("icon", v)} />
-                    </div>
-                    {/* K7: Risk seviyesi — noRisk true iken gizlenir */}
-                    <AnimatePresence initial={false}>
-                        {!form.noRisk && (
-                            <motion.div
-                                key="risk-field"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                            >
-                                <label className={labelCls}>Risk Seviyesi</label>
-                                <AdminSelect options={riskOptions} value={form.risk} onChange={v => updateField("risk", v)} placeholder="Risk seçin" />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                    {!isCreating && (
-                        <div>
-                            <label className={labelCls}>Sıra</label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                value={form.order}
-                                onChange={e => updateField("order", parseInt(e.target.value) || 0)}
-                                className={inputCls}
-                            />
-                        </div>
-                    )}
-                    {/* K8: Badge alanı animasyonlu açılıp kapanır */}
-                    <AnimatePresence initial={false}>
-                        {form.newBadge && (
-                            <motion.div
-                                key="badge-section"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                className="col-span-full overflow-hidden"
-                            >
-                                <div className="mt-1 space-y-3">
-                                    <label className={labelCls}>Badge Bitiş Zamanı (opsiyonel)</label>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {[3, 6, 12, 24, 48, 72].map(h => (
-                                            <button
-                                                key={h}
-                                                type="button"
-                                                onClick={() => {
-                                                    const d = new Date(Date.now() + h * 3600000);
-                                                    updateField("newBadgeExpiry", d.toISOString());
-                                                }}
-                                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
-                                            >
-                                                {h} saat
-                                            </button>
-                                        ))}
-                                        <button
-                                            type="button"
-                                            onClick={() => updateField("newBadgeExpiry", "")}
-                                            className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
-                                        >
-                                            Temizle
-                                        </button>
-                                    </div>
-                                    <div className="flex gap-2 items-end">
-                                        <div className="flex-1 max-w-[180px]">
-                                            <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Tarih</label>
-                                            <input
-                                                type="date"
-                                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toISOString().slice(0, 10) : ""}
-                                                onChange={e => {
-                                                    if (!e.target.value) { updateField("newBadgeExpiry", ""); return; }
-                                                    const existing = form.newBadgeExpiry ? new Date(form.newBadgeExpiry) : new Date();
-                                                    const [y, m, d] = e.target.value.split("-").map(Number);
-                                                    existing.setFullYear(y, m - 1, d);
-                                                    updateField("newBadgeExpiry", existing.toISOString());
-                                                }}
-                                                className={`${inputCls} [color-scheme:dark]`}
-                                            />
-                                        </div>
-                                        <div className="flex-1 max-w-[140px]">
-                                            <label className="block text-[9px] font-bold text-white/15 uppercase tracking-wider mb-1">Saat</label>
-                                            <input
-                                                type="time"
-                                                value={form.newBadgeExpiry ? new Date(form.newBadgeExpiry).toTimeString().slice(0, 5) : ""}
-                                                onChange={e => {
-                                                    if (!e.target.value || !form.newBadgeExpiry) return;
-                                                    const existing = new Date(form.newBadgeExpiry);
-                                                    const [h, m] = e.target.value.split(":").map(Number);
-                                                    existing.setHours(h, m, 0, 0);
-                                                    updateField("newBadgeExpiry", existing.toISOString());
-                                                }}
-                                                className={`${inputCls} [color-scheme:dark]`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {form.newBadgeExpiry && (
-                                        <p className="text-[10px] text-amber-400/50">
-                                            Bitiş: {new Date(form.newBadgeExpiry).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
-                                        </p>
-                                    )}
-                                    <p className="text-[9px] text-white/15">Boş bırakılırsa badge manuel kapatılana kadar görünür</p>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </div>
-
-            {/* Translate Toast */}
-            <AnimatePresence>
-                {translateToast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className="fixed top-4 right-4 z-[999] px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-sm font-medium shadow-lg backdrop-blur-xl"
-                    >
-                        ✓ {translateToast}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Translations */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
-                        <button
-                            type="button"
-                            onClick={handleAutoTranslate}
-                            disabled={translating || (!form.translations[translationLang]?.title && !form.translations[translationLang]?.desc)}
-                            className="h-7 px-3 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
-                        >
-                            {translating ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
-                            {translating ? "Çevriliyor..." : "Diğer Dillere Çevir"}
-                        </button>
-                    </div>
-                    <AdminLangPicker value={translationLang} onChange={setTranslationLang} availableLangs={availableLangs} />
-                </div>
-                <div className="space-y-3">
-                    <div>
-                        <label className={labelCls}>Başlık</label>
-                        <input
-                            value={form.translations[translationLang]?.title || ""}
-                            onChange={e => updateTranslation(translationLang, "title", e.target.value)}
-                            placeholder="Özellik başlığı..."
-                            className={inputCls}
-                        />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Açıklama</label>
-                        <textarea
-                            value={form.translations[translationLang]?.desc || ""}
-                            onChange={e => updateTranslation(translationLang, "desc", e.target.value)}
-                            rows={2}
-                            placeholder="Özellik açıklaması..."
-                            className={textareaCls}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Commands */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
-                    <AdminLangPicker value={commandLang} onChange={setCommandLang} availableLangs={availableLangs} />
-                </div>
-
-                {/* Script Message — per-language (above command) */}
-                <div>
-                    <label className={labelCls}>Script Mesajı <span className="text-white/15 font-normal">(dile göre değişir)</span></label>
-                    <div className="flex gap-2">
-                        <input
-                            value={form.commands[commandLang]?.scriptMessage || ""}
-                            onChange={e => updateCommand(commandLang, "scriptMessage", e.target.value)}
-                            placeholder="Optimizasyon uygulanıyor..."
-                            className={`${inputCls} flex-1`}
-                        />
-                        <button
-                            type="button"
-                            onClick={handleTranslateScriptMsg}
-                            disabled={translatingScript || !form.commands[commandLang]?.scriptMessage}
-                            className="shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
-                            title="Script mesajını diğer dillere çevir"
-                        >
-                            {translatingScript ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
-                            Çevir
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const enTitle = form.translations["en"]?.title || "";
-                                const allAuto = availableLangs.every(lang => {
-                                    const title = form.translations[lang]?.title || enTitle;
-                                    const msg = form.commands[lang]?.scriptMessage || "";
-                                    return title && msg && msg === generateScriptMessage(title, lang);
-                                });
-                                if (allAuto) {
-                                    for (const lang of availableLangs) {
-                                        updateCommand(lang, "scriptMessage", "");
-                                    }
-                                } else {
-                                    for (const lang of availableLangs) {
-                                        const title = form.translations[lang]?.title || enTitle;
-                                        if (title) {
-                                            updateCommand(lang, "scriptMessage", generateScriptMessage(title, lang));
-                                        }
-                                    }
-                                }
-                            }}
-                            disabled={!form.translations["en"]?.title && !availableLangs.some(l => form.translations[l]?.title)}
-                            className={`shrink-0 h-9 px-3 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed ${
-                                availableLangs.every(lang => {
-                                    const enTitle = form.translations["en"]?.title || "";
-                                    const title = form.translations[lang]?.title || enTitle;
-                                    const msg = form.commands[lang]?.scriptMessage || "";
-                                    return title && msg && msg === generateScriptMessage(title, lang);
-                                })
-                                    ? "bg-[#6b5be6]/20 text-[#6b5be6] border-[#6b5be6]/30"
-                                    : "bg-[#6b5be6]/10 text-[#6b5be6]/70 border-[#6b5be6]/15 hover:bg-[#6b5be6]/20"
-                            }`}
-                            title="Tüm diller için başlıktan otomatik oluştur / kaldır"
-                        >
-                            {availableLangs.every(lang => {
-                                const enTitle = form.translations["en"]?.title || "";
-                                const title = form.translations[lang]?.title || enTitle;
-                                const msg = form.commands[lang]?.scriptMessage || "";
-                                return title && msg && msg === generateScriptMessage(title, lang);
-                            }) ? <Check size={11} /> : null}
-                            Otomatik
-                        </button>
-                    </div>
-                </div>
-
-                {/* Command — language-independent */}
-                <div className="border-t border-white/[0.04] pt-4">
-                    <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
-                    <textarea
-                        value={form.commands[commandLang]?.command || ""}
-                        onChange={e => updateCommand(commandLang, "command", e.target.value)}
-                        rows={6}
-                        placeholder="PowerShell komutu..."
-                        className={`${textareaCls} font-mono text-xs`}
-                    />
-                </div>
-            </div>
-
-            {/* Delete Modal */}
-            <AdminConfirmModal
-                open={showDeleteModal}
-                onClose={() => setShowDeleteModal(false)}
-                onConfirm={() => {
-                    setShowDeleteModal(false);
-                    if (feature) onDelete(feature.id);
-                }}
-                title="Özelliği Sil"
-                description="Bu işlem geri alınamaz. Tüm çeviriler ve komutlar kalıcı olarak silinecektir. Devam etmek istiyor musunuz?"
-                confirmText="Evet, Sil"
-                cancelText="İptal"
-                variant="danger"
-            />
         </motion.div>
     );
 }

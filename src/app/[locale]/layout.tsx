@@ -49,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
             images: ["/optwin.png"],
         },
         icons: {
-            icon: "/favicon.ico",
+            icon: settings.site_favicon_url || "/favicon.ico",
         },
     };
 }

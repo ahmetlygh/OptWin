@@ -119,6 +119,7 @@ const en = {
     "support.way2": "Star our GitHub repo for more visibility.",
     "support.way3": "Share OptWin with friends and communities.",
     "support.linkCopied": "Link copied!",
+    "support.widgetMessage": "Do you want to support free software?",
     "support.close": "Close",
 
     // Footer

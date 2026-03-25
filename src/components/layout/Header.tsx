@@ -37,7 +37,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
     const adminRef = useRef<HTMLDivElement>(null);
 
     // Dynamic Site Name
-    const [siteName] = useState(serverSettings.site_name || "OptWin");
+    const siteName = serverSettings.site_name || "OptWin";
 
     const closeLangDropdown = useCallback(() => {
         if (!isLangOpen) return;
@@ -103,10 +103,11 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
 
     const handleLogoClick = (e: React.MouseEvent) => {
         e.preventDefault();
-        if (window.location.pathname === "/") {
+        const homePath = `/${lang}`;
+        if (pathname === "/" || pathname === homePath) {
             window.scrollTo({ top: 0, behavior: "smooth" });
         } else {
-            window.location.href = "/";
+            router.push(homePath);
         }
     };
 
@@ -130,7 +131,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                 <div className="flex items-center gap-3">
                     <Link href="/" onClick={handleLogoClick} className="flex items-center gap-3 group cursor-pointer">
                         <div className="h-9 w-auto flex items-center justify-center">
-                            <Image src="/optwin.png" alt={`${siteName} Logo`} width={36} height={36} className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
+                            <Image src={serverSettings.site_logo_url || "/optwin.png"} alt={`${siteName} Logo`} width={36} height={36} className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <h1 className="text-2xl font-black tracking-tight bg-clip-text text-transparent text-gradient mt-0.5">
                             {siteName}
@@ -142,16 +143,22 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                 <div className="flex items-center gap-4 md:gap-6">
                     <nav className="hidden md:flex items-center gap-6">
                         <Link
-                            href="/#about"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                if (window.location.pathname === '/') {
-                                    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
-                                } else {
-                                    window.location.href = '/#about';
-                                }
-                            }}
+                            href={`/${lang}#about`}
                             className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200"
+                            onClick={(e) => {
+                                const targetPath = `/${lang}`;
+                                const isHome = pathname === "/" || pathname === targetPath || pathname === targetPath + "/";
+                                
+                                if (isHome) {
+                                    e.preventDefault();
+                                    const element = document.getElementById('about');
+                                    if (element) {
+                                        element.scrollIntoView({ behavior: 'smooth' });
+                                        window.history.pushState(null, "", `#about`);
+                                    }
+                                }
+                                // If not home, let Next.js navigate normally to /${lang}#about
+                            }}
                         >
                             {mounted ? t["nav.about"] : "About"}
                         </Link>

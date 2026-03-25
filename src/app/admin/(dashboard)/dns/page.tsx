@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Loader } from "@/components/shared/Loader";
+import { AdminActionBar } from "@/components/admin/AdminActionBar";
+import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
+import { Globe, Plus, Trash2, Pencil, Check, RotateCcw } from "lucide-react";
 
 type DnsProvider = {
     id: string;
@@ -68,8 +72,8 @@ export default function AdminDnsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-2 border-[var(--accent-color)] border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center p-20">
+                <Loader size={32} />
             </div>
         );
     }
@@ -152,11 +156,11 @@ export default function AdminDnsPage() {
             {deleteConfirm && (
                 <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 backdrop-blur-xl" onClick={() => setDeleteConfirm(null)}>
                     <div className="bg-[#1a1a24] border border-[#2b2938] rounded-2xl p-6 max-w-sm w-full mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-white mb-2">Delete DNS Provider?</h3>
-                        <p className="text-sm text-[#a19eb7] mb-6">This will permanently remove this DNS provider from the selection list.</p>
+                        <h3 className="text-lg font-bold text-white mb-2 italic tracking-tight">Kanalı Temizle?</h3>
+                        <p className="text-xs text-[#a19eb7]/60 mb-6 font-medium leading-relaxed">Bu DNS sağlayıcısını seçim listesinden kalıcı olarak kaldıracaktır.</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">Cancel</button>
-                            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">Delete</button>
+                            <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-xs">İptal</button>
+                            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-10 bg-red-500/80 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-xs">Sil</button>
                         </div>
                     </div>
                 </div>
@@ -185,21 +189,44 @@ function DnsForm({ provider, isCreating, saving, onSave, onCancel }: {
         onSave(data);
     };
 
-    const inputClass = "w-full h-10 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-[#a19eb7]/50 focus:outline-none focus:border-[var(--accent-color)]/50 transition-colors";
-    const labelClass = "block text-xs font-bold text-[#a19eb7] uppercase tracking-wider mb-1.5";
+    const { setHasUnsavedChanges } = useUnsavedChanges();
+    const hasChanges = useMemo(() => {
+        return slug !== (provider?.slug || "") ||
+               name !== (provider?.name || "") ||
+               primary !== (provider?.primary || "") ||
+               secondary !== (provider?.secondary || "") ||
+               order !== (provider?.order || 0) ||
+               enabled !== (provider?.enabled !== false);
+    }, [slug, name, primary, secondary, order, enabled, provider]);
+
+    useEffect(() => {
+        setHasUnsavedChanges(hasChanges);
+        return () => setHasUnsavedChanges(false);
+    }, [hasChanges, setHasUnsavedChanges]);
+
+    const inputClass = "w-full h-10 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-[#a19eb7]/50 focus:outline-none focus:border-[#6b5be6]/50 transition-colors";
+    const labelClass = "block text-[10px] font-bold text-[#a19eb7] uppercase tracking-widest mb-2 opacity-40";
 
     return (
         <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <button onClick={onCancel} className="size-9 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                <div className="flex items-center gap-4">
+                    <button onClick={onCancel} className="size-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5">
+                        <RotateCcw size={16} />
                     </button>
-                    <h2 className="text-2xl font-black text-white tracking-tight">{isCreating ? "New DNS Provider" : "Edit DNS Provider"}</h2>
+                    <div>
+                        <h2 className="text-2xl font-black text-white tracking-tight">{isCreating ? "Yeni DNS Sağlayıcı" : "DNS Sağlayıcıyı Düzenle"}</h2>
+                        <p className="text-xs text-white/20 mt-0.5 font-medium italic">Sistem genelinde kullanılacak DNS yapılandırması</p>
+                    </div>
                 </div>
-                <button onClick={handleSubmit} disabled={saving || !slug || !name || !primary || !secondary} className="h-10 px-6 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-all flex items-center gap-2">
-                    {saving ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</> : <>{isCreating ? "Create" : "Save"}</>}
-                </button>
+                <AdminActionBar
+                    show={hasChanges || isCreating}
+                    saving={saving}
+                    saved={false}
+                    onSave={handleSubmit}
+                    onCancel={onCancel}
+                    saveText={isCreating ? "Ekle" : "Kaydet"}
+                />
             </div>
 
             <div className="bg-[#1a1a24]/80 border border-[#2b2938] rounded-2xl p-6 space-y-4">

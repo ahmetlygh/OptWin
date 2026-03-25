@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 
 type UnsavedChangesContextType = {
     hasUnsavedChanges: boolean;
@@ -20,6 +20,19 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const onSave = useRef<(() => Promise<void>) | null>(null);
     const onDiscard = useRef<(() => void) | null>(null);
+
+    // Global browser guard (F5, Tab close)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = ""; // Standard way to show browser prompt
+                return "";
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [hasUnsavedChanges]);
 
     return (
         <UnsavedChangesContext.Provider value={{ hasUnsavedChanges, setHasUnsavedChanges, onSave, onDiscard }}>

@@ -3,6 +3,7 @@
 import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { MenuIcon, XIcon, HeartIcon } from "../shared/Icons";
 import { USFlag, TRFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "../shared/Flags";
@@ -11,6 +12,8 @@ export function MobileNav() {
     const [isOpen, setIsOpen] = useState(false);
     const { lang, setLang, setSupportModalOpen } = useOptWinStore();
     const { t } = useTranslation();
+    const router = useRouter();
+    const pathname = usePathname();
 
     const languages: { code: Lang; label: string; flag: React.ReactNode }[] = [
         { code: "tr", label: "TR", flag: <TRFlag className="size-4 rounded-sm" /> },
@@ -59,14 +62,15 @@ export function MobileNav() {
 
                     <nav className="flex flex-col gap-2 pt-2 border-t border-[var(--border-color)]">
                         <Link
-                            href="/#about"
+                            href={`/${lang}#about`}
                             onClick={(e) => {
                                 e.preventDefault();
                                 setIsOpen(false);
-                                if (window.location.pathname === '/') {
-                                    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+                                const homePath = `/${lang}`;
+                                if (pathname === '/' || pathname === homePath) {
+                                                                    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
                                 } else {
-                                    window.location.href = '/#about';
+                                                                    router.push(`/${lang}#about`);
                                 }
                             }}
                             className="flex items-center justify-between p-4 rounded-xl bg-white/5 text-[var(--text-primary)] font-bold active:scale-95 transition-all"

@@ -2,7 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { useOptWinStore } from "@/store/useOptWinStore";
+import Script from "next/script";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "@/i18n/useTranslation";
 import { Settings } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
@@ -41,6 +44,8 @@ function AmbientBackground() {
 
 /* ── Public Shell ─────────────────────────────────────────────── */
 export function PublicShell({ children, serverMaintenance = false, adminSession = null, serverSettings = {} }: { children: React.ReactNode; serverMaintenance?: boolean; adminSession?: { name: string | null; image: string | null } | null; serverSettings?: Record<string, string> }) {
+    const { t } = useTranslation();
+    const { lang } = useOptWinStore();
     const pathname = usePathname();
     const isAdmin = pathname.startsWith("/admin");
     const [maintenance, setMaintenance] = useState(serverMaintenance);
@@ -141,6 +146,24 @@ export function PublicShell({ children, serverMaintenance = false, adminSession 
             {/* Initial loading */}
             {!checked && (
                 <div className="fixed inset-0 z-[9999] bg-[var(--bg-color)]" />
+            )}
+
+            {/* Buy Me a Coffee Widget (Inject only if enabled) */}
+            {serverSettings.bmc_widget_enabled === "true" && serverSettings.bmc_url && (
+                <Script
+                    key={`bmc-widget-${t["support.widgetMessage"] || lang}`}
+                    src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js"
+                    data-name="BMC-Widget"
+                    data-cfasync="false"
+                    data-id={serverSettings.bmc_url.split("/").pop()}
+                    data-description="Support our project!"
+                    data-message={t["support.widgetMessage"] || "Özgür yazılıma destek olmak ister misiniz?"}
+                    data-color="#6c5ce7"
+                    data-position="Right"
+                    data-x_margin="18"
+                    data-y_margin="18"
+                    strategy="afterInteractive"
+                />
             )}
         </>
     );

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
@@ -72,6 +73,8 @@ export async function PUT(req: NextRequest) {
         );
 
         await prisma.$transaction(ops);
+        revalidateTag("ui-translations", "layout" as any);
+        revalidatePath("/", "layout");
 
         return NextResponse.json({ success: true });
     } catch (error: unknown) {

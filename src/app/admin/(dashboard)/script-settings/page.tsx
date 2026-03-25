@@ -21,7 +21,9 @@ import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
-import { toPowerShellSafe } from "@/lib/powershell-safe";
+import { AdminActionBar } from "@/components/admin/AdminActionBar";
+import { Loader } from "@/components/shared/Loader";
+import { toPowerShellSafe, generateScriptMessage } from "@/lib/powershell-safe";
 
 type LabelsMap = Record<string, Record<string, string>>;
 type PreviewLine = { text: string; key: string | null; valueKey?: string; editable: boolean };
@@ -601,8 +603,8 @@ export default function ScriptDefaultsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 size={24} className="text-[#6b5be6] animate-spin" />
+            <div className="flex items-center justify-center p-20">
+                <Loader />
             </div>
         );
     }
@@ -637,35 +639,13 @@ export default function ScriptDefaultsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* N11: Save/Cancel buttons LEFT of lang picker */}
-                    <AnimatePresence mode="popLayout">
-                        {hasChanges && (
-                            <motion.div
-                                key="save-cancel"
-                                initial={{ opacity: 0, x: -12, scale: 0.95 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, x: -12, scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                                className="flex items-center gap-2"
-                            >
-                                <button
-                                    onClick={handleCancel}
-                                    className="h-9 px-4 rounded-xl text-sm font-medium text-white/40 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all flex items-center gap-2"
-                                >
-                                    <RotateCcw size={14} />
-                                    İptal
-                                </button>
-                                <button
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                    className="h-9 px-5 rounded-xl text-sm font-bold text-white bg-[#6b5be6] hover:bg-[#5a4bd4] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"
-                                >
-                                    {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                                    {saving ? "Kaydediliyor..." : saved ? "Kaydedildi!" : "Kaydet"}
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    <AdminActionBar
+                        show={hasChanges}
+                        saving={saving}
+                        saved={saved}
+                        onSave={handleSave}
+                        onCancel={handleCancel}
+                    />
 
                     <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages} />
                 </div>

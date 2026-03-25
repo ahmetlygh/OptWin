@@ -156,6 +156,8 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         messages: "Mesajlar",
         stats: "İstatistikler",
         settings: "Ayarlar",
+        general: "Genel Ayarlar",
+        content: "İçerik Yönetimi",
         appearance: "Görünüm",
     };
 
