@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Settings } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import { MaintenanceOverlay } from "./MaintenanceOverlay";
+
 import { SupportModal } from "@/components/modals/SupportModal";
 import { ScrollToTop } from "./ScrollToTop";
 import { ScrollRestorer } from "@/components/shared/ScrollRestorer";
@@ -50,58 +50,76 @@ export function PublicShell({ children, serverMaintenance = false, adminSession 
     const [mReason, setMReason] = useState<string | null>(null);
     const [mEstimatedEnd, setMEstimatedEnd] = useState<string | null>(null);
 
-    // Poll maintenance status for public pages
+    // SSE EventSource for zero-latency maintenance status updates
     useEffect(() => {
         if (isAdmin) return;
 
+        // Still do one initial HTTP fetch to sync details (reason, estimatedEnd) if needed, 
+        // though the stream will keep the boolean logic perfectly in sync.
         const check = async () => {
             try {
                 const res = await fetch("/api/maintenance");
                 const data = await res.json();
-                const newState = data.maintenance === true;
                 setMReason(data.reason || null);
                 setMEstimatedEnd(data.estimatedEnd || null);
-
-                // Show transition spinner when switching between states (not on first load)
+                
+                const newState = data.maintenance === true;
                 if (prevMaintenance.current !== null && prevMaintenance.current !== newState) {
                     setTransitioning(true);
-                    setTimeout(() => {
-                        setMaintenance(newState);
-                        setTimeout(() => setTransitioning(false), 400);
-                    }, 600);
+                    setTimeout(() => { window.location.href = window.location.pathname; }, 400);
                 } else {
                     setMaintenance(newState);
                 }
                 prevMaintenance.current = newState;
+                setChecked(true);
             } catch { /* ignore */ }
-            setChecked(true);
         };
 
-        // If server already told us maintenance is on, don't need initial fetch
-        if (!serverMaintenance) {
-            check();
-        }
-        const poll = setInterval(check, 5000);
-        return () => clearInterval(poll);
+        if (!serverMaintenance) check();
+
+        const es = new EventSource("/api/maintenance/stream");
+        es.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (typeof data.maintenance === "boolean") {
+                    const newState = data.maintenance;
+                    if (prevMaintenance.current !== null && prevMaintenance.current !== newState) {
+                        setTransitioning(true);
+                        setTimeout(() => { window.location.href = window.location.pathname; }, 400);
+                    } else {
+                        setMaintenance(newState);
+                        setChecked(true);
+                    }
+                    prevMaintenance.current = newState;
+                }
+            } catch { /* ignore */ }
+        };
+
+        return () => es.close();
     }, [isAdmin, serverMaintenance]);
 
     if (isAdmin) {
         return <>{children}</>;
     }
 
+    // Hide public UI children if rendering a normal path under maintenance (the rewritten /maintenance page doesn't use PublicShell wrapper directly since layout renders it inside but we don't want the Header/Footer)
+    // Wait, if the rewritten /maintenance page IS running, its pathname is still the original e.g. /en. So how do we hide Header/Footer?
+    // We can conditionally hide Header/Footer inside PublicShell if maintenance is active!
+    // But wait, if maintenance is active, does the rewritten /maintenance page render INSIDE PublicShell's children? Yes.
+    // So if maintenance is true, we ONLY render children (which is the MaintenanceUI page).
+
     return (
         <>
-            {/* Transition spinner — shown during state change */}
             <AnimatePresence>
                 {transitioning && <TransitionSpinner key="spinner" />}
             </AnimatePresence>
 
-            {/* Maintenance overlay */}
-            <AnimatePresence>
-                {maintenance && checked && !transitioning && <MaintenanceOverlay key="maintenance" reason={mReason} estimatedEnd={mEstimatedEnd} />}
-            </AnimatePresence>
+            {checked && !transitioning && maintenance && (
+                <>
+                    {children}
+                </>
+            )}
 
-            {/* Normal site — no wrapper animation to avoid breaking position:fixed children (ActionArea, modals) */}
             {checked && !transitioning && !maintenance && (
                     <>
                         <AmbientBackground />

@@ -2,6 +2,18 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
+import { redisCache } from "@/lib/redis";
+
+const SUPPORTED_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"];
+
+/** Purge all feature-related Redis caches so script generator picks up changes */
+async function invalidateFeatureCache() {
+    const keys = [
+        ...SUPPORTED_LANGS.map(l => `optwin:cache:features_all:${l}`),
+        ...SUPPORTED_LANGS.map(l => `optwin:cache:labels:${l}`),
+    ];
+    await redisCache.del(keys);
+}
 
 /* ─── Zod schemas ─── */
 
@@ -134,6 +146,7 @@ export async function POST(req: NextRequest) {
             include: { translations: true, commands: true },
         });
 
+        await invalidateFeatureCache();
         return NextResponse.json({ success: true, feature });
     } catch (error: unknown) {
         console.error("Create feature error:", error);
@@ -206,6 +219,7 @@ export async function PUT(req: NextRequest) {
             include: { translations: true, commands: true, category: { include: { translations: true } } },
         });
 
+        await invalidateFeatureCache();
         return NextResponse.json({ success: true, feature: updated });
     } catch (error: unknown) {
         console.error("Update feature error:", error);
@@ -252,6 +266,7 @@ export async function PATCH(req: NextRequest) {
             )
         );
 
+        await invalidateFeatureCache();
         return NextResponse.json({ success: true, moved: toMove.length, startOrder });
     } catch (error: unknown) {
         console.error("Move features error:", error);
@@ -269,6 +284,7 @@ export async function DELETE(req: NextRequest) {
 
     try {
         await prisma.feature.delete({ where: { id } });
+        await invalidateFeatureCache();
         return NextResponse.json({ success: true });
     } catch (error: unknown) {
         console.error("Delete feature error:", error);

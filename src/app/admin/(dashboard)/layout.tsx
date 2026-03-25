@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getSettings } from "@/lib/settings";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { UnsavedChangesProvider } from "@/components/admin/UnsavedChangesContext";
@@ -17,9 +18,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         redirect("/admin/unauthorized");
     }
 
-    const unreadMessages = await prisma.contactMessage.count({
-        where: { read: false, deleted: false },
-    });
+    const [unreadMessages, settings] = await Promise.all([
+        prisma.contactMessage.count({
+            where: { read: false, deleted: false },
+        }),
+        getSettings(["site_name", "site_version"])
+    ]);
+
+    const siteName = settings.site_name || "OptWin";
+    const siteVersion = settings.site_version || "1.3";
 
     return (
         <UnsavedChangesProvider>
@@ -30,7 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <div className="absolute bottom-[-10%] left-[20%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-[radial-gradient(circle,rgba(147,51,234,0.04)_0%,transparent_70%)]" />
             </div>
 
-            <AdminSidebar unreadMessages={unreadMessages} />
+            <AdminSidebar unreadMessages={unreadMessages} siteName={siteName} siteVersion={siteVersion} />
 
             <div className="flex-1 flex flex-col min-w-0 relative z-10">
                 <AdminHeader

@@ -151,7 +151,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         features: "Özellikler",
         edit: "Düzenle",
         categories: "Kategoriler",
-        "script-defaults": "Script Ayarları",
+        "script-settings": "Script Ayarları",
         translations: "Çeviriler",
         messages: "Mesajlar",
         stats: "İstatistikler",

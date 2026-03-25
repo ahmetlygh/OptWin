@@ -123,9 +123,11 @@ export default async function RootLayout({
                     }}
                 />
                 <ClientProviders serverSettings={settings}>
-                    <PublicShell serverMaintenance={maintenance} adminSession={adminSession} serverSettings={settings}>
-                        {children}
-                    </PublicShell>
+                    {maintenance && !isAdmin ? children : (
+                        <PublicShell serverMaintenance={maintenance} adminSession={adminSession} serverSettings={settings}>
+                            {children}
+                        </PublicShell>
+                    )}
                 </ClientProviders>
             </body>
         </html>

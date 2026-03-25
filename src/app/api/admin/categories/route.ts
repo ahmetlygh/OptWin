@@ -2,7 +2,15 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
+import { redisCache } from "@/lib/redis";
 
+const SUPPORTED_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"];
+
+/** Purge feature caches (category changes affect which features are visible) */
+async function invalidateFeatureCache() {
+    const keys = SUPPORTED_LANGS.map(l => `optwin:cache:features_all:${l}`);
+    await redisCache.del(keys);
+}
 const catTranslationSchema = z.object({
     lang: z.string().max(5),
     name: z.string().max(200),
@@ -77,6 +85,7 @@ export async function POST(req: NextRequest) {
             include: { translations: true, _count: { select: { features: true } } },
         });
 
+        await invalidateFeatureCache();
         return NextResponse.json({ success: true, category });
     } catch (error: unknown) {
         const prismaError = error as { code?: string };
@@ -122,6 +131,7 @@ export async function PUT(req: NextRequest) {
             include: { translations: true, _count: { select: { features: true } } },
         });
 
+        await invalidateFeatureCache();
         return NextResponse.json({ success: true, category: updated });
     } catch (error: unknown) {
         console.error("Update category error:", error);
@@ -129,7 +139,7 @@ export async function PUT(req: NextRequest) {
     }
 }
 
-// DELETE /api/admin/categories?id=xxx
+// DELETE /api/admin/categories?id=xxx&force=true
 export async function DELETE(req: NextRequest) {
     if (!(await checkAdmin())) return unauthorizedResponse();
 
@@ -140,15 +150,56 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
     // Check if category has features
-    if (!force) {
-        const count = await prisma.feature.count({ where: { categoryId: id } });
-        if (count > 0) {
-            return NextResponse.json({ error: "Cannot delete category with features. Move or delete features first.", hasFeatures: true }, { status: 400 });
-        }
+    const featureCount = await prisma.feature.count({ where: { categoryId: id } });
+
+    if (!force && featureCount > 0) {
+        return NextResponse.json({
+            error: "Cannot delete category with features. Move or delete features first.",
+            hasFeatures: true,
+            featureCount,
+        }, { status: 400 });
     }
 
     try {
-        await prisma.category.delete({ where: { id } });
+        if (force && featureCount > 0) {
+            // Cascading delete via $transaction: deepest relations first
+            // 1. Get all feature IDs belonging to this category
+            const featureIds = (await prisma.feature.findMany({
+                where: { categoryId: id },
+                select: { id: true },
+            })).map(f => f.id);
+
+            await prisma.$transaction([
+                // 2. Delete FeatureCommand records for all features
+                prisma.featureCommand.deleteMany({
+                    where: { featureId: { in: featureIds } },
+                }),
+                // 3. Delete FeatureTranslation records for all features
+                prisma.featureTranslation.deleteMany({
+                    where: { featureId: { in: featureIds } },
+                }),
+                // 4. Delete all Feature records
+                prisma.feature.deleteMany({
+                    where: { categoryId: id },
+                }),
+                // 5. Delete CategoryTranslation records
+                prisma.categoryTranslation.deleteMany({
+                    where: { categoryId: id },
+                }),
+                // 6. Finally delete the Category itself
+                prisma.category.delete({ where: { id } }),
+            ]);
+        } else {
+            // No features — safe to delete directly (translations cascade)
+            await prisma.$transaction([
+                prisma.categoryTranslation.deleteMany({
+                    where: { categoryId: id },
+                }),
+                prisma.category.delete({ where: { id } }),
+            ]);
+        }
+
+        await invalidateFeatureCache();
         return NextResponse.json({ success: true });
     } catch (error: unknown) {
         console.error("Delete category error:", error);

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
 import { settingsService } from "@/lib/settingsService";
+import { redisClient } from "@/lib/redis";
 
 const maintenanceSchema = z.object({
     enabled: z.boolean(),
@@ -14,17 +14,14 @@ const maintenanceSchema = z.object({
 export async function GET() {
     if (!(await checkAdmin())) return unauthorizedResponse();
     try {
-        const settings = await prisma.siteSetting.findMany({
-            where: {
-                key: { in: ["maintenanceMode", "maintenanceReason", "maintenanceEstimatedEnd"] },
-            },
-        });
-        const map = Object.fromEntries(settings.map(s => [s.key, s.value]));
+        const settings = await settingsService.getSettings<Record<string, string>>(
+            ["maintenanceMode", "maintenanceReason", "maintenanceEstimatedEnd"]
+        );
         return NextResponse.json({
             success: true,
-            maintenance: map.maintenanceMode === "true",
-            reason: map.maintenanceReason || "",
-            estimatedEnd: map.maintenanceEstimatedEnd || "",
+            maintenance: settings.maintenanceMode === "true",
+            reason: settings.maintenanceReason || "",
+            estimatedEnd: settings.maintenanceEstimatedEnd || "",
         });
     } catch {
         return NextResponse.json({ success: false, maintenance: false, reason: "", estimatedEnd: "" });
@@ -48,6 +45,12 @@ export async function PUT(req: Request) {
             { key: "maintenanceReason", value: reason, type: "string", description: "Bakım sebebi" },
             { key: "maintenanceEstimatedEnd", value: estimatedEnd, type: "string", description: "Tahmini bitiş zamanı (ISO UTC)" }
         ]);
+
+        try {
+            await redisClient.publish("optwin:channels:maintenance", String(enabled));
+        } catch (e) {
+            console.error("Failed to publish maintenance state to Redis", e);
+        }
 
         return NextResponse.json({ success: true, maintenance: enabled, reason, estimatedEnd });
     } catch (error: unknown) {

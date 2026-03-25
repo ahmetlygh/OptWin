@@ -365,7 +365,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                     <div className="space-y-2">
                         {[
                             { label: "Özellikleri Yönet", desc: "Optimizasyonları düzenle, aç/kapat", href: "/admin/features", color: "var(--accent-color)" },
-                            { label: "Script Ayarları", desc: "Tüm diller için script metinlerini düzenle", href: "/admin/script-defaults", color: "#10b981" },
+                            { label: "Script Ayarları", desc: "Tüm diller için script metinlerini düzenle", href: "/admin/script-settings", color: "#10b981" },
                         ].map((action, i) => (
                             <motion.div
                                 key={action.href}

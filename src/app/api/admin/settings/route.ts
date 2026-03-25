@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
+import { settingsService } from "@/lib/settingsService";
 
 /**
  * GET /api/admin/settings — fetch all site settings (admin only)
@@ -105,16 +106,16 @@ export async function PUT(req: Request) {
 
         const { settings } = parsed.data;
 
-        const ops = Object.entries(settings).map(([key, value]) => {
+        // Use settingsService which atomically writes to DB + purges Redis cache
+        const updatePayload = Object.entries(settings).map(([key, value]) => {
             const meta = KNOWN_SETTINGS[key] || { type: "string", description: "" };
-            return prisma.siteSetting.upsert({
-                where: { key },
-                create: { key, value, type: meta.type, description: meta.description },
-                update: { value },
-            });
+            return { key, value, type: meta.type, description: meta.description };
         });
 
-        await Promise.all(ops);
+        const ok = await settingsService.updateSettings(updatePayload);
+        if (!ok) {
+            return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error: unknown) {

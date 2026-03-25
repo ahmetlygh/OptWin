@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useSyncExternalStore, useState } from "react";
-import { useOptWinStore } from "@/store/useOptWinStore";
+import { usePathname } from "next/navigation";
+import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { WarningModal } from "@/components/modals/WarningModal";
 import { RestorePointModal } from "@/components/modals/RestorePointModal";
 import { ScriptOverlay } from "@/components/modals/ScriptOverlay";
@@ -13,11 +14,15 @@ const LOADING_TEXT: Record<string, string> = {
     fr: "Chargement...", es: "Cargando...", zh: "加载中...", hi: "लोड हो रहा है...",
 };
 
+const LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
+
 export function ClientProviders({ children, serverSettings = {} }: { children: React.ReactNode; serverSettings?: Record<string, string> }) {
     const theme = useOptWinStore((state) => state.theme);
     const lang = useOptWinStore((state) => state.lang);
+    const setLang = useOptWinStore((state) => state.setLang);
     const loadTranslations = useOptWinStore((state) => state.loadTranslations);
     const [fadeOut, setFadeOut] = useState(false);
+    const pathname = usePathname();
 
     // Detect client-side mount without setState in useEffect
     const mounted = useSyncExternalStore(
@@ -25,6 +30,18 @@ export function ClientProviders({ children, serverSettings = {} }: { children: R
         () => true,
         () => false
     );
+
+    // URL is the source of truth for language. Sync Zustand + Cookie on initial load.
+    useEffect(() => {
+        if (!mounted || !pathname) return;
+        const segments = pathname.split('/');
+        if (segments.length > 1 && LOCALES.includes(segments[1])) {
+            const urlLocale = segments[1] as Lang;
+            if (lang !== urlLocale) {
+                setLang(urlLocale); // This also writes NEXT_LOCALE cookie
+            }
+        }
+    }, [mounted, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Load DB translations on mount and when language changes
     useEffect(() => {

@@ -18,6 +18,7 @@ export default function AdminCategoriesPage() {
     const [editing, setEditing] = useState<Category | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [cascadeConfirm, setCascadeConfirm] = useState(false);
     const [saving, setSaving] = useState(false);
     const [dragItem, setDragItem] = useState<number | null>(null);
 
@@ -44,6 +45,7 @@ export default function AdminCategoriesPage() {
         const data = await res.json();
         if (!data.success) alert(data.error);
         setDeleteConfirm(null);
+        setCascadeConfirm(false);
         fetchCategories();
     };
 
@@ -179,18 +181,38 @@ export default function AdminCategoriesPage() {
                 if (!cat) return null;
                 const hasFeatures = cat._count.features > 0;
                 return (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 backdrop-blur-xl" onClick={() => setDeleteConfirm(null)}>
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 backdrop-blur-xl" onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }}>
                         <div className="bg-[#1a1a24] border border-[#2b2938] rounded-2xl p-6 max-w-sm w-full mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
                             <h3 className="text-lg font-bold text-white mb-2">Kategoriyi Sil?</h3>
-                            {hasFeatures ? (
-                                <p className="text-sm text-red-400 mb-6">Bu kategori içinde <b>{cat._count.features}</b> adet özellik bulunuyor! "Hepsini Sil" diyerek kategoriyi ve içindeki tüm özellikleri tamamen silebilirsiniz.</p>
+
+                            {!cascadeConfirm ? (
+                                <>
+                                    {hasFeatures ? (
+                                        <p className="text-sm text-red-400 mb-6">Bu kategori icinde <b>{cat._count.features}</b> adet ozellik bulunuyor! &quot;Hepsini Sil&quot; diyerek kategoriyi ve icindeki tum ozellikleri tamamen silebilirsiniz.</p>
+                                    ) : (
+                                        <p className="text-sm text-[#a19eb7] mb-6">Bu kategoriyi silmek istediginizden emin misiniz?</p>
+                                    )}
+                                    <div className="flex gap-3">
+                                        <button onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">Iptal</button>
+                                        {hasFeatures ? (
+                                            <button onClick={() => setCascadeConfirm(true)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">Hepsini Sil</button>
+                                        ) : (
+                                            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">Sil</button>
+                                        )}
+                                    </div>
+                                </>
                             ) : (
-                                <p className="text-sm text-[#a19eb7] mb-6">Bu kategoriyi silmek istediğinizden emin misiniz?</p>
+                                <>
+                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+                                        <p className="text-sm text-red-400 font-bold mb-1">Bu islem geri alinamaz!</p>
+                                        <p className="text-sm text-red-400/80">Kategoriyi icindeki <b>{cat._count.features}</b> ozellikle beraber kalici olarak silmek istediginize emin misiniz? Tum ozellikler, ceviriler ve PowerShell komutlari da silinecektir.</p>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setCascadeConfirm(false)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">Geri Don</button>
+                                        <button onClick={() => handleDelete(deleteConfirm, true)} className="flex-1 h-10 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all text-sm">Evet, Kalici Olarak Sil</button>
+                                    </div>
+                                </>
                             )}
-                            <div className="flex gap-3">
-                                <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">İptal</button>
-                                <button onClick={() => handleDelete(deleteConfirm, hasFeatures)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">{hasFeatures ? "Hepsini Sil" : "Sil"}</button>
-                            </div>
                         </div>
                     </div>
                 );

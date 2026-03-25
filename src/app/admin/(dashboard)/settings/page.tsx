@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Settings as SettingsIcon,
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
+import { AdminSelect } from "@/components/admin/AdminSelect";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 type SettingsMap = Record<string, string>;
@@ -245,6 +247,8 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function SettingsPage() {
+    const router = useRouter();
+
     // ─── TAB state ──────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState<TabId>("settings");
 
@@ -375,6 +379,7 @@ export default function SettingsPage() {
             }
             setOriginalSettings({ ...settings });
             setSaved(true);
+            router.refresh(); // Refresh layout Server Components to pick up new siteName/siteVersion props
             setTimeout(() => setSaved(false), 2000);
         } catch {
             setSettingsError("Değişiklikler kaydedilemedi.");
@@ -409,6 +414,7 @@ export default function SettingsPage() {
             }
             setOriginalTranslations(JSON.parse(JSON.stringify(translations)));
             setContentSaved(true);
+            router.refresh();
             setTimeout(() => setContentSaved(false), 2000);
         } catch {
             setContentError("Çeviriler kaydedilemedi.");
@@ -588,13 +594,9 @@ export default function SettingsPage() {
                                 </span>
                                 <button
                                     onClick={() => maintenance ? window.dispatchEvent(new CustomEvent('optwin:open-maintenance-off')) : window.dispatchEvent(new CustomEvent('optwin:open-maintenance-modal'))}
-                                    className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${maintenance ? 'bg-red-500' : 'bg-white/[0.06]'}`}
+                                    className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${maintenance ? "bg-red-500/80" : "bg-emerald-500/80"}`}
                                 >
-                                    <motion.div
-                                        animate={{ x: maintenance ? 24 : 2 }}
-                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                        className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm"
-                                    />
+                                    <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${maintenance ? "left-[19px]" : "left-[3px]"}`} />
                                 </button>
                             </div>
                         </div>
@@ -631,8 +633,8 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="flex-1">
                                                 {field.type === "toggle" ? (
-                                                    <button onClick={() => updateSetting(field.key, value === "true" ? "false" : "true")} className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${value === "true" ? "bg-[#6b5be6]" : "bg-white/[0.06]"}`}>
-                                                        <motion.div animate={{ x: value === "true" ? 24 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm" />
+                                                    <button onClick={() => updateSetting(field.key, value === "true" ? "false" : "true")} className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${value === "true" ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}>
+                                                        <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${value === "true" ? "left-[19px]" : "left-[3px]"}`} />
                                                     </button>
                                                 ) : field.type === "select" ? (
                                                     field.key === "default_lang" ? (
@@ -642,10 +644,12 @@ export default function SettingsPage() {
                                                             variant="form"
                                                         />
                                                     ) : (
-                                                        <select value={value} onChange={e => updateSetting(field.key, e.target.value)} className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.10] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 focus:outline-none transition-all appearance-none cursor-pointer">
-                                                            <option value="" className="bg-[#0d0d14]">Seçin...</option>
-                                                            {field.options?.map(opt => <option key={opt.value} value={opt.value} className="bg-[#0d0d14]">{opt.label}</option>)}
-                                                        </select>
+                                                        <AdminSelect
+                                                            options={field.options || []}
+                                                            value={value}
+                                                            onChange={v => updateSetting(field.key, v)}
+                                                            placeholder="Seçin..."
+                                                        />
                                                     )
                                                 ) : field.type === "textarea" ? (
                                                     <textarea value={value} onChange={e => updateSetting(field.key, e.target.value)} placeholder={field.placeholder} rows={2} className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.10] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 placeholder-white/15 focus:outline-none transition-all resize-none font-mono" />

@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
-
+import { redisCache } from "@/lib/redis";
 // GET /api/admin/script-labels — get all script labels grouped by lang
 export async function GET() {
     if (!(await checkAdmin())) return unauthorizedResponse();
@@ -87,6 +87,15 @@ export async function PUT(req: NextRequest) {
                 update: { value: JSON.stringify(deletedPreviewLines) },
                 create: { key: "script_deleted_preview_lines", value: JSON.stringify(deletedPreviewLines) },
             });
+        }
+
+        // Invalidate Redis cache for any SiteSetting keys modified
+        const invalidateKeys: string[] = [];
+        if (extraLines !== undefined) invalidateKeys.push("optwin:setting:script_extra_lines");
+        if (lineOverrides !== undefined) invalidateKeys.push("optwin:setting:script_line_overrides");
+        if (deletedPreviewLines !== undefined) invalidateKeys.push("optwin:setting:script_deleted_preview_lines");
+        if (invalidateKeys.length > 0) {
+            await redisCache.del(invalidateKeys);
         }
 
         return NextResponse.json({ success: true });

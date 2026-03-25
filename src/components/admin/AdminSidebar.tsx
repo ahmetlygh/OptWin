@@ -27,6 +27,8 @@ import {
 
 interface AdminSidebarProps {
     unreadMessages?: number;
+    siteName?: string;
+    siteVersion?: string;
 }
 
 type MenuItem = {
@@ -37,7 +39,11 @@ type MenuItem = {
     badge?: number;
 };
 
-export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
+export function AdminSidebar({ 
+    unreadMessages = 0, 
+    siteName = "OptWin", 
+    siteVersion = "1.3" 
+}: AdminSidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const [isMobileOpen, setMobileOpen] = useState(false);
@@ -58,7 +64,7 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
     const menuItems: MenuItem[] = [
         { label: "Genel Bakış", href: "/admin", icon: <LayoutDashboard size={17} /> },
         { label: "Özellikler", href: "/admin/features", icon: <Puzzle size={17} /> },
-        { label: "Script Ayarları", href: "/admin/script-defaults", icon: <FileCode2 size={17} /> },
+        { label: "Script Ayarları", href: "/admin/script-settings", icon: <FileCode2 size={17} /> },
         { label: "Kategoriler", href: "/admin/categories", icon: <FolderOpen size={17} />, disabled: true },
         { label: "DNS Sağlayıcılar", href: "/admin/dns", icon: <Globe size={17} />, disabled: true },
         { label: "Çeviriler", href: "/admin/translations", icon: <Languages size={17} />, disabled: true },
@@ -88,7 +94,7 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
                     <div className="h-9 w-9 flex items-center justify-center shrink-0">
                         <Image
                             src="/optwin.png"
-                            alt="OptWin"
+                            alt={siteName}
                             width={36}
                             height={36}
                             className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300"
@@ -96,7 +102,7 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
                     </div>
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
-                            <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6]">OptWin</span>
+                            <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] truncate max-w-[120px]" title={siteName}>{siteName}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest text-[#6b5be6] bg-[#6b5be6]/10 px-1.5 py-0.5 rounded-md">
                                 Admin
                             </span>
@@ -136,11 +142,11 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
                     return (
                         <Link key={item.href} href={item.href} onClick={(e) => handleNavClick(e, item.href)}>
                             <motion.div
-                                initial={{ opacity: 0, x: -6 }}
+                                initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.025, duration: 0.25 }}
-                                className={`relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group ${
-                                    active ? "text-white" : "text-white/35 hover:text-white/75 hover:bg-white/[0.03]"
+                                transition={{ duration: 0.3, delay: index * 0.03, ease: "easeOut" }}
+                                className={`relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-200 group ${
+                                    active ? "text-white" : "text-white/35 hover:text-white/75 hover:bg-white/[0.04]"
                                 }`}
                             >
                                 {active && (
@@ -171,7 +177,7 @@ export function AdminSidebar({ unreadMessages = 0 }: AdminSidebarProps) {
 
             {/* Footer — Version */}
             <div className="relative z-10 px-4 py-3 border-t border-white/[0.05]">
-                <p className="text-[10px] text-white/15 font-medium text-center">OptWin Admin v1.3</p>
+                <p className="text-[10px] text-white/15 font-medium text-center">{siteName} Admin v{siteVersion}</p>
             </div>
         </aside>
     );

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, ChevronDown, Globe } from "lucide-react";
 import Image from "next/image";
 
-/* ── SVG Flag icons (visual only — not translatable) ──────── */
+/* ── SVG Flag icons ──────── */
 const FLAG_SVG: Record<string, React.ReactNode> = {
     tr: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#E30A17" width="30" height="20"/><circle cx="11" cy="10" r="6" fill="white"/><circle cx="13" cy="10" r="5" fill="#E30A17"/><polygon fill="white" points="17,10 14.09,8.09 15.18,11.45 13.09,9.54 16.45,10.73"/></svg>,
     en: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#012169" width="30" height="20"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="white" strokeWidth="4"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="#C8102E" strokeWidth="2"/><path d="M15,0 V20 M0,10 H30" stroke="white" strokeWidth="6"/><path d="M15,0 V20 M0,10 H30" stroke="#C8102E" strokeWidth="3"/></svg>,
@@ -16,7 +17,6 @@ const FLAG_SVG: Record<string, React.ReactNode> = {
     hi: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#FF9933" width="30" height="6.67"/><rect fill="white" y="6.67" width="30" height="6.67"/><rect fill="#138808" y="13.33" width="30" height="6.67"/><circle cx="15" cy="10" r="2" fill="none" stroke="#000080" strokeWidth="0.5"/></svg>,
 };
 
-/* ── Language metadata (non-translatable config) ──────── */
 const LANGS = [
     { code: "tr", label: "Türkçe" },
     { code: "en", label: "English" },
@@ -27,57 +27,48 @@ const LANGS = [
     { code: "hi", label: "हिन्दी" },
 ];
 
-/* UTC offsets per language (will be DB-driven in Faz 9) */
 const UTC_OFFSET: Record<string, number> = { tr: 3, en: 0, de: 1, fr: 1, es: 1, zh: 8, hi: 5.5 };
 
-export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string | Record<string, string> | null; estimatedEnd?: string | null }) {
-    // Normalize reason: could be a JSON string, a parsed object, or a plain string
-    const safeReason: string = (() => {
-        if (!reason) return "";
-        if (typeof reason === "object") {
-            try { return JSON.stringify(reason); } catch { return ""; }
-        }
-        return String(reason);
-    })();
-
-    const [lang, setLang] = useState("en");
+export function MaintenanceUI({ 
+    locale, 
+    translations, 
+    settings, 
+    reason, 
+    estimatedEnd,
+    isActive 
+}: { 
+    locale: string; 
+    translations: Record<string, string>; 
+    settings: Record<string, string>;
+    reason: string; 
+    estimatedEnd: string | null;
+    isActive: boolean;
+}) {
+    const router = useRouter();
+    const pathname = usePathname();
     const [langOpen, setLangOpen] = useState(false);
-    const [tick, setTick] = useState(0);
-    const [translations, setTranslations] = useState<Record<string, string>>({});
+    const [isMounted, setIsMounted] = useState(false);
+    const [, setTick] = useState(0);
     const langRef = useRef<HTMLDivElement>(null);
 
-    // Safe translation getter with static fallback
-    const mt = useCallback((key: string, fallback: string) => {
-        return translations[key] || fallback;
-    }, [translations]);
-
-    // Load language gracefully from cookies or local storage fallback
     useEffect(() => {
-        let detected = "en";
-        // 1. Try to read from document.cookie (NEXT_LOCALE)
-        const match = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]*)/);
-        if (match && match[1]) {
-            detected = match[1];
-        } else {
-            // 2. Try to read from Zustand persist store fallback
-            try {
-                const store = localStorage.getItem("optwin-store");
-                if (store) {
-                    const parsed = JSON.parse(store);
-                    if (parsed?.state?.lang) detected = parsed.state.lang;
-                }
-            } catch { /* empty */ }
-        }
-        if (LANGS.some(l => l.code === detected)) setLang(detected);
+        setIsMounted(true);
     }, []);
 
-    // Fetch translations from DB API when language changes
+    // Watch for maintenance lifting natively via polling 
     useEffect(() => {
-        fetch(`/api/ui-translations?lang=${lang}`)
-            .then(r => r.ok ? r.json() : {})
-            .then(data => setTranslations(data))
-            .catch(() => { /* static fallback will be used */ });
-    }, [lang]);
+        if (!isActive) return;
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch("/api/maintenance");
+                const data = await res.json();
+                if (data.maintenance === false) {
+                    window.location.href = window.location.pathname;
+                }
+            } catch { /* ignore */ }
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [isActive]);
 
     // Tick for countdown
     useEffect(() => {
@@ -94,7 +85,7 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    void tick;
+    const mt = (key: string, fallback: string) => translations[key] || fallback;
 
     // Countdown calculation
     const endTime = estimatedEnd ? new Date(estimatedEnd).getTime() : 0;
@@ -108,12 +99,11 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
     };
     const hasCountdown = !!estimatedEnd && diff > 0;
 
-    // Format end date using the selected language's UTC offset
     let endDateStr = "";
     if (estimatedEnd) {
         try {
             const dateObj = new Date(estimatedEnd);
-            const offset = UTC_OFFSET[lang] ?? 0;
+            const offset = UTC_OFFSET[locale] ?? 0;
             const targetTime = dateObj.getTime() + (offset * 3600000);
             const targetDate = new Date(targetTime);
             const d = targetDate.getUTCDate().toString().padStart(2, '0');
@@ -121,7 +111,7 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
             const y = targetDate.getUTCFullYear();
             const hh = targetDate.getUTCHours().toString().padStart(2, '0');
             const mm = targetDate.getUTCMinutes().toString().padStart(2, '0');
-            if (lang === 'en') {
+            if (locale === 'en') {
                 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 endDateStr = `${d} ${monthNames[targetDate.getUTCMonth()]} ${y}, ${hh}:${mm}`;
             } else {
@@ -130,7 +120,10 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
         } catch { endDateStr = new Date(estimatedEnd).toLocaleString(); }
     }
 
-    const currentLang = LANGS.find(l => l.code === lang) || LANGS[1];
+    const currentLang = LANGS.find(l => l.code === locale) || LANGS[1];
+    const siteName = settings.site_name || "OptWin";
+    const copyrightYear = settings.copyright_year || new Date().getFullYear().toString();
+    const copyrightText = settings.copyright_text || "All rights reserved.";
 
     return (
         <motion.div
@@ -138,9 +131,8 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
-            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
+            className="fixed inset-0 z-[10000] flex flex-col items-center justify-center overflow-hidden bg-[#08080d]"
         >
-            {/* Rich background with animated pulse orbs */}
             <div className="absolute inset-0 bg-[#08080d]">
                 <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle,rgba(107,91,230,0.14)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '4s' }} />
                 <div className="absolute bottom-[-15%] left-[20%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(147,51,234,0.10)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
@@ -153,7 +145,7 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
             <div ref={langRef} className="absolute top-6 right-6 z-20">
                 <button onClick={() => setLangOpen(!langOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-white/40 hover:text-white/60 transition-all">
                     <Globe size={12} className="text-white/25" />
-                    <span>{FLAG_SVG[lang]}</span>
+                    <span>{FLAG_SVG[locale]}</span>
                     <span>{currentLang.label}</span>
                     <ChevronDown size={11} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
                 </button>
@@ -162,10 +154,19 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }} className="absolute right-0 mt-1 min-w-[140px] bg-[#13131d] border border-white/[0.06] rounded-lg shadow-xl overflow-hidden">
                             {LANGS.map(({ code, label }) => (
                                 <button key={code} onClick={() => { 
-                                    setLang(code); 
                                     setLangOpen(false); 
                                     document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000`;
-                                }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${lang === code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
+                                    
+                                    // Change the URL slug gracefully using Next router
+                                    const segments = pathname.split('/');
+                                    const locales = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
+                                    if (segments.length > 1 && locales.includes(segments[1])) {
+                                        segments[1] = code;
+                                        router.replace(segments.join('/') || '/');
+                                    } else {
+                                        router.replace(`/${code}`);
+                                    }
+                                }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${locale === code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
                                     <span>{FLAG_SVG[code]}</span><span>{label}</span>
                                 </button>
                             ))}
@@ -174,20 +175,16 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                 </AnimatePresence>
             </div>
 
-            {/* Main content */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative z-10 flex flex-col items-center text-center px-6 max-w-lg">
-                {/* Logo */}
                 <div className="flex items-center gap-4 mb-10 select-none">
-                    <Image src="/optwin.png" alt={mt("maintenance.siteName", "OptWin")} width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
-                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">{mt("maintenance.siteName", "OptWin")}</h1>
+                    <Image src="/optwin.png" alt={siteName} width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
+                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">{siteName}</h1>
                 </div>
 
-                {/* Spinning gear */}
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="mb-6">
                     <Settings size={68} className="text-[#6b5be6]/35" strokeWidth={1.5} />
                 </motion.div>
 
-                {/* Message card */}
                 <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl px-6 py-5 mb-6 max-w-[460px] w-full backdrop-blur-sm">
                     <p className="text-white/50 text-[18px] leading-[1.7] mb-2">
                         {mt("maintenance.msg", "Our site is currently under maintenance.")}
@@ -197,39 +194,28 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                     </p>
                 </div>
 
-                {/* Reason — per language */}
-                {(() => {
-                    if (!safeReason) return null;
-                    let reasonMap: Record<string, string> = {};
-                    try { reasonMap = JSON.parse(safeReason); } catch { reasonMap = { en: safeReason, tr: safeReason }; }
-                    const localReason = reasonMap[lang] || reasonMap.en || reasonMap.tr || "";
-                    if (!localReason) return null;
-                    return (
-                        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
-                            <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">
-                                {mt("maintenance.reasonLabel", "Reason:")}
-                            </p>
-                            <p className="text-[15px] text-white/30 leading-relaxed">{localReason}</p>
-                        </div>
-                    );
-                })()}
+                {reason && (
+                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
+                        <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">
+                            {mt("maintenance.reasonLabel", "Reason:")}
+                        </p>
+                        <p className="text-[15px] text-white/30 leading-relaxed">{reason}</p>
+                    </div>
+                )}
 
-                {/* Progress bar */}
                 <div className="w-full max-w-[384px] mb-2.5">
                     <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden relative">
                         <motion.div className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-[#6b5be6]/60 to-transparent rounded-full" animate={{ x: ["-100%", "400%"] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
                     </div>
                 </div>
 
-                {/* WIP text below bar */}
                 <p className="text-[13px] text-white/18 font-medium mb-3 tracking-wide">
                     {mt("maintenance.wip", "Work in progress...")}
                 </p>
 
-                {/* Live clock with UTC offset */}
                 <p className="text-[13px] text-white/14 font-mono tabular-nums mb-6">
-                    {(() => {
-                        const offset = UTC_OFFSET[lang] ?? 0;
+                    {isMounted ? (() => {
+                        const offset = UTC_OFFSET[locale] ?? 0;
                         const utcNow = Date.now();
                         const local = new Date(utcNow + offset * 3600000);
                         const hh = local.getUTCHours().toString().padStart(2, '0');
@@ -238,11 +224,10 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                         const sign = offset >= 0 ? '+' : '';
                         const utcLabel = `UTC${sign}${offset}`;
                         return `${hh}:${mm}:${ss}  ${utcLabel}`;
-                    })()}
+                    })() : "00:00:00"}
                 </p>
 
-                {/* Countdown */}
-                {hasCountdown && (
+                {hasCountdown && isMounted && (
                     <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl px-6 py-5 mb-5 max-w-[460px] w-full">
                         <p className="text-[13px] font-bold text-white/25 uppercase tracking-wider mb-4">
                             {mt("maintenance.estLabel", "Estimated Completion")}
@@ -268,9 +253,8 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                 )}
             </motion.div>
 
-            {/* Copyright */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="absolute bottom-8 left-0 right-0 text-center">
-                <p className="text-[16px] text-white/13 font-medium">&copy; {new Date().getFullYear()} {mt("maintenance.siteName", "OptWin")}. All rights reserved.</p>
+                <p className="text-[16px] text-white/13 font-medium">&copy; {copyrightYear} {siteName}. {copyrightText}</p>
             </motion.div>
         </motion.div>
     );
