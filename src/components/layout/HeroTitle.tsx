@@ -6,40 +6,45 @@ import { useTranslation } from "@/i18n/useTranslation";
  * HeroTitle renders the main hero heading with a highlighted keyword.
  * 
  * Translation keys used:
- * - hero.title.text: Full title text (e.g. "Optimize your Windows Experience")
- * - hero.title.highlight: The word to highlight (e.g. "Optimize")
+ * - hero.titleTemplate: Interpolation format (e.g. "{highlight} {prefix}")
+ * - hero.titleHighlight: The word to highlight (e.g. "Optimize")
+ * - hero.titlePrefix: The remaining text string
  * - hero.subtitle: Subtitle paragraph
- * 
- * The component splits the title text around the highlight word
- * to apply gradient styling to the highlighted portion.
+ *
+ * The component splits the title template dynamically around the markup
+ * to apply gradient styling correctly regardless of language syntax order.
  */
 export function HeroTitle() {
     const { t } = useTranslation();
 
-    const fullTitle = t["hero.title.text"];
-    const highlightWord = t["hero.title.highlight"];
+    // Fallback to English structure if DB is wiped during dev
+    const template = t["hero.titleTemplate"] || "{highlight} {prefix}";
+    const highlightWord = t["hero.titleHighlight"] || "";
+    const prefixWord = t["hero.titlePrefix"] || "";
 
-    // Split the title around the highlight word to render it with gradient
-    const highlightIndex = fullTitle.indexOf(highlightWord);
-    const before = highlightIndex > 0 ? fullTitle.slice(0, highlightIndex) : "";
-    const after = highlightIndex >= 0 ? fullTitle.slice(highlightIndex + highlightWord.length) : "";
-    const hasHighlight = highlightIndex >= 0;
+    // Split template keeping delimiters
+    const parts = template.split(/(\{highlight\}|\{prefix\})/g);
 
     return (
         <div className="min-h-[120px] sm:min-h-[160px] md:min-h-[180px] flex flex-col justify-end">
             {/* Title */}
             <h2 className="text-[2rem] leading-[1.1] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black tracking-tight mb-3 sm:mb-4 max-w-xl lg:max-w-3xl animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                {hasHighlight ? (
-                    <>
-                        {before && <span className="text-white">{before}</span>}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-color)] to-purple-400">
-                            {highlightWord}
-                        </span>
-                        {after && <span className="text-white">{after}</span>}
-                    </>
-                ) : (
-                    <span className="text-white">{fullTitle}</span>
-                )}
+                {parts.map((p, i) => {
+                    if (p === "{highlight}") {
+                        return (
+                            <span key={i} className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-color)] to-purple-400">
+                                {highlightWord}
+                            </span>
+                        );
+                    }
+                    if (p === "{prefix}") {
+                        return <span key={i} className="text-white">{prefixWord}</span>;
+                    }
+                    if (p) {
+                        return <span key={i} className="text-white">{p}</span>;
+                    }
+                    return null;
+                })}
             </h2>
 
             {/* Subtitle */}

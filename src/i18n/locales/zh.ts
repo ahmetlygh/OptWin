@@ -5,8 +5,9 @@ const zh = {
     "nav.language": "语言",
     "nav.aboutOptwin": "关于 OptWin",
 
+    "hero.titleTemplate": "{highlight}{prefix}",
     "hero.titleHighlight": "优化",
-    "hero.titlePrefix": "你的 Windows 体验",
+    "hero.titlePrefix": "您的 Windows 体验",
     "hero.subtitle": "高级用户和游戏玩家的高级优化工具。通过一个脚本清理、调整和加速您的系统。",
 
     "stats.visits": "访问",
@@ -156,8 +157,6 @@ const zh = {
     "feature.risk.medium": "中等",
     "feature.risk.high": "高风险",
     "ui.loading": "加载中...",
-    "hero.title.text": "优化你的 Windows 体验",
-    "hero.title.highlight": "优化",
     "maintenance.msg": "我们的网站正在维护中。我们的团队正在努力提供最佳体验。",
     "maintenance.apology": "对此给您带来的不便，我们深表歉意。",
     "maintenance.reasonLabel": "原因：",

@@ -3,13 +3,13 @@ import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
 import { redisCache } from "@/lib/redis";
+import { cacheService } from "@/lib/cache-service";
 
 const SUPPORTED_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"];
 
 /** Purge feature caches (category changes affect which features are visible) */
 async function invalidateFeatureCache() {
-    const keys = SUPPORTED_LANGS.map(l => `optwin:cache:features_all:${l}`);
-    await redisCache.del(keys);
+    await cacheService.invalidate("category");
 }
 const catTranslationSchema = z.object({
     lang: z.string().max(5),

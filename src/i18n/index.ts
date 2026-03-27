@@ -31,7 +31,9 @@ export function getTranslation(lang: string): Translations {
  */
 export function t(lang: string, key: TranslationKeys): string {
     const translations = locales[lang] || locales.en;
-    return translations[key] || (locales.en as Translations)[key] || key;
+    if (translations[key] !== undefined) return translations[key];
+    if ((locales.en as Translations)[key] !== undefined) return (locales.en as Translations)[key];
+    return key;
 }
 
 export type { TranslationKeys };

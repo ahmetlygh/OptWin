@@ -19,7 +19,7 @@ import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminIconPicker } from "@/components/admin/AdminIconPicker";
 import { generateScriptMessage } from "@/lib/powershell-safe";
-import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
+// Using context modal
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 import { AdminActionBar } from "@/components/admin/AdminActionBar";
 import { Loader } from "@/components/shared/Loader";
@@ -146,11 +146,11 @@ function SlugFeatureEditor({
     const [error, setError] = useState("");
     const [saved, setSaved] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const { hasUnsavedChanges, setHasUnsavedChanges, onSave: registerOnSave, onDiscard: registerOnDiscard, openModal } = useUnsavedChanges();
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
 
     // N9: Wire to shared UnsavedChangesContext so sidebar nav guard works
-    const { setHasUnsavedChanges, onSave: registerOnSave, onDiscard: registerOnDiscard } = useUnsavedChanges();
+    // const { setHasUnsavedChanges, onSave: registerOnSave, onDiscard: registerOnDiscard } = useUnsavedChanges();
 
     const handleAutoTranslate = async () => {
         const title = form.translations[translationLang]?.title;
@@ -306,9 +306,8 @@ function SlugFeatureEditor({
     }, [registerOnSave, registerOnDiscard]);
 
     const tryNavigate = (navFn: () => void) => {
-        if (hasChanges) {
-            setPendingNav(() => navFn);
-            setShowUnsavedModal(true);
+        if (hasUnsavedChanges) {
+            openModal(navFn);
         } else {
             navFn();
         }
@@ -757,22 +756,7 @@ function SlugFeatureEditor({
                 variant="danger"
             />
 
-            {/* Unsaved Changes Modal */}
-            <UnsavedChangesModal
-                open={showUnsavedModal}
-                onClose={() => { setShowUnsavedModal(false); setPendingNav(null); }}
-                onSaveAndLeave={async () => {
-                    setShowUnsavedModal(false);
-                    await handleSubmit();
-                    pendingNav?.();
-                    setPendingNav(null);
-                }}
-                onDiscardAndLeave={() => {
-                    setShowUnsavedModal(false);
-                    pendingNav?.();
-                    setPendingNav(null);
-                }}
-            />
+            {/* Managed by UnsavedChangesProvider */}
         </motion.div>
     );
 }

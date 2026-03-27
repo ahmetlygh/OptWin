@@ -7,6 +7,7 @@ const en = {
     "nav.aboutOptwin": "About OptWin",
 
     // Hero
+    "hero.titleTemplate": "{highlight} {prefix}",
     "hero.titleHighlight": "Optimize",
     "hero.titlePrefix": "your Windows Experience",
     "hero.subtitle": "The premium optimization tool for power users and gamers. Debloat, tweak, and accelerate your system with a single script.",
@@ -123,12 +124,13 @@ const en = {
     "support.close": "Close",
 
     // Footer
-    "footer.description": "Ultimate open-source Windows optimization suite. Secure, fast, and reliable system tuning for Gamers and Professionals.",
+    "footer.description": "OptWin is the most advanced open-source Windows optimization platform, engineered for peak performance. We provide transparent, secure, and high-fidelity tuning solutions for gamers and power users worldwide.",
     "footer.legal": "Legal",
     "footer.privacy": "Privacy Policy",
     "footer.terms": "Terms of Service",
     "footer.support": "Support",
     "footer.contactUs": "Contact Us",
+    "footer.contact": "Contact",
     "footer.allRights": "All rights reserved.",
 
     // Scroll to top
@@ -179,9 +181,7 @@ const en = {
     // Loading
     "ui.loading": "Loading...",
 
-    // Hero Title parts (JSON format for structured data)
-    "hero.title.text": "Optimize your Windows Experience",
-    "hero.title.highlight": "Optimize",
+    // Standardized via hero.titleHighlight/Prefix
 
     // Maintenance overlay
     "maintenance.msg": "Our site is currently under maintenance. Our team is working to provide the best experience.",

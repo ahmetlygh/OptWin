@@ -5,6 +5,7 @@ const tr = {
     "nav.language": "Dil Seçimi",
     "nav.aboutOptwin": "OptWin Hakkında",
 
+    "hero.titleTemplate": "{prefix} {highlight}",
     "hero.titleHighlight": "Hızlandırın",
     "hero.titlePrefix": "Windows Deneyiminizi",
     "hero.subtitle": "Gelişmiş kullanıcılar ve oyuncular için premium optimizasyon aracı. Tek bir komut dosyası ile sisteminizi temizleyin, ince ayar yapın ve hızlandırın.",
@@ -109,12 +110,13 @@ const tr = {
     "support.widgetMessage": "Özgür yazılıma destek olmak ister misiniz?",
     "support.close": "Kapat",
 
-    "footer.description": "En kapsamlı açık kaynaklı Windows optimizasyon paketi. Oyuncular ve Profesyoneller için güvenli, hızlı ve güvenilir sistem ayarlama.",
+    "footer.description": "OptWin, Windows sisteminizi en üst düzeye çıkarmak için tasarlanan dünyanın en gelişmiş açık kaynaklı optimizasyon platformudur. Oyuncular ve profesyoneller için şeffaf, güvenli ve yüksek performanslı çözümler sunuyoruz.",
     "footer.legal": "Yasal",
     "footer.privacy": "Gizlilik Politikası",
     "footer.terms": "Kullanım Şartları",
     "footer.support": "Destek",
     "footer.contactUs": "İletişim",
+    "footer.contact": "İletişim",
     "footer.allRights": "Tüm hakları saklıdır.",
 
     "scrollTop.label": "Yukarı çık",
@@ -157,8 +159,6 @@ const tr = {
     "feature.risk.medium": "Orta Risk",
     "feature.risk.high": "Yüksek Risk",
     "ui.loading": "Yükleniyor...",
-    "hero.title.text": "Windows Deneyiminizi Hızlandırın",
-    "hero.title.highlight": "Hızlandırın",
     "maintenance.msg": "Sitemiz şu anda bakımdadır. Ekibimiz en iyi deneyimi sunmak için çalışıyor.",
     "maintenance.apology": "Verdiğimiz rahatsızlık için özür dileriz.",
     "maintenance.reasonLabel": "Sebep:",

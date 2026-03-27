@@ -23,9 +23,11 @@ import {
 } from "lucide-react";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
+import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminActionBar } from "@/components/admin/AdminActionBar";
 import { Loader } from "@/components/shared/Loader";
+import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 type SettingsMap = Record<string, string>;
@@ -209,7 +211,7 @@ export default function GeneralSettings() {
     if (loading) {
         return (
             <div className="flex items-center justify-center p-20">
-                <Loader size={32} />
+                <Loader />
             </div>
         );
     }

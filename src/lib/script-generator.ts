@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { toPowerShellSafe, escapeForPsString } from "./powershell-safe";
 import { redisCache } from "./redis";
+import { cacheService } from "./cache-service";
 
 type ScriptParams = {
     features: string[];
@@ -36,28 +37,17 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     const supportedLangs = ["en", "tr", "de", "fr", "es", "zh", "hi"];
     const dbLang = supportedLangs.includes(lang) ? lang : "en";
 
-    const featuresCacheKey = `optwin:cache:features_all:${dbLang}`;
-    let allEnabledFeatures;
-    const cachedFeatures = await redisCache.get(featuresCacheKey);
-    
     // Parallelize static dependencies securely utilizing Redis caching
     const [rawLabels, fetchedFeatures, dnsData] = await Promise.all([
         getLabelsFromDb(lang),
-        cachedFeatures ? Promise.resolve(JSON.parse(cachedFeatures)) : prisma.feature.findMany({
-            where: { enabled: true, category: { enabled: true } },
-            include: { commands: { where: { lang: dbLang } } },
-            orderBy: { order: 'asc' }
-        }).then(res => {
-            redisCache.set(featuresCacheKey, JSON.stringify(res), 604800).catch(() => {});
-            return res;
-        }),
+        cacheService.getFeaturesWithCommands(dbLang),
         features.includes('changeDNS') && dnsProvider
             ? Promise.all([
                 prisma.feature.findUnique({
                     where: { slug: 'changeDNS' },
                     include: { commands: { where: { lang: dbLang } } }
                 }),
-                prisma.dnsProvider.findUnique({ where: { slug: dnsProvider } }),
+                cacheService.getDnsProvider(dnsProvider),
             ])
             : Promise.resolve([null, null] as const),
     ]);

@@ -1,23 +1,16 @@
-import { prisma } from "@/lib/db";
+import { cacheService } from "@/lib/cache-service";
 import { FeatureGridClient } from "./FeatureGridClient";
 import type { Category } from "@/types/feature";
 
-export async function FeatureGrid() {
-    // Fetch active categories and features
-    const categoriesDb = await prisma.category.findMany({
-        where: { enabled: true },
-        orderBy: { order: 'asc' },
-        include: {
-            translations: true,
-            features: {
-                where: { enabled: true },
-                orderBy: { order: 'asc' },
-                include: {
-                    translations: true,
-                }
-            }
-        }
-    });
+interface FeatureGridProps {
+    params: Promise<{ locale: string }>;
+}
 
-    return <FeatureGridClient categories={categoriesDb as Category[]} />;
+export async function FeatureGrid({ params }: FeatureGridProps) {
+    const { locale } = await params;
+    
+    // REDIS JSON FETCH (Sub-millisecond)
+    const categories = await cacheService.getCategories(locale);
+
+    return <FeatureGridClient categories={categories as Category[]} />;
 }

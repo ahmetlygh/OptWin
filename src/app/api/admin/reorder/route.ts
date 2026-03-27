@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
+import { cacheService } from "@/lib/cache-service";
 
 const reorderSchema = z.object({
     type: z.enum(["feature", "category", "dns"]),
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
         });
 
         await Promise.all(updates);
+        await cacheService.invalidate(type);
 
         return NextResponse.json({ success: true });
     } catch (error: unknown) {

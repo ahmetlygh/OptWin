@@ -23,6 +23,7 @@ import {
     ChevronsUpDown,
     ChevronsDownUp,
     Languages,
+    List,
 } from "lucide-react";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
@@ -32,7 +33,7 @@ import { AdminActionBar } from "@/components/admin/AdminActionBar";
 import { Loader } from "@/components/shared/Loader";
 import { generateScriptMessage, toPowerShellSafe } from "@/lib/powershell-safe";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
-import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
+// Redundant import removed to use centralized context modal
 import {
     DndContext,
     closestCenter,
@@ -185,14 +186,16 @@ export default function AdminFeaturesPage() {
     const [editingCatValue, setEditingCatValue] = useState("");
     const [originalCatValue, setOriginalCatValue] = useState("");
     const catNameRef = useRef<HTMLInputElement>(null);
-    const { setHasUnsavedChanges, onSave, onDiscard } = useUnsavedChanges();
+    const { hasUnsavedChanges, setHasUnsavedChanges, onSave, onDiscard, openModal } = useUnsavedChanges();
     const [catNameDirty, setCatNameDirty] = useState(false);
     const [translateToast, setTranslateToast] = useState("");
     const [deleteCatId, setDeleteCatId] = useState<string | null>(null);
     const [cascadeConfirmCat, setCascadeConfirmCat] = useState(false);
     const [moveCatTarget, setMoveCatTarget] = useState("");
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false); // We keep this if needed for internal page logic, but preferably we use openModal
+    const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
 
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
     const fetchFeatures = useCallback(async () => {
         const res = await fetch("/api/admin/features");
@@ -615,28 +618,162 @@ export default function AdminFeaturesPage() {
 
             {/* Modals */}
             <AdminConfirmModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)} title="Sil" description="Emin misiniz?" />
+            
             <AnimatePresence>
+                {/* Category Reorder Modal - Premium Revamp */}
                 {showCategoryOrder && (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowCategoryOrder(false)} />
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-6 w-full max-w-md">
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}><SortableContext items={orderedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                            <div className="space-y-1 mb-6">{orderedCategories.map(cat => <SortableCategoryRow key={cat.id} cat={cat} getTrName={getCatDisplayName} />)}</div>
-                        </SortableContext></DndContext>
-                        <div className="flex gap-2"><button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-9 bg-white/[0.03] rounded-xl text-white/40 text-sm">İptal</button><button onClick={saveCategoryOrder} className="flex-1 h-9 bg-[#6b5be6] rounded-xl text-white font-bold text-sm">Kaydet</button></div>
-                    </motion.div></div>
+                    <div key="reorder-modal" className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }} 
+                            className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+                            onClick={() => setShowCategoryOrder(false)} 
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 12 }} 
+                            animate={{ opacity: 1, scale: 1, y: 0 }} 
+                            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                            className="relative bg-[#0f0f18] border border-white/[0.08] rounded-[2rem] p-6 w-full max-w-md shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
+                                    <List size={20} className="text-[#6b5be6]" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-bold text-white tracking-tight">Kategorileri Sırala</h3>
+                                    <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">Sürükle ve Bırak</p>
+                                </div>
+                                <button onClick={() => setShowCategoryOrder(false)} className="p-2 text-white/20 hover:text-white/60 transition-colors">
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div className="max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar mb-6">
+                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+                                    <SortableContext items={orderedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                                        <div className="space-y-1">
+                                            {orderedCategories.map(cat => <SortableCategoryRow key={cat.id} cat={cat} getTrName={getCatDisplayName} />)}
+                                        </div>
+                                    </SortableContext>
+                                </DndContext>
+                            </div>
+                            
+                            <div className="flex gap-3 mt-4">
+                                <button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-11 bg-white/[0.03] border border-white/[0.05] rounded-xl text-sm font-semibold text-white/40 hover:bg-white/[0.06] transition-all">İptal</button>
+                                <button onClick={saveCategoryOrder} className="flex-1 h-11 bg-[#6b5be6] hover:bg-[#5a4bd4] shadow-lg shadow-[#6b5be6]/15 rounded-xl text-sm font-bold text-white transition-all">Kaydetti ve Uygula</button>
+                            </div>
+                        </motion.div>
+                    </div>
                 )}
+
+                {/* New Category Modal - Premium Revamp */}
                 {showNewCategory && (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowNewCategory(false)} />
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-6 w-full max-w-md space-y-4">
-                        <input value={newCatSlug} onChange={e => setNewCatSlug(e.target.value)} placeholder="Slug" className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-white" />
-                        <div className="flex gap-2"><input value={newCatNames.en} onChange={e => setNewCatNames(prev => ({ ...prev, en: e.target.value }))} placeholder="English Name" className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-white" /><button onClick={translateCatName} className="bg-emerald-500/10 text-emerald-400 px-4 rounded-xl text-xs font-bold">Çevir</button></div>
-                        <div className="flex gap-2"><button onClick={() => setShowNewCategory(false)} className="flex-1 h-10 bg-white/[0.03] rounded-xl text-white/40">İptal</button><button onClick={createCategory} className="flex-1 h-10 bg-[#6b5be6] rounded-xl text-white font-bold">Oluştur</button></div>
-                    </motion.div></div>
+                    <div key="new-category-modal" className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }} 
+                            className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+                            onClick={() => setShowNewCategory(false)} 
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 12 }} 
+                            animate={{ opacity: 1, scale: 1, y: 0 }} 
+                            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                            className="relative bg-[#0f0f18] border border-white/[0.08] rounded-[2rem] p-6 w-full max-w-md shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
+                                        <Plus size={20} className="text-[#6b5be6]" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-bold text-white tracking-tight">Yeni Kategori</h3>
+                                        <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">Optimizasyon Gruplama</p>
+                                    </div>
+                                    <button onClick={() => setShowNewCategory(false)} className="p-2 text-white/20 hover:text-white/60 transition-colors">
+                                        <X size={18} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {/* Slug Input */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5 ml-1">Kategori ID (Slug)</label>
+                                        <input 
+                                            value={newCatSlug} 
+                                            onChange={e => setNewCatSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
+                                            placeholder="örn: system-cleanup" 
+                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-sm text-white placeholder-white/10 focus:outline-none focus:border-[#6b5be6]/40 transition-all font-medium" 
+                                        />
+                                    </div>
+
+                                    {/* Multi-lang Name Input */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider ml-1">Kategori Adı</label>
+                                            <AdminLangPicker 
+                                                value={newCatLang} 
+                                                onChange={setNewCatLang} 
+                                            />
+                                        </div>
+                                        <div className="relative group">
+                                            <input 
+                                                value={newCatNames[newCatLang as keyof typeof newCatNames] || ""} 
+                                                onChange={e => setNewCatNames(prev => ({ ...prev, [newCatLang]: e.target.value }))} 
+                                                placeholder={`${newCatLang.toUpperCase()} dilli ismi...`} 
+                                                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 pr-20 text-sm text-white focus:outline-none focus:border-[#6b5be6]/40 transition-all font-medium" 
+                                            />
+                                            {newCatNames.en && (
+                                                <button 
+                                                    onClick={translateCatName} 
+                                                    className="absolute right-2 top-2 h-8 px-3 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
+                                                >
+                                                    Tümüne Çevir
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex gap-3 mt-8">
+                                    <button 
+                                        onClick={() => setShowNewCategory(false)} 
+                                        className="flex-1 h-11 bg-white/[0.03] border border-white/[0.05] rounded-xl text-sm font-semibold text-white/40 hover:bg-white/[0.06] transition-all"
+                                    >
+                                        İptal
+                                    </button>
+                                    <button 
+                                        onClick={createCategory} 
+                                        disabled={!newCatSlug || !newCatNames.en}
+                                        className="flex-1 h-11 bg-[#6b5be6] hover:bg-[#5a4bd4] shadow-lg shadow-[#6b5be6]/15 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        Kategori Oluştur
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+
+                {/* Confirm Deletion */}
+                {deleteCatId && (
+                    <AdminConfirmModal 
+                        open={true} 
+                        onClose={() => setDeleteCatId(null)} 
+                        onConfirm={() => deleteCategory(deleteCatId)} 
+                        title="Kategoriyi Sil" 
+                        description="Bu kategoriyi ve içindeki tüm özellikleri silmek istediğinize emin misiniz? Bu işlem geri alınamaz." 
+                        confirmText="Kategoriyi Sil" 
+                        variant="danger" 
+                    />
                 )}
             </AnimatePresence>
-            {deleteCatId && (
-                <AdminConfirmModal open={true} onClose={() => setDeleteCatId(null)} onConfirm={() => deleteCategory(deleteCatId)} title="Kategoriyi Sil" description="Bu kategoriyi ve içindeki tüm özellikleri silmek istediğinize emin misiniz?" confirmText="Sil" variant="danger" />
-            )}
         </motion.div>
     );
 }

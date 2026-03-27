@@ -5,8 +5,9 @@ const es = {
     "nav.language": "Idioma",
     "nav.aboutOptwin": "Acerca de OptWin",
 
-    "hero.titleHighlight": "Optimiza",
-    "hero.titlePrefix": "tu Experiencia Windows",
+    "hero.titleTemplate": "{highlight} {prefix}",
+    "hero.titleHighlight": "Optimice",
+    "hero.titlePrefix": "su experiencia con Windows",
     "hero.subtitle": "La herramienta de optimización premium para usuarios avanzados y gamers. Limpia, ajusta y acelera tu sistema con un solo script.",
 
     "stats.visits": "Visitas",
@@ -156,8 +157,6 @@ const es = {
     "feature.risk.medium": "Medio",
     "feature.risk.high": "Alto Riesgo",
     "ui.loading": "Cargando...",
-    "hero.title.text": "Optimiza tu Experiencia Windows",
-    "hero.title.highlight": "Optimiza",
     "maintenance.msg": "Nuestro sitio esta en mantenimiento.",
     "maintenance.apology": "Pedimos disculpas por las molestias.",
     "maintenance.reasonLabel": "Razon:",

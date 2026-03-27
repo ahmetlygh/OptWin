@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag, revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
+import { purgeTranslationCache } from "@/lib/translations";
 import { z } from "zod";
 
 /**
@@ -73,6 +74,10 @@ export async function PUT(req: NextRequest) {
         );
 
         await prisma.$transaction(ops);
+        
+        // Purge Redis cache for UI translations
+        await purgeTranslationCache();
+
         revalidateTag("ui-translations", "layout" as any);
         revalidatePath("/", "layout");
 

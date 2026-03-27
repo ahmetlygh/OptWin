@@ -79,7 +79,9 @@ export const defaultDnsProviders = [
 ];
 
 export const defaultUiTranslations = [
-    { key: "hero.title", en: "Optimize your Windows experience", tr: "Windows Deneyiminizi Hızlandırın" },
+    { key: "hero.titleTemplate", en: "{highlight} {prefix}", tr: "{prefix} {highlight}" },
+    { key: "hero.titlePrefix", en: "your Windows Experience", tr: "Windows Deneyiminizi" },
+    { key: "hero.titleHighlight", en: "Optimize", tr: "Hızlandırın" },
     { key: "hero.desc", en: "Select the optimizations you need and generate a custom script instantly.", tr: "İhtiyacınız olan optimizasyonları seçin ve anında sizin için bir script oluşturun." },
     { key: "btn.create", en: "Create Script", tr: "Script Oluştur" },
     { key: "footer.text", en: "Secure & Open Source.", tr: "Güvenli ve Açık Kaynak." },

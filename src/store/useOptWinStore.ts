@@ -17,6 +17,7 @@ interface OptWinState {
     // DB-driven translations
     dbTranslations: Record<string, string>;
     translationsLoaded: boolean;
+    isTranslationsLoading: boolean;
     activeLangRequest: string;
     loadTranslations: (lang: string) => Promise<void>;
 
@@ -73,12 +74,13 @@ export const useOptWinStore = create<OptWinState>()(
             collapsedCategories: new Set<string>(),
             dbTranslations: {},
             translationsLoaded: false,
+            isTranslationsLoading: false,
 
             // Load translations from DB API
             activeLangRequest: "",
             loadTranslations: async (lang: string) => {
                 if (get().activeLangRequest === lang && get().translationsLoaded) return;
-                set({ activeLangRequest: lang }); // Optimistic lock for strict mode
+                set({ activeLangRequest: lang, isTranslationsLoading: true });
                 try {
                     const res = await fetch(`/api/ui-translations?lang=${lang}`);
                     if (res.ok) {
@@ -86,8 +88,9 @@ export const useOptWinStore = create<OptWinState>()(
                         set({ dbTranslations: data, translationsLoaded: true, activeLangRequest: lang });
                     }
                 } catch {
-                    // Silently fail — static fallback will be used
-                    set({ activeLangRequest: "" });
+                    // fallbacks...
+                } finally {
+                    set({ isTranslationsLoading: false });
                 }
             },
 
@@ -203,21 +206,26 @@ export const useOptWinStore = create<OptWinState>()(
             } as unknown as OptWinState),
             storage: {
                 getItem: (name) => {
+                    if (typeof window === "undefined") return null;
                     const str = localStorage.getItem(name);
                     if (!str) return null;
                     // For backwards compatibility: Convert old Array-based selectedFeatures to Object
                     const parsed = JSON.parse(str);
                     if (parsed?.state?.selectedFeatures && Array.isArray(parsed.state.selectedFeatures)) {
                         const obj: Record<string, boolean> = {};
-                        parsed.state.selectedFeatures.forEach((k: string) => obj[k] = true);
+                        parsed.state.selectedFeatures.forEach((k: string) => (obj[k] = true));
                         parsed.state.selectedFeatures = obj;
                     }
                     return parsed;
                 },
                 setItem: (name, value) => {
+                    if (typeof window === "undefined") return;
                     localStorage.setItem(name, JSON.stringify(value));
                 },
-                removeItem: (name) => localStorage.removeItem(name),
+                removeItem: (name) => {
+                    if (typeof window === "undefined") return;
+                    localStorage.removeItem(name);
+                },
             },
         }
     )

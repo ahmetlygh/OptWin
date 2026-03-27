@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "../globals.css";
-import { ClientProviders } from "@/components/providers/ClientProviders";
 import { PublicShell } from "@/components/layout/PublicShell";
+import { ClientProviders } from "@/components/providers/ClientProviders";
 import { isMaintenanceMode } from "@/lib/maintenance";
 import { headers, cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
+import { getTranslationsFromDb } from "@/lib/translations";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://optwin.tech";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -77,13 +75,17 @@ export default async function RootLayout({
         auth(),
         getSettings(PUBLIC_KEYS)
     ]);
+
+    const cookieStore = await cookies();
+    const finalLocale = locale || cookieStore.get("NEXT_LOCALE")?.value || settings.default_lang || "en";
+    
+    // Fetch translations synchronously for SSR
+    const initialTranslations = await getTranslationsFromDb(finalLocale);
     const adminSession = session?.isAdmin ? {
         name: session.user?.name || null,
         image: session.user?.image || null,
     } : null;
 
-    const cookieStore = await cookies();
-    const finalLocale = locale || cookieStore.get("NEXT_LOCALE")?.value || settings.default_lang || "en";
     const theme = cookieStore.get("NEXT_THEME")?.value || settings.default_theme || "dark";
 
     const siteName = settings.site_name || "OptWin";
@@ -93,43 +95,41 @@ export default async function RootLayout({
     const themePrimaryColor = settings.theme_primary_color || null;
 
     return (
-        <html lang={finalLocale} className={theme} suppressHydrationWarning>
-            <body className={`${inter.variable} antialiased selection:bg-[#6c5ce7] selection:text-white theme-ready`}>
-                {themePrimaryColor && (
-                    <style dangerouslySetInnerHTML={{ __html: `:root { --accent-color: ${themePrimaryColor}; }` }} />
+        <>
+            {themePrimaryColor && (
+                <style dangerouslySetInnerHTML={{ __html: `:root { --accent-color: ${themePrimaryColor}; }` }} />
+            )}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "SoftwareApplication",
+                        "name": siteName,
+                        "applicationCategory": "UtilitiesApplication",
+                        "operatingSystem": "Windows",
+                        "url": siteUrl,
+                        "description": siteDescription,
+                        "offers": {
+                            "@type": "Offer",
+                            "price": "0",
+                            "priceCurrency": "USD",
+                        },
+                        "author": {
+                            "@type": "Person",
+                            "name": authorName,
+                            "url": authorUrl,
+                        },
+                    }),
+                }}
+            />
+            <ClientProviders serverSettings={settings} initialTranslations={initialTranslations}>
+                {maintenance && !isAdmin ? children : (
+                    <PublicShell serverMaintenance={maintenance} adminSession={adminSession} serverSettings={settings}>
+                        {children}
+                    </PublicShell>
                 )}
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify({
-                            "@context": "https://schema.org",
-                            "@type": "SoftwareApplication",
-                            "name": siteName,
-                            "applicationCategory": "UtilitiesApplication",
-                            "operatingSystem": "Windows",
-                            "url": siteUrl,
-                            "description": siteDescription,
-                            "offers": {
-                                "@type": "Offer",
-                                "price": "0",
-                                "priceCurrency": "USD",
-                            },
-                            "author": {
-                                "@type": "Person",
-                                "name": authorName,
-                                "url": authorUrl,
-                            },
-                        }),
-                    }}
-                />
-                <ClientProviders serverSettings={settings}>
-                    {maintenance && !isAdmin ? children : (
-                        <PublicShell serverMaintenance={maintenance} adminSession={adminSession} serverSettings={settings}>
-                            {children}
-                        </PublicShell>
-                    )}
-                </ClientProviders>
-            </body>
-        </html>
+            </ClientProviders>
+        </>
     );
 }

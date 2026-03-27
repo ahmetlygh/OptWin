@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
-import { createHash } from "crypto";
+import { createHash, createHmac } from "crypto";
+
+const SECRET = process.env.NEXTAUTH_SECRET || "default_captcha_secret_optwin";
 
 const contactSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long").trim(),
     email: z.string().email("Invalid email address").max(255, "Email too long").trim(),
     subject: z.string().min(3, "Subject must be at least 3 characters").max(200, "Subject too long").trim(),
-    message: z.string().min(10, "Message must be at least 10 characters").max(5000, "Message too long").trim(),
+    message: z.string().min(20, "Message must be at least 20 characters").max(1000, "Message too long").trim(),
+    captchaToken: z.string().min(1, "Token empty"),
+    captchaAnswer: z.number(),
 });
 
 function getClientIp(req: Request): string {
@@ -22,9 +26,26 @@ function hashIp(ip: string): string {
     return createHash("sha256").update(ip).digest("hex").slice(0, 32);
 }
 
+function verifyCaptcha(token: string, userAnswer: number): boolean {
+    try {
+        const decoded = Buffer.from(token, "base64").toString("utf8");
+        const [data, hash] = decoded.split("|");
+        const [answerStr, timestampStr] = data.split(":");
+        
+        // 15-minute expiration
+        if (Date.now() - parseInt(timestampStr) > 15 * 60 * 1000) return false;
+        
+        const expectedHash = createHmac("sha256", SECRET).update(data).digest("hex");
+        if (expectedHash !== hash) return false;
+
+        return parseInt(answerStr) === userAnswer;
+    } catch {
+        return false;
+    }
+}
+
 /**
- * DB-based rate limiting using VisitDedup model pattern.
- * Checks how many contact messages were created from the same IP hash in the last hour.
+ * DB-based rate limiting using SiteSetting
  */
 async function checkRateLimit(ipHash: string): Promise<boolean> {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -32,16 +53,11 @@ async function checkRateLimit(ipHash: string): Promise<boolean> {
     const recentCount = await prisma.contactMessage.count({
         where: {
             createdAt: { gte: oneHourAgo },
-            // We embed IP hash in a metadata approach: store ipHash in a hidden column
-            // Since ContactMessage doesn't have ipHash, we use SiteSetting as a simple KV store
         },
     });
 
-    // Fallback: global rate limit — max 20 messages per hour across all users
-    // This is a safety net. For per-IP limiting, see below.
-    if (recentCount >= 20) return false;
+    if (recentCount >= 20) return false; // Global hourly limit
 
-    // Per-IP check using SiteSetting as a lightweight rate store
     const key = `rate_contact_${ipHash}`;
     try {
         const existing = await prisma.siteSetting.findUnique({ where: { key } });
@@ -49,22 +65,19 @@ async function checkRateLimit(ipHash: string): Promise<boolean> {
             const data = JSON.parse(existing.value) as { count: number; resetAt: string };
             const resetAt = new Date(data.resetAt);
             if (new Date() > resetAt) {
-                // Window expired — reset
                 await prisma.siteSetting.update({
                     where: { key },
                     data: { value: JSON.stringify({ count: 1, resetAt: new Date(Date.now() + 60 * 60 * 1000).toISOString() }) },
                 });
                 return true;
             }
-            if (data.count >= 3) return false;
-            // Increment
+            if (data.count >= 3) return false; // Per IP Limit
             await prisma.siteSetting.update({
                 where: { key },
                 data: { value: JSON.stringify({ count: data.count + 1, resetAt: data.resetAt }) },
             });
             return true;
         }
-        // No record — first request
         await prisma.siteSetting.create({
             data: {
                 key,
@@ -75,8 +88,7 @@ async function checkRateLimit(ipHash: string): Promise<boolean> {
         });
         return true;
     } catch {
-        // If rate check fails, allow the request (fail-open)
-        return true;
+        return true; // Fail-open
     }
 }
 
@@ -84,8 +96,12 @@ export async function POST(req: Request) {
     try {
         const ip = getClientIp(req);
         const ipHash = hashIp(ip);
+        
+        // Metadata Capture
+        const userAgent = req.headers.get("user-agent") || "unknown";
+        const referrer = req.headers.get("referer") || "unknown";
+        const locale = req.headers.get("accept-language")?.split(',')[0] || "unknown";
 
-        // DB-based rate limiting: max 3 messages per IP per hour
         const allowed = await checkRateLimit(ipHash);
         if (!allowed) {
             return NextResponse.json(
@@ -105,10 +121,33 @@ export async function POST(req: Request) {
             );
         }
 
-        const { name, email, subject, message } = parsed.data;
+        const { name, email, subject, message, captchaToken, captchaAnswer } = parsed.data;
 
+        // Verify Anti-Spam Captcha
+        const isBot = !verifyCaptcha(captchaToken, captchaAnswer);
+        const spamScore = isBot ? 0 : 100;
+
+        if (isBot) {
+            return NextResponse.json(
+                { success: false, error: "Anti-spam verification failed. Please check your math." },
+                { status: 403 }
+            );
+        }
+
+        // @ts-ignore - Prisma schema is updated but typings need dev server restart
         const contact = await prisma.contactMessage.create({
-            data: { name, email, subject, message }
+            data: { 
+                name, 
+                email, 
+                subject, 
+                message,
+                // Captured Metadata
+                ipHash,
+                userAgent: userAgent.substring(0, 200), // Trim if too long
+                locale,
+                referrer: referrer.substring(0, 200),
+                spamScore,
+            }
         });
 
         return NextResponse.json({ success: true, data: { id: contact.id } });
@@ -120,3 +159,4 @@ export async function POST(req: Request) {
         );
     }
 }
+

@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
+import { cacheService } from "@/lib/cache-service";
 
 const createDnsSchema = z.object({
     slug: z.string().min(1).max(100),
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
         const provider = await prisma.dnsProvider.create({
             data: { slug, name, primary, secondary, order, enabled },
         });
+        await cacheService.invalidate("dns");
         return NextResponse.json({ success: true, provider });
     } catch (error: unknown) {
         const prismaError = error as { code?: string };
@@ -72,6 +74,7 @@ export async function PUT(req: NextRequest) {
         if (order !== undefined) data.order = order;
         if (enabled !== undefined) data.enabled = enabled;
         const provider = await prisma.dnsProvider.update({ where: { id }, data });
+        await cacheService.invalidate("dns");
         return NextResponse.json({ success: true, provider });
     } catch (error: unknown) {
         console.error("Update DNS error:", error);
@@ -86,6 +89,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
     try {
         await prisma.dnsProvider.delete({ where: { id } });
+        await cacheService.invalidate("dns");
         return NextResponse.json({ success: true });
     } catch (error: unknown) {
         console.error("Delete DNS error:", error);

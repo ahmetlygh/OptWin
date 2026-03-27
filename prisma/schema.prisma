@@ -153,6 +153,13 @@ model ContactMessage {
   deleted   Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  // --- Extended Metadata (Security & Analytics) ---
+  ipHash    String?
+  userAgent String?
+  locale    String?
+  referrer  String?
+  spamScore Int?     // Result of Math verification (100 = passed, 0 = failed/bot)
+
   @@map("contact_messages")
 }
 

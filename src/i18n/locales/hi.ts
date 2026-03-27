@@ -5,7 +5,8 @@ const hi = {
     "nav.language": "भाषा",
     "nav.aboutOptwin": "OptWin के बारे में",
 
-    "hero.titleHighlight": "बेहतर बनाएं",
+    "hero.titleTemplate": "{prefix} {highlight}",
+    "hero.titleHighlight": "अनुकूलित करें",
     "hero.titlePrefix": "अपने Windows अनुभव को",
     "hero.subtitle": "पावर यूज़र्स और गेमर्स के लिए प्रीमियम ऑप्टिमाइज़ेशन टूल। एक स्क्रिप्ट से अपने सिस्टम को तेज़ करें।",
 
@@ -156,8 +157,6 @@ const hi = {
     "feature.risk.medium": "मध्यम",
     "feature.risk.high": "उच्च जोखिम",
     "ui.loading": "लोड हो रहा है...",
-    "hero.title.text": "अपने Windows अनुभव को बेहतर बनाएं",
-    "hero.title.highlight": "बेहतर बनाएं",
     "maintenance.msg": "हमारी साइट वर्तमान में रखरखाव में है। हमारी टीम सर्वोत्तम अनुभव प्रदान करने के लिए काम कर रही है।",
     "maintenance.apology": "असुविधा के लिए हम क्षमा चाहते हैं।",
     "maintenance.reasonLabel": "कारण:",

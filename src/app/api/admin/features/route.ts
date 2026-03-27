@@ -3,16 +3,13 @@ import { prisma } from "@/lib/db";
 import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
 import { redisCache } from "@/lib/redis";
+import { cacheService } from "@/lib/cache-service";
 
 const SUPPORTED_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"];
 
 /** Purge all feature-related Redis caches so script generator picks up changes */
 async function invalidateFeatureCache() {
-    const keys = [
-        ...SUPPORTED_LANGS.map(l => `optwin:cache:features_all:${l}`),
-        ...SUPPORTED_LANGS.map(l => `optwin:cache:labels:${l}`),
-    ];
-    await redisCache.del(keys);
+    await cacheService.invalidate("feature");
 }
 
 /* ─── Zod schemas ─── */

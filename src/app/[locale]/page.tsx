@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { cacheService } from "@/lib/cache-service";
 import { Hero } from "@/components/layout/Hero";
 import { FeatureGrid } from "@/components/features/FeatureGrid";
 import { ActionArea } from "@/components/layout/ActionArea";
@@ -8,52 +8,37 @@ import { DnsModal } from "@/components/modals/DnsModal";
 import { HashScroller } from "@/components/shared/HashScroller";
 import { StickyControlsPanel } from "@/components/layout/StickyControlsPanel";
 
-export default async function Home() {
-    // Parallelized DB queries — all run simultaneously
-    const [presetsDb, dnsProvidersDb, allFeatures] = await Promise.all([
-        prisma.preset.findMany({
-            where: { enabled: true },
-            orderBy: { order: 'asc' },
-            include: { translations: true }
-        }),
-        prisma.dnsProvider.findMany({
-            where: { enabled: true },
-            orderBy: { order: 'asc' }
-        }),
-        prisma.feature.findMany({
-            where: { enabled: true, category: { enabled: true } },
-            select: { slug: true }
-        }),
+interface HomeProps {
+    params: Promise<{ locale: string }>;
+}
+
+export default async function Home({ params }: HomeProps) {
+    const { locale } = await params;
+
+    // HIGH-PERFORMANCE REDIS FETCH
+    const [presets, dnsProviders, allFeatureSlugs] = await Promise.all([
+        cacheService.getPresets(locale),
+        cacheService.getDnsProviders(),
+        cacheService.getFeatureSlugs(),
     ]);
-
-    // Map to a clean object for Client Component
-    const presetsFormatted = presetsDb.map(p => ({
-        id: p.id,
-        slug: p.slug,
-        featureSlugs: p.featureSlugs,
-        translations: p.translations.map(t => ({ lang: t.lang, name: t.name })),
-    }));
-
-    const allFeatureSlugs = allFeatures.map(f => f.slug);
 
     return (
         <>
             <div className="flex flex-col gap-12 pt-8 animate-fade-in-up">
                 <Hero />
                 <StickyControlsPanel
-                    presets={presetsFormatted}
+                    presets={presets}
                     allFeatureSlugs={allFeatureSlugs}
-                    dnsProviders={dnsProvidersDb}
+                    dnsProviders={dnsProviders}
                 />
                 <div style={{ overflowAnchor: "none" }}>
-                    <FeatureGrid />
+                    <FeatureGrid params={Promise.resolve({ locale })} />
                 </div>
                 <StatsSection />
                 <AboutSection />
             </div>
             <ActionArea />
-            {/* DnsModal needs server-side providers prop — other modals live in ClientProviders */}
-            <DnsModal providers={dnsProvidersDb} />
+            <DnsModal providers={dnsProviders} />
             <HashScroller />
         </>
     );

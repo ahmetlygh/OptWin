@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Settings as SettingsIcon, Type, ChevronRight } from "lucide-react";
+import { Settings as SettingsIcon, Type } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
@@ -13,7 +13,6 @@ const TABS = [
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-
     const pathname = usePathname();
     const [lang, setLang] = useState("en");
 
@@ -24,6 +23,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     }, []);
 
     const activeTabLabel = TABS.find(t => t.href === pathname)?.label || "Ayarlar";
+    const isContentTab = pathname.includes("/settings/content");
 
     return (
         <motion.div
@@ -32,33 +32,23 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             transition={{ duration: 0.4 }}
             className="space-y-5"
         >
-            {/* Breadcrumbs & Header */}
+            {/* Header Section — No breadcrumbs inside page content as requested */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                    {/* Breadcrumbs */}
-                    <nav className="flex items-center gap-1.5 px-0.5 mb-1">
-                        <Link href="/admin/stats" className="text-[10px] font-bold text-white/20 hover:text-white/40 uppercase tracking-widest transition-colors">Admin</Link>
-                        <ChevronRight size={10} className="text-white/10" />
-                        <Link href="/admin/settings/general" className="text-[10px] font-bold text-white/20 hover:text-white/40 uppercase tracking-widest transition-colors">Ayarlar</Link>
-                        <ChevronRight size={10} className="text-white/10" />
-                        <span className="text-[10px] font-bold text-[#6b5be6]/50 uppercase tracking-widest">{activeTabLabel}</span>
-                    </nav>
-
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 flex items-center justify-center">
-                            <SettingsIcon size={18} className="text-[#6b5be6]" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-black text-white tracking-tight">{activeTabLabel}</h1>
-                            <p className="text-xs text-white/30">Site genelinde geçerli olan tüm yapılandırmaları yönetin</p>
-                        </div>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 flex items-center justify-center border border-[#6b5be6]/20">
+                        {isContentTab ? <Type size={18} className="text-[#6b5be6]" /> : <SettingsIcon size={18} className="text-[#6b5be6]" />}
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight">{activeTabLabel}</h1>
+                        <p className="text-xs text-white/30">Site genelinde geçerli olan tüm yapılandırmaları yönetin</p>
                     </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    {pathname.includes("/settings") && (
-                        <div className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.06] rounded-xl px-3 py-1.5 shadow-sm">
-                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-wider">Alt Dil</span>
+                    {/* Language picker only for Content tab */}
+                    {isContentTab && (
+                        <div className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.08] rounded-2xl px-4 py-2 shadow-2xl backdrop-blur-3xl min-w-[200px]">
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] shrink-0">DİL</span>
                             <AdminLangPicker 
                                 value={lang} 
                                 onChange={(l) => {
@@ -66,23 +56,22 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                                     window.dispatchEvent(new CustomEvent('optwin:admin-lang-change', { detail: l }));
                                 }} 
                                 variant="form"
-                                className="!h-7 border-none bg-transparent"
+                                className="border-none bg-transparent"
                             />
                         </div>
                     )}
                 </div>
             </div>
 
-
             {/* Tab bar */}
-            <div className="flex gap-1 p-1 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+            <div className="flex gap-1 p-1 rounded-xl bg-white/[0.02] border border-white/[0.04] max-w-fit">
                 {TABS.map(tab => {
                     const active = pathname === tab.href;
                     return (
                         <Link
                             key={tab.id}
                             href={tab.href}
-                            className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                            className={`relative flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-bold transition-all duration-200 ${
                                 active
                                     ? "text-white"
                                     : "text-white/30 hover:text-white/60 hover:bg-white/[0.02]"
@@ -91,7 +80,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                             {active && (
                                 <motion.div
                                     layoutId="settingsTab"
-                                    className="absolute inset-0 rounded-lg bg-[#6b5be6]/10 border border-[#6b5be6]/15"
+                                    className="absolute inset-0 rounded-lg bg-[#6b5be6]/10 border border-[#6b5be6]/15 shadow-[0_0_20px_rgba(107,91,230,0.1)]"
                                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                                 />
                             )}

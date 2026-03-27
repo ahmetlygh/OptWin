@@ -49,16 +49,21 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
     }, [isLangOpen]);
 
     const handleLangSwitch = (newLang: Lang) => {
-        setLang(newLang);
         closeLangDropdown();
         if (pathname) {
             const segments = pathname.split('/');
             const LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
             if (segments.length > 1 && LOCALES.includes(segments[1])) {
                 segments[1] = newLang;
-                router.replace(segments.join('/') || '/');
+                // Set the cookie for SSR
+                document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000`;
+                router.push(segments.join('/') || '/');
+                // Deliberately skipping setLang(newLang) here to prevent FOUC.
+                // It will be lazily synced in ClientProviders when the new route connects.
+                return;
             }
         }
+        setLang(newLang);
     };
 
     const closeAdminDropdown = useCallback(() => {

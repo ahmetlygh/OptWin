@@ -23,6 +23,7 @@ export default function AdminDnsPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
 
     const fetchProviders = async () => {
         const res = await fetch("/api/admin/dns");
@@ -59,9 +60,13 @@ export default function AdminDnsPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setEditing(null);
-                setIsCreating(false);
-                fetchProviders();
+                setSaved(true);
+                setTimeout(() => {
+                    setEditing(null);
+                    setIsCreating(false);
+                    setSaved(false);
+                    fetchProviders();
+                }, 1200);
             } else {
                 alert(data.error || "Failed to save");
             }
@@ -73,7 +78,7 @@ export default function AdminDnsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center p-20">
-                <Loader size={32} />
+                <Loader />
             </div>
         );
     }
@@ -84,6 +89,7 @@ export default function AdminDnsPage() {
                 provider={editing}
                 isCreating={isCreating}
                 saving={saving}
+                saved={saved}
                 onSave={handleSave}
                 onCancel={() => { setEditing(null); setIsCreating(false); }}
             />
@@ -169,10 +175,11 @@ export default function AdminDnsPage() {
     );
 }
 
-function DnsForm({ provider, isCreating, saving, onSave, onCancel }: {
+function DnsForm({ provider, isCreating, saving, saved, onSave, onCancel }: {
     provider: DnsProvider | null;
     isCreating: boolean;
     saving: boolean;
+    saved: boolean;
     onSave: (data: any) => void;
     onCancel: () => void;
 }) {
@@ -222,7 +229,7 @@ function DnsForm({ provider, isCreating, saving, onSave, onCancel }: {
                 <AdminActionBar
                     show={hasChanges || isCreating}
                     saving={saving}
-                    saved={false}
+                    saved={saved}
                     onSave={handleSubmit}
                     onCancel={onCancel}
                     saveText={isCreating ? "Ekle" : "Kaydet"}

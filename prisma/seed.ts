@@ -118,6 +118,31 @@ async function main() {
     }
     console.log(`  ✅ ${defaultSettings.length} settings created\n`);
 
+    // 4b. Hero i18n SiteSettings Overrides (Complete 7 Language Fix)
+    console.log("🗣️ Enforcing 7-Language Morphological Hero Mapping...");
+    const heroMappings = {
+        tr: { template: "{prefix} {highlight}", prefix: "Windows Deneyiminizi", highlight: "Hızlandırın" },
+        en: { template: "{highlight} {prefix}", prefix: "your Windows Experience", highlight: "Optimize" },
+        de: { template: "{highlight} {prefix}", prefix: "Sie Ihr Windows-Erlebnis", highlight: "Optimieren" },
+        fr: { template: "{highlight} {prefix}", prefix: "votre expérience Windows", highlight: "Optimisez" },
+        es: { template: "{highlight} {prefix}", prefix: "su experiencia con Windows", highlight: "Optimice" },
+        zh: { template: "{highlight}{prefix}", prefix: "您的 Windows 体验", highlight: "优化" },
+        hi: { template: "{prefix} {highlight}", prefix: "अपने Windows अनुभव को", highlight: "अनुकूलित करें" }
+    };
+
+    for (const [lang, vars] of Object.entries(heroMappings)) {
+        for (const [keyRaw, value] of Object.entries(vars)) {
+            // Map keys exactly as the Content Admin does
+            const dbKey = `optwin:setting:translations:hero.title${keyRaw.charAt(0).toUpperCase() + keyRaw.slice(1)}:${lang}`;
+            await prisma.siteSetting.upsert({
+                where: { key: dbKey },
+                update: { value },
+                create: { key: dbKey, value, type: "string" },
+            });
+        }
+    }
+    console.log(`  ✅ Morphological structures enforced\n`);
+
     // 5. UI Translations
     console.log("🌍 Creating UI translations...");
     for (const t of defaultUiTranslations) {
