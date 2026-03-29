@@ -1,5 +1,6 @@
 import { getTranslationsFromDb } from "@/lib/translations";
 import { settingsService } from "@/lib/settingsService";
+import { languageService } from "@/lib/languageService";
 import { MaintenanceUI } from "@/components/layout/MaintenanceUI";
 
 export default async function MaintenancePage({
@@ -10,7 +11,7 @@ export default async function MaintenancePage({
     const { locale } = await params;
 
     // Fetch all settings needed for maintenance page + footer in a single MGET
-    const [translations, settings] = await Promise.all([
+    const [translations, settings, languagesData] = await Promise.all([
         getTranslationsFromDb(locale),
         settingsService.getSettings([
             "site_name", 
@@ -28,6 +29,7 @@ export default async function MaintenancePage({
             "maintenanceEstimatedEnd",
             "active_languages"
         ]),
+        languageService.getActiveLanguages(),
     ]);
 
     const maintenanceActive = settings.maintenanceMode === "true";
@@ -65,6 +67,7 @@ export default async function MaintenancePage({
             reason={safeReason}
             estimatedEnd={estimatedEndRaw || null}
             isActive={maintenanceActive}
+            languagesData={languagesData}
         />
     );
 }

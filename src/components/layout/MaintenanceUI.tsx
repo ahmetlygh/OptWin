@@ -5,28 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Settings, ChevronDown, Globe } from "lucide-react";
 import Image from "next/image";
 
-/* ── SVG Flag icons ──────── */
-const FLAG_SVG: Record<string, React.ReactNode> = {
-    tr: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#E30A17" width="30" height="20"/><circle cx="11" cy="10" r="6" fill="white"/><circle cx="13" cy="10" r="5" fill="#E30A17"/><polygon fill="white" points="17,10 14.09,8.09 15.18,11.45 13.09,9.54 16.45,10.73"/></svg>,
-    en: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#012169" width="30" height="20"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="white" strokeWidth="4"/><path d="M0,0 L30,20 M30,0 L0,20" stroke="#C8102E" strokeWidth="2"/><path d="M15,0 V20 M0,10 H30" stroke="white" strokeWidth="6"/><path d="M15,0 V20 M0,10 H30" stroke="#C8102E" strokeWidth="3"/></svg>,
-    de: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#000" width="30" height="6.67"/><rect fill="#DD0000" y="6.67" width="30" height="6.67"/><rect fill="#FFCC00" y="13.33" width="30" height="6.67"/></svg>,
-    fr: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#002395" width="10" height="20"/><rect fill="white" x="10" width="10" height="20"/><rect fill="#ED2939" x="20" width="10" height="20"/></svg>,
-    es: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#AA151B" width="30" height="5"/><rect fill="#F1BF00" y="5" width="30" height="10"/><rect fill="#AA151B" y="15" width="30" height="5"/></svg>,
-    zh: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#DE2910" width="30" height="20"/><polygon fill="#FFDE00" points="5,2.5 6.1,5.9 3.1,3.9 6.9,3.9 3.9,5.9"/><polygon fill="#FFDE00" points="10,1 10.5,2.3 9.2,1.5 10.8,1.5 9.5,2.3" transform="scale(0.6) translate(10,0)"/><polygon fill="#FFDE00" points="12,3 12.5,4.3 11.2,3.5 12.8,3.5 11.5,4.3" transform="scale(0.6) translate(10,0)"/></svg>,
-    hi: <svg viewBox="0 0 30 20" width="16" height="11" className="inline-block"><rect fill="#FF9933" width="30" height="6.67"/><rect fill="white" y="6.67" width="30" height="6.67"/><rect fill="#138808" y="13.33" width="30" height="6.67"/><circle cx="15" cy="10" r="2" fill="none" stroke="#000080" strokeWidth="0.5"/></svg>,
-};
-
-const LANGS = [
-    { code: "tr", label: "Türkçe" },
-    { code: "en", label: "English" },
-    { code: "de", label: "Deutsch" },
-    { code: "fr", label: "Français" },
-    { code: "es", label: "Español" },
-    { code: "zh", label: "中文" },
-    { code: "hi", label: "हिन्दी" },
-];
-
-const UTC_OFFSET: Record<string, number> = { tr: 3, en: 0, de: 1, fr: 1, es: 1, zh: 8, hi: 5.5 };
+import { LanguageData } from "@/lib/languageService";
 
 export function MaintenanceUI({ 
     locale, 
@@ -34,7 +13,8 @@ export function MaintenanceUI({
     settings, 
     reason, 
     estimatedEnd,
-    isActive 
+    isActive,
+    languagesData
 }: { 
     locale: string; 
     translations: Record<string, string>; 
@@ -42,6 +22,7 @@ export function MaintenanceUI({
     reason: string; 
     estimatedEnd: string | null;
     isActive: boolean;
+    languagesData: LanguageData[];
 }) {
     const [langOpen, setLangOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -88,7 +69,8 @@ export function MaintenanceUI({
     if (estimatedEnd) {
         try {
             const dateObj = new Date(estimatedEnd);
-            const offset = UTC_OFFSET[locale] ?? 0;
+            const currentLangData = languagesData.find(l => l.code === locale) || languagesData[0];
+            const offset = currentLangData?.utcOffset ?? 0;
             const targetTime = dateObj.getTime() + (offset * 3600000);
             const targetDate = new Date(targetTime);
             const d = targetDate.getUTCDate().toString().padStart(2, '0');
@@ -105,7 +87,7 @@ export function MaintenanceUI({
         } catch { endDateStr = new Date(estimatedEnd).toLocaleString(); }
     }
 
-    const currentLang = LANGS.find(l => l.code === locale) || LANGS[1];
+    const currentLang = languagesData.find(l => l.code === locale) || languagesData[0] || { code: "en", nativeName: "English", flagSvg: "" };
     const siteName = settings.site_name || "OptWin";
     const copyrightYear = settings.copyright_year || new Date().getFullYear().toString();
     // Match main site footer logic exactly: copyright_text falls back to siteName
@@ -131,22 +113,22 @@ export function MaintenanceUI({
             <div ref={langRef} className="absolute top-6 right-6 z-20">
                 <button onClick={() => setLangOpen(!langOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-white/40 hover:text-white/60 transition-all">
                     <Globe size={12} className="text-white/25" />
-                    <span>{FLAG_SVG[locale]}</span>
-                    <span>{currentLang.label}</span>
+                    <span dangerouslySetInnerHTML={{ __html: currentLang.flagSvg ? currentLang.flagSvg.replace('<svg', '<svg width="16" height="11" class="inline-block"') : "" }}></span>
+                    <span>{currentLang.nativeName}</span>
                     <ChevronDown size={11} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
                 </button>
                 <AnimatePresence>
                     {langOpen && (
                         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }} className="absolute right-0 mt-1 min-w-[140px] bg-[#13131d] border border-white/[0.06] rounded-lg shadow-xl overflow-hidden">
-                            {LANGS.filter(l => (settings.active_languages || "tr,en,de,fr,es,zh,hi").split(',').map(s=>s.trim()).includes(l.code)).map(({ code, label }) => (
-                                <button key={code} onClick={() => { 
+                            {languagesData.filter(l => (settings.active_languages || "tr,en,de,fr,es,zh,hi").split(',').map(s=>s.trim()).includes(l.code)).map((l) => (
+                                <button key={l.code} onClick={() => { 
                                     setLangOpen(false); 
-                                    document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000`;
+                                    document.cookie = `NEXT_LOCALE=${l.code}; path=/; max-age=31536000`;
                                     
                                     // Navigate to the maintenance page in the new locale
-                                    window.location.href = `/${code}/maintenance`;
-                                }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${locale === code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
-                                    <span>{FLAG_SVG[code]}</span><span>{label}</span>
+                                    window.location.href = `/${l.code}/maintenance`;
+                                }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${locale === l.code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
+                                    <span dangerouslySetInnerHTML={{ __html: l.flagSvg ? l.flagSvg.replace('<svg', '<svg width="16" height="11" class="inline-block"') : "" }}></span><span>{l.nativeName}</span>
                                 </button>
                             ))}
                         </motion.div>
@@ -194,7 +176,8 @@ export function MaintenanceUI({
 
                 <p className="text-[13px] text-white/14 font-mono tabular-nums mb-6">
                     {isMounted ? (() => {
-                        const offset = UTC_OFFSET[locale] ?? 0;
+                        const currentLangData = languagesData.find(l => l.code === locale) || languagesData[0];
+                        const offset = currentLangData?.utcOffset ?? 0;
                         const utcNow = Date.now();
                         const local = new Date(utcNow + offset * 3600000);
                         const hh = local.getUTCHours().toString().padStart(2, '0');
@@ -239,7 +222,7 @@ export function MaintenanceUI({
                     </span>
                     <span className="hidden md:inline size-1 rounded-full bg-white/[0.06]"></span>
                     <span className="text-[14px] text-white/10 font-medium select-none tracking-tight">
-                        {mt("footer.allRights", "All rights reserved.")}
+                        {mt("footer.allRights", "") || "All rights reserved."}
                     </span>
                 </div>
             </motion.div>

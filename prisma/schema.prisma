@@ -218,6 +218,39 @@ model PageContent {
   @@map("page_contents")
 }
 
+model Language {
+  id          String   @id @default(cuid())
+  code        String   @unique        // "tr", "en", "de", etc.
+  name        String                  // "Turkish", "English"
+  nativeName  String                  // "Türkçe", "English"
+  flagSvg     String   @db.Text       // Raw SVG string for the flag icon
+  utcOffset   Float    @default(0)    // UTC offset: 3, 0, 1, 8, 5.5
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  seoMetadata Json?                   // { title, description, keywords }
+  translations Json?                  // Flat key-value translations
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("languages")
+}
+
+model SystemEvent {
+  id        String   @id @default(cuid())
+  action    String                  // "UPDATE_KEYS", "CREATE_LANGUAGE", etc.
+  entityType String  @default("")   // "language", "translation", etc.
+  entityId  String   @default("")
+  metadata  Json?                   // Extra context data
+  adminId   String?
+  adminEmail String?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+  @@map("system_events")
+}
+
 enum RiskLevel {
   low
   medium

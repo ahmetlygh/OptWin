@@ -2,14 +2,21 @@
 
 import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
+import { useEffect, useState, useRef, useCallback, useSyncExternalStore, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDownIcon, SunIcon, MoonIcon, HeartIcon } from "../shared/Icons";
-import { USFlag, TRFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "../shared/Flags";
 import { ShieldCheck, LogOut, PanelLeft } from "lucide-react";
 import { signOut } from "next-auth/react";
+
+interface LanguageItem {
+    code: string;
+    name: string;
+    nativeName: string;
+    flagSvg: string;
+    utcOffset: number;
+}
 
 interface HeaderProps {
     adminSession?: { name: string | null; image: string | null } | null;
@@ -39,6 +46,23 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
     // Dynamic Site Name
     const siteName = serverSettings.site_name || "OptWin";
 
+    // Parse dynamic languages from serverSettings (injected by SSR layout)
+    const languages: LanguageItem[] = useMemo(() => {
+        try {
+            if (serverSettings._languagesData) {
+                return JSON.parse(serverSettings._languagesData);
+            }
+        } catch { /* ignore */ }
+        // Fallback if no data available
+        return [
+            { code: "tr", nativeName: "Türkçe", flagSvg: "", utcOffset: 3 },
+            { code: "en", nativeName: "English", flagSvg: "", utcOffset: 0 },
+        ];
+    }, [serverSettings._languagesData]);
+
+    // Derive locale codes from dynamic data
+    const localeCodes = useMemo(() => languages.map(l => l.code), [languages]);
+
     const closeLangDropdown = useCallback(() => {
         if (!isLangOpen) return;
         setIsLangClosing(true);
@@ -52,14 +76,10 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
         closeLangDropdown();
         if (pathname) {
             const segments = pathname.split('/');
-            const LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
-            if (segments.length > 1 && LOCALES.includes(segments[1])) {
+            if (segments.length > 1 && localeCodes.includes(segments[1])) {
                 segments[1] = newLang;
-                // Set the cookie for SSR
                 document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000`;
                 router.push(segments.join('/') || '/');
-                // Deliberately skipping setLang(newLang) here to prevent FOUC.
-                // It will be lazily synced in ClientProviders when the new route connects.
                 return;
             }
         }
@@ -115,16 +135,6 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
             router.push(homePath);
         }
     };
-
-    const languages: { code: Lang; label: string; flag: React.ReactNode }[] = [
-        { code: "tr", label: "Türkçe", flag: <TRFlag className="size-4 rounded-sm object-cover" /> },
-        { code: "en", label: "English", flag: <USFlag className="size-4 rounded-sm object-cover" /> },
-        { code: "de", label: "Deutsch", flag: <DEFlag className="size-4 rounded-sm object-cover" /> },
-        { code: "fr", label: "Français", flag: <FRFlag className="size-4 rounded-sm object-cover" /> },
-        { code: "zh", label: "中文", flag: <CNFlag className="size-4 rounded-sm object-cover" /> },
-        { code: "es", label: "Español", flag: <ESFlag className="size-4 rounded-sm object-cover" /> },
-        { code: "hi", label: "हिन्दी", flag: <INFlag className="size-4 rounded-sm object-cover" /> },
-    ];
 
     const currentLang = languages.find(l => l.code === lang) || languages[0];
 
@@ -189,7 +199,11 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                 onClick={toggleLangDropdown}
                                 className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--border-color)]/80 text-[var(--text-primary)] text-sm font-medium transition-colors duration-200"
                             >
-                                <span>{currentLang.flag}</span>
+                                {currentLang.flagSvg ? (
+                                    <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: currentLang.flagSvg.replace('<svg', '<svg width="20" height="14"') }} />
+                                ) : (
+                                    <span className="w-5 h-3.5 bg-gray-500/20 rounded-[2px]" />
+                                )}
                                 <span className="uppercase">{currentLang.code}</span>
                                 <ChevronDownIcon
                                     size={16}
@@ -203,11 +217,15 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                         {languages.map((l) => (
                                             <button
                                                 key={l.code}
-                                                onClick={() => handleLangSwitch(l.code)}
+                                                onClick={() => handleLangSwitch(l.code as Lang)}
                                                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${lang === l.code ? 'bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-bold' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]'}`}
                                             >
-                                                <span>{l.flag}</span>
-                                                <span>{l.label}</span>
+                                                {l.flagSvg ? (
+                                                    <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: l.flagSvg.replace('<svg', '<svg width="20" height="14"') }} />
+                                                ) : (
+                                                    <span className="w-5 h-3.5 bg-gray-500/20 rounded-[2px]" />
+                                                )}
+                                                <span>{l.nativeName}</span>
                                             </button>
                                         ))}
                                     </div>

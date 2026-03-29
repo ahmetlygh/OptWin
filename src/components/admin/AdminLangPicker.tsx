@@ -2,24 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
-import { TRFlag, USFlag, CNFlag, ESFlag, INFlag, DEFlag, FRFlag } from "@/components/shared/Flags";
-
-type LangOption = {
-    code: string;
-    flag: React.ReactNode;
-    name: string;
-};
-
-const LANGUAGES: LangOption[] = [
-    { code: "tr", flag: <TRFlag className="w-4 h-3 rounded-sm" />, name: "Türkçe" },
-    { code: "en", flag: <USFlag className="w-4 h-3 rounded-sm" />, name: "English" },
-    { code: "zh", flag: <CNFlag className="w-4 h-3 rounded-sm" />, name: "中文" },
-    { code: "es", flag: <ESFlag className="w-4 h-3 rounded-sm" />, name: "Español" },
-    { code: "hi", flag: <INFlag className="w-4 h-3 rounded-sm" />, name: "हिन्दी" },
-    { code: "de", flag: <DEFlag className="w-4 h-3 rounded-sm" />, name: "Deutsch" },
-    { code: "fr", flag: <FRFlag className="w-4 h-3 rounded-sm" />, name: "Français" },
-];
+import { ChevronDown, Globe } from "lucide-react";
 
 interface AdminLangPickerProps {
     value: string;
@@ -32,11 +15,30 @@ interface AdminLangPickerProps {
 export function AdminLangPicker({ value, onChange, availableLangs, variant = "header", className = "" }: AdminLangPickerProps) {
 
     const [isOpen, setIsOpen] = useState(false);
+    const [langs, setLangs] = useState<any[]>([]);
     const ref = useRef<HTMLDivElement>(null);
 
-    const langs = availableLangs
-        ? LANGUAGES.filter(l => availableLangs.includes(l.code))
-        : LANGUAGES;
+    useEffect(() => {
+        const fetchLangs = () => {
+            fetch("/api/admin/languages")
+                .then(r => r.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        let fetched = data;
+                        if (availableLangs && availableLangs.length > 0) {
+                            fetched = fetched.filter((l: any) => availableLangs.includes(l.code));
+                        }
+                        setLangs(fetched);
+                    }
+                })
+                .catch(() => {});
+        };
+
+        fetchLangs();
+
+        window.addEventListener("optwin:languages-updated", fetchLangs);
+        return () => window.removeEventListener("optwin:languages-updated", fetchLangs);
+    }, [availableLangs]);
 
     const selected = langs.find(l => l.code === value) || langs[0];
 
@@ -76,9 +78,13 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
                 }`}
             >
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="flex items-center leading-none shrink-0">{selected?.flag}</span>
+                    {selected && selected.flagSvg ? (
+                         <span className="flex items-center justify-center shrink-0 w-4 h-3 rounded-sm overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: selected.flagSvg }} />
+                    ) : (
+                         <span className="flex items-center justify-center shrink-0 w-4 h-3 rounded-sm bg-white/10"><Globe size={10} className="text-white/40"/></span>
+                    )}
                     <span className={`truncate ${isForm ? "" : "uppercase tracking-widest text-[10px]"}`}>
-                        {isForm ? selected?.name : selected?.code}
+                        {selected ? (isForm ? selected.nativeName : selected.code) : value}
                     </span>
                 </div>
                 <motion.div
@@ -119,8 +125,12 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
                                         }`}
                                     >
                                         <div className="flex items-center gap-2.5 overflow-hidden">
-                                            <span className="flex items-center leading-none shrink-0">{lang.flag}</span>
-                                            <span className="truncate">{lang.name}</span>
+                                            {lang.flagSvg ? (
+                                                <span className="flex items-center justify-center shrink-0 w-4 h-3 rounded-sm overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: lang.flagSvg }} />
+                                            ) : (
+                                                <span className="flex items-center justify-center shrink-0 w-4 h-3 rounded-sm bg-white/10"><Globe size={10} className="text-white/40"/></span>
+                                            )}
+                                            <span className="truncate">{lang.nativeName}</span>
                                         </div>
                                         <span className={`text-[10px] font-mono uppercase tracking-wider ${isSelected ? "text-[#6b5be6]/50" : "text-white/10"}`}>
                                             {lang.code}

@@ -2,6 +2,7 @@ import { prisma } from "./db";
 import { toPowerShellSafe, escapeForPsString } from "./powershell-safe";
 import { redisCache } from "./redis";
 import { cacheService } from "./cache-service";
+import { languageService } from "./languageService";
 
 type ScriptParams = {
     features: string[];
@@ -34,8 +35,8 @@ async function getLabelsFromDb(lang: string): Promise<Record<string, string>> {
 export async function generateScript(params: ScriptParams): Promise<string> {
     const { features, dnsProvider, lang, createRestorePoint } = params;
 
-    const supportedLangs = ["en", "tr", "de", "fr", "es", "zh", "hi"];
-    const dbLang = supportedLangs.includes(lang) ? lang : "en";
+    const activeCodes = await languageService.getActiveCodes();
+    const dbLang = activeCodes.includes(lang) ? lang : "en";
 
     // Parallelize static dependencies securely utilizing Redis caching
     const [rawLabels, fetchedFeatures, dnsData] = await Promise.all([
@@ -65,9 +66,7 @@ export async function generateScript(params: ScriptParams): Promise<string> {
     for (const [k, v] of Object.entries(resolved)) {
         labels[k] = toPowerShellSafe(v);
     }
-    // UTC offset map — each language shows its own timezone
-    const UTC_OFFSETS: Record<string, number> = { tr: 3, en: 0, de: 1, fr: 1, es: 1, zh: 8, hi: 5.5 };
-    const langOffset = UTC_OFFSETS[dbLang] ?? 0;
+    const langOffset = await languageService.getUtcOffset(dbLang);
 
     // Calculate date/time for the target language's timezone
     // now.getTime() is always UTC milliseconds — no getTimezoneOffset needed

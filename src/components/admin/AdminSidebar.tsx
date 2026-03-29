@@ -67,11 +67,10 @@ export function AdminSidebar({
         { label: "Script Ayarları", href: "/admin/script-settings", icon: <FileCode2 size={17} /> },
         { label: "Kategoriler", href: "/admin/categories", icon: <FolderOpen size={17} />, disabled: true },
         { label: "DNS Sağlayıcılar", href: "/admin/dns", icon: <Globe size={17} />, disabled: true },
-        { label: "Çeviriler", href: "/admin/translations", icon: <Languages size={17} />, disabled: true },
+        { label: "Dil Yönetimi", href: "/admin/languages", icon: <Globe2 size={17} /> },
         { label: "Mesajlar", href: "/admin/messages", icon: <MessageSquare size={17} />, disabled: true, badge: unreadMessages },
         { label: "Duyurular", href: "/admin/announcements", icon: <Megaphone size={17} />, disabled: true },
         { label: "İstatistikler", href: "/admin/stats", icon: <BarChart3 size={17} />, disabled: true },
-        { label: "Dil Yönetimi", href: "/admin/languages", icon: <Globe2 size={17} />, disabled: true },
         { label: "Görünüm", href: "/admin/appearance", icon: <Palette size={17} />, disabled: true },
         { label: "Ayarlar", href: "/admin/settings", icon: <Settings size={17} /> },
     ];

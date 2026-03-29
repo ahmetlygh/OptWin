@@ -21,20 +21,27 @@ export async function GET(req: NextRequest) {
         if (lang) where.lang = lang;
         if (prefix) where.key = { startsWith: prefix };
 
-        const rows = await prisma.uiTranslation.findMany({
-            where,
-            orderBy: [{ key: "asc" }, { lang: "asc" }],
+        const rows = await prisma.language.findMany({
+            // @ts-ignore
+            select: { code: true, translations: true }
         });
 
         // Group by lang
         const grouped: Record<string, Record<string, string>> = {};
         for (const row of rows) {
-            if (!grouped[row.lang]) grouped[row.lang] = {};
-            grouped[row.lang][row.key] = row.value;
+            // @ts-ignore
+            grouped[row.code] = (row.translations as Record<string, string>) || {};
+        }
+
+        // If specific lang requested, filter
+        if (lang && grouped[lang]) {
+             const filtered: Record<string, Record<string, string>> = { [lang]: grouped[lang] };
+             return NextResponse.json({ success: true, translations: filtered });
         }
 
         return NextResponse.json({ success: true, translations: grouped });
-    } catch {
+    } catch (e) {
+        console.error(e);
         return NextResponse.json({ success: false, error: "Failed to fetch translations" }, { status: 500 });
     }
 }
@@ -65,18 +72,45 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        const ops = parsed.data.translations.map(t =>
-            prisma.uiTranslation.upsert({
-                where: { key_lang: { key: t.key, lang: t.lang } },
-                create: { key: t.key, lang: t.lang, value: t.value },
-                update: { value: t.value },
-            })
-        );
+        // Group changes by language
+        const langChanges: Record<string, Record<string, string>> = {};
+        for (const t of parsed.data.translations) {
+            if (!langChanges[t.lang]) langChanges[t.lang] = {};
+            langChanges[t.lang][t.key] = t.value;
+        }
+
+        const codes = Object.keys(langChanges);
+        
+        const currentLangs = await prisma.language.findMany({
+            where: { code: { in: codes } },
+            // @ts-ignore
+            select: { code: true, translations: true }
+        });
+
+        const ops = [];
+        for (const langObj of currentLangs) {
+             const code = langObj.code;
+             // @ts-ignore
+             const originalObj = (langObj.translations as Record<string, string>) || {};
+             const merged = { ...originalObj, ...langChanges[code] };
+             
+             ops.push(prisma.language.update({
+                 where: { code },
+                 // @ts-ignore
+                 data: { translations: merged }
+             }));
+        }
 
         await prisma.$transaction(ops);
         
         // Purge Redis cache for UI translations
-        await purgeTranslationCache();
+        for (const code of codes) {
+            await purgeTranslationCache(code);
+        }
+        
+        // Also invalidate language service
+        const { languageService } = await import("@/lib/languageService");
+        await languageService.invalidateCache();
 
         revalidateTag("ui-translations", "layout" as any);
         revalidatePath("/", "layout");

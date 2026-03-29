@@ -45,9 +45,8 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     const [showMaintenanceOff, setShowMaintenanceOff] = useState(false);
 
     // Maintenance modal fields
-    const REASON_LANGS = ["tr", "en", "de", "fr", "es", "zh", "hi"] as const;
-    const REASON_LANG_LABELS: Record<string, string> = { tr: "TR", en: "EN", de: "DE", fr: "FR", es: "ES", zh: "ZH", hi: "HI" };
-    const [mReasons, setMReasons] = useState<Record<string, string>>(Object.fromEntries(REASON_LANGS.map(l => [l, ""])));
+    const [reasonLangs, setReasonLangs] = useState<string[]>([]);
+    const [mReasons, setMReasons] = useState<Record<string, string>>({});
     const [mReasonLang, setMReasonLang] = useState("tr");
     const [mTranslating, setMTranslating] = useState(false);
     const [mTimeMode, setMTimeMode] = useState<"duration" | "datetime">("duration");
@@ -69,6 +68,15 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             setMaintenanceLoading(false);
             window.dispatchEvent(new CustomEvent('optwin:set-maintenance', { detail: d.maintenance === true }));
         }).catch(() => setMaintenanceLoading(false));
+
+        fetch("/api/admin/languages").then(r => r.json()).then(d => {
+            if (d.success) {
+                const codes = d.languages.map((l: any) => l.code);
+                setReasonLangs(codes);
+                setMReasons(Object.fromEntries(codes.map((c: string) => [c, ""])));
+                setMReasonLang(codes.includes("tr") ? "tr" : (codes[0] || "en"));
+            }
+        }).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -118,11 +126,11 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         setMaintenanceLoading(false);
         setShowMaintenanceOn(false);
         setShowMaintenanceOff(false);
-        if (!enabled) { setMReasons(Object.fromEntries(REASON_LANGS.map(l => [l, ""]))); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); }
+        if (!enabled) { setMReasons(Object.fromEntries(reasonLangs.map(l => [l, ""]))); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); }
     };
 
     const openMaintenanceModal = () => {
-        setMReasons(Object.fromEntries(REASON_LANGS.map(l => [l, ""]))); setMReasonLang("tr"); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
+        setMReasons(Object.fromEntries(reasonLangs.map(l => [l, ""]))); setMReasonLang(reasonLangs.includes("tr") ? "tr" : (reasonLangs[0] || "en")); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
         setShowMaintenanceOn(true);
     };
 
@@ -161,7 +169,27 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         general: "Genel Ayarlar",
         content: "İçerik Yönetimi",
         appearance: "Görünüm",
+        languages: "Dil Yönetimi",
     };
+
+    const [dynamicLabels, setDynamicLabels] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const parts = pathname.split("/");
+        if (pathname.startsWith("/admin/languages/") && parts.length >= 4) {
+            const code = parts[3];
+            fetch("/api/admin/languages")
+                .then(r => r.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        const l = data.find(x => x.code === code);
+                        if (l) {
+                            setDynamicLabels(prev => ({ ...prev, [code]: l.name }));
+                        }
+                    }
+                }).catch(() => {});
+        }
+    }, [pathname]);
 
     const breadcrumbs = (() => {
         const parts = pathname.replace(/^\//, "").split("/").filter(Boolean);
@@ -170,7 +198,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         for (const part of parts) {
             path += `/${part}`;
             items.push({
-                label: BREADCRUMB_LABELS[part] || part,
+                label: dynamicLabels[part] || BREADCRUMB_LABELS[part] || part,
                 href: path,
             });
         }
@@ -328,7 +356,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                     <AdminLangPicker
                                         value={mReasonLang}
                                         onChange={setMReasonLang}
-                                        availableLangs={[...REASON_LANGS]}
+                                        availableLangs={reasonLangs}
                                     />
                                 </div>
                                 <textarea
@@ -347,7 +375,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                             if (!text?.trim()) return;
                                             setMTranslating(true);
                                             try {
-                                                const otherLangs = REASON_LANGS.filter(l => l !== mReasonLang);
+                                                const otherLangs = reasonLangs.filter(l => l !== mReasonLang);
                                                 const res = await fetch("/api/admin/translate", {
                                                     method: "POST",
                                                     headers: { "Content-Type": "application/json" },

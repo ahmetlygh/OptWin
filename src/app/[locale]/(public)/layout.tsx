@@ -3,6 +3,7 @@ import { ClientProviders } from "@/components/providers/ClientProviders";
 import { auth } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { getTranslationsFromDb } from "@/lib/translations";
+import { languageService } from "@/lib/languageService";
 
 export default async function PublicLayout({
     children,
@@ -20,12 +21,16 @@ export default async function PublicLayout({
         "default_lang", "default_theme", "theme_primary_color", "maintenanceMode"
     ];
 
-    const [session, settings] = await Promise.all([
+    const [session, settings, activeLanguages] = await Promise.all([
         auth(),
-        getSettings(PUBLIC_KEYS)
+        getSettings(PUBLIC_KEYS),
+        languageService.getActiveLanguages(),
     ]);
 
     const initialTranslations = await getTranslationsFromDb(locale);
+    
+    // Inject serialized language data into settings so child components can access it
+    settings._languagesData = JSON.stringify(activeLanguages);
     const adminSession = session?.isAdmin ? {
         name: session.user?.name || null,
         image: session.user?.image || null,

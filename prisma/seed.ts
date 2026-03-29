@@ -4,6 +4,7 @@ import { defaultSettings, defaultDnsProviders, defaultUiTranslations } from "./s
 import { scriptLabels } from "./seed-data/script-labels";
 import { featuresP1 } from "./seed-data/features-p1";
 import { featuresP2 } from "./seed-data/features-p2";
+import { defaultLanguages } from "./seed-data/languages";
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -169,6 +170,17 @@ async function main() {
         create: { id: "main", totalVisits: 0, totalScripts: 0 },
     });
     console.log("📊 Stats initialized\n");
+
+    // 6b. Languages
+    console.log("🌍 Creating languages...");
+    for (const lang of defaultLanguages) {
+        await prisma.language.upsert({
+            where: { code: lang.code },
+            update: { name: lang.name, nativeName: lang.nativeName, flagSvg: lang.flagSvg, utcOffset: lang.utcOffset, isDefault: lang.isDefault, isActive: lang.isActive, sortOrder: lang.sortOrder, seoMetadata: lang.seoMetadata },
+            create: lang,
+        });
+    }
+    console.log(`  ✅ ${defaultLanguages.length} languages created\n`);
 
     // 7. Script Labels
     console.log("🏷️ Creating script labels...");

@@ -44,7 +44,6 @@ interface ContentSection {
     keys: TranslationKeyDef[];
 }
 
-const LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"];
 
 const CONTENT_SECTIONS: ContentSection[] = [
     {
@@ -231,7 +230,8 @@ export default function ContentSettings() {
             const data = await res.json();
             if (data.success) {
                 const filtered: Record<string, Record<string, string>> = {};
-                for (const lang of LANGS) {
+                const activeLangs = Object.keys(data.translations);
+                for (const lang of activeLangs) {
                     filtered[lang] = {};
                     const langData = data.translations[lang] || {};
                     for (const key of allKeys) {
@@ -250,6 +250,8 @@ export default function ContentSettings() {
 
     useEffect(() => {
         fetchTranslations();
+        window.addEventListener("optwin:languages-updated", fetchTranslations);
+        return () => window.removeEventListener("optwin:languages-updated", fetchTranslations);
     }, [fetchTranslations]);
 
     // ─── Change detection ───────────────────────────────────────────────────
@@ -270,7 +272,8 @@ export default function ContentSettings() {
         setError("");
         try {
             const changes: { key: string; lang: string; value: string }[] = [];
-            for (const lang of LANGS) {
+            const activeLangs = Object.keys(translations);
+            for (const lang of activeLangs) {
                 const current = translations[lang] || {};
                 const original = originalTranslations[lang] || {};
                 for (const key of Object.keys(current)) {
