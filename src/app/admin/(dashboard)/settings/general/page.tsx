@@ -5,11 +5,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Settings as SettingsIcon,
-    Save,
-    Loader2,
-    Check,
-    AlertCircle,
-    ShieldAlert,
     Globe,
     Github,
     Coffee,
@@ -18,17 +13,17 @@ import {
     Palette,
     Trash2,
     AlertTriangle,
-    RotateCcw,
     ChevronDown,
+    ShieldAlert,
+    AlertCircle,
+    Loader2,
 } from "lucide-react";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminThemePicker } from "@/components/admin/AdminThemePicker";
-import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminActionBar } from "@/components/admin/AdminActionBar";
 import { Loader } from "@/components/shared/Loader";
-import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 type SettingsMap = Record<string, string>;
@@ -52,9 +47,6 @@ interface SettingGroup {
     fields: SettingField[];
 }
 
-const REASON_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"] as const;
-const REASON_LANG_LABELS: Record<string, string> = { tr: "Türkçe", en: "English", de: "Deutsch", fr: "Français", es: "Español", zh: "中文", hi: "हिन्दी" };
-
 const SETTING_GROUPS: SettingGroup[] = [
     {
         id: "general",
@@ -68,7 +60,7 @@ const SETTING_GROUPS: SettingGroup[] = [
             { key: "site_description", label: "Site Açıklaması", description: "Arama motorları için SEO site açıklaması.", type: "text", placeholder: "Free, open-source browser-based Windows optimizer..." },
             { key: "site_keywords", label: "Anahtar Kelimeler", description: "SEO için virgülle ayrılmış anahtar kelimeler.", type: "text", placeholder: "windows optimizer, powershell, pc tweaks" },
             { key: "site_version", label: "Site Sürümü", description: "Footer ve admin panelinde görünen sürüm numarası.", type: "text", placeholder: "1.3.0" },
-            { key: "default_lang", label: "Varsayılan Dil", description: "Yeni ziyaretçilerin göreceği varsayılan dil.", type: "select", options: REASON_LANGS.map(code => ({ value: code, label: REASON_LANG_LABELS[code] })) },
+            { key: "default_lang", label: "Varsayılan Dil", description: "Yeni ziyaretçilerin göreceği varsayılan dil.", type: "select" },
             { key: "default_theme", label: "Varsayılan Tema", description: "Yeni ziyaretçilerin göreceği varsayılan tema.", type: "select", icon: <Palette size={14} />, options: [{ value: "dark", label: "Koyu" }, { value: "light", label: "Açık" }] },
             { key: "copyright_text", label: "Copyright Metni", description: "Footer'da görünen telif hakkı metni. Örn: OptWin", type: "text", placeholder: "OptWin" },
             { key: "copyright_year", label: "Copyright Yılı", description: "Footer'da görünen telif hakkı yılı. Girdiğiniz değer aynen gösterilir.", type: "text", placeholder: "2026" },
@@ -123,13 +115,6 @@ export default function GeneralSettings() {
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState("");
     const [showDangerZone, setShowDangerZone] = useState(false);
-    const [lang, setLang] = useState("en");
-
-    useEffect(() => {
-        const handler = (e: any) => setLang(e.detail);
-        window.addEventListener('optwin:admin-lang-change', handler);
-        return () => window.removeEventListener('optwin:admin-lang-change', handler);
-    }, []);
 
     // ─── MAINTENANCE state ─────────────────────────────────────────────────────
     const [maintenance, setMaintenance] = useState(false);
@@ -248,7 +233,7 @@ export default function GeneralSettings() {
             )}
 
             {/* Maintenance Mode */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden">
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-white/[0.04] bg-white/[0.015]">
                 <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between gap-3">
                     <div className="flex flex-1 items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/10 text-red-500"><ShieldAlert size={16} /></div>
@@ -280,7 +265,7 @@ export default function GeneralSettings() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: gi * 0.04, duration: 0.3 }}
-                    className="rounded-2xl border border-white/[0.04] bg-white/[0.015] overflow-hidden"
+                    className="rounded-2xl border border-white/[0.04] bg-white/[0.015]"
                 >
                     <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${group.color}15`, color: group.color }}>{group.icon}</div>
@@ -320,7 +305,7 @@ export default function GeneralSettings() {
                                                 <AdminLangPicker
                                                     value={value || "en"}
                                                     onChange={v => setSettings(prev => ({ ...prev, [field.key]: v }))}
-                                                    variant="form"
+                                                    variant="settings"
                                                 />
                                             ) : field.key === "default_theme" ? (
                                                 <AdminThemePicker

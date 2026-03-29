@@ -223,6 +223,7 @@ model Language {
   code        String   @unique        // "tr", "en", "de", etc.
   name        String                  // "Turkish", "English"
   nativeName  String                  // "Türkçe", "English"
+  turkishName String?   @default("")  // "Türkçe", "İngilizce"
   flagSvg     String   @db.Text       // Raw SVG string for the flag icon
   utcOffset   Float    @default(0)    // UTC offset: 3, 0, 1, 8, 5.5
   isActive    Boolean  @default(true)

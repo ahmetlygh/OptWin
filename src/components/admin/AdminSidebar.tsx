@@ -3,17 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
-import { UnsavedChangesModal } from "@/components/admin/UnsavedChangesModal";
 import {
     LayoutDashboard,
     Puzzle,
     FileCode2,
     FolderOpen,
     Globe,
-    Languages,
     MessageSquare,
     BarChart3,
     Settings,
@@ -45,21 +42,7 @@ export function AdminSidebar({
     siteVersion = "1.3" 
 }: AdminSidebarProps) {
     const pathname = usePathname();
-    const router = useRouter();
     const [isMobileOpen, setMobileOpen] = useState(false);
-    const { hasUnsavedChanges, onSave, onDiscard } = useUnsavedChanges();
-    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-    const [pendingHref, setPendingHref] = useState<string | null>(null);
-
-    const handleNavClick = (e: React.MouseEvent, href: string) => {
-        if (hasUnsavedChanges && !pathname.startsWith(href)) {
-            e.preventDefault();
-            setPendingHref(href);
-            setShowUnsavedModal(true);
-        } else {
-            setMobileOpen(false);
-        }
-    };
 
     const menuItems: MenuItem[] = [
         { label: "Genel Bakış", href: "/admin", icon: <LayoutDashboard size={17} /> },
@@ -139,7 +122,7 @@ export function AdminSidebar({
                     }
 
                     return (
-                        <Link key={item.href} href={item.href} onClick={(e) => handleNavClick(e, item.href)}>
+                        <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
                             <motion.div
                                 initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -183,20 +166,6 @@ export function AdminSidebar({
 
     return (
         <>
-            <UnsavedChangesModal
-                open={showUnsavedModal}
-                onClose={() => { setShowUnsavedModal(false); setPendingHref(null); }}
-                onSaveAndLeave={async () => {
-                    setShowUnsavedModal(false);
-                    if (onSave.current) await onSave.current();
-                    if (pendingHref) { router.push(pendingHref); setPendingHref(null); }
-                }}
-                onDiscardAndLeave={() => {
-                    setShowUnsavedModal(false);
-                    if (onDiscard.current) onDiscard.current();
-                    if (pendingHref) { router.push(pendingHref); setPendingHref(null); }
-                }}
-            />
             {/* Desktop sidebar */}
             <div className="hidden md:block shrink-0">
                 {sidebarContent}

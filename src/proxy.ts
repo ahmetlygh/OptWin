@@ -82,23 +82,36 @@ async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
 }
 
 /* ── Locales ── */
-const LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
-const DEFAULT_LOCALE = 'en';
+async function getLanguageSets() {
+    try {
+        const activeRaw = await redisCache.get("optwin:languages:active");
+        const allRaw = await redisCache.get("optwin:languages:all");
+        
+        const active = activeRaw ? JSON.parse(activeRaw).map((l: any) => l.code) : ['en', 'tr'];
+        const all = allRaw ? JSON.parse(allRaw).map((l: any) => l.code) : active;
+        
+        return { active, all };
+    } catch {
+        return { active: ['en', 'tr'], all: ['en', 'tr'] };
+    }
+}
 
-function getPreferredLocale(request: NextRequest): string {
+async function getPreferredLocale(request: NextRequest, activeLocales: string[]): Promise<string> {
+    const defaultLocale = (await redisCache.get("optwin:setting:default_lang")) || 'en';
+    
     // 1. Explicit user choice via strictly synced Cookie
     const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
-    if (cookieLocale && LOCALES.includes(cookieLocale)) return cookieLocale;
+    if (cookieLocale && activeLocales.includes(cookieLocale)) return cookieLocale;
     
     // 2. Browser default
     const acceptLang = request.headers.get('accept-language');
     if (acceptLang) {
-        const browserMatch = acceptLang.split(',').map(l => l.trim().split(';')[0].slice(0, 2)).find(code => LOCALES.includes(code));
+        const browserMatch = acceptLang.split(',').map(l => l.trim().split(';')[0].slice(0, 2)).find(code => activeLocales.includes(code));
         if (browserMatch) return browserMatch;
     }
     
     // 3. Fallback
-    return DEFAULT_LOCALE;
+    return activeLocales.includes(defaultLocale) ? defaultLocale : (activeLocales[0] || 'en');
 }
 
 /* ── Paths that are ALWAYS allowed (even during maintenance) ── */
@@ -126,6 +139,7 @@ const LOCALE_BYPASS = [
 export default async function proxy(request: NextRequest) {
     try {
         const { pathname } = request.nextUrl;
+        const { active: ACTIVE_LOCALES, all: ALL_LOCALES } = await getLanguageSets();
 
         // Pass pathname to server components via header safely
         const response = NextResponse.next();
@@ -135,10 +149,21 @@ export default async function proxy(request: NextRequest) {
         
         // ── Segment-based Locale Redirection ──
         const isBypassed = LOCALE_BYPASS.some(p => pathname.startsWith(p) || pathname === p);
-        const hasLocaleSegment = LOCALES.some(locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`);
         
-        if (!isBypassed && !hasLocaleSegment) {
-            const locale = getPreferredLocale(request);
+        // Check if the current path starts with ANY known language code
+        const segment = pathname.split('/')[1];
+        const hasAnyLocaleSegment = ALL_LOCALES.includes(segment);
+        const hasActiveLocaleSegment = ACTIVE_LOCALES.includes(segment);
+        
+        // 1. If it's an INACTIVE locale segment, redirect to home with preferred locale
+        if (hasAnyLocaleSegment && !hasActiveLocaleSegment && !isBypassed) {
+            const locale = await getPreferredLocale(request, ACTIVE_LOCALES);
+            return NextResponse.redirect(new URL(`/${locale}`, request.url));
+        }
+
+        // 2. If it has NO locale segment at all, redirect to preferred locale
+        if (!isBypassed && !hasActiveLocaleSegment) {
+            const locale = await getPreferredLocale(request, ACTIVE_LOCALES);
             // Construct strictly matched segment paths: / -> /en, /privacy -> /en/privacy
             const newSegments = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;
             const redirectUrl = new URL(newSegments, request.url);
@@ -233,7 +258,7 @@ export default async function proxy(request: NextRequest) {
                 }
 
                 // Redirect to the localized strictly SSR maintenance page
-                const locale = getPreferredLocale(request);
+                const locale = await getPreferredLocale(request, ACTIVE_LOCALES);
                 const redirectUrl = new URL(`/${locale}/maintenance`, request.url);
                 const rd = NextResponse.redirect(redirectUrl);
                 rd.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
@@ -254,7 +279,7 @@ export default async function proxy(request: NextRequest) {
         } else {
             // If maintenance is OFF, block users from visiting the maintenance page manually
             if (!isApiRequest && isAtMaintenance) {
-                const locale = getPreferredLocale(request);
+                const locale = await getPreferredLocale(request, ACTIVE_LOCALES);
                 return NextResponse.redirect(new URL(`/${locale}`, request.url));
             }
         }
@@ -270,4 +295,4 @@ export const config = {
     matcher: [
         '/admin/:path*',
         '/((?!_next/static|_next/image|favicon.ico).*)',
-    ],};
+    ],};

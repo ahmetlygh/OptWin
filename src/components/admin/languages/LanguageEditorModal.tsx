@@ -6,17 +6,19 @@ import { Language } from "./LanguageDashboard";
 
 interface Props {
     language: Language | null;
+    displayOnly?: boolean;
     onClose: () => void;
-    onSave: () => void;
+    onSave: (updated?: Language) => void;
 }
 
-export function LanguageEditorModal({ language, onClose, onSave }: Props) {
+export function LanguageEditorModal({ language, onClose, onSave, displayOnly = false }: Props) {
     const { showToast } = useOptWinStore();
     const isEdit = !!language;
     const [formData, setFormData] = useState({
         code: "",
         name: "",
         nativeName: "",
+        turkishName: "",
         flagSvg: "",
         utcOffset: 0,
         isActive: true,
@@ -31,6 +33,7 @@ export function LanguageEditorModal({ language, onClose, onSave }: Props) {
                 code: language.code,
                 name: language.name,
                 nativeName: language.nativeName,
+                turkishName: language.turkishName || "",
                 flagSvg: language.flagSvg,
                 utcOffset: language.utcOffset,
                 isActive: language.isActive,
@@ -42,10 +45,22 @@ export function LanguageEditorModal({ language, onClose, onSave }: Props) {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+
+        const updated: Language = {
+            ...(language || {} as Language),
+            ...formData,
+            code: formData.code.toLowerCase().trim()
+        };
+
+        if (displayOnly) {
+            onSave(updated);
+            return;
+        }
+
         setIsSaving(true);
         try {
             const method = isEdit ? "PUT" : "POST";
-            const body = isEdit ? { ...formData, id: language.id } : formData;
+            const body = isEdit ? { ...formData, id: language?.id } : formData;
             
             const res = await fetch("/api/admin/languages", {
                 method,
@@ -55,7 +70,7 @@ export function LanguageEditorModal({ language, onClose, onSave }: Props) {
             
             if (res.ok) {
                 showToast(isEdit ? "Dil güncellendi" : "Dil eklendi", "success");
-                onSave();
+                onSave(updated);
             } else {
                 const data = await res.json();
                 showToast(data.error || "Hata oluştu", "error");
@@ -101,10 +116,10 @@ export function LanguageEditorModal({ language, onClose, onSave }: Props) {
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-white/70">Dil Kodu (ISO)</label>
                             <input
-                                required disabled={isEdit}
+                                required
                                 type="text"
                                 pattern="[a-z]{2,5}"
-                                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
+                                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
                                 value={formData.code}
                                 onChange={e => setFormData({ ...formData, code: e.target.value })}
                                 placeholder="tr, en, zh vb."
@@ -149,6 +164,18 @@ export function LanguageEditorModal({ language, onClose, onSave }: Props) {
                     </div>
 
                     <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-white/70">Adı (Türkçe)</label>
+                        <input
+                            required
+                            type="text"
+                            className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
+                            value={formData.turkishName}
+                            onChange={e => setFormData({ ...formData, turkishName: e.target.value })}
+                            placeholder="Türkçe, İngilizce, Çince vb."
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
                         <label className="text-sm font-medium text-white/70 flex items-center justify-between">
                             <span>Bayrak (SVG Kodu)</span>
                             <span className="text-[10px] text-yellow-500/70 border border-yellow-500/20 bg-yellow-500/5 px-2 py-0.5 rounded flex items-center gap-1">
@@ -163,34 +190,6 @@ export function LanguageEditorModal({ language, onClose, onSave }: Props) {
                             placeholder='<svg viewBox="0 0 30 20">...</svg>'
                         />
                     </div>
-
-                    <div className="flex gap-10 pt-2">
-                        <div className="flex items-center gap-3">
-                            <span className="text-[12px] font-bold text-white/70 tracking-wide">Yayımla (Aktif)</span>
-                            <button
-                                type="button"
-                                onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
-                                className={`w-10 h-5 rounded-full transition-all duration-300 relative ${formData.isActive ? "bg-[#6b5be6] shadow-[0_0_15px_rgba(107,91,230,0.3)]" : "bg-white/[0.06] border border-white/[0.05]"}`}
-                            >
-                                <span className={`absolute top-[2px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${formData.isActive ? "left-[22px]" : "left-[2px]"}`} />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <span className="text-[12px] font-bold text-white/70 tracking-wide">Varsayılan Dil (Default)</span>
-                            <button
-                                type="button"
-                                onClick={() => setFormData(prev => ({ ...prev, isDefault: !prev.isDefault }))}
-                                className={`w-10 h-5 rounded-full transition-all duration-300 relative ${formData.isDefault ? "bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]" : "bg-white/[0.06] border border-white/[0.05]"}`}
-                            >
-                                <span className={`absolute top-[2px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${formData.isDefault ? "left-[22px]" : "left-[2px]"}`} />
-                            </button>
-                        </div>
-                    </div>
-
-                    <p className="text-[10px] text-white/40 pt-2 flex items-center gap-1.5 border-t border-white/[0.05]">
-                        * Varsayılan dil değiştirilirse eski varsayılanın konumu otomatik sıfırlanır.
-                    </p>
 
                     <div className="pt-4 border-t border-white/10 flex justify-end gap-3 sticky bottom-0">
                         <button type="button" onClick={onClose} disabled={isSaving} className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/5 transition-colors">

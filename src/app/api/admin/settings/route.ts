@@ -118,6 +118,18 @@ export async function PUT(req: Request) {
             return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
         }
 
+        // --- SINGLE SOURCE OF TRUTH SYNC ---
+        // If default_lang was changed, sync it with the Language table
+        if (settings.default_lang) {
+            await prisma.$transaction([
+                prisma.language.updateMany({ where: { isDefault: true }, data: { isDefault: false } }),
+                prisma.language.updateMany({ where: { code: settings.default_lang }, data: { isDefault: true, isActive: true } }),
+            ]);
+            // Import and use languageService to invalidate its cache
+            const { languageService } = await import("@/lib/languageService");
+            await languageService.invalidateCache();
+        }
+
         revalidateTag("ui-translations", "layout" as any);
         revalidatePath("/", "layout");
 

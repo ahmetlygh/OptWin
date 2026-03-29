@@ -113,7 +113,7 @@ export function MaintenanceUI({
             <div ref={langRef} className="absolute top-6 right-6 z-20">
                 <button onClick={() => setLangOpen(!langOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-white/40 hover:text-white/60 transition-all">
                     <Globe size={12} className="text-white/25" />
-                    <span dangerouslySetInnerHTML={{ __html: currentLang.flagSvg ? currentLang.flagSvg.replace('<svg', '<svg width="16" height="11" class="inline-block"') : "" }}></span>
+                    <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-sm overflow-hidden bg-white/5 [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover [&>svg]:scale-110" dangerouslySetInnerHTML={{ __html: currentLang.flagSvg || "" }}></span>
                     <span>{currentLang.nativeName}</span>
                     <ChevronDown size={11} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
                 </button>
@@ -128,7 +128,7 @@ export function MaintenanceUI({
                                     // Navigate to the maintenance page in the new locale
                                     window.location.href = `/${l.code}/maintenance`;
                                 }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${locale === l.code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
-                                    <span dangerouslySetInnerHTML={{ __html: l.flagSvg ? l.flagSvg.replace('<svg', '<svg width="16" height="11" class="inline-block"') : "" }}></span><span>{l.nativeName}</span>
+                                    <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-sm overflow-hidden bg-white/5 [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover [&>svg]:scale-110" dangerouslySetInnerHTML={{ __html: l.flagSvg || "" }}></span><span>{l.nativeName}</span>
                                 </button>
                             ))}
                         </motion.div>

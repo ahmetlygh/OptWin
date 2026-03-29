@@ -183,9 +183,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 .then(data => {
                     if (Array.isArray(data)) {
                         const l = data.find(x => x.code === code);
-                        if (l) {
-                            setDynamicLabels(prev => ({ ...prev, [code]: l.name }));
-                        }
+                        if (l) setDynamicLabels(prev => ({ ...prev, [code]: l.turkishName || l.name }));
                     }
                 }).catch(() => {});
         }

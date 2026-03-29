@@ -4,7 +4,7 @@ import { languageService } from "@/lib/languageService";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 
-// GET: Fetch all languages (admin view includes inactive)
+// GET: Fetch all languages
 export async function GET() {
     const session = await auth();
     if (!session?.isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,10 +20,11 @@ export async function GET() {
     }
 }
 
-const createSchema = z.object({
+const languageSchema = z.object({
     code: z.string().min(2).max(5).regex(/^[a-z]{2,5}$/),
     name: z.string().min(1).max(50),
     nativeName: z.string().min(1).max(50),
+    turkishName: z.string().min(1).max(50).optional().default(""),
     flagSvg: z.string().max(10000).default(""),
     utcOffset: z.number().min(-12).max(14).default(0),
     isActive: z.boolean().default(true),
@@ -43,77 +44,95 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const data = createSchema.parse(body);
+        const data = languageSchema.parse(body);
 
-        // If setting as default, unset all others
-        if (data.isDefault) {
-            await prisma.language.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
-        }
+        const language = await prisma.$transaction(async (tx) => {
+            if (data.isDefault) {
+                await tx.language.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
+                const { settingsService } = await import("@/lib/settingsService");
+                await settingsService.updateSetting("default_lang", data.code, "string", "Varsayılan dil kodu");
+            }
 
-        const language = await prisma.language.create({ data });
-
-        // Log event
-        await prisma.systemEvent.create({
-            data: {
-                action: "CREATE_LANGUAGE",
-                entityType: "language",
-                entityId: language.id,
-                metadata: { code: language.code },
-                adminEmail: session.user?.email || null,
-            },
+            return await tx.language.create({ 
+                data: {
+                    ...data,
+                    seoMetadata: data.seoMetadata || { title: "", description: "", keywords: "" }
+                } 
+            });
         });
 
-        // Invalidate cache
         await languageService.invalidateCache();
-
         return NextResponse.json(language, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
+            return NextResponse.json({ error: "Validation failed", details: error.issues }, { status: 400 });
         }
-        console.error("[Admin Languages POST]", error);
         return NextResponse.json({ error: "Failed to create language" }, { status: 500 });
     }
 }
 
-// PUT: Bulk update (reorder, toggle active)
+// PUT: Bulk update (Task 5: Prisma Payload White-List)
 export async function PUT(request: NextRequest) {
     const session = await auth();
     if (!session?.isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
         const body = await request.json();
-        const { id, ...updateData } = body;
+        const { id, newCode, ...inputData } = body;
 
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-        // If setting as default, unset all others
-        if (updateData.isDefault) {
-            await prisma.language.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
-        }
-
-        const updated = await prisma.language.update({
+        const currentLang = await prisma.language.findUnique({ 
             where: { id },
-            data: updateData,
+            select: { isDefault: true, isActive: true, code: true }
         });
 
-        // Log event
-        await prisma.systemEvent.create({
-            data: {
-                action: "UPDATE_LANGUAGE",
-                entityType: "language",
-                entityId: updated.id,
-                metadata: { code: updated.code, fields: Object.keys(updateData) },
-                adminEmail: session.user?.email || null,
-            },
+        if (!currentLang) return NextResponse.json({ error: "Language not found" }, { status: 404 });
+
+        // PRISMA WHITE-LIST: Discard any UI-specific or non-schema fields
+        const validFields = ["code", "name", "nativeName", "turkishName", "flagSvg", "utcOffset", "isActive", "isDefault", "sortOrder", "seoMetadata"];
+        const updateData: any = {};
+        
+        validFields.forEach(field => {
+            if (inputData[field] !== undefined) {
+                updateData[field] = inputData[field];
+            }
+        });
+
+        // Handle possible code rename via newCode
+        if (newCode && newCode !== currentLang.code) {
+            updateData.code = newCode;
+        }
+
+        // Logic Enforcement: Default language protection
+        if (currentLang.isDefault) {
+            if (updateData.isActive === false) {
+                return NextResponse.json({ error: "Varsayılan dil pasife alınamaz. Önce başka bir dili varsayılan yapın." }, { status: 400 });
+            }
+            if (updateData.isDefault === false) {
+                return NextResponse.json({ error: "Varsayılan dil durumu doğrudan kaldırılamaz. Lütfen başka bir dili varsayılan olarak seçin." }, { status: 400 });
+            }
+        }
+
+        const updated = await prisma.$transaction(async (tx) => {
+            if (updateData.isDefault) {
+                await tx.language.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
+                updateData.isActive = true; 
+                const { settingsService } = await import("@/lib/settingsService");
+                await settingsService.updateSetting("default_lang", updateData.code || currentLang.code, "string", "Varsayılan dil kodu");
+            }
+
+            return await tx.language.update({
+                where: { id },
+                data: updateData,
+            });
         });
 
         await languageService.invalidateCache();
-
         return NextResponse.json(updated);
     } catch (error) {
-        console.error("[Admin Languages PUT]", error);
-        return NextResponse.json({ error: "Failed to update language" }, { status: 500 });
+        console.error("[Admin Languages PUT Error]", error);
+        return NextResponse.json({ error: "Update failed; possible invalid payload structure." }, { status: 500 });
     }
 }
 
@@ -132,18 +151,6 @@ export async function DELETE(request: NextRequest) {
         if (lang.isDefault) return NextResponse.json({ error: "Cannot delete the default language" }, { status: 400 });
 
         await prisma.language.delete({ where: { id } });
-
-        // Log event
-        await prisma.systemEvent.create({
-            data: {
-                action: "DELETE_LANGUAGE",
-                entityType: "language",
-                entityId: id,
-                metadata: { code: lang.code },
-                adminEmail: session.user?.email || null,
-            },
-        });
-
         await languageService.invalidateCache();
 
         return NextResponse.json({ success: true });
