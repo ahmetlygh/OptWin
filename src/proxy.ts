@@ -219,23 +219,26 @@ export default async function proxy(request: NextRequest) {
 
         // ── Maintenance mode: block ALL public routes ──
         const mInfo = await checkMaintenance(request.nextUrl.origin || '/');
+        
+        // Normalized path check: is any segment literally "maintenance"?
+        const isAtMaintenance = pathname.split('/').some(s => s === 'maintenance');
 
         if (mInfo.active) {
             if (!isApiRequest) {
-                // If it's already explicitly hitting the maintenance route, allow it
-                if (pathname.includes('/maintenance')) {
+                // Storm-Killer: If already on maintenance page, do not redirect
+                if (isAtMaintenance) {
                     const rewriteRes = NextResponse.next();
                     rewriteRes.headers.set('x-next-pathname', pathname);
                     return rewriteRes;
                 }
 
-                // Rewrite to the localized strictly SSR maintenance page
+                // Redirect to the localized strictly SSR maintenance page
                 const locale = getPreferredLocale(request);
                 const redirectUrl = new URL(`/${locale}/maintenance`, request.url);
-                const rw = NextResponse.rewrite(redirectUrl);
-                rw.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-                rw.headers.set('x-next-pathname', pathname);
-                return rw;
+                const rd = NextResponse.redirect(redirectUrl);
+                rd.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+                rd.headers.set('x-next-pathname', pathname);
+                return rd;
             }
 
             return NextResponse.json(
@@ -248,6 +251,12 @@ export default async function proxy(request: NextRequest) {
                     },
                 }
             );
+        } else {
+            // If maintenance is OFF, block users from visiting the maintenance page manually
+            if (!isApiRequest && isAtMaintenance) {
+                const locale = getPreferredLocale(request);
+                return NextResponse.redirect(new URL(`/${locale}`, request.url));
+            }
         }
 
         return response;

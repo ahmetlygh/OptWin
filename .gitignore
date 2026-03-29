@@ -48,6 +48,7 @@ Hardcoded.md
 Debug.md
 OPTIMIZATIONS.md
 .gitignore
+PROGRESS.md
 
 # env files (.env.example is committed)
 .env

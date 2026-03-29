@@ -13,6 +13,7 @@ import {
     Bell,
     ArrowRight,
     Clock,
+    Loader2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -74,17 +75,20 @@ function timeAgo(dateStr: string): string {
 
 export function AdminDashboardClient({ data, userName = "Admin" }: { data: DashboardData; userName?: string }) {
     const [maintenance, setMaintenance] = useState(false);
+    const [maintenanceLoading, setMaintenanceLoading] = useState(true);
 
     useEffect(() => {
         fetch("/api/admin/maintenance").then(r => r.json()).then(d => {
-            if (d.maintenance) setMaintenance(true);
-        }).catch(() => {});
-        const poll = setInterval(() => {
-            fetch("/api/admin/maintenance").then(r => r.json()).then(d => {
-                setMaintenance(d.maintenance === true);
-            }).catch(() => {});
-        }, 5000);
-        return () => clearInterval(poll);
+            setMaintenance(d.maintenance === true);
+            setMaintenanceLoading(false);
+        }).catch(() => setMaintenanceLoading(false));
+        
+        const handler = (e: any) => {
+            setMaintenance(e.detail);
+            setMaintenanceLoading(false);
+        };
+        window.addEventListener('optwin:set-maintenance', handler);
+        return () => window.removeEventListener('optwin:set-maintenance', handler);
     }, []);
 
     const stats = [
@@ -161,17 +165,21 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                             </p>
                         </div>
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors duration-500 ${
-                            maintenance
+                            maintenanceLoading ? "bg-white/[0.02] border-white/5" : maintenance
                                 ? "bg-amber-500/[0.06] border-amber-500/10"
                                 : "bg-emerald-500/[0.06] border-emerald-500/10"
                         }`}>
-                            <div className={`w-2 h-2 rounded-full animate-pulse transition-colors duration-500 ${
-                                maintenance ? "bg-amber-400" : "bg-emerald-400"
-                            }`} />
+                            {maintenanceLoading ? (
+                                <Loader2 size={12} className="text-white/20 animate-spin" />
+                            ) : (
+                                <div className={`w-2 h-2 rounded-full animate-pulse transition-colors duration-500 ${
+                                    maintenance ? "bg-amber-400" : "bg-emerald-400"
+                                }`} />
+                            )}
                             <span className={`text-[11px] font-semibold transition-colors duration-500 ${
-                                maintenance ? "text-amber-400/80" : "text-emerald-400/80"
+                                maintenanceLoading ? "text-white/20" : maintenance ? "text-amber-400/80" : "text-emerald-400/80"
                             }`}>
-                                {maintenance ? "Site Bakımda" : "Sistem Aktif"}
+                                {maintenanceLoading ? "Durum alınıyor..." : maintenance ? "Site Bakımda" : "Sistem Aktif"}
                             </span>
                         </div>
                     </div>

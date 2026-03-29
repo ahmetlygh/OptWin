@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, ChevronDown, Globe } from "lucide-react";
 import Image from "next/image";
@@ -44,8 +43,6 @@ export function MaintenanceUI({
     estimatedEnd: string | null;
     isActive: boolean;
 }) {
-    const router = useRouter();
-    const pathname = usePathname();
     const [langOpen, setLangOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [, setTick] = useState(0);
@@ -55,20 +52,8 @@ export function MaintenanceUI({
         setIsMounted(true);
     }, []);
 
-    // Watch for maintenance lifting natively via polling 
-    useEffect(() => {
-        if (!isActive) return;
-        const interval = setInterval(async () => {
-            try {
-                const res = await fetch("/api/maintenance");
-                const data = await res.json();
-                if (data.maintenance === false) {
-                    window.location.href = window.location.pathname;
-                }
-            } catch { /* ignore */ }
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [isActive]);
+    // SSE redirect is now handled exclusively by ClientProviders (unified listener)
+    // No duplicate EventSource needed here
 
     // Tick for countdown
     useEffect(() => {
@@ -123,7 +108,8 @@ export function MaintenanceUI({
     const currentLang = LANGS.find(l => l.code === locale) || LANGS[1];
     const siteName = settings.site_name || "OptWin";
     const copyrightYear = settings.copyright_year || new Date().getFullYear().toString();
-    const copyrightText = settings.copyright_text || "All rights reserved.";
+    // Match main site footer logic exactly: copyright_text falls back to siteName
+    const copyrightText = settings.copyright_text || siteName;
 
     return (
         <motion.div
@@ -152,20 +138,13 @@ export function MaintenanceUI({
                 <AnimatePresence>
                     {langOpen && (
                         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }} className="absolute right-0 mt-1 min-w-[140px] bg-[#13131d] border border-white/[0.06] rounded-lg shadow-xl overflow-hidden">
-                            {LANGS.map(({ code, label }) => (
+                            {LANGS.filter(l => (settings.active_languages || "tr,en,de,fr,es,zh,hi").split(',').map(s=>s.trim()).includes(l.code)).map(({ code, label }) => (
                                 <button key={code} onClick={() => { 
                                     setLangOpen(false); 
                                     document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000`;
                                     
-                                    // Change the URL slug gracefully using Next router
-                                    const segments = pathname.split('/');
-                                    const locales = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
-                                    if (segments.length > 1 && locales.includes(segments[1])) {
-                                        segments[1] = code;
-                                        router.replace(segments.join('/') || '/');
-                                    } else {
-                                        router.replace(`/${code}`);
-                                    }
+                                    // Navigate to the maintenance page in the new locale
+                                    window.location.href = `/${code}/maintenance`;
                                 }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${locale === code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
                                     <span>{FLAG_SVG[code]}</span><span>{label}</span>
                                 </button>
@@ -194,7 +173,7 @@ export function MaintenanceUI({
                     </p>
                 </div>
 
-                {reason && (
+                {reason && reason.trim() !== "" && (
                     <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
                         <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">
                             {mt("maintenance.reasonLabel", "Reason:")}
@@ -254,7 +233,15 @@ export function MaintenanceUI({
             </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="absolute bottom-8 left-0 right-0 text-center">
-                <p className="text-[16px] text-white/13 font-medium">&copy; {copyrightYear} {siteName}. {copyrightText}</p>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3">
+                    <span className="text-[14px] text-white/10 font-medium select-none tracking-tight">
+                        &copy; {copyrightYear} {copyrightText}
+                    </span>
+                    <span className="hidden md:inline size-1 rounded-full bg-white/[0.06]"></span>
+                    <span className="text-[14px] text-white/10 font-medium select-none tracking-tight">
+                        {mt("footer.allRights", "All rights reserved.")}
+                    </span>
+                </div>
             </motion.div>
         </motion.div>
     );

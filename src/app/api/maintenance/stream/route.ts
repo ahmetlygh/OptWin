@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { redisClient } from "@/lib/redis";
+import { redisClient, redisCache } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -7,9 +7,17 @@ export async function GET(request: Request) {
     let subscriber: typeof redisClient | null = null;
 
     const stream = new ReadableStream({
-        start(controller) {
-            // Send initial connection message
-            controller.enqueue(`data: {"connected":true}\n\n`);
+        async start(controller) {
+            // Send CURRENT maintenance state immediately on connect
+            // This is critical: clients need to know the state RIGHT NOW, not just future changes
+            try {
+                const currentValue = await redisCache.get("optwin:setting:maintenanceMode");
+                const isActive = currentValue === "true";
+                controller.enqueue(`data: {"maintenance":${isActive}}\n\n`);
+            } catch {
+                // Fallback: if Redis read fails, assume not in maintenance
+                controller.enqueue(`data: {"maintenance":false}\n\n`);
+            }
 
             // Duplicate redis client for pub/sub (ioredis requirement)
             subscriber = redisClient.duplicate();
@@ -17,7 +25,7 @@ export async function GET(request: Request) {
             subscriber.on("message", (channel, message) => {
                 if (channel === "optwin:channels:maintenance") {
                     try {
-                        controller.enqueue(`data: {"maintenance": ${message === "true"}}\n\n`);
+                        controller.enqueue(`data: {"maintenance":${message === "true"}}\n\n`);
                     } catch (e) {
                         console.error("Failed to push SSE message", e);
                     }

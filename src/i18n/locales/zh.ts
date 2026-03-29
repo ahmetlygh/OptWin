@@ -8,7 +8,7 @@ const zh = {
     "hero.titleTemplate": "{highlight}{prefix}",
     "hero.titleHighlight": "优化",
     "hero.titlePrefix": "您的 Windows 体验",
-    "hero.subtitle": "高级用户和游戏玩家的高级优化工具。通过一个脚本清理、调整和加速您的系统。",
+    "hero.subtitle": "高级用户和玩家 professional 优化工具。仅需一个脚本，即可清理、优化并加速您的系统。",
 
     "stats.visits": "访问",
     "stats.downloads": "下载",

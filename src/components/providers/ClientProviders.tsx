@@ -76,6 +76,73 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
         document.documentElement.lang = lang;
     }, [lang, mounted]);
 
+    // ── Unified SSE: Single listener handles BOTH directions ──
+    // ON → redirect to /maintenance (if on public page)
+    // OFF → redirect to /home (if on maintenance page)
+    const prevMaintenanceGlobal = useRef<boolean | null>(null);
+    const sseRedirectFired = useRef(false);
+
+    useEffect(() => {
+        if (!mounted) return;
+
+        // Don't run SSE on admin pages
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/admin')) return;
+
+        const es = new EventSource("/api/maintenance/stream");
+
+        es.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (typeof data.maintenance !== "boolean") return;
+
+                const newState = data.maintenance;
+                const prevState = prevMaintenanceGlobal.current;
+
+                // Store current state for next comparison
+                prevMaintenanceGlobal.current = newState;
+
+                // First message: just establish baseline, don't redirect
+                // (proxy already handled the initial page load correctly)
+                if (prevState === null) return;
+
+                // Prevent multiple redirects
+                if (sseRedirectFired.current) return;
+
+                const livePath = window.location.pathname;
+                const segments = livePath.split('/');
+                const pathLocale = (segments.length > 1 && LOCALES.includes(segments[1])) ? segments[1] : 'en';
+                const isOnMaintenancePage = segments.some(s => s === 'maintenance');
+
+                // Case 1: Maintenance just turned ON → redirect to maintenance page
+                if (prevState === false && newState === true && !isOnMaintenancePage) {
+                    sseRedirectFired.current = true;
+                    window.location.replace(`/${pathLocale}/maintenance`);
+                    return;
+                }
+
+                // Case 2: Maintenance just turned OFF → redirect to home page
+                if (prevState === true && newState === false && isOnMaintenancePage) {
+                    sseRedirectFired.current = true;
+                    window.location.replace(`/${pathLocale}`);
+                    return;
+                }
+            } catch { /* ignore parse errors */ }
+        };
+
+        es.onerror = () => {
+            // On SSE connection error, try to reconnect after a delay
+            // The browser's EventSource auto-reconnects, so we just log
+            console.warn("[OptWin SSE] Connection error, auto-reconnecting...");
+        };
+
+        return () => {
+            es.close();
+            // Reset redirect guard on unmount so it works on remount
+            sseRedirectFired.current = false;
+        };
+    }, [mounted]);
+
     return (
         <>
             {/* 

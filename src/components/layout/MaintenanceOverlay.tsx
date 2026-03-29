@@ -268,9 +268,17 @@ export function MaintenanceOverlay({ reason, estimatedEnd }: { reason?: string |
                 )}
             </motion.div>
 
-            {/* Copyright */}
+            {/* Copyright — dynamic, localized, same data as main site footer */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="absolute bottom-8 left-0 right-0 text-center">
-                <p className="text-[16px] text-white/13 font-medium">&copy; {new Date().getFullYear()} {mt("maintenance.siteName", "OptWin")}. All rights reserved.</p>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3">
+                    <span className="text-[14px] text-white/10 font-medium select-none tracking-tight">
+                        &copy; {new Date().getFullYear()} {mt("maintenance.siteName", "OptWin")}
+                    </span>
+                    <span className="hidden md:inline size-1 rounded-full bg-white/[0.06]"></span>
+                    <span className="text-[14px] text-white/10 font-medium select-none tracking-tight">
+                        {mt("footer.allRights", "All rights reserved.")}
+                    </span>
+                </div>
             </motion.div>
         </motion.div>
     );

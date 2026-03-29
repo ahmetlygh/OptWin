@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import { PublicShell } from "@/components/layout/PublicShell";
-import { ClientProviders } from "@/components/providers/ClientProviders";
-import { isMaintenanceMode } from "@/lib/maintenance";
-import { headers, cookies } from "next/headers";
-import { auth } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
-import { getTranslationsFromDb } from "@/lib/translations";
+
+import { headers } from "next/headers";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://optwin.tech";
 
@@ -67,26 +63,9 @@ export default async function RootLayout({
         "site_url", "site_name", "site_description", "site_keywords", "site_version", 
         "site_logo_url", "site_favicon_url", "github_url", "bmc_url", "contact_email", 
         "author_name", "author_url", "bmc_widget_enabled", "copyright_text", "copyright_year",
-        "default_lang", "default_theme", "theme_primary_color",
+        "default_lang", "default_theme", "theme_primary_color", "maintenanceMode"
     ];
-
-    const [maintenance, session, settings] = await Promise.all([
-        isAdmin ? Promise.resolve(false) : isMaintenanceMode(),
-        auth(),
-        getSettings(PUBLIC_KEYS)
-    ]);
-
-    const cookieStore = await cookies();
-    const finalLocale = locale || cookieStore.get("NEXT_LOCALE")?.value || settings.default_lang || "en";
-    
-    // Fetch translations synchronously for SSR
-    const initialTranslations = await getTranslationsFromDb(finalLocale);
-    const adminSession = session?.isAdmin ? {
-        name: session.user?.name || null,
-        image: session.user?.image || null,
-    } : null;
-
-    const theme = cookieStore.get("NEXT_THEME")?.value || settings.default_theme || "dark";
+    const settings = await getSettings(PUBLIC_KEYS);
 
     const siteName = settings.site_name || "OptWin";
     const authorName = settings.author_name || "ahmetly_";
@@ -123,13 +102,7 @@ export default async function RootLayout({
                     }),
                 }}
             />
-            <ClientProviders serverSettings={settings} initialTranslations={initialTranslations}>
-                {maintenance && !isAdmin ? children : (
-                    <PublicShell serverMaintenance={maintenance} adminSession={adminSession} serverSettings={settings}>
-                        {children}
-                    </PublicShell>
-                )}
-            </ClientProviders>
+            {children}
         </>
     );
 }

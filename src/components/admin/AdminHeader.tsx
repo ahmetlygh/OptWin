@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,6 +35,7 @@ const DURATION_PRESETS = [
 ];
 
 export function AdminHeader({ user }: AdminHeaderProps) {
+    const router = useRouter();
     const [time, setTime] = useState("");
     const [showSignOut, setShowSignOut] = useState(false);
     const [showViewSite, setShowViewSite] = useState(false);
@@ -111,6 +112,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             if (data.success) {
                 setMaintenance(data.maintenance);
                 window.dispatchEvent(new CustomEvent('optwin:set-maintenance', { detail: data.maintenance }));
+                router.refresh();
             }
         } catch { /* ignore */ }
         setMaintenanceLoading(false);
@@ -201,20 +203,20 @@ export function AdminHeader({ user }: AdminHeaderProps) {
 
                 {/* Right: Actions + User */}
                 <div className="flex items-center gap-3">
-                    {/* Site Active Toggle — ON = site open, OFF = maintenance */}
+                    {/* Maintenance Active Toggle — ON (Right) = Site Active (maintenance false), OFF (Left) = Maintenance (maintenance true) */}
                     <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-medium hidden sm:inline transition-colors duration-300 ${maintenance ? "text-amber-400/50" : "text-emerald-400/50"}`}>
-                            {maintenance ? "Bakımda" : "Aktif"}
+                        <span className={`text-[10px] font-medium hidden sm:inline transition-colors duration-300 ${maintenanceLoading ? "text-white/20" : maintenance ? "text-amber-400" : "text-emerald-400"}`}>
+                            {maintenanceLoading ? "Yükleniyor..." : maintenance ? "Bakımda" : "Aktif"}
                         </span>
                         <button
                             onClick={() => maintenance ? setShowMaintenanceOff(true) : openMaintenanceModal()}
                             disabled={maintenanceLoading}
-                            className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${!maintenance ? "bg-emerald-500/80" : "bg-white/[0.06]"} ${maintenanceLoading ? "opacity-50" : ""}`}
+                            className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${maintenanceLoading ? "bg-white/10" : maintenance ? "bg-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.2)]" : "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]"} ${maintenanceLoading ? "opacity-50" : ""}`}
                         >
                             {maintenanceLoading ? (
                                 <Loader2 size={10} className="absolute top-[5px] left-1/2 -translate-x-1/2 text-white/50 animate-spin" />
                             ) : (
-                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${!maintenance ? "left-[19px]" : "left-[3px]"}`} />
+                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${maintenance ? "left-[3px]" : "left-[19px]"}`} />
                             )}
                         </button>
                     </div>

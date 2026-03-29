@@ -126,14 +126,17 @@ async function main() {
         de: { template: "{highlight} {prefix}", prefix: "Sie Ihr Windows-Erlebnis", highlight: "Optimieren" },
         fr: { template: "{highlight} {prefix}", prefix: "votre expérience Windows", highlight: "Optimisez" },
         es: { template: "{highlight} {prefix}", prefix: "su experiencia con Windows", highlight: "Optimice" },
-        zh: { template: "{highlight}{prefix}", prefix: "您的 Windows 体验", highlight: "优化" },
+        zh: { template: "{highlight}{prefix}", prefix: "您的 Windows 体验", highlight: "优化", subtitle: "高级用户和玩家 professional 优化工具。仅需一个脚本，即可清理、优化并加速您的系统。" },
         hi: { template: "{prefix} {highlight}", prefix: "अपने Windows अनुभव को", highlight: "अनुकूलित करें" }
     };
 
     for (const [lang, vars] of Object.entries(heroMappings)) {
         for (const [keyRaw, value] of Object.entries(vars)) {
             // Map keys exactly as the Content Admin does
-            const dbKey = `optwin:setting:translations:hero.title${keyRaw.charAt(0).toUpperCase() + keyRaw.slice(1)}:${lang}`;
+            const dbKey = keyRaw === "subtitle" 
+                ? `optwin:setting:translations:hero.subtitle:${lang}`
+                : `optwin:setting:translations:hero.title${keyRaw.charAt(0).toUpperCase() + keyRaw.slice(1)}:${lang}`;
+                
             await prisma.siteSetting.upsert({
                 where: { key: dbKey },
                 update: { value },

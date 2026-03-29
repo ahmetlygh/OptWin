@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
+import { AdminThemePicker } from "@/components/admin/AdminThemePicker";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminActionBar } from "@/components/admin/AdminActionBar";
@@ -132,8 +133,19 @@ export default function GeneralSettings() {
 
     // ─── MAINTENANCE state ─────────────────────────────────────────────────────
     const [maintenance, setMaintenance] = useState(false);
+    const [maintenanceLoading, setMaintenanceLoading] = useState(true);
+
     useEffect(() => {
-        const handler = (e: any) => setMaintenance(e.detail);
+        // Fetch absolute truth from Redis/DB via existing API instead of waiting for missed events
+        fetch("/api/admin/maintenance").then(r => r.json()).then(d => {
+            setMaintenance(d.maintenance === true);
+            setMaintenanceLoading(false);
+        }).catch(() => setMaintenanceLoading(false));
+
+        const handler = (e: any) => {
+            setMaintenance(e.detail);
+            setMaintenanceLoading(false);
+        };
         window.addEventListener('optwin:set-maintenance', handler);
         return () => window.removeEventListener('optwin:set-maintenance', handler);
     }, []);
@@ -246,12 +258,17 @@ export default function GeneralSettings() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${!maintenance ? "text-emerald-400" : "text-white/20"}`}>Aktif</span>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${maintenanceLoading ? "text-white/20" : maintenance ? "text-amber-400" : "text-emerald-400"}`}>{maintenanceLoading ? "YÜKLENİYOR" : maintenance ? "BAKIMDA" : "AKTİF"}</span>
                         <button
                             onClick={() => maintenance ? window.dispatchEvent(new CustomEvent('optwin:open-maintenance-off')) : window.dispatchEvent(new CustomEvent('optwin:open-maintenance-modal'))}
-                            className={`relative w-12 h-6 rounded-full transition-all duration-300 ${!maintenance ? "bg-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-white/[0.06]"}`}
+                            disabled={maintenanceLoading}
+                            className={`relative w-12 h-6 rounded-full transition-all duration-300 ${maintenanceLoading ? "bg-white/10" : maintenance ? "bg-amber-500/80 shadow-[0_0_15px_rgba(245,158,11,0.3)]" : "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]"}`}
                         >
-                            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${!maintenance ? "left-7" : "left-1"}`} />
+                            {maintenanceLoading ? (
+                                <Loader2 size={12} className="absolute top-1.5 left-1/2 -translate-x-1/2 text-white/50 animate-spin" />
+                            ) : (
+                                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${maintenance ? "left-1" : "left-7"}`} />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -304,6 +321,11 @@ export default function GeneralSettings() {
                                                     value={value || "en"}
                                                     onChange={v => setSettings(prev => ({ ...prev, [field.key]: v }))}
                                                     variant="form"
+                                                />
+                                            ) : field.key === "default_theme" ? (
+                                                <AdminThemePicker
+                                                    value={value || "dark"}
+                                                    onChange={v => setSettings(prev => ({ ...prev, [field.key]: v }))}
                                                 />
                                             ) : (
                                                 <AdminSelect
