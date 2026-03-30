@@ -55,7 +55,6 @@ export default async function Home({ params }: HomeProps) {
                 <AboutSection />
             </div>
             <ActionArea />
-            <DnsModal providers={dnsProviders} />
             <HashScroller />
         </>
     );
