@@ -27,73 +27,78 @@ const SeoPreview = ({ title, description, code }: { title: string; description: 
     </div>
 );
 
-/* ── Task 3: JSON Syntax Highlighting (zero-dependency) ── */
-const JsonHighlighter = memo(({ content, searchTerm }: { content: string; searchTerm: string }) => {
-    const highlighted = useMemo(() => {
-        if (!content) return [];
-        const lines = content.split("\n");
-        const term = (searchTerm || "").toLowerCase();
+/* ── Task 3 & 4: Structural JSON Editor (Values-Only) ── */
+const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { content: string; onUpdate: (key: string, val: string) => void; onCancel: () => void; searchTerm: string }) => {
+    const data = useMemo(() => {
+        try { return JSON.parse(content); } catch { return {}; }
+    }, [content]);
 
-        return lines.map((line, i) => {
-            const parts: React.ReactNode[] = [];
-            let remaining = line;
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                onCancel();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onCancel]);
+
+    const term = (searchTerm || "").toLowerCase();
+
+    return (
+        <div className="font-mono text-[13px] p-8 space-y-1.5 custom-scrollbar min-h-full bg-black/[0.1]">
+            <div className="text-white/30">{'{'}</div>
+            {Object.entries(data).map(([key, val], i) => {
+                if (key === "_config") return null;
+                const isMatch = term && (key.toLowerCase().includes(term) || String(val).toLowerCase().includes(term));
+
+                return (
+                    <div key={key} className={`group flex items-start gap-2 pl-4 border-l border-transparent hover:border-white/10 transition-all ${isMatch ? "bg-[#6b5be6]/5" : ""} ${!isMatch && term ? "opacity-30" : "opacity-100"}`}>
+                        <div className="shrink-0 flex items-center pr-2">
+                             <span className="text-white/20 mr-1">&quot;</span>
+                             <span className="text-[#b39ddb] font-bold">{key}</span>
+                             <span className="text-white/20 ml-1">&quot;</span>
+                             <span className="text-white/25 ml-1">:</span>
+                        </div>
+                        <div className="flex-1 relative flex items-center group-hover:bg-white/[0.02] rounded px-2 -ml-2 transition-colors">
+                            <span className="text-white/20 mr-1">&quot;</span>
+                            <textarea
+                                value={String(val)}
+                                rows={1}
+                                onChange={(e) => {
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = e.target.scrollHeight + 'px';
+                                    onUpdate(key, e.target.value);
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = e.target.scrollHeight + 'px';
+                                }}
+                                className="w-full bg-transparent overflow-hidden resize-none outline-none text-[#a5d6a7] focus:text-white caret-white transition-colors py-0 min-h-[1.5em]"
+                                placeholder="..."
+                            />
+                            <span className="text-white/20 ml-1">&quot;</span>
+                            {i < Object.keys(data).length - 2 && <span className="text-white/10">,</span>}
+                        </div>
+                    </div>
+                );
+            })}
             
-            // Search highlighting logic
-            if (term && line.toLowerCase().includes(term)) {
-                // If it's a match, we could highlight the whole line or parts. 
-                // For now, let's just make the matching line stand out.
-            }
+            {/* Config Section - Read Only Visual */}
+            {data["_config"] && (
+                <div className="pt-4 mt-4 border-t border-white/[0.03]">
+                    <div className="flex items-center gap-2 pl-4 text-white/15 select-none italic text-[11px]">
+                         <span>&quot;_config&quot;: {'{'} ... {'}'}</span>
+                         <span className="text-[9px] bg-white/5 px-1.5 rounded not-italic ml-2">READ-ONLY</span>
+                    </div>
+                </div>
+            )}
 
-            // Match JSON key-value patterns
-            const keyMatch = remaining.match(/^(\s*)"([^"]+)"(\s*:\s*)/);
-            if (keyMatch) {
-                parts.push(<span key={`${i}-ws`} className="text-white/20">{keyMatch[1]}</span>);
-                parts.push(<span key={`${i}-q1`} className="text-white/20">&quot;</span>);
-                const isKeyMatch = term && keyMatch[2].toLowerCase().includes(term);
-                parts.push(<span key={`${i}-k`} className={`${isKeyMatch ? "bg-[#b39ddb]/30 text-white shadow-[0_0_8px_rgba(179,157,219,0.5)]" : "text-[#b39ddb]"} transition-all`}>{keyMatch[2]}</span>);
-                parts.push(<span key={`${i}-q2`} className="text-white/20">&quot;</span>);
-                parts.push(<span key={`${i}-col`} className="text-white/25">{keyMatch[3]}</span>);
-                remaining = remaining.slice(keyMatch[0].length);
-                // Value part
-                const strVal = remaining.match(/^"([^"]*)"(,?\s*)$/);
-                const numVal = remaining.match(/^(\d+\.?\d*)(,?\s*)$/);
-                const boolVal = remaining.match(/^(true|false|null)(,?\s*)$/);
-                const braceVal = remaining.match(/^([{}\[\]])(,?\s*)$/);
-                
-                if (strVal) {
-                    parts.push(<span key={`${i}-vq1`} className="text-white/20">&quot;</span>);
-                    const isValMatch = term && strVal[1].toLowerCase().includes(term);
-                    parts.push(<span key={`${i}-v`} className={`${isValMatch ? "bg-emerald-500/30 text-white shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "text-[#a5d6a7]"} transition-all`}>{strVal[1]}</span>);
-                    parts.push(<span key={`${i}-vq2`} className="text-white/20">&quot;</span>);
-                    parts.push(<span key={`${i}-comma`} className="text-white/15">{strVal[2]}</span>);
-                } else if (numVal) {
-                    parts.push(<span key={`${i}-n`} className="text-[#ffcc80]">{numVal[1]}</span>);
-                    parts.push(<span key={`${i}-nc`} className="text-white/15">{numVal[2]}</span>);
-                } else if (boolVal) {
-                    parts.push(<span key={`${i}-b`} className="text-[#ef9a9a]">{boolVal[1]}</span>);
-                    parts.push(<span key={`${i}-bc`} className="text-white/15">{boolVal[2]}</span>);
-                } else if (braceVal) {
-                    parts.push(<span key={`${i}-br`} className="text-white/30">{braceVal[1]}</span>);
-                    parts.push(<span key={`${i}-brc`} className="text-white/15">{braceVal[2]}</span>);
-                } else {
-                    parts.push(<span key={`${i}-rest`} className="text-white/40">{remaining}</span>);
-                }
-            } else {
-                // Non-key lines (braces, empty)
-                const braceOnly = line.match(/^(\s*)([{}\[\],]*)(\s*)$/);
-                if (braceOnly) {
-                    parts.push(<span key={`${i}-bw`} className="text-white/20">{braceOnly[1]}</span>);
-                    parts.push(<span key={`${i}-bo`} className="text-white/30">{braceOnly[2]}</span>);
-                } else {
-                    parts.push(<span key={`${i}-raw`} className="text-white/40">{line}</span>);
-                }
-            }
-            return <div key={i} className={`leading-relaxed transition-opacity duration-300 ${term && !line.toLowerCase().includes(term) ? "opacity-30" : "opacity-100"}`}>{parts}</div>;
-        });
-    }, [content, searchTerm]);
-    return <div className="font-mono text-[13px] whitespace-pre">{highlighted}</div>;
+            <div className="text-white/30">{'}'}</div>
+        </div>
+    );
 });
-JsonHighlighter.displayName = "JsonHighlighter";
+SmartJsonEditor.displayName = "SmartJsonEditor";
 
 /* ── Memoized Translation Row ── */
 const TranslationRow = memo(({ k, defText, trText, isMissingInDb, onUpdate, forwardRef }: { k: string; defText: string; trText: string; isMissingInDb: boolean; onUpdate: (key: string, val: string) => void; forwardRef?: React.Ref<HTMLInputElement | HTMLTextAreaElement>; }) => {
@@ -191,6 +196,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const [showDefaultModal, setShowDefaultModal] = useState(false);
     const [pendingCode, setPendingCode] = useState<string | null>(null);
     const [highlightKey, setHighlightKey] = useState<string | null>(null);
+    const [uiKey, setUiKey] = useState(0); // Forced re-mount key
     const [openSidebars, setOpenSidebars] = useState<Record<string, boolean>>({ status: true, seo: false, pt: false });
     const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
     const jsonContainerRef = useRef<HTMLDivElement>(null);
@@ -360,13 +366,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
     }, [translations, seoMetadata, pageTitles, language, isJsonMode, deferredSearch, showMissingOnly, constructVirtualJson]);
 
-    const handleRawJsonChange = (val: string) => { 
-        setJsonContent(val); 
-        try {
-            JSON.parse(val);
-            deconstructVirtualJson(val);
-        } catch {}
-    };
+    // handleRawJsonChange was removed as SmartJsonEditor handles updates directly via callbacks.
 
     // Automatic Sync to JSON content whenever UI state changes
     useEffect(() => {
@@ -378,17 +378,23 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
     }, [translations, seoMetadata, pageTitles, language, isJsonMode, deferredSearch, showMissingOnly, constructVirtualJson, jsonContent]);
 
-    const toggleJsonMode = () => {
+    const toggleJsonMode = (revert = false) => {
         if (!isJsonMode) {
              setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly));
+             setIsJsonMode(true);
         } else {
-             deconstructVirtualJson(jsonContent);
-             // Force table re-render to ensure virtualizer measurements are fresh
-             if (virtualizer) {
-                virtualizer.measure();
+             if (revert) {
+                showToast("Değişiklikler geri alındı", "success");
+             } else {
+                deconstructVirtualJson(jsonContent);
              }
+             
+             // Forced re-mount strategy: unmount and remount UI tree to fix hydration
+             setUiKey(prev => prev + 1);
+             setIsJsonMode(false);
+             
+             // Measure after re-mount is handled by the virtualizer itself due to fresh state
         }
-        setIsJsonMode(!isJsonMode);
     };
 
     const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -680,10 +686,9 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         <div className="relative w-full sm:w-80">
                             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                             <input ref={searchRef} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Anahtar veya çeviri ara..." className={`${neonInput} pl-10`} />
-                            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono text-white/15 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">Ctrl+F</kbd>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={toggleJsonMode} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${isJsonMode ? "bg-[#6b5be6] text-white border-[#6b5be6] shadow-[0_0_20px_rgba(107,91,230,0.3)] hover:bg-[#5a4cc2] hover:shadow-[0_0_25px_rgba(107,91,230,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-[#6b5be6]/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(107,91,230,0.15)]"}`}>
+                            <button onClick={() => toggleJsonMode()} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${isJsonMode ? "bg-[#6b5be6] text-white border-[#6b5be6] shadow-[0_0_20px_rgba(107,91,230,0.3)] hover:bg-[#5a4cc2] hover:shadow-[0_0_25px_rgba(107,91,230,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-[#6b5be6]/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(107,91,230,0.15)]"}`}>
                                 {isJsonMode ? "UI MODU" : "RAW JSON"}
                             </button>
                             <button onClick={() => setShowMissingOnly(!showMissingOnly)} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${showMissingOnly ? "bg-amber-500 text-black border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:bg-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-amber-500/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(245,158,11,0.15)]"}`}>
@@ -696,7 +701,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     <div className="flex-1 min-h-0 bg-white/[0.015] backdrop-blur-md border border-white/[0.05] rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
                         <AnimatePresence mode="wait">
                             {!isJsonMode ? (
-                                <motion.div key="ui-mode" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-col h-full absolute inset-0">
+                                <motion.div key={`ui-mode-${uiKey}`} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-col h-full absolute inset-0">
                                     <div className="grid grid-cols-2 bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] sticky top-0 z-20">
                                         <div className="p-3.5 px-5 text-[10px] flex items-center gap-2 font-black text-white/30 uppercase tracking-[0.2em]">
                                             <FlagIcon flagSvg={defaultLang?.flagSvg ?? ""} size="sm" /> 
@@ -751,23 +756,21 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                             </div>
                                         </div>
                                     </div>
-                                        <div ref={jsonContainerRef} className="flex-1 overflow-auto custom-scrollbar group/json bg-black/[0.1] relative">
-                                            <div className="relative p-10 font-mono text-[14px] leading-6 min-h-full isolate" style={{ display: 'grid' }}>
-                                                <textarea 
-                                                    value={jsonContent} 
-                                                    onChange={e => handleRawJsonChange(e.target.value)} 
-                                                    spellCheck={false} 
-                                                    className="absolute inset-0 w-full h-full bg-transparent p-10 outline-none resize-none leading-6 text-transparent caret-white selection:bg-white/20 z-20 font-mono text-[14px] overflow-hidden whitespace-pre" 
-                                                />
-                                                {/* Sizing element to push grid rows - Must Match Textarea Exactly */}
-                                                <div aria-hidden="true" className="invisible leading-6 whitespace-pre font-mono text-[14px] col-start-1 row-start-1 pointer-events-none pb-12 z-0">
-                                                    {jsonContent + '\n\n'}
-                                                </div>
-                                                {/* Highlighting - Must Match Textarea Exactly */}
-                                                <div className="relative pointer-events-none z-10 leading-6 font-mono text-[14px] col-start-1 row-start-1 whitespace-pre">
-                                                    <JsonHighlighter content={jsonContent} searchTerm={deferredSearch} />
-                                                </div>
-                                            </div>
+                                        <div ref={jsonContainerRef} className="flex-1 overflow-auto custom-scrollbar group/json relative">
+                                            <SmartJsonEditor 
+                                                content={jsonContent} 
+                                                searchTerm={deferredSearch}
+                                                onCancel={() => toggleJsonMode(true)}
+                                                onUpdate={(key, val) => {
+                                                    try {
+                                                        const parsed = JSON.parse(jsonContent);
+                                                        parsed[key] = val;
+                                                        const nextJson = JSON.stringify(parsed, null, 4);
+                                                        setJsonContent(nextJson);
+                                                        deconstructVirtualJson(nextJson);
+                                                    } catch {}
+                                                }}
+                                            />
                                         </div>
                                 </motion.div>
                             )}
@@ -836,10 +839,9 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                        {/* Task 5: Save shortcut hint */}
+                        {/* Task 5: Save shortcut hint removed */}
                         <div className="mt-2 pt-2 border-t border-white/[0.03] flex items-center justify-center gap-2 relative z-10">
                             <Keyboard size={10} className="text-white/15" />
-                            <span className="text-[8px] font-mono text-white/15">Ctrl+S Kaydet</span>
                         </div>
                     </motion.div>
 
