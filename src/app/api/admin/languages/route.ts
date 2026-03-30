@@ -22,7 +22,7 @@ export async function GET() {
 
 // Task 3: Single-Word Naming Enforcement (Zod Validation)
 const languageSchema = z.object({
-    code: z.string().min(2).max(5).regex(/^[a-z]{2,5}$|^[a-z]{2}-[A-Z]{2}$/),
+    code: z.string().min(2).max(6).regex(/^[a-zA-Z]{2,3}(?:-[a-zA-Z]{2,4})?$/),
     name: z.string().min(1).max(50).regex(/^\S+$/, "Dil ismi tek kelime olmalıdır."), // No spaces
     nativeName: z.string().min(1).max(50),
     turkishName: z.string().min(1).max(50).optional().default(""),

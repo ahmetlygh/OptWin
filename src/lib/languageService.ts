@@ -116,6 +116,12 @@ export const languageService = {
         return langs.map(l => l.code);
     },
 
+    async getUtcOffset(code: string): Promise<number> {
+        const langs = await this.getAllLanguages();
+        const lang = langs.find(l => l.code === code);
+        return lang ? (lang.utcOffset || 0) : 0;
+    },
+
     async invalidateCache(): Promise<void> {
         await redisCache.del([CACHE_KEY, ALL_CACHE_KEY]);
     },

@@ -203,9 +203,9 @@ export function LanguageDashboard() {
                                         {!lang.isDefault && (
                                             <button
                                                 onClick={() => setLangToDelete(lang)}
-                                                className="px-3 py-2 bg-transparent hover:bg-red-500/10 text-white/10 hover:text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                className="px-3 py-2 bg-red-500/5 hover:bg-red-500/20 text-red-500/40 hover:text-red-500 border border-red-500/10 hover:border-red-500/30 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 group/del"
                                             >
-                                                SİL
+                                                <Trash2 size={12} className="opacity-40 group-hover/del:opacity-100" /> SİL
                                             </button>
                                         )}
                                     </div>
@@ -234,7 +234,16 @@ export function LanguageDashboard() {
 
             <AnimatePresence>{isSortingMode && <SortingModal languages={languages} onClose={() => setIsSortingMode(false)} onSave={handleSaveOrder} />}</AnimatePresence>
             <AnimatePresence>{isEditModalOpen && <LanguageEditorModal language={activeLang} onClose={() => setIsEditModalOpen(false)} onSave={() => { setIsEditModalOpen(false); fetchLanguages(); }} />}</AnimatePresence>
-            <AdminConfirmModal open={!!langToDelete} onClose={() => setLangToDelete(null)} onConfirm={() => langToDelete && handleDelete(langToDelete)} title="Dili Sil" description={`${langToDelete?.name} dili silinsin mi?`} confirmText="Evet, Sil" variant="danger" />
+            <AdminConfirmModal 
+                open={!!langToDelete} 
+                onClose={() => setLangToDelete(null)} 
+                onConfirm={() => langToDelete && handleDelete(langToDelete)} 
+                title="DİLİ KALICI OLARAK SİL?" 
+                description={`Bu işlem geri alınamaz. "${langToDelete?.turkishName}" diline ait tüm çeviriler, SEO ayarları ve yapılandırmalar tamamen silinecektir. Devam etmek istediğine emin misin?`} 
+                confirmText="EVET, HER ŞEYİ SİL" 
+                cancelText="VAZGEÇ"
+                variant="danger" 
+            />
         </div>
     );
 }

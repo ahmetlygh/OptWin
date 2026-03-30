@@ -28,8 +28,9 @@ const SeoPreview = ({ title, description, code }: { title: string; description: 
 );
 
 /* ── Task 3 & 4: Structural JSON Editor (Values-Only) ── */
-const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm }: { content: string; onUpdate: (key: string, val: string) => void; onRevert: () => void; searchTerm: string }) => {
+const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMissingOnly, originalTranslations, origSeoMeta, origPageTitles, highlightKey }: { content: string; onUpdate: (key: string, val: string) => void; onRevert: () => void; searchTerm: string; showMissingOnly: boolean; originalTranslations: Record<string, string>; origSeoMeta: any; origPageTitles: Record<string, string>; highlightKey?: string | null }) => {
     const [localData, setLocalData] = useState<Record<string, any>>({});
+    const inputRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
 
     useEffect(() => {
         try { setLocalData(JSON.parse(content)); } catch { setLocalData({}); }
@@ -56,24 +57,90 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm }: { con
     const term = (searchTerm || "").toLowerCase();
 
     return (
-        <div className="font-mono text-[13px] p-8 space-y-1.5 custom-scrollbar min-h-full bg-black/[0.1]">
+        <div className="font-mono text-[13px] leading-relaxed p-8 custom-scrollbar min-h-full bg-black/[0.1]">
             <div className="text-white/30">{'{'}</div>
             {Object.entries(localData).map(([key, val], i) => {
-                const isMatch = term && (key.toLowerCase().includes(term) || String(val).toLowerCase().includes(term));
+                const termMatch = term && (key.toLowerCase().includes(term) || String(val).toLowerCase().includes(term));
+                const isEmptyNow = !val || String(val).trim() === "";
+
+                // 1. Handle Config Keys (_config.*)
+                if (key.startsWith("_config.")) {
+                    const isMissingModeActive = showMissingOnly;
+                    // If missing mode is on, ONLY show if it's actually empty.
+                    if (isMissingModeActive && !isEmptyNow) return null;
+                    
+                    return (
+                        <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/[0.015] transition-all ${termMatch ? "bg-[#6b5be6]/5" : ""} ${!termMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
+                            <div className="shrink-0 flex items-center pr-2">
+                                 <span className="text-white/20 mr-1">&quot;</span>
+                                 <span className="text-[#b39ddb] font-bold">{key}</span>
+                                 <span className="text-white/20 ml-1">&quot;</span>
+                                 <span className="text-white/25 ml-2">:</span>
+                            </div>
+                            <div className={`flex-1 relative flex items-start flex-wrap transition-colors border ${isEmptyNow ? "bg-amber-500/10 border-amber-500/30 rounded-md" : "border-transparent"}`}>
+                                <span className={`text-white/20 ml-2 mr-0.5 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
+                                <textarea
+                                    ref={el => { inputRefs.current[i] = el; }}
+                                    value={String(val)}
+                                    rows={1}
+                                    spellCheck={false}
+                                    onChange={(e) => {
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = e.target.scrollHeight + 'px';
+                                        handleChange(key, e.target.value);
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = e.target.scrollHeight + 'px';
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            if (inputRefs.current[i + 1]) inputRefs.current[i + 1]?.focus();
+                                            else e.currentTarget.blur();
+                                        }
+                                        if (e.key === "ArrowDown") { e.preventDefault(); inputRefs.current[i + 1]?.focus(); }
+                                        if (e.key === "ArrowUp") { e.preventDefault(); inputRefs.current[i - 1]?.focus(); }
+                                        if (e.key === "Escape") { e.stopPropagation(); e.currentTarget.blur(); }
+                                    }}
+                                    className={`bg-transparent overflow-hidden resize-none outline-none caret-white transition-colors py-0 mt-0.5 min-h-[1.5em] w-auto inline-block min-w-[20px] whitespace-nowrap ${isEmptyNow ? "text-amber-100/90" : "text-[#a5d6a7] focus:text-white"}`}
+                                    placeholder="..."
+                                    style={{ width: `${Math.max(2, String(val).length)}ch`, minWidth: '1ch' }}
+                                />
+                                <span className={`text-white/20 ml-0.5 mr-1 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
+                                {i < Object.keys(localData).length - 1 && <span className="text-white/10 mt-[2px]">,</span>}
+                            </div>
+                        </div>
+                    );
+                }
+
+                // 2. Handle Regular Translations, SEO, and Page Titles
+                let originalValue = originalTranslations[key];
+                if (key.startsWith("seo.")) originalValue = origSeoMeta[key.replace("seo.", "")];
+                else if (key.startsWith("page.")) originalValue = origPageTitles[key];
+                
+                const wasOriginallyEmpty = !originalValue || String(originalValue).trim() === "";
+                
+                // If showing missing only, hide if it WAS NOT empty initially
+                if (showMissingOnly && !wasOriginallyEmpty) return null;
+
+                const isMatch = termMatch || (showMissingOnly && wasOriginallyEmpty);
 
                 return (
-                    <div key={key} className={`group flex items-start gap-2 pl-4 border-l border-transparent hover:border-white/10 transition-all ${isMatch ? "bg-[#6b5be6]/5" : ""} ${!isMatch && term ? "opacity-30" : "opacity-100"}`}>
+                    <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/[0.015] transition-all ${isMatch ? "bg-[#6b5be6]/5" : ""} ${!isMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
                         <div className="shrink-0 flex items-center pr-2">
                              <span className="text-white/20 mr-1">&quot;</span>
                              <span className="text-[#b39ddb] font-bold">{key}</span>
                              <span className="text-white/20 ml-1">&quot;</span>
-                             <span className="text-white/25 ml-1">:</span>
+                             <span className="text-white/25 ml-2">:</span>
                         </div>
-                        <div className="flex-1 relative flex items-center group-hover:bg-white/[0.02] rounded px-2 -ml-2 transition-colors">
-                            <span className="text-white/20 mr-1">&quot;</span>
+                        <div className={`flex-1 relative flex items-start flex-wrap transition-colors border ${isEmptyNow ? "bg-amber-500/10 border-amber-500/30 rounded-md" : "border-transparent"}`}>
+                            <span className={`text-white/20 ml-2 mr-0.5 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
                             <textarea
+                                ref={el => { inputRefs.current[i] = el; }}
                                 value={String(val)}
                                 rows={1}
+                                spellCheck={false}
                                 onChange={(e) => {
                                     e.target.style.height = 'auto';
                                     e.target.style.height = e.target.scrollHeight + 'px';
@@ -83,11 +150,34 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm }: { con
                                     e.target.style.height = 'auto';
                                     e.target.style.height = e.target.scrollHeight + 'px';
                                 }}
-                                className="w-full bg-transparent overflow-hidden resize-none outline-none text-[#a5d6a7] focus:text-white caret-white transition-colors py-0 min-h-[1.5em]"
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        if (inputRefs.current[i + 1]) {
+                                            inputRefs.current[i + 1]?.focus();
+                                        } else {
+                                            e.currentTarget.blur();
+                                        }
+                                    }
+                                    if (e.key === "ArrowDown") {
+                                        e.preventDefault();
+                                        inputRefs.current[i + 1]?.focus();
+                                    }
+                                    if (e.key === "ArrowUp") {
+                                        e.preventDefault();
+                                        inputRefs.current[i - 1]?.focus();
+                                    }
+                                    if (e.key === "Escape") {
+                                        e.stopPropagation();
+                                        e.currentTarget.blur();
+                                    }
+                                }}
+                                className={`bg-transparent overflow-hidden resize-none outline-none caret-white transition-colors py-0 mt-0.5 min-h-[1.5em] w-auto inline-block min-w-[20px] whitespace-nowrap ${isEmptyNow ? "text-amber-100/90" : "text-[#a5d6a7] focus:text-white"}`}
                                 placeholder="..."
+                                style={{ width: `${Math.max(2, String(val).length)}ch`, minWidth: '1ch' }}
                             />
-                            <span className="text-white/20 ml-1">&quot;</span>
-                            {i < Object.keys(localData).length - 2 && <span className="text-white/10">,</span>}
+                            <span className={`text-white/20 ml-0.5 mr-1 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
+                            {i < Object.keys(localData).length - 2 && <span className="text-white/10 mt-[2px]">,</span>}
                         </div>
                     </div>
                 );
@@ -113,9 +203,9 @@ const TranslationRow = memo(({ k, defText, trText, isMissingInDb, onUpdate, forw
             </div>
             <div className={`p-6 flex items-start min-w-0 relative ${isEmpty ? "bg-amber-500/[0.01]" : "bg-transparent"}`}>
                 {isTextarea ? (
-                    <textarea ref={forwardRef as React.Ref<HTMLTextAreaElement>} value={trText} onFocus={(e) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} onChange={e => onUpdate(k, e.target.value)} placeholder="..." rows={3} className={`${neonInput} p-4 resize-none min-h-[60px] custom-scrollbar text-[14px] leading-6`} />
+                    <textarea ref={forwardRef as React.Ref<HTMLTextAreaElement>} value={trText} spellCheck={false} onFocus={(e) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} onChange={e => onUpdate(k, e.target.value)} placeholder="..." rows={3} className={`${neonInput} p-4 resize-none min-h-[60px] custom-scrollbar text-[14px] font-medium leading-6`} />
                 ) : (
-                    <input ref={forwardRef as React.Ref<HTMLInputElement>} type="text" value={trText} onFocus={(e) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} onChange={e => onUpdate(k, e.target.value)} placeholder="..." className={`${neonInput} px-5 py-3.5 font-medium text-[14px] leading-6`} />
+                    <input ref={forwardRef as React.Ref<HTMLInputElement>} type="text" value={trText} spellCheck={false} onFocus={(e) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} onChange={e => onUpdate(k, e.target.value)} placeholder="..." className={`${neonInput} px-5 py-3.5 font-medium text-[14px] leading-6`} />
                 )}
                 {isEmpty && <div className="absolute top-3 right-4 w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.7)]" />}
             </div>
@@ -207,7 +297,6 @@ export const constructVirtualJson = (ui: any, seo: any, pt: any, lang: Language 
     out["_config.svg"] = lang.flagSvg;
     out["_config.order"] = lang.sortOrder;
     out["_config.isActive"] = lang.isActive;
-    out["_config.isDefault"] = lang.isDefault;
     
     return JSON.stringify(out, null, 4);
 };
@@ -245,7 +334,16 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const [pendingCode, setPendingCode] = useState<string | null>(null);
     const [highlightKey, setHighlightKey] = useState<string | null>(null);
     const [uiKey, setUiKey] = useState(0);
-    const [isDirty, setIsDirty] = useState(false);
+    const isDirty = useMemo(() => {
+        try {
+            return JSON.stringify(translations) !== JSON.stringify(originalTranslations) ||
+                   JSON.stringify(pageTitles) !== JSON.stringify(origPageTitles) ||
+                   JSON.stringify(seoMetadata) !== JSON.stringify(origSeoMeta) ||
+                   JSON.stringify(language) !== JSON.stringify(originalLanguage);
+        } catch { return false; }
+    }, [translations, originalTranslations, pageTitles, origPageTitles, seoMetadata, origSeoMeta, language, originalLanguage]);
+    // Keep setIsDirty as a mock function to satisfy existing handlers safely
+    const setIsDirty = useCallback((dirty: boolean) => {}, []);
     // Snapshot refs: frozen copies taken when entering JSON mode
     const snapshotTr = useRef<Record<string, string>>({});
     const snapshotSeo = useRef<any>({});
@@ -350,7 +448,6 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         flagSvg: meta.svg || prev.flagSvg, 
                         utcOffset: meta.utcOffset !== undefined ? Number(meta.utcOffset) : prev.utcOffset, 
                         isActive: meta.isActive !== undefined ? String(meta.isActive) === "true" : prev.isActive, 
-                        isDefault: meta.isDefault !== undefined ? String(meta.isDefault) === "true" : prev.isDefault, 
                         sortOrder: meta.order !== undefined ? Number(meta.order) : prev.sortOrder 
                     };
                 });
@@ -360,6 +457,22 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
     }, [setTranslations, setSeoMetadata, setPageTitles, setLanguage]);
 
+    const patchJsonContent = useCallback((updates: Record<string, any>) => {
+        if (!isJsonMode) return;
+        setJsonContent(prev => {
+            try {
+                const parsed = JSON.parse(prev);
+                let changed = false;
+                for (const [k, v] of Object.entries(updates)) {
+                    if (parsed[k] !== v) {
+                        parsed[k] = v;
+                        changed = true;
+                    }
+                }
+                return changed ? JSON.stringify(parsed, null, 4) : prev;
+            } catch { return prev; }
+        });
+    }, [isJsonMode]);
 
     const toggleJsonMode = (revert = false) => {
         if (!isJsonMode) {
@@ -472,11 +585,25 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
     /* ── Cancel ── */
     const handleCancel = () => {
-        setTranslations(structuredClone(originalTranslations));
-        setPageTitles(structuredClone(origPageTitles));
-        setSeoMetadata(structuredClone(origSeoMeta));
-        if (originalLanguage) setLanguage(structuredClone(originalLanguage));
+        const tr = structuredClone(originalTranslations);
+        const pt = structuredClone(origPageTitles);
+        const seo = structuredClone(origSeoMeta);
+        const lang = originalLanguage ? structuredClone(originalLanguage) : null;
+
+        setTranslations(tr);
+        setPageTitles(pt);
+        setSeoMetadata(seo);
+        if (lang) setLanguage(lang);
         setPendingCode(null);
+
+        // Crucial: Update jsonContent to reflect the original state if in JSON mode
+        const restoredJson = constructVirtualJson(tr, seo, pt, lang, "", false, defaultTrans);
+        setJsonContent(restoredJson);
+        snapshotJson.current = restoredJson;
+
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
         setIsDirty(false);
         showToast("Değişiklikler geri alındı.", "success");
     };
@@ -549,9 +676,54 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
     /* ── Computed ── */
     const allKeys = useMemo(() => Object.keys(defaultTrans).filter(k => !k.startsWith("page.")), [defaultTrans]);
-    const filteredKeys = useMemo(() => allKeys.filter(k => (!showMissingOnly || !translations[k]) && (!deferredSearch || k.toLowerCase().includes(deferredSearch.toLowerCase()))), [allKeys, showMissingOnly, deferredSearch, translations]);
-    const { percentage, missingCount } = useMemo(() => calculateProgress({ ...translations, ...pageTitles }, seoMetadata, allKeys), [translations, pageTitles, seoMetadata, allKeys]);
-    const minimapMarkers = useMemo(() => filteredKeys.map((k, i) => !translations[k] ? (i / filteredKeys.length) * 100 : null).filter(p => p !== null) as number[], [filteredKeys, translations]);
+    const filteredKeys = useMemo(() => allKeys.filter(k => {
+        const isMatch = (!showMissingOnly || !originalTranslations[k] || originalTranslations[k].trim() === "");
+        const searchMatch = (!deferredSearch || k.toLowerCase().includes(deferredSearch.toLowerCase()));
+        return isMatch && searchMatch;
+    }), [allKeys, showMissingOnly, deferredSearch, originalTranslations]);
+    
+    // Use originalTranslations for counters so they don't jump while typing
+    const missingCount = useMemo(() => {
+        let count = 0;
+        allKeys.forEach(k => {
+            if (!originalTranslations[k] || originalTranslations[k].trim() === "") count++;
+        });
+        return count;
+    }, [allKeys, originalTranslations]);
+
+    // Task: Automatically exit 'Show Missing' mode when all are resolved (on save)
+    useEffect(() => {
+        if (showMissingOnly && missingCount === 0) {
+            setShowMissingOnly(false);
+        }
+    }, [missingCount, showMissingOnly]);
+
+    const { percentage } = useMemo(() => calculateProgress({ ...translations, ...pageTitles }, seoMetadata, allKeys), [translations, pageTitles, seoMetadata, allKeys]);
+    
+    // Global minimap markers (works for both UI and JSON modes)
+    const minimapMarkers = useMemo(() => {
+        const markers: number[] = [];
+        if (isJsonMode) {
+            const lines = jsonContent.split("\n");
+            const total = lines.length;
+            if (total === 0) return markers;
+            lines.forEach((l, i) => {
+                const isMissing = l.includes(': ""') || l.endsWith(': "",');
+                if (isMissing) markers.push(((i + 0.5) / total) * 100);
+            });
+            return markers;
+        }
+
+        const total = filteredKeys.length;
+        if (total === 0) return markers;
+
+        filteredKeys.forEach((k, i) => {
+            const isMissing = !originalTranslations[k] || originalTranslations[k].trim() === "";
+            // Maps exactly to the physical center height proportion of the scroll track
+            if (isMissing) markers.push(((i + 0.5) / total) * 100);
+        });
+        return markers;
+    }, [filteredKeys, originalTranslations, isJsonMode, jsonContent]);
 
     const parentRef = useRef<HTMLDivElement>(null);
     const virtualizer = useVirtualizer({
@@ -560,17 +732,100 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         estimateSize: () => 82, 
         overscan: 10,
         measureElement: el => el?.getBoundingClientRect().height ?? 82,
+        scrollToFn: (offset, canSmooth, instance) => {
+            const el = parentRef.current;
+            if (!el) return;
+            if (canSmooth) {
+                const start = el.scrollTop;
+                const change = offset - start;
+                const startTime = performance.now();
+                const duration = 800;
+                let isCanceled = false;
+                const cancel = () => { isCanceled = true; };
+                el.addEventListener('wheel', cancel, { passive: true, once: true });
+                el.addEventListener('touchstart', cancel, { passive: true, once: true });
+                el.addEventListener('mousedown', cancel, { passive: true, once: true });
+
+                function animateScroll(currentTime: number) {
+                    if (!el || isCanceled) {
+                        el?.removeEventListener('wheel', cancel);
+                        el?.removeEventListener('touchstart', cancel);
+                        el?.removeEventListener('mousedown', cancel);
+                        return;
+                    }
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+                    el.scrollTop = start + change * easeOutCubic;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateScroll);
+                    } else {
+                        el.removeEventListener('wheel', cancel);
+                        el.removeEventListener('touchstart', cancel);
+                        el.removeEventListener('mousedown', cancel);
+                    }
+                }
+                requestAnimationFrame(animateScroll);
+            } else {
+                el.scrollTop = offset;
+            }
+        }
     });
 
     /* ── Task 2: Smart Jump with Highlight Pulse ── */
     const jumpToNextMissing = useCallback(() => {
         if (isJsonMode) {
             const lines = jsonContent.split("\n");
-            const targetLine = lines.findIndex(l => l.includes(': ""'));
+            // Highlight lines that are empty
+            const targetLine = lines.findIndex(l => l.includes(': ""') || l.endsWith(': "",'));
             if (targetLine !== -1) {
                 const el = jsonContainerRef.current;
-                if (el) {
-                    el.scrollTo({ top: targetLine * 24 - 100, behavior: "smooth" });
+                if (!el) return;
+
+                const parsed = JSON.parse(jsonContent || "{}");
+                const keys = Object.keys(parsed);
+                const emptyKey = keys.find(k => !parsed[k] || String(parsed[k]).trim() === "");
+                const rowHeight = 28; // approximate line height in virtual json editor
+                
+                const targetTop = Math.max(0, targetLine * rowHeight - el.clientHeight / 2 + 100);
+                const start = el.scrollTop;
+                const change = targetTop - start;
+                const startTime = performance.now();
+                const duration = 800;
+                let isCanceled = false;
+                const cancel = () => { isCanceled = true; };
+                el.addEventListener('wheel', cancel, { passive: true, once: true });
+                el.addEventListener('touchstart', cancel, { passive: true, once: true });
+                el.addEventListener('mousedown', cancel, { passive: true, once: true });
+
+                function animateScroll(currentTime: number) {
+                    if (!el || isCanceled) {
+                        el?.removeEventListener('wheel', cancel);
+                        el?.removeEventListener('touchstart', cancel);
+                        el?.removeEventListener('mousedown', cancel);
+                        return;
+                    }
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+                    el.scrollTop = start + change * easeOutCubic;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateScroll);
+                    } else {
+                        el.removeEventListener('wheel', cancel);
+                        el.removeEventListener('touchstart', cancel);
+                        el.removeEventListener('mousedown', cancel);
+                    }
+                }
+                requestAnimationFrame(animateScroll);
+                
+                if (emptyKey) {
+                    setTimeout(() => {
+                        setHighlightKey(`json-${emptyKey}`);
+                        setTimeout(() => setHighlightKey(null), 1500);
+                    }, 850);
                 }
                 showToast(`Satır ${targetLine + 1} üzerinde eksik değer bulundu.`, "success");
                 return;
@@ -578,18 +833,21 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
 
         // 1. Check current filtered list (translations)
-        const nextTrIndex = filteredKeys.findIndex(k => !translations[k]);
+        const nextTrIndex = filteredKeys.findIndex(k => !originalTranslations[k] || originalTranslations[k].trim() === "");
         if (nextTrIndex !== -1) {
             const nextTr = filteredKeys[nextTrIndex];
-            setHighlightKey(nextTr);
-            virtualizer.scrollToIndex(nextTrIndex, { align: "center" });
-            setTimeout(() => inputRefs.current[nextTr]?.focus(), 150);
-            setTimeout(() => setHighlightKey(null), 1500);
+            virtualizer.scrollToIndex(nextTrIndex, { align: "center", behavior: "smooth" });
+            
+            setTimeout(() => {
+                setHighlightKey(nextTr);
+                inputRefs.current[nextTr]?.focus();
+                setTimeout(() => setHighlightKey(null), 1500);
+            }, 850);
             return;
         }
 
         // 2. Check ALL translations (might be hidden by search)
-        const globalNextKey = allKeys.find(k => !translations[k]);
+        const globalNextKey = allKeys.find(k => !originalTranslations[k] || originalTranslations[k].trim() === "");
         if (globalNextKey) {
             setSearchQuery("");
             setShowMissingOnly(true);
@@ -605,9 +863,11 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
             setTimeout(() => {
                 seoRefs.current[nextSeo]?.focus();
                 seoRefs.current[nextSeo]?.scrollIntoView({ behavior: "smooth", block: "center" });
-                setHighlightKey(`seo.${nextSeo}`);
             }, 350);
-            setTimeout(() => setHighlightKey(null), 1800);
+            setTimeout(() => {
+                setHighlightKey(`seo.${nextSeo}`);
+                setTimeout(() => setHighlightKey(null), 1800);
+            }, 850);
             return;
         }
 
@@ -618,18 +878,28 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
             setTimeout(() => {
                 pageTitleRefs.current[nextPt]?.focus();
                 pageTitleRefs.current[nextPt]?.scrollIntoView({ behavior: "smooth", block: "center" });
-                setHighlightKey(nextPt);
             }, 350);
-            setTimeout(() => setHighlightKey(null), 1800);
+            setTimeout(() => {
+                setHighlightKey(nextPt);
+                setTimeout(() => setHighlightKey(null), 1800);
+            }, 850);
             return;
         }
         showToast("Tüm alanlar tamamlanmış görünüyor!", "success");
-    }, [translations, seoMetadata, pageTitles, isJsonMode, jsonContent, filteredKeys, allKeys, virtualizer, showToast]);
+    }, [translations, seoMetadata, pageTitles, isJsonMode, jsonContent, filteredKeys, allKeys, virtualizer, showToast, originalTranslations]);
 
-    /* ── JSON Deconstruct Sync (Phase 3) — Only fires in JSON mode when jsonContent changes ── */
+    /* ── Bi-directional Sync ── */
     useEffect(() => {
         if (isJsonMode) deconstructVirtualJson(jsonContent);
     }, [jsonContent, isJsonMode, deconstructVirtualJson]);
+
+    useEffect(() => {
+        // Sync JSON with ALL UI states in real-time
+        if (!isJsonMode) {
+            const nextJson = constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly, defaultTrans);
+            setJsonContent(nextJson);
+        }
+    }, [translations, seoMetadata, pageTitles, language, isJsonMode, deferredSearch, showMissingOnly, defaultTrans]);
 
     /* ── Task 5: Keyboard Shortcuts ── */
     useEffect(() => {
@@ -656,15 +926,33 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         : "bg-gradient-to-r from-[#5a4cc2] to-[#6b5be6] shadow-[0_0_20px_rgba(107,91,230,0.25)]";
 
     /* highlight pulse CSS class */
-    const pulseClass = "ring-2 ring-[#6b5be6]/50 shadow-[0_0_25px_rgba(107,91,230,0.3)] bg-[#6b5be6]/5";
+    const pulseClass = "highlight-pulse-ui";
 
     return (
         <div className="w-full h-[calc(100vh-90px)] max-w-[1920px] mx-auto flex flex-col pt-6 pb-2 px-4 lg:px-8 overflow-hidden">
             <style>{`
-                .optwin-pro-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
-                .optwin-pro-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-                .optwin-pro-scroll::-webkit-scrollbar-thumb { background: rgba(107, 91, 230, 0.5); border: 3px solid rgba(13, 13, 18, 1); border-radius: 8px; }
-                .optwin-pro-scroll::-webkit-scrollbar-thumb:hover { background: rgba(107, 91, 230, 0.8); }
+                .optwin-pro-scroll::-webkit-scrollbar { width: 16px; height: 16px; }
+                .optwin-pro-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 4px; }
+                .optwin-pro-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 8px; transition: all 0.2s; }
+                .optwin-pro-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+                .optwin-pro-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+                @keyframes highlightPulseUi {
+                    0% { box-shadow: inset 0 0 0 rgba(107, 91, 230, 0); background-color: transparent; }
+                    20% { box-shadow: inset 0 0 30px rgba(107, 91, 230, 0.5); background-color: rgba(107, 91, 230, 0.08); }
+                    80% { box-shadow: inset 0 0 30px rgba(107, 91, 230, 0.5); background-color: rgba(107, 91, 230, 0.08); }
+                    100% { box-shadow: inset 0 0 0 rgba(107, 91, 230, 0); background-color: transparent; }
+                }
+                .highlight-pulse-ui { animation: highlightPulseUi 1.5s ease-in-out forwards; border-radius: 8px; pointer-events: none; }
+                .highlight-pulse-ui > * { pointer-events: auto; }
+
+                @keyframes highlightPulseRaw {
+                    0% { background-color: transparent; }
+                    20% { background-color: rgba(245, 158, 11, 0.15); border-radius: 4px; box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.2); }
+                    80% { background-color: rgba(245, 158, 11, 0.15); border-radius: 4px; box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.2); }
+                    100% { background-color: transparent; }
+                }
+                .highlight-pulse-raw { animation: highlightPulseRaw 1.5s ease-in-out forwards; }
             `}</style>
             <AdminActionBar show={hasChanges} saving={saving} saved={saved} onSave={handleSave} onCancel={handleCancel} error={error || undefined} />
 
@@ -735,7 +1023,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
                     {/* ── Translation Area ── */}
                     <div className="flex-1 min-h-0 bg-white/[0.015] backdrop-blur-md border border-white/[0.05] rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
-                        <AnimatePresence mode="popLayout">
+                        <AnimatePresence mode="wait">
                             {!isJsonMode ? (
                                 <motion.div key={`ui-mode-${uiKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0">
                                     <div className="grid grid-cols-2 bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] sticky top-0 z-20">
@@ -749,7 +1037,6 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                                 <span className="truncate">{language.turkishName} ({language.nativeName})</span>
                                             </div>
                                             <div className="flex items-center gap-3 shrink-0 ml-2">
-                                                {/* REMOVED: VARSAYILAN and Düzenle button from here */}
                                             </div>
                                         </div>
                                     </div>
@@ -768,9 +1055,6 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                         ) : (
                                             <div className="p-20 text-center space-y-4"><XCircle size={36} className="text-white/8 mx-auto" /><p className="text-white/25 text-[10px] font-black uppercase tracking-[0.2em]">Sonuç bulunamadı</p></div>
                                         )}
-                                        <div className="absolute right-0 top-0 w-1.5 h-full bg-white/[0.01] opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none rounded-r-xl">
-                                            {minimapMarkers.map((pos, i) => <div key={i} className="absolute left-0 w-full h-[3px] bg-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.6)] rounded-full" style={{ top: `${pos}%` }} />)}
-                                        </div>
                                     </div>
                                 </motion.div>
                             ) : (
@@ -778,8 +1062,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                 <motion.div key="json-mode" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0 z-10">
                                     <div className="bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] h-[45px] px-6 flex items-center justify-between shrink-0">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black text-[#6b5be6] uppercase tracking-[0.25em]">Raw JSON Editor</span>
-                                            <span className="text-[8px] text-white/10 font-bold uppercase tracking-widest hidden sm:inline">— Veri Kaynağı</span>
+                                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em]">Raw JSON Editor</span>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-2">
@@ -792,17 +1075,35 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                             </div>
                                         </div>
                                     </div>
-                                        <div ref={jsonContainerRef} className="flex-1 overflow-auto group/json relative optwin-pro-scroll" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(107, 91, 230, 0.5) rgba(0, 0, 0, 0.2)' }}>
-                                            <SmartJsonEditor 
-                                                content={jsonContent} 
-                                                searchTerm={deferredSearch}
-                                                onRevert={handleJsonRevert}
-                                                onUpdate={handleJsonUpdate}
-                                            />
-                                        </div>
+                                    <div ref={jsonContainerRef} className="flex-1 overflow-auto group/json relative optwin-pro-scroll" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(107, 91, 230, 0.5) rgba(0, 0, 0, 0.2)' }}>
+                                        <SmartJsonEditor 
+                                            content={jsonContent} 
+                                            searchTerm={deferredSearch}
+                                            showMissingOnly={showMissingOnly}
+                                            originalTranslations={originalTranslations}
+                                            origSeoMeta={origSeoMeta}
+                                            origPageTitles={origPageTitles}
+                                            highlightKey={highlightKey}
+                                            onRevert={handleJsonRevert}
+                                            onUpdate={handleJsonUpdate}
+                                        />
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        {/* ── Global Minimap (Fixed to workspace, independent of scroll) ── */}
+                        <div className="absolute right-0 w-1.5 pointer-events-none z-[100] bg-white/[0.01] border-l border-white/[0.04]" style={{ top: 45, bottom: 0 }}>
+                            <div className="relative w-full h-full">
+                                {minimapMarkers.map((pos, i) => (
+                                    <div 
+                                        key={i} 
+                                        className="absolute left-0 w-full h-[2px] bg-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.7)] transition-opacity duration-300" 
+                                        style={{ top: `${pos}%` }} 
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -814,7 +1115,9 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         <div className="flex items-center justify-between mt-2">
                             <span className="text-[10px] font-black text-white/35 uppercase tracking-[0.2em]">Aktif</span>
                             <RippleToggle active={language.isActive} disabled={originalLanguage?.isDefault} onToggle={() => {
-                                setLanguage(prev => prev ? ({ ...prev, isActive: !prev.isActive }) : null);
+                                const newVal = !language.isActive;
+                                setLanguage(prev => prev ? ({ ...prev, isActive: newVal }) : null);
+                                patchJsonContent({ "_config.isActive": newVal });
                                 setIsDirty(true);
                             }} />
                         </div>
@@ -837,7 +1140,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         <div className="absolute top-0 right-0 w-40 h-40 bg-[#6b5be6]/[0.06] blur-3xl pointer-events-none" />
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/[0.03] blur-3xl pointer-events-none" />
                         <div className="flex items-center justify-between mb-3 relative z-10">
-                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">İlerleme</span>
+                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Tamamlanma Oranı</span>
                             <span className={`text-[12px] font-black tabular-nums ${progressColor}`}>%{percentage}</span>
                         </div>
                         <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden mb-3 relative z-10">
@@ -880,6 +1183,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                     <label className="text-[10px] font-black text-white/35 uppercase tracking-[0.2em] block">{field}</label>
                                     <input ref={el => { seoRefs.current[field] = el; }} type="text" value={seoMetadata[field] || ""} onChange={e => {
                                         setSeoMetadata((prev: Record<string, string>) => ({ ...prev, [field]: e.target.value }));
+                                        patchJsonContent({ [`seo.${field}`]: e.target.value });
                                         setIsDirty(true);
                                     }} className={neonInput} />
                                 </div>
@@ -900,6 +1204,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                         <label className="text-[10px] font-black text-white/35 uppercase tracking-[0.2em] block">{label}</label>
                                         <input ref={el => { pageTitleRefs.current[k] = el; }} type="text" value={pageTitles[k] || ""} onChange={e => {
                                             setPageTitles(prev => ({ ...prev, [k]: e.target.value }));
+                                            patchJsonContent({ [k]: e.target.value });
                                             setIsDirty(true);
                                         }} className={neonInput} />
                                     </div>
@@ -920,6 +1225,16 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         onSave={(up) => {
                             if (up) {
                                 setLanguage(up);
+                                patchJsonContent({
+                                    "_config.name": up.name,
+                                    "_config.code": up.code,
+                                    "_config.utcOffset": String(up.utcOffset),
+                                    "_config.localName": up.nativeName,
+                                    "_config.trName": up.turkishName,
+                                    "_config.svg": up.flagSvg,
+                                    "_config.order": String(up.sortOrder),
+                                    "_config.isActive": up.isActive,
+                                });
                                 setIsDirty(true);
                                 if (up.code !== code) setPendingCode(up.code);
                             }

@@ -63,7 +63,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
         const updated: Language = {
             ...(language || {} as Language),
             ...formData,
-            code: formData.code.toLowerCase().trim()
+            code: formData.code.trim() // Keep case for pt-BR style, just trim
         };
 
         if (displayOnly) {
@@ -74,7 +74,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
         setIsSaving(true);
         try {
             const method = isEdit ? "PUT" : "POST";
-            const body = isEdit ? { ...formData, id: language?.id } : formData;
+            const body = isEdit ? { ...formData, id: language?.id, newCode: formData.code } : formData;
             const res = await fetch("/api/admin/languages", {
                 method,
                 headers: { "Content-Type": "application/json" },
@@ -145,10 +145,11 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
                         <div>
                             <FieldLabel icon={<Code2 size={11} />}>Dil Kodu (ISO)</FieldLabel>
                             <input
-                                required type="text" pattern="[a-z]{2,5}|[a-z]{2}-[A-Z]{2}"
+                                required type="text" 
+                                pattern="^[a-zA-Z]{2,3}(?:-[a-zA-Z]{2,4})?$"
                                 className={inputClasses}
                                 value={formData.code}
-                                onChange={e => setFormData({ ...formData, code: e.target.value.toLowerCase().trim() })}
+                                onChange={e => setFormData({ ...formData, code: e.target.value.trim() })}
                                 placeholder="tr, en, pt-BR"
                             />
                         </div>
