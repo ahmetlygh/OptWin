@@ -28,7 +28,7 @@ const SeoPreview = ({ title, description, code }: { title: string; description: 
 );
 
 /* ── Task 3 & 4: Structural JSON Editor (Values-Only) ── */
-const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { content: string; onUpdate: (key: string, val: string) => void; onCancel: () => void; searchTerm: string }) => {
+const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm }: { content: string; onUpdate: (key: string, val: string) => void; onRevert: () => void; searchTerm: string }) => {
     const [localData, setLocalData] = useState<Record<string, any>>({});
 
     useEffect(() => {
@@ -46,12 +46,12 @@ const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { con
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 e.preventDefault();
-                onCancel();
+                onRevert();
             }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [onCancel]);
+    }, [onRevert]);
 
     const term = (searchTerm || "").toLowerCase();
 
@@ -251,6 +251,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const snapshotSeo = useRef<any>({});
     const snapshotPt = useRef<Record<string, string>>({});
     const snapshotLang = useRef<Language | null>(null);
+    const snapshotJson = useRef<string>("");
     const [statusOpen, setStatusOpen] = useState(true);
     const [seoOpen, setSeoOpen] = useState(false);
     const [ptOpen, setPtOpen] = useState(false);
@@ -368,7 +369,9 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
              snapshotPt.current = structuredClone(pageTitles);
              snapshotLang.current = language ? structuredClone(language) : null;
              
-             setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly, defaultTrans));
+             const initialJson = constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly, defaultTrans);
+             snapshotJson.current = initialJson;
+             setJsonContent(initialJson);
              setIsJsonMode(true);
         } else {
              if (revert) {
@@ -389,6 +392,21 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
              setIsJsonMode(false);
         }
     };
+
+    const handleJsonRevert = useCallback(() => {
+        if (jsonContent !== snapshotJson.current) {
+            setJsonContent(snapshotJson.current);
+            // Restore UI states from entry snapshots to allow action bar to reflect accurate status
+            setTranslations(snapshotTr.current);
+            setSeoMetadata(snapshotSeo.current);
+            setPageTitles(snapshotPt.current);
+            if (snapshotLang.current) setLanguage(snapshotLang.current);
+            
+            // Discard the dirty flag for this session to hide the action bar
+            setIsDirty(false);
+            showToast("JSON değişiklikleri geri alındı.", "warning");
+        }
+    }, [jsonContent, showToast]);
 
     const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]; if (!file) return;
@@ -704,8 +722,8 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                             <input ref={searchRef} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Anahtar veya çeviri ara..." className={`${neonInput} pl-10`} />
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={() => toggleJsonMode()} className={`px-5 py-2.5 border rounded-xl text-[10px] flex items-center gap-2 font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${isJsonMode ? "bg-white/[0.05] text-white border-white/[0.1] shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:bg-white/[0.1] hover:border-white/[0.2]" : "bg-[#140f2d]/50 text-[#b39ddb] border-[#6b5be6]/30 shadow-[0_0_20px_rgba(107,91,230,0.15)] hover:bg-[#1f1747]/80 hover:border-[#6b5be6]/60 hover:text-white hover:shadow-[0_0_25px_rgba(107,91,230,0.3)]"}`}>
-                                <Settings2 size={13} className={isJsonMode ? "text-white/50" : "text-[#6b5be6]"} /> {isJsonMode ? "UI MOD" : "RAW JSON"}
+                            <button onClick={() => toggleJsonMode()} className={`px-5 py-2.5 border rounded-xl text-[10px] flex items-center gap-2 font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${isJsonMode ? "bg-[#064e3b]/40 text-[#34d399] border-[#059669]/40 shadow-[0_0_20px_rgba(16,185,129,0.15)] hover:bg-[#065f46]/60 hover:border-[#34d399]/50 hover:shadow-[0_0_25px_rgba(16,185,129,0.25)]" : "bg-[#140f2d]/50 text-[#b39ddb] border-[#6b5be6]/30 shadow-[0_0_20px_rgba(107,91,230,0.15)] hover:bg-[#1f1747]/80 hover:border-[#6b5be6]/60 hover:text-white hover:shadow-[0_0_25px_rgba(107,91,230,0.3)]"}`}>
+                                <Settings2 size={13} className={isJsonMode ? "text-[#34d399]" : "text-[#6b5be6]"} /> {isJsonMode ? "UI MOD" : "RAW JSON"}
                             </button>
                             {missingCount > 0 && (
                                 <button onClick={() => setShowMissingOnly(!showMissingOnly)} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${showMissingOnly ? "bg-amber-500 text-black border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:bg-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-amber-500/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(245,158,11,0.15)]"}`}>
@@ -778,7 +796,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                             <SmartJsonEditor 
                                                 content={jsonContent} 
                                                 searchTerm={deferredSearch}
-                                                onCancel={() => toggleJsonMode(true)}
+                                                onRevert={handleJsonRevert}
                                                 onUpdate={handleJsonUpdate}
                                             />
                                         </div>
