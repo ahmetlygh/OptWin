@@ -29,9 +29,18 @@ const SeoPreview = ({ title, description, code }: { title: string; description: 
 
 /* ── Task 3 & 4: Structural JSON Editor (Values-Only) ── */
 const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { content: string; onUpdate: (key: string, val: string) => void; onCancel: () => void; searchTerm: string }) => {
-    const data = useMemo(() => {
-        try { return JSON.parse(content); } catch { return {}; }
+    const [localData, setLocalData] = useState<Record<string, any>>({});
+
+    useEffect(() => {
+        try { setLocalData(JSON.parse(content)); } catch { setLocalData({}); }
     }, [content]);
+
+    const handleChange = useCallback((key: string, val: string) => {
+        setLocalData(prev => ({ ...prev, [key]: val }));
+        
+        // Push to parent immediately since the parent handles `jsonContent` efficiently now
+        onUpdate(key, val);
+    }, [onUpdate]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,8 +58,7 @@ const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { con
     return (
         <div className="font-mono text-[13px] p-8 space-y-1.5 custom-scrollbar min-h-full bg-black/[0.1]">
             <div className="text-white/30">{'{'}</div>
-            {Object.entries(data).map(([key, val], i) => {
-                if (key === "_config") return null;
+            {Object.entries(localData).map(([key, val], i) => {
                 const isMatch = term && (key.toLowerCase().includes(term) || String(val).toLowerCase().includes(term));
 
                 return (
@@ -69,7 +77,7 @@ const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { con
                                 onChange={(e) => {
                                     e.target.style.height = 'auto';
                                     e.target.style.height = e.target.scrollHeight + 'px';
-                                    onUpdate(key, e.target.value);
+                                    handleChange(key, e.target.value);
                                 }}
                                 onFocus={(e) => {
                                     e.target.style.height = 'auto';
@@ -79,21 +87,13 @@ const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { con
                                 placeholder="..."
                             />
                             <span className="text-white/20 ml-1">&quot;</span>
-                            {i < Object.keys(data).length - 2 && <span className="text-white/10">,</span>}
+                            {i < Object.keys(localData).length - 2 && <span className="text-white/10">,</span>}
                         </div>
                     </div>
                 );
             })}
             
-            {/* Config Section - Read Only Visual */}
-            {data["_config"] && (
-                <div className="pt-4 mt-4 border-t border-white/[0.03]">
-                    <div className="flex items-center gap-2 pl-4 text-white/15 select-none italic text-[11px]">
-                         <span>&quot;_config&quot;: {'{'} ... {'}'}</span>
-                         <span className="text-[9px] bg-white/5 px-1.5 rounded not-italic ml-2">READ-ONLY</span>
-                    </div>
-                </div>
-            )}
+
 
             <div className="text-white/30">{'}'}</div>
         </div>
@@ -121,7 +121,7 @@ const TranslationRow = memo(({ k, defText, trText, isMissingInDb, onUpdate, forw
             </div>
         </div>
     );
-}, (prev, next) => prev.k === next.k && prev.trText === next.trText && prev.defText === next.defText);
+}, (prev, next) => prev.k === next.k && prev.trText === next.trText && prev.defText === next.defText && prev.onUpdate === next.onUpdate);
 TranslationRow.displayName = "TranslationRow";
 
 /* ── Collapsible Sidebar Section ── */
@@ -165,6 +165,53 @@ const RippleToggle = ({ active, disabled, onToggle }: { active: boolean; disable
 
 
 
+/* ── Helper: Saf JSON Builder Çıktısı (Phase 6) ── */
+export const constructVirtualJson = (ui: any, seo: any, pt: any, lang: Language | null, searchStr: string, hideFilled: boolean, defaultTrans: Record<string, string>) => {
+    if (!lang) return "";
+    const out: any = {};
+    const term = (searchStr || "").toLowerCase();
+
+    // 1. UI Translations
+    Object.keys(defaultTrans).forEach(k => { 
+        if (!k.startsWith("page.")) {
+            if (hideFilled && ui[k]) return;
+            const val = ui[k] || "";
+            if (term && !k.toLowerCase().includes(term) && !val.toLowerCase().includes(term)) return;
+            out[k] = val; 
+        }
+    });
+    
+    // 2. SEO Meta
+    const seoKeys = ["title", "description", "keywords", "ogTitle", "ogDesc", "twitterCard"];
+    seoKeys.forEach(sk => {
+        const v = seo[sk] || "";
+        if (hideFilled && v) return;
+        if (term && !`seo.${sk}`.toLowerCase().includes(term) && !v.toLowerCase().includes(term)) return;
+        out[`seo.${sk}`] = v;
+    });
+
+    // 3. Page Titles
+    Object.keys(pt).forEach(k => {
+        const v = pt[k] || "";
+        if (hideFilled && v) return;
+        if (term && !k.toLowerCase().includes(term) && !v.toLowerCase().includes(term)) return;
+        out[k] = v;
+    });
+
+    // 4. Config -- flattened for direct editing
+    out["_config.name"] = lang.name;
+    out["_config.code"] = lang.code;
+    out["_config.utcOffset"] = lang.utcOffset;
+    out["_config.localName"] = lang.nativeName;
+    out["_config.trName"] = lang.turkishName;
+    out["_config.svg"] = lang.flagSvg;
+    out["_config.order"] = lang.sortOrder;
+    out["_config.isActive"] = lang.isActive;
+    out["_config.isDefault"] = lang.isDefault;
+    
+    return JSON.stringify(out, null, 4);
+};
+
 /* ── Main Page ── */
 export default function LanguageTranslationPage({ params }: { params: Promise<{ code: string }> }) {
     const { code } = use(params);
@@ -198,12 +245,15 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const [pendingCode, setPendingCode] = useState<string | null>(null);
     const [highlightKey, setHighlightKey] = useState<string | null>(null);
     const [uiKey, setUiKey] = useState(0);
+    const [isDirty, setIsDirty] = useState(false);
     // Snapshot refs: frozen copies taken when entering JSON mode
     const snapshotTr = useRef<Record<string, string>>({});
     const snapshotSeo = useRef<any>({});
     const snapshotPt = useRef<Record<string, string>>({});
     const snapshotLang = useRef<Language | null>(null);
-    const [openSidebars, setOpenSidebars] = useState<Record<string, boolean>>({ status: true, seo: false, pt: false });
+    const [statusOpen, setStatusOpen] = useState(true);
+    const [seoOpen, setSeoOpen] = useState(false);
+    const [ptOpen, setPtOpen] = useState(false);
     const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
     const jsonContainerRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
@@ -222,10 +272,10 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     const def = langs.find((l) => l.isDefault) || langs[0];
                     if (curr) {
                         setLanguage(curr);
-                        setOriginalLanguage(JSON.parse(JSON.stringify(curr)));
+                        setOriginalLanguage(structuredClone(curr));
                         const seo = (curr as any).seoMetadata || {};
                         setSeoMetadata(seo);
-                        setOrigSeoMeta(JSON.parse(JSON.stringify(seo)));
+                        setOrigSeoMeta(structuredClone(seo));
                     }
                     if (def) setDefaultLang(def);
                     const [resCurr, resDef] = await Promise.all([
@@ -247,9 +297,9 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         else ui[k] = cTrans[k];
                     });
                     setTranslations(ui);
-                    setOriginalTranslations(JSON.parse(JSON.stringify(ui)));
+                    setOriginalTranslations(structuredClone(ui));
                     setPageTitles(pt);
-                    setOrigPageTitles(JSON.parse(JSON.stringify(pt)));
+                    setOrigPageTitles(structuredClone(pt));
                 }
             } catch {
                 setError("Veriler yüklenirken hata oluştu.");
@@ -260,65 +310,17 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         init();
     }, [code]);
 
-    /* ── JSON Sync ── */
-    const constructVirtualJson = useCallback((ui: any, seo: any, pt: any, lang: Language | null, searchStr: string, hideFilled: boolean) => {
-        if (!lang) return "";
-        const out: any = {};
-        const term = (searchStr || "").toLowerCase();
-
-        // 1. UI Translations
-        Object.keys(defaultTrans).forEach(k => { 
-            if (!k.startsWith("page.")) {
-                if (hideFilled && ui[k]) return;
-                const val = ui[k] || "";
-                if (term && !k.toLowerCase().includes(term) && !val.toLowerCase().includes(term)) return;
-                out[k] = val; 
-            }
-        });
-        
-        // 2. SEO Meta
-        const seoKeys = ["title", "description", "keywords", "ogTitle", "ogDesc", "twitterCard"];
-        seoKeys.forEach(sk => {
-            const v = seo[sk] || "";
-            if (hideFilled && v) return;
-            if (term && !`seo.${sk}`.toLowerCase().includes(term) && !v.toLowerCase().includes(term)) return;
-            out[`seo.${sk}`] = v;
-        });
-
-        // 3. Page Titles
-        Object.keys(pt).forEach(k => {
-            const v = pt[k] || "";
-            if (hideFilled && v) return;
-            if (term && !k.toLowerCase().includes(term) && !v.toLowerCase().includes(term)) return;
-            out[k] = v;
-        });
-
-        // 4. Config -- always present at the bottom of the JSON
-        out["_config"] = { 
-            name: lang.name, 
-            code: lang.code, 
-            utcOffset: lang.utcOffset, 
-            localName: lang.nativeName, 
-            trName: lang.turkishName, 
-            svg: lang.flagSvg, 
-            order: lang.sortOrder, 
-            isActive: lang.isActive, 
-            isDefault: lang.isDefault 
-        };
-        
-        return JSON.stringify(out, null, 4);
-    }, [defaultTrans]);
 
     const deconstructVirtualJson = useCallback((jsonStr: string) => {
         try {
             const parsed = JSON.parse(jsonStr);
-            const ui: any = {}; const seoPartial: any = {}; const ptPartial: any = {}; const meta = parsed["_config"] || {};
+            const ui: any = {}; const seoPartial: any = {}; const ptPartial: any = {}; const meta: any = {};
             
             Object.keys(parsed).forEach(k => {
-                if (k === "_config") return;
-                if (k.startsWith("seo.")) { seoPartial[k.replace("seo.", "")] = parsed[k] || ""; }
-                else if (k.startsWith("page.")) ptPartial[k] = parsed[k] || "";
-                else ui[k] = parsed[k] || "";
+                if (k.startsWith("_config.")) { meta[k.replace("_config.", "")] = parsed[k]; }
+                else if (k.startsWith("seo.")) { seoPartial[k.replace("seo.", "")] = parsed[k] || ""; }
+                else if (k.startsWith("page.")) { ptPartial[k] = parsed[k] || ""; }
+                else { ui[k] = parsed[k] || ""; }
             });
             
             // Critical: Ensure full object structure to match original state types
@@ -345,10 +347,10 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         nativeName: meta.localName || prev.nativeName, 
                         turkishName: meta.trName || prev.turkishName, 
                         flagSvg: meta.svg || prev.flagSvg, 
-                        utcOffset: meta.utcOffset ?? prev.utcOffset, 
-                        isActive: meta.isActive ?? prev.isActive, 
-                        isDefault: meta.isDefault ?? prev.isDefault, 
-                        sortOrder: meta.order ?? prev.sortOrder 
+                        utcOffset: meta.utcOffset !== undefined ? Number(meta.utcOffset) : prev.utcOffset, 
+                        isActive: meta.isActive !== undefined ? String(meta.isActive) === "true" : prev.isActive, 
+                        isDefault: meta.isDefault !== undefined ? String(meta.isDefault) === "true" : prev.isDefault, 
+                        sortOrder: meta.order !== undefined ? Number(meta.order) : prev.sortOrder 
                     };
                 });
             }
@@ -357,22 +359,16 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
     }, [setTranslations, setSeoMetadata, setPageTitles, setLanguage]);
 
-    // Single consolidated sync: keep jsonContent fresh when UI state changes outside JSON mode
-    useEffect(() => {
-        if (!isJsonMode && language) {
-            setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly));
-        }
-    }, [translations, seoMetadata, pageTitles, language, isJsonMode, deferredSearch, showMissingOnly, constructVirtualJson]);
 
     const toggleJsonMode = (revert = false) => {
         if (!isJsonMode) {
              // Take a snapshot of current state BEFORE entering JSON mode
-             snapshotTr.current = JSON.parse(JSON.stringify(translations));
-             snapshotSeo.current = JSON.parse(JSON.stringify(seoMetadata));
-             snapshotPt.current = JSON.parse(JSON.stringify(pageTitles));
-             snapshotLang.current = language ? JSON.parse(JSON.stringify(language)) : null;
+             snapshotTr.current = structuredClone(translations);
+             snapshotSeo.current = structuredClone(seoMetadata);
+             snapshotPt.current = structuredClone(pageTitles);
+             snapshotLang.current = language ? structuredClone(language) : null;
              
-             setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly));
+             setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly, defaultTrans));
              setIsJsonMode(true);
         } else {
              if (revert) {
@@ -381,6 +377,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                 setSeoMetadata(snapshotSeo.current);
                 setPageTitles(snapshotPt.current);
                 if (snapshotLang.current) setLanguage(snapshotLang.current);
+                setIsDirty(false);
                 showToast("Değişiklikler geri alındı.", "success");
              } else {
                 // Apply JSON edits to UI state
@@ -401,6 +398,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                 const imported = JSON.parse(ev.target?.result as string);
                 setJsonContent(JSON.stringify(imported, null, 4));
                 deconstructVirtualJson(JSON.stringify(imported));
+                setIsDirty(true);
                 showToast("İçe aktarma başarılı.", "success");
             } catch { showToast("Hatalı JSON.", "error"); }
         };
@@ -408,26 +406,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     };
 
     /* ── Change Detection ── */
-    const hasChanges = useMemo(() => {
-        // Use a consistent serialization for comparison to avoid "false positives" from order or whitespace
-        const serialize = (obj: any) => JSON.stringify(Object.keys(obj).sort().reduce((acc: any, k) => { acc[k] = obj[k]; return acc; }, {}));
-        
-        const trChanged = serialize(translations) !== serialize(originalTranslations);
-        const seoChanged = serialize(seoMetadata) !== serialize(origSeoMeta);
-        const pTitlesChanged = serialize(pageTitles) !== serialize(origPageTitles);
-        
-        const metaChanged = 
-            language?.isActive !== originalLanguage?.isActive || 
-            language?.isDefault !== originalLanguage?.isDefault || 
-            language?.name !== originalLanguage?.name || 
-            language?.nativeName !== originalLanguage?.nativeName || 
-            language?.flagSvg !== originalLanguage?.flagSvg || 
-            language?.utcOffset !== originalLanguage?.utcOffset || 
-            language?.sortOrder !== originalLanguage?.sortOrder || 
-            pendingCode !== null;
-
-        return trChanged || seoChanged || pTitlesChanged || metaChanged;
-    }, [translations, originalTranslations, seoMetadata, origSeoMeta, pageTitles, origPageTitles, language, originalLanguage, pendingCode]);
+    const hasChanges = isDirty || pendingCode !== null;
 
     useEffect(() => {
         unsavedCtx.setHasUnsavedChanges(hasChanges);
@@ -452,11 +431,12 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         body: JSON.stringify({ ...language, id: language.id, newCode: pendingCode, seoMetadata: seoMetadata })
                     });
                 }
-                setOriginalTranslations(JSON.parse(JSON.stringify(translations)));
-                setOrigPageTitles(JSON.parse(JSON.stringify(pageTitles)));
-                setOrigSeoMeta(JSON.parse(JSON.stringify(seoMetadata)));
-                if (language) setOriginalLanguage(JSON.parse(JSON.stringify(language)));
+                setOriginalTranslations(structuredClone(translations));
+                setOrigPageTitles(structuredClone(pageTitles));
+                setOrigSeoMeta(structuredClone(seoMetadata));
+                if (language) setOriginalLanguage(structuredClone(language));
                 setSaved(true);
+                setIsDirty(false);
                 showToast("Değişiklikler kaydedildi.", "success");
                 window.dispatchEvent(new CustomEvent("optwin:languages-updated"));
                 setTimeout(() => setSaved(false), 2000);
@@ -474,11 +454,12 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
     /* ── Cancel ── */
     const handleCancel = () => {
-        setTranslations(JSON.parse(JSON.stringify(originalTranslations)));
-        setPageTitles(JSON.parse(JSON.stringify(origPageTitles)));
-        setSeoMetadata(JSON.parse(JSON.stringify(origSeoMeta)));
-        if (originalLanguage) setLanguage(JSON.parse(JSON.stringify(originalLanguage)));
+        setTranslations(structuredClone(originalTranslations));
+        setPageTitles(structuredClone(origPageTitles));
+        setSeoMetadata(structuredClone(origSeoMeta));
+        if (originalLanguage) setLanguage(structuredClone(originalLanguage));
         setPendingCode(null);
+        setIsDirty(false);
         showToast("Değişiklikler geri alındı.", "success");
     };
 
@@ -501,7 +482,24 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         } catch { showToast("Ağ hatası.", "error"); }
     };
 
-    /* ── AI Translation ── */
+    /* ── Stable Callbacks (Phase 3) ── */
+    const handleTranslationUpdate = useCallback((k: string, v: string) => {
+        setTranslations(prev => ({ ...prev, [k]: v }));
+        setIsDirty(true);
+    }, []);
+
+    const handleJsonUpdate = useCallback((key: string, val: string) => {
+        setIsDirty(true);
+        setJsonContent(prev => {
+            try {
+                const parsed = JSON.parse(prev);
+                parsed[key] = val;
+                return JSON.stringify(parsed, null, 4);
+            } catch { return prev; }
+        });
+    }, []);
+
+    /* ── AI Translation (MyMemory - Ücretsiz) ── */
     const handleAITranslate = async () => {
         const missingKeys = Object.keys(defaultTrans).filter(k => !translations[k]);
         if (missingKeys.length === 0 || !language || !defaultLang) return;
@@ -510,13 +508,22 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
             const res = await fetch("/api/admin/languages/ai-translate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ targetLang: language.nativeName, translations: Object.fromEntries(missingKeys.map(k => [k, defaultTrans[k]])) })
+                body: JSON.stringify({
+                    targetLang: language.code,
+                    sourceLang: defaultLang.code,
+                    translations: Object.fromEntries(missingKeys.map(k => [k, defaultTrans[k]]))
+                })
             });
             const data = await res.json();
-            if (data.success) {
+            if (res.ok && data.success) {
                 setTranslations(prev => ({ ...prev, ...data.translations }));
+                setIsDirty(true);
                 showToast("Eksikler tamamlandı.", "success");
+            } else {
+                showToast(data.error || "Çeviri sırasında bir hata oluştu.", "error");
             }
+        } catch {
+            showToast("Ağ hatası veya sunucuya ulaşılamıyor.", "error");
         } finally {
             setIsTranslating(false);
         }
@@ -534,6 +541,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         getScrollElement: () => parentRef.current,
         estimateSize: () => 82, 
         overscan: 10,
+        measureElement: el => el?.getBoundingClientRect().height ?? 82,
     });
 
     /* ── Task 2: Smart Jump with Highlight Pulse ── */
@@ -575,7 +583,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         // 3. Check SEO fields
         const nextSeo = SEO_KEYS.find(f => !seoMetadata[f]);
         if (nextSeo) {
-            setOpenSidebars(p => ({ ...p, seo: true }));
+            setSeoOpen(true);
             setTimeout(() => {
                 seoRefs.current[nextSeo]?.focus();
                 seoRefs.current[nextSeo]?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -588,7 +596,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         // 4. Check page titles
         const nextPt = PAGE_KEYS.find(k => !pageTitles[k]);
         if (nextPt) {
-            setOpenSidebars(p => ({ ...p, pt: true }));
+            setPtOpen(true);
             setTimeout(() => {
                 pageTitleRefs.current[nextPt]?.focus();
                 pageTitleRefs.current[nextPt]?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -599,6 +607,11 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
         showToast("Tüm alanlar tamamlanmış görünüyor!", "success");
     }, [translations, seoMetadata, pageTitles, isJsonMode, jsonContent, filteredKeys, allKeys, virtualizer, showToast]);
+
+    /* ── JSON Deconstruct Sync (Phase 3) — Only fires in JSON mode when jsonContent changes ── */
+    useEffect(() => {
+        if (isJsonMode) deconstructVirtualJson(jsonContent);
+    }, [jsonContent, isJsonMode, deconstructVirtualJson]);
 
     /* ── Task 5: Keyboard Shortcuts ── */
     useEffect(() => {
@@ -629,6 +642,12 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
     return (
         <div className="w-full h-[calc(100vh-90px)] max-w-[1920px] mx-auto flex flex-col pt-6 pb-2 px-4 lg:px-8 overflow-hidden">
+            <style>{`
+                .optwin-pro-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+                .optwin-pro-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+                .optwin-pro-scroll::-webkit-scrollbar-thumb { background: rgba(107, 91, 230, 0.5); border: 3px solid rgba(13, 13, 18, 1); border-radius: 8px; }
+                .optwin-pro-scroll::-webkit-scrollbar-thumb:hover { background: rgba(107, 91, 230, 0.8); }
+            `}</style>
             <AdminActionBar show={hasChanges} saving={saving} saved={saved} onSave={handleSave} onCancel={handleCancel} error={error || undefined} />
 
             {/* ── Header ── */}
@@ -661,7 +680,8 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                     </label>
                     <button onClick={() => {
-                        const blob = new Blob([jsonContent], { type: "application/json" });
+                        const exportJson = constructVirtualJson(translations, seoMetadata, pageTitles, language, "", false, defaultTrans);
+                        const blob = new Blob([exportJson], { type: "application/json" });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url; a.download = `${code}.json`; a.click();
@@ -684,12 +704,14 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                             <input ref={searchRef} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Anahtar veya çeviri ara..." className={`${neonInput} pl-10`} />
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={() => toggleJsonMode()} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${isJsonMode ? "bg-[#6b5be6] text-white border-[#6b5be6] shadow-[0_0_20px_rgba(107,91,230,0.3)] hover:bg-[#5a4cc2] hover:shadow-[0_0_25px_rgba(107,91,230,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-[#6b5be6]/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(107,91,230,0.15)]"}`}>
-                                {isJsonMode ? "UI MODU" : "RAW JSON"}
+                            <button onClick={() => toggleJsonMode()} className={`px-5 py-2.5 border rounded-xl text-[10px] flex items-center gap-2 font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${isJsonMode ? "bg-white/[0.05] text-white border-white/[0.1] shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:bg-white/[0.1] hover:border-white/[0.2]" : "bg-[#140f2d]/50 text-[#b39ddb] border-[#6b5be6]/30 shadow-[0_0_20px_rgba(107,91,230,0.15)] hover:bg-[#1f1747]/80 hover:border-[#6b5be6]/60 hover:text-white hover:shadow-[0_0_25px_rgba(107,91,230,0.3)]"}`}>
+                                <Settings2 size={13} className={isJsonMode ? "text-white/50" : "text-[#6b5be6]"} /> {isJsonMode ? "UI MOD" : "RAW JSON"}
                             </button>
-                            <button onClick={() => setShowMissingOnly(!showMissingOnly)} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${showMissingOnly ? "bg-amber-500 text-black border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:bg-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-amber-500/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(245,158,11,0.15)]"}`}>
-                                EKSİKLER
-                            </button>
+                            {missingCount > 0 && (
+                                <button onClick={() => setShowMissingOnly(!showMissingOnly)} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${showMissingOnly ? "bg-amber-500 text-black border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:bg-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-amber-500/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(245,158,11,0.15)]"}`}>
+                                    EKSİKLER
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -713,14 +735,14 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                             </div>
                                         </div>
                                     </div>
-                                    <div ref={parentRef} className="flex-1 overflow-y-auto custom-scrollbar relative">
+                                    <div ref={parentRef} className="flex-1 overflow-y-auto optwin-pro-scroll relative" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(107, 91, 230, 0.5) rgba(0, 0, 0, 0.2)' }}>
                                         {filteredKeys.length > 0 ? (
                                             <div style={{ height: `${virtualizer.getTotalSize()}px`, width: "100%", position: "relative" }}>
                                                 {virtualizer.getVirtualItems().map((vItem) => {
                                                     const k = filteredKeys[vItem.index];
                                                     return (
                                                         <div key={k} data-index={vItem.index} ref={virtualizer.measureElement} style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${vItem.start}px)` }} className={highlightKey === k ? pulseClass : ""}>
-                                                            <TranslationRow k={k} defText={defaultTrans[k]} trText={translations[k] || ""} isMissingInDb={!originalTranslations[k]} onUpdate={(k, v) => setTranslations(prev => ({ ...prev, [k]: v }))} forwardRef={el => { inputRefs.current[k] = el; }} />
+                                                            <TranslationRow k={k} defText={defaultTrans[k]} trText={translations[k] || ""} isMissingInDb={!originalTranslations[k]} onUpdate={handleTranslationUpdate} forwardRef={el => { inputRefs.current[k] = el; }} />
                                                         </div>
                                                     );
                                                 })}
@@ -752,20 +774,12 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                             </div>
                                         </div>
                                     </div>
-                                        <div ref={jsonContainerRef} className="flex-1 overflow-auto custom-scrollbar group/json relative">
+                                        <div ref={jsonContainerRef} className="flex-1 overflow-auto group/json relative optwin-pro-scroll" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(107, 91, 230, 0.5) rgba(0, 0, 0, 0.2)' }}>
                                             <SmartJsonEditor 
                                                 content={jsonContent} 
                                                 searchTerm={deferredSearch}
                                                 onCancel={() => toggleJsonMode(true)}
-                                                onUpdate={(key, val) => {
-                                                    try {
-                                                        const parsed = JSON.parse(jsonContent);
-                                                        parsed[key] = val;
-                                                        const nextJson = JSON.stringify(parsed, null, 4);
-                                                        setJsonContent(nextJson);
-                                                        deconstructVirtualJson(nextJson);
-                                                    } catch {}
-                                                }}
+                                                onUpdate={handleJsonUpdate}
                                             />
                                         </div>
                                 </motion.div>
@@ -775,13 +789,16 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                 </div>
 
                 {/* ── Sağ Sütun: Kenar Çubuğu ── */}
-                <div className="h-full overflow-y-auto custom-scrollbar space-y-4 pr-1 pb-4 flex-1">
+                <div className="h-full overflow-y-auto optwin-pro-scroll relative space-y-4 pr-1 pb-4 flex-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(107, 91, 230, 0.5) rgba(0, 0, 0, 0.2)' }}>
 
                     {/* Dil Durumu */}
-                    <SidebarSection title="Dil Durumu" icon={<Activity size={13} />} isOpen={openSidebars.status} onToggle={() => setOpenSidebars(p => ({ ...p, status: !p.status }))}>
+                    <SidebarSection title="Dil Durumu" icon={<Activity size={13} />} isOpen={statusOpen} onToggle={() => setStatusOpen(p => !p)}>
                         <div className="flex items-center justify-between mt-2">
                             <span className="text-[10px] font-black text-white/35 uppercase tracking-[0.2em]">Aktif</span>
-                            <RippleToggle active={language.isActive} disabled={originalLanguage?.isDefault} onToggle={() => setLanguage(prev => prev ? ({ ...prev, isActive: !prev.isActive }) : null)} />
+                            <RippleToggle active={language.isActive} disabled={originalLanguage?.isDefault} onToggle={() => {
+                                setLanguage(prev => prev ? ({ ...prev, isActive: !prev.isActive }) : null);
+                                setIsDirty(true);
+                            }} />
                         </div>
                         {language.isDefault ? (
                             <div className="mt-4 flex items-center justify-center p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider gap-2">
@@ -838,12 +855,15 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     </motion.div>
 
                     {/* Global SEO + Task 1: SeoPreview */}
-                    <SidebarSection title="SEO Meta" icon={<Globe size={13} />} isOpen={openSidebars.seo} onToggle={() => setOpenSidebars(p => ({ ...p, seo: !p.seo }))} isWarning={SEO_KEYS.some(k => k !== "twitterCard" && !seoMetadata[k])}>
+                    <SidebarSection title="SEO Meta" icon={<Globe size={13} />} isOpen={seoOpen} onToggle={() => setSeoOpen(p => !p)} isWarning={SEO_KEYS.some(k => k !== "twitterCard" && !seoMetadata[k])}>
                         <div className="space-y-3.5 mt-2">
                             {["title", "description", "keywords", "ogTitle", "ogDesc"].map(field => (
                                 <div key={field} className={`space-y-1.5 ${highlightKey === `seo.${field}` ? pulseClass : ""}`}>
                                     <label className="text-[10px] font-black text-white/35 uppercase tracking-[0.2em] block">{field}</label>
-                                    <input ref={el => { seoRefs.current[field] = el; }} type="text" value={seoMetadata[field] || ""} onChange={e => setSeoMetadata({ ...seoMetadata, [field]: e.target.value })} className={neonInput} />
+                                    <input ref={el => { seoRefs.current[field] = el; }} type="text" value={seoMetadata[field] || ""} onChange={e => {
+                                        setSeoMetadata((prev: Record<string, string>) => ({ ...prev, [field]: e.target.value }));
+                                        setIsDirty(true);
+                                    }} className={neonInput} />
                                 </div>
                             ))}
                         </div>
@@ -851,7 +871,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     </SidebarSection>
 
                     {/* Page Titles */}
-                    <SidebarSection title="Sayfa Başlıkları" icon={<Layout size={13} />} isOpen={openSidebars.pt} onToggle={() => setOpenSidebars(p => ({ ...p, pt: !p.pt }))} isWarning={PAGE_KEYS.some(k => !pageTitles[k])}>
+                    <SidebarSection title="Sayfa Başlıkları" icon={<Layout size={13} />} isOpen={ptOpen} onToggle={() => setPtOpen(p => !p)} isWarning={PAGE_KEYS.some(k => !pageTitles[k])}>
                         <div className="space-y-3.5 mt-2">
                             {PAGE_KEYS.map(k => {
                                 const route = k.split(".")[1];
@@ -860,7 +880,10 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                 return (
                                     <div key={k} className={`space-y-1.5 ${highlightKey === k ? pulseClass : ""}`}>
                                         <label className="text-[10px] font-black text-white/35 uppercase tracking-[0.2em] block">{label}</label>
-                                        <input ref={el => { pageTitleRefs.current[k] = el; }} type="text" value={pageTitles[k] || ""} onChange={e => setPageTitles({ ...pageTitles, [k]: e.target.value })} className={neonInput} />
+                                        <input ref={el => { pageTitleRefs.current[k] = el; }} type="text" value={pageTitles[k] || ""} onChange={e => {
+                                            setPageTitles(prev => ({ ...prev, [k]: e.target.value }));
+                                            setIsDirty(true);
+                                        }} className={neonInput} />
                                     </div>
                                 );
                             })}
@@ -879,6 +902,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         onSave={(up) => {
                             if (up) {
                                 setLanguage(up);
+                                setIsDirty(true);
                                 if (up.code !== code) setPendingCode(up.code);
                             }
                             setIsInfoModalOpen(false);

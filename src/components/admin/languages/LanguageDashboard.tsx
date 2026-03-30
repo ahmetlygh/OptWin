@@ -169,10 +169,13 @@ export function LanguageDashboard() {
                                 initial={{ opacity: 0, scale: 0.98 }} 
                                 animate={{ opacity: 1, scale: 1 }} 
                                 transition={{ duration: 0.2 }} // Optimized lightweight animation (Task 2)
-                                className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 hover:bg-white/[0.04] transition-colors relative overflow-hidden group shadow-2xl"
+                                className={`bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 hover:bg-white/[0.04] transition-colors relative overflow-hidden group shadow-2xl ${!lang.isActive ? "opacity-60 saturate-50" : ""}`}
                             >
                                 {lang.isDefault && (
                                     <div className="absolute top-0 right-0 px-3 py-1 bg-amber-500 text-black text-[9px] font-black uppercase tracking-wider rounded-bl-xl z-10 shadow-lg">VARSAYILAN</div>
+                                )}
+                                {!lang.isActive && !lang.isDefault && (
+                                    <div className="absolute top-0 right-0 px-3 py-1 bg-white/10 backdrop-blur-md text-white/40 border-b border-l border-white/5 text-[9px] font-black uppercase tracking-wider rounded-bl-xl z-10">PASİF</div>
                                 )}
                                 
                                 <div className="flex items-start justify-between gap-4 mb-4">

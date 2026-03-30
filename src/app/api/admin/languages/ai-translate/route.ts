@@ -1,106 +1,137 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { redisCache } from "@/lib/redis";
 
-// Task 2: AI Budget Guard (Rate Limiting Logic)
-const RATE_LIMIT_WINDOW = 3600; // 1 hour
-const MAX_REQUESTS_PER_WINDOW = 20; // Max 20 auto-translate batches per hour per admin
-const KEY_PREFIX = "optwin:ratelimit:ai-translate:";
+// Language nativeName / displayName to ISO 639-1 code mapping
+const LANG_CODE_MAP: Record<string, string> = {
+    // Native names
+    "türkçe": "tr", "english": "en", "deutsch": "de", "français": "fr",
+    "español": "es", "中文": "zh", "हिन्दी": "hi", "português": "pt",
+    "italiano": "it", "русский": "ru", "日本語": "ja", "한국어": "ko",
+    "arabic": "ar", "عربي": "ar", "polski": "pl", "nederlands": "nl",
+    // ISO codes (pass-through)
+    "tr": "tr", "en": "en", "de": "de", "fr": "fr", "es": "es",
+    "zh": "zh", "hi": "hi", "pt": "pt", "pt-br": "pt-br", "it": "it",
+    "ru": "ru", "ja": "ja", "ko": "ko", "ar": "ar", "pl": "pl", "nl": "nl",
+};
 
-export async function POST(request: NextRequest) {
-    const session = await auth();
-    if (!session?.isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const SEP = " ||NT|| ";
+const CHUNK_CHAR_LIMIT = 450; // MyMemory limit is ~500 chars per request
 
-    // Task 1: Environment Variable Validation (Backend)
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return NextResponse.json({ 
-            error: "Gemini API anahtarı (.env) eksik. Lütfen yapılandırmanızı kontrol edin." 
-        }, { status: 400 });
+function resolveIsoCode(lang: string): string {
+    return LANG_CODE_MAP[lang.toLowerCase()] || lang.toLowerCase().slice(0, 2);
+}
+
+function chunkArray<T>(arr: T[], charLimit: number, getValue: (item: T) => string): T[][] {
+    const chunks: T[][] = [];
+    let current: T[] = [];
+    let currentLen = 0;
+
+    for (const item of arr) {
+        const len = getValue(item).length + SEP.length;
+        if (current.length > 0 && currentLen + len > charLimit) {
+            chunks.push(current);
+            current = [];
+            currentLen = 0;
+        }
+        current.push(item);
+        currentLen += len;
+    }
+    if (current.length > 0) chunks.push(current);
+    return chunks;
+}
+
+async function translateChunk(texts: string[], sourceLang: string, targetLang: string): Promise<string[]> {
+    const joined = texts.join(SEP);
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(joined)}&langpair=${sourceLang}|${targetLang}`;
+
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!res.ok) throw new Error(`MyMemory API hatası: HTTP ${res.status}`);
+
+    const data = await res.json();
+    if (data.responseStatus !== 200) {
+        throw new Error(`MyMemory API hatası: ${data.responseDetails || "Bilinmeyen hata"}`);
     }
 
-    const adminEmail = session.user?.email || "unknown";
-    const rateLimitKey = `${KEY_PREFIX}${adminEmail}`;
+    const translatedText: string = data.responseData?.translatedText || "";
+    const parts = translatedText.split(SEP);
 
+    // Ensure we always return same length as input
+    const result: string[] = [];
+    for (let i = 0; i < texts.length; i++) {
+        result.push(parts[i]?.trim() || texts[i]);
+    }
+    return result;
+}
+
+export async function POST(request: NextRequest) {
     try {
-        // Rate Limiting Check
-        const currentRequests = await redisCache.get(rateLimitKey);
-        const count = currentRequests ? parseInt(currentRequests) : 0;
-
-        if (count >= MAX_REQUESTS_PER_WINDOW) {
-            return NextResponse.json({ 
-                error: "AI Çeviri limiti aşıldı. Lütfen bir saat sonra tekrar deneyin.",
-                limitReached: true 
-            }, { 
-                status: 429,
-                headers: { "Retry-After": "3600" }
-            });
+        const session = await auth();
+        if (!session?.isAdmin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
-        const { targetLang, sourceLang, translations: referenceTranslations } = body;
+        const targetLang = body.targetLang || body.targetLanguage;
+        const sourceLang = body.sourceLang || "en";
+        const referenceTranslations = body.translations || body.keys;
 
-        if (!targetLang || !referenceTranslations || typeof referenceTranslations !== 'object') {
+        if (
+            !targetLang ||
+            !referenceTranslations ||
+            typeof referenceTranslations !== "object" ||
+            Array.isArray(referenceTranslations) ||
+            referenceTranslations === null
+        ) {
             return NextResponse.json({ error: "Eksik parametre veya geçersiz çeviri objesi." }, { status: 400 });
         }
 
-        const keysToTranslate = Object.keys(referenceTranslations);
-        if (keysToTranslate.length === 0) return NextResponse.json({ translations: {} });
+        const pairs = Object.entries(referenceTranslations as Record<string, string>);
+        if (pairs.length === 0) return NextResponse.json({ translations: {} });
 
-        // Increment rate limit counter
-        if (count === 0) {
-            await redisCache.set(rateLimitKey, "1", RATE_LIMIT_WINDOW);
-        } else {
-            await redisCache.incr(rateLimitKey);
+        const sourceIso = resolveIsoCode(sourceLang);
+        const targetIso = resolveIsoCode(targetLang);
+
+        if (sourceIso === targetIso) {
+            // Same language — just mirror
+            const mirror: Record<string, string> = {};
+            for (const [k, v] of pairs) mirror[k] = v;
+            return NextResponse.json({ success: true, translations: mirror });
         }
 
-        const systemPrompt = `You are a professional software localization expert.
-Task: Translate UI strings for a Windows Optimization tool.
-Source Language: ${sourceLang || "Turkish"}
-Target Language: ${targetLang}
-Requirements:
-1. Return ONLY a valid JSON object.
-2. Maintain all technical placeholders like {count}, {name}, etc.
-3. Preserve the exact keys.
-4. Do not wrap in markdown code blocks.`;
+        // Split into chunks that respect MyMemory's ~500 char limit
+        const chunks = chunkArray(pairs, CHUNK_CHAR_LIMIT, ([, v]) => v);
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [
-                    { role: "user", parts: [{ text: systemPrompt + "\n\nTranslate this JSON:\n" + JSON.stringify(referenceTranslations, null, 2) }] }
-                ],
-                generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
-            })
-        });
+        const translatedPairs: Record<string, string> = {};
 
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Gemini API Error: ${errText}`);
+        for (const chunk of chunks) {
+            const keys = chunk.map(([k]) => k);
+            const values = chunk.map(([, v]) => v);
+
+            let results: string[];
+            try {
+                results = await translateChunk(values, sourceIso, targetIso);
+            } catch (err) {
+                console.error("TRANSLATE_CHUNK_ERROR:", err);
+                // On chunk failure, keep original values for that chunk
+                results = values;
+            }
+
+            for (let i = 0; i < keys.length; i++) {
+                translatedPairs[keys[i]] = results[i];
+            }
+
+            // Polite delay between chunks to avoid IP rate limiting
+            if (chunks.length > 1) {
+                await new Promise((r) => setTimeout(r, 300));
+            }
         }
 
-        const data = await response.json();
-        let generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (!generatedText) throw new Error("AI yanıt dönmedi.");
-        if (generatedText.includes("```")) generatedText = generatedText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-        let parsedTranslations;
-        try {
-            parsedTranslations = JSON.parse(generatedText);
-        } catch (e) {
-            throw new Error("AI geçersiz JSON döndü.");
-        }
-        
-        const cleanedTranslations: Record<string, string> = {};
-        for (const key of keysToTranslate) {
-            if (parsedTranslations[key]) cleanedTranslations[key] = parsedTranslations[key];
-        }
-
-        return NextResponse.json({ success: true, translations: cleanedTranslations });
+        return NextResponse.json({ success: true, translations: translatedPairs });
     } catch (error) {
-        console.error("[AI Auto-Translate ERROR]", error);
-        return NextResponse.json({ error: "AI çevirisi başarısız oldu.", details: (error as Error).message }, { status: 500 });
+        console.error("TRANSLATE_API_ERROR:", error);
+        return NextResponse.json(
+            { error: (error as Error).message || "Bilinmeyen sunucu hatası" },
+            { status: 500 }
+        );
     }
 }
