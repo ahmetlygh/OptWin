@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
 import { AdminActionBar } from "@/components/admin/AdminActionBar";
-import { ArrowLeft, Bot, Globe, RefreshCw, Search, AlertCircle, Activity, Settings2, FileDown, FileUp, ChevronDown, ChevronRight, Layout, Sparkles, XCircle, Navigation2, Keyboard, X } from "lucide-react";
+import { ArrowLeft, Bot, Globe, RefreshCw, Search, AlertCircle, Activity, Settings2, FileDown, FileUp, ChevronDown, ChevronRight, Layout, Sparkles, XCircle, Navigation2, X } from "lucide-react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { FlagIcon } from "@/components/shared/FlagIcon";
 import { Language } from "@/components/admin/languages/LanguageDashboard";
@@ -36,6 +36,7 @@ const SmartJsonEditor = memo(({ content, onUpdate, onCancel, searchTerm }: { con
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
+                e.preventDefault();
                 onCancel();
             }
         };
@@ -196,7 +197,12 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const [showDefaultModal, setShowDefaultModal] = useState(false);
     const [pendingCode, setPendingCode] = useState<string | null>(null);
     const [highlightKey, setHighlightKey] = useState<string | null>(null);
-    const [uiKey, setUiKey] = useState(0); // Forced re-mount key
+    const [uiKey, setUiKey] = useState(0);
+    // Snapshot refs: frozen copies taken when entering JSON mode
+    const snapshotTr = useRef<Record<string, string>>({});
+    const snapshotSeo = useRef<any>({});
+    const snapshotPt = useRef<Record<string, string>>({});
+    const snapshotLang = useRef<Language | null>(null);
     const [openSidebars, setOpenSidebars] = useState<Record<string, boolean>>({ status: true, seo: false, pt: false });
     const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
     const jsonContainerRef = useRef<HTMLDivElement>(null);
@@ -287,20 +293,18 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
             out[k] = v;
         });
 
-        // 4. Config (Only if not searching/filtering)
-        if (!term && !hideFilled) {
-            out["_config"] = { 
-                name: lang.name, 
-                code: lang.code, 
-                utcOffset: lang.utcOffset, 
-                localName: lang.nativeName, 
-                trName: lang.turkishName, 
-                svg: lang.flagSvg, 
-                order: lang.sortOrder, 
-                isActive: lang.isActive, 
-                isDefault: lang.isDefault 
-            };
-        }
+        // 4. Config -- always present at the bottom of the JSON
+        out["_config"] = { 
+            name: lang.name, 
+            code: lang.code, 
+            utcOffset: lang.utcOffset, 
+            localName: lang.nativeName, 
+            trName: lang.turkishName, 
+            svg: lang.flagSvg, 
+            order: lang.sortOrder, 
+            isActive: lang.isActive, 
+            isDefault: lang.isDefault 
+        };
         
         return JSON.stringify(out, null, 4);
     }, [defaultTrans]);
@@ -353,47 +357,39 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
     }, [setTranslations, setSeoMetadata, setPageTitles, setLanguage]);
 
-    const lastSearch = useRef(deferredSearch);
-    const lastMissing = useRef(showMissingOnly);
-
+    // Single consolidated sync: keep jsonContent fresh when UI state changes outside JSON mode
     useEffect(() => {
-        const filtersChanged = lastSearch.current !== deferredSearch || lastMissing.current !== showMissingOnly;
-        lastSearch.current = deferredSearch;
-        lastMissing.current = showMissingOnly;
-
-        if (!isJsonMode || filtersChanged) {
-            if (language) setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly));
+        if (!isJsonMode && language) {
+            setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly));
         }
     }, [translations, seoMetadata, pageTitles, language, isJsonMode, deferredSearch, showMissingOnly, constructVirtualJson]);
 
-    // handleRawJsonChange was removed as SmartJsonEditor handles updates directly via callbacks.
-
-    // Automatic Sync to JSON content whenever UI state changes
-    useEffect(() => {
-        if (!isJsonMode && language) {
-            const nextJson = constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly);
-            if (nextJson !== jsonContent) {
-                setJsonContent(nextJson);
-            }
-        }
-    }, [translations, seoMetadata, pageTitles, language, isJsonMode, deferredSearch, showMissingOnly, constructVirtualJson, jsonContent]);
-
     const toggleJsonMode = (revert = false) => {
         if (!isJsonMode) {
+             // Take a snapshot of current state BEFORE entering JSON mode
+             snapshotTr.current = JSON.parse(JSON.stringify(translations));
+             snapshotSeo.current = JSON.parse(JSON.stringify(seoMetadata));
+             snapshotPt.current = JSON.parse(JSON.stringify(pageTitles));
+             snapshotLang.current = language ? JSON.parse(JSON.stringify(language)) : null;
+             
              setJsonContent(constructVirtualJson(translations, seoMetadata, pageTitles, language, deferredSearch, showMissingOnly));
              setIsJsonMode(true);
         } else {
              if (revert) {
-                showToast("Değişiklikler geri alındı", "success");
+                // Restore from snapshot -- discard all JSON edits
+                setTranslations(snapshotTr.current);
+                setSeoMetadata(snapshotSeo.current);
+                setPageTitles(snapshotPt.current);
+                if (snapshotLang.current) setLanguage(snapshotLang.current);
+                showToast("Değişiklikler geri alındı.", "success");
              } else {
+                // Apply JSON edits to UI state
                 deconstructVirtualJson(jsonContent);
              }
              
-             // Forced re-mount strategy: unmount and remount UI tree to fix hydration
+             // Increment key to force React to fully re-mount the UI tree
              setUiKey(prev => prev + 1);
              setIsJsonMode(false);
-             
-             // Measure after re-mount is handled by the virtualizer itself due to fresh state
         }
     };
 
@@ -699,9 +695,9 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
                     {/* ── Translation Area ── */}
                     <div className="flex-1 min-h-0 bg-white/[0.015] backdrop-blur-md border border-white/[0.05] rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence mode="popLayout">
                             {!isJsonMode ? (
-                                <motion.div key={`ui-mode-${uiKey}`} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-col h-full absolute inset-0">
+                                <motion.div key={`ui-mode-${uiKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0">
                                     <div className="grid grid-cols-2 bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] sticky top-0 z-20">
                                         <div className="p-3.5 px-5 text-[10px] flex items-center gap-2 font-black text-white/30 uppercase tracking-[0.2em]">
                                             <FlagIcon flagSvg={defaultLang?.flagSvg ?? ""} size="sm" /> 
@@ -738,8 +734,8 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                     </div>
                                 </motion.div>
                             ) : (
-                                /* ── Task 3: Syntax-highlighted JSON ── */
-                                <motion.div key="json-mode" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.3, ease: "easeOut" }} className="flex flex-col h-full absolute inset-0 z-10">
+                                /* ── Structural JSON Editor ── */
+                                <motion.div key="json-mode" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0 z-10">
                                     <div className="bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] h-[45px] px-6 flex items-center justify-between shrink-0">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[10px] font-black text-[#6b5be6] uppercase tracking-[0.25em]">Raw JSON Editor</span>
@@ -839,10 +835,6 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                        {/* Task 5: Save shortcut hint removed */}
-                        <div className="mt-2 pt-2 border-t border-white/[0.03] flex items-center justify-center gap-2 relative z-10">
-                            <Keyboard size={10} className="text-white/15" />
-                        </div>
                     </motion.div>
 
                     {/* Global SEO + Task 1: SeoPreview */}

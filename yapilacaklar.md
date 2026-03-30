@@ -1,64 +1,106 @@
-## Faz 6: Son Rötuşlar, Akıcılık ve Hata Giderme
-- [x] **Arayüz (UI) ve Sayfa Yapısı**:
-    - [x] Sayfanın tamamının tek sayfa (single-page) yapısında olması, sayfanın sağında (body seviyesinde) genel scroll bar çıkmaması sağlanacak.
-    - [x] Elemanların sıkışık durmaması, modern ve ferah boşluklara sahip olması sağlanacak.
-- [x] **Buton ve Metin İyileştirmeleri**:
-    - [x] "GEMINI" olan butonun adı "AI-ÇEVİRİ" olarak değiştirilecek.
-    - [x] "UI MODU" ve "RAW JSON" geçiş butonlarının hem normal hem de hover durumları daha estetik ve güzel hale getirilecek.
-- [x] **Raw JSON Editör Hataları**:
-    - [x] Raw JSON editöründeki kaydırma (scroll) sorunu kesin olarak çözülecek (Derin analiz yapılacak).
-    - [x] Raw moddan UI moduna geçildiğinde sayfanın "bom boş" kalması (veya key'lerin yüklenmemesi) sorunu çözülecek.
+## Faz 8: Mimari Denetim ve Yapilacaklar
 
-## Faz 7: Stabilizasyon, Derin Bug Fix ve Performans Audit
-- [x] **Global Layout ve Scroll Fix**:
-    - [x] Ana sayfa (Language Dashboard) ve editör sayfasındaki çift scroll/kayma sorunu kesin olarak çözülecek. `h-screen` ve `overflow-hidden` stratejisi tüm admin paneline yayılacak.
-- [x] **Eksik Navigasyonu (Jump to Next)**:
-    - [x] "Eksik gösteriyor ama bulamıyor" hatası giderildi. Arama filtresi otomatik temizleme ve SEO/PT alanlarını kapsama eklendi.
-- [x] **Raw JSON Editör Devrimi**:
-    - [x] **İmleç/Focus Sorunu**: Textarea ve Highlighter arasındaki hizalama (14px font vs leading) mükemmel hale getirildi.
-    - [x] **Yapı Koruması**: JSON anahtarlarının değiştirilmesi engellenecek, sadece değerlerin düzenlenmesine izin verilecek (Shallow diff/merge).
-    - [x] **Anlık Senkron**: Sidebar veya diğer modallardan yapılan değişikliklerin JSON editörüne anında (useEffect/ref) yansıması sağlandı.
+Tarih: 2026-03-30
+Dosya: `src/app/admin/(dashboard)/languages/[code]/page.tsx`
+Toplam Satir: ~944
 
-- [x] **UI Modu Performans Audit**:
-    - [x] `TranslationRow` bileşeni `React.memo` ile optimize edilecek.
-    - [x] Virtualizer'ın "overscan" ve "estimateSize" değerleri dinamik ölçümle (`measureElement`) stabilize edilecek.
-    - [x] DOM öğelerinin "unload-load" (mount/unmount) sırasında yarattığı layout thrashing engellenecek.
-- [x] **Veri Bütünlüğü**:
-    - [x] Raw -> UI geçişinde labellerin kaybolması sorunu için `setTranslations` ve `setLanguage` akışları `Promise.all` veya ardışık state batching ile garanti altına alınacak.
-
-- [x] **Senkronizasyon ve Performans**:
-    - [x] UI ve Raw JSON arası anlık (real-time) çift yönlü senkronizasyon sağlandı.
-    - [x] Raw JSON Editor başlığı inceltildi ve referans header ile uyumlu hale getirildi.
-    - [x] Tablo kaydırma performansı (virtualization) yeniden optimize edildi.
-
-## Performans Audit & Akıcılık Çözümleri (Özet)
-Dil düzenleme sayfasındaki kaydırma ve yükleme performansını "yağ gibi" yapmak için şu teknikler uygulandı:
-
-1. **Memoization (Satır Bazlı)**: `TranslationRow` bileşeni, sadece kendi verisi değiştiğinde render olacak şekilde `memo` ile sarmalandı. Bu, 1000 satırlık bir listede tek bir harf yazıldığında diğer 999 satırın boşuna render olmasını engeller.
-2. **Virtualizer Stabilization**: `useVirtualizer` üzerinde `estimateSize` tablodaki ortalama satır yüksekliğine (82px) çekildi ve `overscan` değeri 10'a çıkarıldı. Bu, hızlı kaydırmalarda beyaz ekran görünmesini engeller.
-3. **Scroll Element Isolation**: `parentRef` üzerinden doğrudan scroll yönetimi yapılarak `window.scroll` tetiklemeleri engellendi.
-4. **CSS Optimization**: Satır hover ve focus animasyonları `will-change: transform` veya sadece `opacity/background` üzerinden yapılarak tarayıcının GPU'su kullanıldı.
-5. **Batch State Updates**: Raw moddan UI moda geçerken state güncellemeleri topluca yapıldığı için (Batching), React'in gereksiz ara-render yapması engellendi.
-6. **Force Measurement**: Modlar arası geçişte `virtualizer.measure()` tetiklenerek gizli kalan elemanların yükseklikleri anında hesaplanması sağlandı.
-
-
-
-## Tamamlananlar (Arşiv)
-- [x] Temel UI/UX Modernizasyonu (Glassmorphism, Neon Aksanlar).
-- [x] Sıkı Türkçe Tipografi Denetimi.
-- [x] Sidebar Yapılandırması (Dil Durumu, İlerleme önceliklendirme).
-- [x] Toggle Tasarım Uyumu.
-- [x] Düzenleme Modalı (UTC Offset butonu, Büyük boyut).
-- [x] Dinamik Sayfa Başlıkları.
-- [x] Varsayılan Dil Değişim Onay Ekranı.
-- [x] İçe/Dışa Aktarma Butonları.
-- [x] JSON Syntax Highlighting (Arama vurgulu).
-- [x] Akıllı "Sonraki Eksik" Navigasyonu (Sidebarları otomatik açan).
-- [x] Global Kısayollar (Ctrl+F, Ctrl+S).
-- [x] Tablo Yüksekliği ve Kaydırma sınırlandırmaları.
-- [x] Performans Optimizasyonu (Virtualization iyileştirmeleri).
-- [x] İlerleme Sayacı ve Mantık Hatası (Sayım metinleri düzeltildi).
-- [x] Dinamik UI Elementleri (Tamamlanana göre buton gizleme).
-- [x] Header Temizliği (Varsayılan rozeti ve Düzenle butonu kaldırıldı).
 ---
-*Not: Bu dosya süreç boyunca güncel tutulacaktır.*
+
+### Tamamlanan Kritik Duzeltmeler (Bu Oturum)
+
+- [x] **ESC Revert Hatasi**: JSON moduna girerken `snapshotTr`, `snapshotSeo`, `snapshotPt`, `snapshotLang` ref'leri ile anlık kopya alınıyor. ESC basılınca bu kopyalar geri yukleniyor, JSON'daki tum degisiklikler siliniyor.
+- [x] **Bos Ekran (Blank UI) Hatasi**: `AnimatePresence mode="wait"` -> `mode="popLayout"` degistirildi. Eski mod, cikis animasyonu tamamlanana kadar yeni DOM'u blokluyordu ve `parentRef` hicbir zaman gecerli bir scroll containerina baglı kalmiyordu. `popLayout` gecici olarak eski DOM'u layout'tan cikarir, yeni DOM aninda monte olur.
+- [x] **_config Blogu Her Zaman Mevcut**: `constructVirtualJson` artik filtre/arama durumundan bagimsiz olarak `_config` bloğunu JSON'un en altına yazar. Cift yonlu senkron garanti altında.
+- [x] **Keyboard Ikonu Kalıntısı**: `<Keyboard />` bileşeni ve importu tamamen cikarildi. Gorunur kısayol ipuclari yok.
+- [x] **Cift useEffect Birlestirildi**: Ayni isi yapan iki `useEffect` (satir 359-367 ve 371-379) tek bir konsolide useEffect'e indirildi. Race condition kaynagi ortadan kaldirildi.
+
+---
+
+### Mimari Denetim Bulgulari (Oncelik Sirasina Gore)
+
+#### YUKSEK ONCELIK
+
+- [ ] **P1: `any` Tip Kirliligi**
+    - `seoMetadata` state'i `useState<any>({})` olarak tanimli (satir 180).
+    - `origSeoMeta` ayni sekilde `any` (satir 181).
+    - `snapshotSeo` ref'i `useRef<any>({})`.
+    - `constructVirtualJson` parametreleri `(ui: any, seo: any, pt: any, ...)` seklinde.
+    - `deconstructVirtualJson` icindeki `parsed`, `ui`, `seoPartial`, `ptPartial`, `meta` degiskenleri hepsi `any`.
+    - **Cozum**: `SeoMetadata` interface'i tanimlanip tum bu alanlara uygulanmali. Bu, runtime'da sessizce kaybolan alanlari derleme zamaninda yakalamamizi saglar.
+
+- [ ] **P2: `deconstructVirtualJson` Merge Stratejisi Hatalı**
+    - `setTranslations` icinde sadece `Object.keys(ui).forEach(k => next[k] = ui[k])` yapiliyor. JSON'dan bir key silinirse (kullanici kazara temizlerse), eski deger korunuyor cunku sadece "additive merge" yapiliyor.
+    - **Cozum**: JSON'dan gelen `ui` objesi tam kaynak olarak kabul edilmeli. `setTranslations(() => ui)` seklinde tam replacement yapilmali, ancak bu durumda JSON'da gorulmeyen (filtreli) key'lerin kaybolmamasi icin filtre durumu kontrol edilmeli.
+
+- [ ] **P3: SmartJsonEditor Performans Sorunu**
+    - `SmartJsonEditor` icerisindeki `onUpdate` her bir karakter girisinde `JSON.parse(jsonContent)` + `JSON.stringify(parsed, null, 4)` + `deconstructVirtualJson(nextJson)` calistiriyor. 500+ key iceren bir dilde her tuş vuruşunda tum JSON yeniden parse edilip serialize ediliyor.
+    - **Cozum**: `onUpdate` icinde dirty flag kullanilmali, debounce (150ms) eklenmeli. Veya `SmartJsonEditor` kendi local state'ini tutmali ve sadece blur/commit aninda parent'a gondermeli.
+
+#### ORTA ONCELIK
+
+- [ ] **P4: Virtualizer `parentRef` Yetim Kalma Riski**
+    - `useVirtualizer` bilesenin ust seviyesinde tanimli ama `parentRef` sadece UI modunda DOM'a baglanıyor. JSON modundayken `parentRef.current === null` ve virtualizer bosuna hesaplama yapmaya devam ediyor.
+    - **Cozum**: `useVirtualizer` cagrisini `isJsonMode === false` kosuluna baglamak veya `enabled` parametresi eklemek.
+
+- [ ] **P5: `handleSave` Dependency Array Sizmasi**
+    - `handleSave`'in bagimlilik dizisinde `router` var ama `handleSave` icinde `router` kullanilmiyor (sadece `history.pushState` kullaniliyor). Bu gereksiz yeniden olusturma tetikliyor.
+    - **Cozum**: `router` bagimliligini kaldirmak.
+
+- [ ] **P6: Sidebar State Carpmasi**
+    - `setSeoMetadata({ ...seoMetadata, [field]: e.target.value })` (satir ~854) seklinde spread yapiliyor. Eger React state batching sirasinda iki ardisik alan degistirilirse, ikincisi birincinin degisikligini goremez (stale closure).
+    - **Cozum**: `setSeoMetadata(prev => ({ ...prev, [field]: e.target.value }))` fonksiyonel guncelleme kullanilmali.
+
+- [ ] **P7: JSON Export Eksik _config Verisi**
+    - Disa aktarma butonu `jsonContent`'i oldugu gibi yazdirir. `_config` blogu artik her zaman dahil oldugu icin, disari aktarilan dosya icerisinde `_config` gibi dahili meta verisi de yer aliyor. Import eden sistem bunu beklemeyebilir.
+    - **Cozum**: Export sirasinda `_config` key'ini cikararak temiz bir JSON olusturmak.
+
+- [ ] **P8: Import Sonrasi `originalTranslations` Guncellenmemesi**
+    - `handleImport` fonksiyonu `deconstructVirtualJson` cagiriyor ama `originalTranslations`'i guncellemiyor. Bu, import edilen dosya kaydedilmeden sayfa kapatilirsa "kaydedilmemis degisiklikler" uyarisini dogru tetikler, ancak "Iptal" butonuna basilinca import edilen verinin tamamen silinmesine neden olur.
+    - **Cozum**: Kullaniciya import sonrasi otomatik kaydetme veya onay sorulmali.
+
+#### DUSUK ONCELIK
+
+- [ ] **P9: `forwardRef` Naming Catismasi**
+    - `TranslationRow` bileseninde `forwardRef` adinda bir prop kullaniliyor. Bu, React'in `React.forwardRef` API'siyle isim catismasi yaratabilir ve gelecekte hata ayiklamayi zorlastirir.
+    - **Cozum**: Prop adini `inputRef` olarak degistirmek.
+
+- [ ] **P10: scrollIntoView Gereksiz Tetiklenmesi**
+    - `TranslationRow` icindeki `input` ve `textarea` elementlerinde `onFocus` handler'i `scrollIntoView` cagiriyor. Virtualizer zaten scrollToIndex ile bu isi yapiyor. Bu cift scroll tetiklemesi "titreme" etkisi yaratabilir.
+    - **Cozum**: `scrollIntoView`'i kaldirup sadece virtualizer'in `scrollToIndex`'ine guvenilmeli.
+
+- [ ] **P11: `handleMakeDefault` Yetersiz State Guncelleme**
+    - Varsayilan dil degistirildiginde `defaultLang` state'i guncellenmiyor. Header'daki referans dil bilgisi bozuk kalabilir.
+    - **Cozum**: Basarili API cagrisindan sonra `setDefaultLang(...)` ile guncellemek.
+
+- [ ] **P12: Dosya Boyutu ve Sorumluluk Ayırımı**
+    - Tek dosya 944 satir, 62KB. SmartJsonEditor, TranslationRow, SeoPreview, SidebarSection, RippleToggle gibi bagimsiz bilesenler ayni dosyada tanimli.
+    - **Cozum**: Her birini `@/components/admin/languages/` altina ayri dosyalara tasimak.
+
+---
+
+### Tamamlananlar (Arsiv)
+
+- [x] Temel UI/UX Modernizasyonu (Glassmorphism, Neon Aksanlar).
+- [x] Sıkı Turkce Tipografi Denetimi.
+- [x] Sidebar Yapilandirmasi (Dil Durumu, Ilerleme onceliklendirme).
+- [x] Toggle Tasarim Uyumu.
+- [x] Duzenleme Modali (UTC Offset butonu, Buyuk boyut).
+- [x] Dinamik Sayfa Basliklari.
+- [x] Varsayilan Dil Degisim Onay Ekrani.
+- [x] Ice/Disa Aktarma Butonlari.
+- [x] JSON Syntax Highlighting (Arama vurgulu).
+- [x] Akilli "Sonraki Eksik" Navigasyonu (Sidebarlari otomatik acan).
+- [x] Global Kisayollar (Ctrl+F, Ctrl+S).
+- [x] Tablo Yuksekligi ve Kaydirma sinirlandirmalari.
+- [x] Performans Optimizasyonu (Virtualization iyilestirmeleri).
+- [x] Ilerleme Sayaci ve Mantik Hatasi (Sayim metinleri duzeltildi).
+- [x] Dinamik UI Elementleri (Tamamlanana gore buton gizleme).
+- [x] Header Temizligi (Varsayilan rozeti ve Duzenle butonu kaldirildi).
+- [x] ESC Revert Mekanizmasi (Snapshot tabanli geri alma).
+- [x] Blank Screen Fix (AnimatePresence mode degisikligi).
+- [x] _config Blogu Garanti (Her zaman JSON'da mevcut).
+- [x] Keyboard Ikonu Kalintisi Temizlendi.
+- [x] Cift useEffect Race Condition Giderildi.
+
+---
+*Bu dosya her mimari denetim sonrasinda guncellenecektir.*
