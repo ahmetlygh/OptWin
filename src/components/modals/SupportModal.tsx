@@ -58,20 +58,21 @@ export function SupportModal({ serverSettings = {} }: SupportModalProps) {
     return (
         <div
             ref={containerRef}
-            className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
+            className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl cursor-default ${isVisible ? 'modal-backdrop-enter' : phase === 'exiting' ? 'modal-backdrop-exit' : ''}`}
             onClick={handleClose}
         >
             <div
-                className={`w-full max-w-2xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl relative overflow-hidden ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
+                className={`w-full max-w-2xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl relative overflow-hidden cursor-default ${isVisible ? 'modal-content-enter' : phase === 'exiting' ? 'modal-content-exit' : ''}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Glow */}
                 <div className="absolute top-0 right-0 w-40 h-40 bg-pink-500/10 rounded-full blur-[50px] pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-[var(--accent-color)]/10 rounded-full blur-[40px] pointer-events-none"></div>
 
+                {/* Task 4: Enhance Close Button Interactivity */}
                 <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 size-8 flex items-center justify-center rounded-full bg-[var(--text-secondary)]/10 text-[var(--text-secondary)] hover:bg-[var(--text-secondary)]/20 hover:text-[var(--text-primary)] hover:rotate-90 transition-all duration-200"
+                    className="absolute top-4 right-4 size-8 flex items-center justify-center rounded-full bg-[var(--text-secondary)]/10 text-[var(--text-secondary)] hover:bg-[var(--text-secondary)]/20 hover:text-[var(--text-primary)] hover:rotate-90 transition-all duration-200 cursor-pointer shadow-sm z-50"
                 >
                     <XIcon size={14} />
                 </button>
@@ -121,7 +122,7 @@ export function SupportModal({ serverSettings = {} }: SupportModalProps) {
                                 href={bmcUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 transition-all duration-300"
+                                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-base rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer"
                             >
                                 <CoffeeIcon size={18} />
                                 {t["support.buyMeCoffee"]}
@@ -130,7 +131,7 @@ export function SupportModal({ serverSettings = {} }: SupportModalProps) {
                         )}
                         <button
                             onClick={handleClose}
-                            className="w-full py-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium text-sm rounded-xl transition-all"
+                            className="w-full py-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium text-sm rounded-xl transition-all cursor-pointer hover:bg-white/5 active:scale-95"
                         >
                             {t["support.close"]}
                         </button>

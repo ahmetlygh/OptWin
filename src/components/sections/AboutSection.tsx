@@ -53,15 +53,15 @@ export function AboutSection() {
                 </div>
             </div>
 
-            {/* Support CTA — Opens Modal */}
+            {/* Task 4: Enhance Support CTA Interactivity */}
             <div id="support" className="w-full max-w-md">
                 <button
                     onClick={() => setSupportModalOpen(true)}
-                    className="w-full group bg-gradient-to-r from-[var(--accent-color)]/10 to-pink-500/10 border border-[var(--border-color)] hover:border-[var(--accent-color)]/40 rounded-2xl p-6 text-center flex flex-col items-center gap-3 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(107,91,230,0.15)] relative overflow-hidden"
+                    className="w-full group bg-gradient-to-r from-[var(--accent-color)]/10 to-pink-500/10 border border-[var(--border-color)] hover:border-[var(--accent-color)]/40 rounded-2xl p-6 text-center flex flex-col items-center gap-3 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(107,91,230,0.15)] relative overflow-hidden cursor-pointer hover:bg-white/[0.02] active:scale-[0.98]"
                     style={{ transition: "all 0.4s cubic-bezier(0.23, 1, 0.32, 1)" }}
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-color)]/5 to-pink-500/5 opacity-0 group-hover:opacity-100" style={{ transition: "opacity 0.3s" }}></div>
-                    <div className="size-12 rounded-full bg-pink-500/15 text-pink-500 flex items-center justify-center relative z-10 group-hover:scale-110" style={{ transition: "transform 0.3s" }}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-color)]/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="size-12 rounded-full bg-pink-500/15 text-pink-500 flex items-center justify-center relative z-10 group-hover:scale-110 transition-transform duration-300 shadow-inner">
                         <HeartIcon size={22} />
                     </div>
                     <span className="text-lg font-bold text-[var(--text-primary)] relative z-10">{t["support.title"]}</span>

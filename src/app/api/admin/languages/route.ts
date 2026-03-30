@@ -20,9 +20,10 @@ export async function GET() {
     }
 }
 
+// Task 3: Single-Word Naming Enforcement (Zod Validation)
 const languageSchema = z.object({
-    code: z.string().min(2).max(5).regex(/^[a-z]{2,5}$/),
-    name: z.string().min(1).max(50),
+    code: z.string().min(2).max(5).regex(/^[a-z]{2,5}$|^[a-z]{2}-[A-Z]{2}$/),
+    name: z.string().min(1).max(50).regex(/^\S+$/, "Dil ismi tek kelime olmalıdır."), // No spaces
     nativeName: z.string().min(1).max(50),
     turkishName: z.string().min(1).max(50).optional().default(""),
     flagSvg: z.string().max(10000).default(""),
@@ -53,9 +54,14 @@ export async function POST(request: NextRequest) {
                 await settingsService.updateSetting("default_lang", data.code, "string", "Varsayılan dil kodu");
             }
 
+            // Task 1: Auto-increment sortOrder for new languages
+            const lastLang = await tx.language.findFirst({ orderBy: { sortOrder: "desc" } });
+            const nextOrder = lastLang ? lastLang.sortOrder + 1 : 0;
+
             return await tx.language.create({ 
                 data: {
                     ...data,
+                    sortOrder: nextOrder,
                     seoMetadata: data.seoMetadata || { title: "", description: "", keywords: "" }
                 } 
             });
@@ -65,31 +71,49 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(language, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: "Validation failed", details: error.issues }, { status: 400 });
+            return NextResponse.json({ error: "Doğrulama hatası", details: error.issues.map(i => i.message).join(", ") }, { status: 400 });
         }
-        return NextResponse.json({ error: "Failed to create language" }, { status: 500 });
+        return NextResponse.json({ error: "Dil oluşturulamadı." }, { status: 500 });
     }
 }
 
-// PUT: Bulk update (Task 5: Prisma Payload White-List)
+// PUT: Bulk update & Manual Ordering
 export async function PUT(request: NextRequest) {
     const session = await auth();
     if (!session?.isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
         const body = await request.json();
-        const { id, newCode, ...inputData } = body;
+        
+        // Handle Bulk Reordering (Task 2)
+        if (body.reorder && Array.isArray(body.reorder)) {
+            await prisma.$transaction(
+                body.reorder.map((item: { id: string, sortOrder: number }) => 
+                    prisma.language.update({
+                        where: { id: item.id },
+                        data: { sortOrder: item.sortOrder }
+                    })
+                )
+            );
+            await languageService.invalidateCache();
+            return NextResponse.json({ success: true });
+        }
 
+        const { id, newCode, ...inputData } = body;
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+
+        // Task 3: Enforce single word on update
+        if (inputData.name && inputData.name.includes(" ")) {
+            return NextResponse.json({ error: "Dil ismi tek kelime olmalıdır." }, { status: 400 });
+        }
 
         const currentLang = await prisma.language.findUnique({ 
             where: { id },
             select: { isDefault: true, isActive: true, code: true }
         });
 
-        if (!currentLang) return NextResponse.json({ error: "Language not found" }, { status: 404 });
+        if (!currentLang) return NextResponse.json({ error: "Dil bulunamadı." }, { status: 404 });
 
-        // PRISMA WHITE-LIST: Discard any UI-specific or non-schema fields
         const validFields = ["code", "name", "nativeName", "turkishName", "flagSvg", "utcOffset", "isActive", "isDefault", "sortOrder", "seoMetadata"];
         const updateData: any = {};
         
@@ -99,19 +123,13 @@ export async function PUT(request: NextRequest) {
             }
         });
 
-        // Handle possible code rename via newCode
         if (newCode && newCode !== currentLang.code) {
             updateData.code = newCode;
         }
 
-        // Logic Enforcement: Default language protection
         if (currentLang.isDefault) {
-            if (updateData.isActive === false) {
-                return NextResponse.json({ error: "Varsayılan dil pasife alınamaz. Önce başka bir dili varsayılan yapın." }, { status: 400 });
-            }
-            if (updateData.isDefault === false) {
-                return NextResponse.json({ error: "Varsayılan dil durumu doğrudan kaldırılamaz. Lütfen başka bir dili varsayılan olarak seçin." }, { status: 400 });
-            }
+            if (updateData.isActive === false) return NextResponse.json({ error: "Varsayılan dil pasife alınamaz." }, { status: 400 });
+            if (updateData.isDefault === false) return NextResponse.json({ error: "Varsayılan dil durumu doğrudan kaldırılamaz." }, { status: 400 });
         }
 
         const updated = await prisma.$transaction(async (tx) => {
@@ -132,7 +150,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json(updated);
     } catch (error) {
         console.error("[Admin Languages PUT Error]", error);
-        return NextResponse.json({ error: "Update failed; possible invalid payload structure." }, { status: 500 });
+        return NextResponse.json({ error: "Güncelleme başarısız." }, { status: 500 });
     }
 }
 
@@ -147,8 +165,8 @@ export async function DELETE(request: NextRequest) {
         if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
         const lang = await prisma.language.findUnique({ where: { id } });
-        if (!lang) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (lang.isDefault) return NextResponse.json({ error: "Cannot delete the default language" }, { status: 400 });
+        if (!lang) return NextResponse.json({ error: "Dil bulunamadı." }, { status: 404 });
+        if (lang.isDefault) return NextResponse.json({ error: "Varsayılan dil silinemez." }, { status: 400 });
 
         await prisma.language.delete({ where: { id } });
         await languageService.invalidateCache();
@@ -156,6 +174,6 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("[Admin Languages DELETE]", error);
-        return NextResponse.json({ error: "Failed to delete language" }, { status: 500 });
+        return NextResponse.json({ error: "Silme başarısız." }, { status: 500 });
     }
 }

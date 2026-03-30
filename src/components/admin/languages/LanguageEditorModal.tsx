@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from "react";
-import { X, Save, AlertCircle } from "lucide-react";
+import { X, Save, AlertCircle, Globe, Type, Flag, Clock, Code2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { Language } from "./LanguageDashboard";
@@ -10,6 +10,15 @@ interface Props {
     onClose: () => void;
     onSave: (updated?: Language) => void;
 }
+
+const FieldLabel = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => (
+    <label className="flex items-center gap-2 text-[10px] font-black text-white/50 uppercase tracking-[0.15em] mb-1.5">
+        <span className="text-[#6b5be6]/70">{icon}</span>
+        {children}
+    </label>
+);
+
+const inputClasses = "w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 text-[13px] text-white focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/[0.04] transition-all placeholder-white/15";
 
 export function LanguageEditorModal({ language, onClose, onSave, displayOnly = false }: Props) {
     const { showToast } = useOptWinStore();
@@ -46,6 +55,11 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
+        if (formData.name.trim().includes(" ")) {
+            showToast("Dil ismi (İngilizce) tek kelime olmalıdır.", "error");
+            return;
+        }
+
         const updated: Language = {
             ...(language || {} as Language),
             ...formData,
@@ -61,13 +75,11 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
         try {
             const method = isEdit ? "PUT" : "POST";
             const body = isEdit ? { ...formData, id: language?.id } : formData;
-            
             const res = await fetch("/api/admin/languages", {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
-            
             if (res.ok) {
                 showToast(isEdit ? "Dil güncellendi" : "Dil eklendi", "success");
                 onSave(updated);
@@ -82,121 +94,160 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
         }
     };
 
-    // ESC to close
     useEffect(() => {
-        const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === "Escape") onClose();
-        };
+        const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
         window.addEventListener("keydown", handleEsc);
         return () => window.removeEventListener("keydown", handleEsc);
     }, [onClose]);
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 10 }} 
-                animate={{ opacity: 1, scale: 1, y: 0 }} 
-                exit={{ opacity: 0, scale: 0.95, y: 10 }} 
-                transition={{ duration: 0.2 }}
+            {/* Backdrop */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            />
+
+            {/* Modal */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative bg-[#12121a] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl custom-scrollbar flex flex-col"
+                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6),0_0_60px_rgba(107,91,230,0.08)] flex flex-col"
             >
-                <div className="sticky top-0 z-10 flex items-center justify-between p-5 border-b border-white/[0.05] bg-[#12121a]/90 backdrop-blur-md">
-                    <h2 className="text-xl font-bold text-white">
-                        {isEdit ? "Dili Düzenle" : "Yeni Dil Ekle"}
-                    </h2>
-                    <button onClick={onClose} className="p-2 text-white/50 hover:text-white rounded-lg transition-colors">
-                        <X size={20} />
+                {/* Ambient Glows */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#6b5be6]/8 blur-3xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-600/5 blur-3xl pointer-events-none" />
+
+                {/* Header */}
+                <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/[0.04]">
+                    <div>
+                        <h2 className="text-sm font-black text-white uppercase tracking-tight">
+                            {isEdit ? "DİL AYARLARI" : "YENİ DİL EKLE"}
+                        </h2>
+                        <p className="text-[10px] text-white/30 font-medium mt-0.5">
+                            {isEdit ? "Mevcut dil bilgilerini güncelleyin" : "Platforma yeni bir dil ekleyin"}
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="p-2 text-white/30 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all">
+                        <X size={18} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6 flex-1">
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="relative z-10 p-5 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
+                    {/* Row 1: Code + UTC */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-white/70">Dil Kodu (ISO)</label>
+                        <div>
+                            <FieldLabel icon={<Code2 size={11} />}>Dil Kodu (ISO)</FieldLabel>
                             <input
-                                required
-                                type="text"
-                                pattern="[a-z]{2,5}"
-                                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
+                                required type="text" pattern="[a-z]{2,5}|[a-z]{2}-[A-Z]{2}"
+                                className={inputClasses}
                                 value={formData.code}
-                                onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                placeholder="tr, en, zh vb."
+                                onChange={e => setFormData({ ...formData, code: e.target.value.toLowerCase().trim() })}
+                                placeholder="tr, en, pt-BR"
                             />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-white/70">Zaman Dilimi (UTC Offset)</label>
-                            <input
-                                required
-                                type="number" step="0.5"
-                                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
-                                value={formData.utcOffset}
-                                onChange={e => setFormData({ ...formData, utcOffset: parseFloat(e.target.value) })}
-                                placeholder="Örn. 3, 0, 8, 5.5"
-                            />
+                        <div>
+                            <FieldLabel icon={<Clock size={11} />}>UTC Offset</FieldLabel>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setFormData(p => ({ ...p, utcOffset: p.utcOffset - 0.5 }))}
+                                    className="h-[42px] px-4 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white/40 hover:text-white hover:bg-white/[0.06] transition-all font-black"
+                                >
+                                    -
+                                </button>
+                                <div className={`${inputClasses} flex-1 flex items-center justify-center font-mono text-center`}>
+                                    {formData.utcOffset > 0 ? `+${formData.utcOffset}` : formData.utcOffset}
+                                </div>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setFormData(p => ({ ...p, utcOffset: p.utcOffset + 0.5 }))}
+                                    className="h-[42px] px-4 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white/40 hover:text-white hover:bg-white/[0.06] transition-all font-black"
+                                >
+                                    +
+                                </button>
+                            </div>
                         </div>
                     </div>
 
+                    {/* ISO Code Change Warning */}
+                    {isEdit && language && formData.code !== language.code && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-3 bg-amber-500/[0.05] border border-amber-500/20 rounded-xl flex gap-2.5 items-start">
+                            <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={14} />
+                            <div>
+                                <p className="text-[10px] font-black text-amber-400 uppercase tracking-wider">ISO Kodu Değişimi</p>
+                                <p className="text-[9px] text-amber-500/60 leading-relaxed mt-0.5">Mevcut SEO linklerini bozabilir.</p>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Row 2: Name EN + Name Local */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-white/70">Adı (İngilizce)</label>
+                        <div>
+                            <FieldLabel icon={<Type size={11} />}>Adı (EN - Tek Kelime)</FieldLabel>
                             <input
-                                required
-                                type="text"
-                                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
+                                required type="text" pattern="^\S+$"
+                                title="Boşluksuz tek bir kelime girin."
+                                className={inputClasses}
                                 value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="Turkish, English vb."
+                                onChange={e => setFormData({ ...formData, name: e.target.value.trim() })}
+                                placeholder="Turkish"
                             />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-white/70">Adı (Yerel)</label>
+                        <div>
+                            <FieldLabel icon={<Globe size={11} />}>Adı (Yerel)</FieldLabel>
                             <input
-                                required
-                                type="text"
-                                className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
+                                required type="text"
+                                className={inputClasses}
                                 value={formData.nativeName}
                                 onChange={e => setFormData({ ...formData, nativeName: e.target.value })}
-                                placeholder="Türkçe, English, 中文 vb."
+                                placeholder="Türkçe"
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-white/70">Adı (Türkçe)</label>
+                    {/* Turkish Name */}
+                    <div>
+                        <FieldLabel icon={<Type size={11} />}>Adı (Türkçe)</FieldLabel>
                         <input
-                            required
-                            type="text"
-                            className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50"
+                            required type="text"
+                            className={inputClasses}
                             value={formData.turkishName}
                             onChange={e => setFormData({ ...formData, turkishName: e.target.value })}
-                            placeholder="Türkçe, İngilizce, Çince vb."
+                            placeholder="Türkçe, İngilizce"
                         />
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-white/70 flex items-center justify-between">
-                            <span>Bayrak (SVG Kodu)</span>
-                            <span className="text-[10px] text-yellow-500/70 border border-yellow-500/20 bg-yellow-500/5 px-2 py-0.5 rounded flex items-center gap-1">
-                                <AlertCircle size={10} /> Emoji yasaktır, sadece SVG.
+                    {/* SVG Flag */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <FieldLabel icon={<Flag size={11} />}>Bayrak (SVG)</FieldLabel>
+                            <span className="text-[8px] text-amber-500/60 border border-amber-500/15 bg-amber-500/[0.03] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1">
+                                <AlertCircle size={8} /> Sadece SVG
                             </span>
-                        </label>
+                        </div>
                         <textarea
                             required
-                            className="w-full h-32 bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 font-mono text-[11px] custom-scrollbar"
+                            className={`${inputClasses} h-28 font-mono text-[11px] resize-none`}
                             value={formData.flagSvg}
                             onChange={e => setFormData({ ...formData, flagSvg: e.target.value })}
                             placeholder='<svg viewBox="0 0 30 20">...</svg>'
                         />
                     </div>
 
-                    <div className="pt-4 border-t border-white/10 flex justify-end gap-3 sticky bottom-0">
-                        <button type="button" onClick={onClose} disabled={isSaving} className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/5 transition-colors">
+                    {/* Footer Buttons */}
+                    <div className="pt-4 border-t border-white/[0.04] flex justify-end gap-2.5">
+                        <button type="button" onClick={onClose} disabled={isSaving} className="px-5 py-2.5 rounded-xl text-[11px] font-bold text-white/40 hover:text-white/70 hover:bg-white/[0.03] transition-all">
                             İptal
                         </button>
-                        <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold shadow-xl shadow-purple-900/30 transition-all disabled:opacity-50">
-                            {isSaving ? "Kaydediliyor..." : <><Save size={16} /> {isEdit ? "Güncelle" : "Oluştur"}</>}
+                        <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#6b5be6] hover:bg-[#5a4cc2] text-white text-[11px] font-black uppercase tracking-wider shadow-lg shadow-purple-900/20 transition-all active:scale-95 disabled:opacity-50">
+                            {isSaving ? "Kaydediliyor..." : <><Save size={14} /> {isEdit ? "Güncelle" : "Oluştur"}</>}
                         </button>
                     </div>
                 </form>
