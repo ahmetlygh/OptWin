@@ -60,8 +60,9 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
         <div className="font-mono text-[13px] leading-relaxed p-8 custom-scrollbar min-h-full bg-black/[0.1]">
             <div className="text-white/30">{'{'}</div>
             {Object.entries(localData).map(([key, val], i) => {
+                if (key === "_config.order") return null;
                 const termMatch = term && (key.toLowerCase().includes(term) || String(val).toLowerCase().includes(term));
-                const isEmptyNow = !val || String(val).trim() === "";
+                const isEmptyNow = val === undefined || val === null || String(val).trim() === "";
 
                 // 1. Handle Config Keys (_config.*)
                 if (key.startsWith("_config.")) {
@@ -229,8 +230,16 @@ const SidebarSection = ({ title, icon, children, isOpen, onToggle, isWarning = f
             </button>
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden">
-                        <div className="px-4 pb-4 space-y-4 border-t border-white/[0.03]">{children}</div>
+                    <motion.div 
+                        initial={{ height: 0 }} 
+                        animate={{ height: "auto" }} 
+                        exit={{ height: 0 }} 
+                        transition={{ duration: 0.5, ease: [0.33, 1, 0.68, 1] }} 
+                        className="overflow-hidden"
+                    >
+                        <div className="px-4 pb-4 space-y-4 border-t border-white/[0.03] select-none">
+                            {children}
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -295,7 +304,6 @@ export const constructVirtualJson = (ui: any, seo: any, pt: any, lang: Language 
     out["_config.localName"] = lang.nativeName;
     out["_config.trName"] = lang.turkishName;
     out["_config.svg"] = lang.flagSvg;
-    out["_config.order"] = lang.sortOrder;
     out["_config.isActive"] = lang.isActive;
     
     return JSON.stringify(out, null, 4);
@@ -333,6 +341,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const [showDefaultModal, setShowDefaultModal] = useState(false);
     const [pendingCode, setPendingCode] = useState<string | null>(null);
     const [highlightKey, setHighlightKey] = useState<string | null>(null);
+    const [targetLoadIndex, setTargetLoadIndex] = useState<number | null>(null);
     const [uiKey, setUiKey] = useState(0);
     const isDirty = useMemo(() => {
         try {
@@ -501,8 +510,10 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
              }
              
              // Increment key to force React to fully re-mount the UI tree
-             setUiKey(prev => prev + 1);
-             setIsJsonMode(false);
+             setTimeout(() => {
+                setUiKey(prev => prev + 1);
+                setIsJsonMode(false);
+             }, 10);
         }
     };
 
@@ -709,29 +720,67 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
             if (total === 0) return markers;
             lines.forEach((l, i) => {
                 const isMissing = l.includes(': ""') || l.endsWith(': "",');
-                if (isMissing) markers.push(((i + 0.5) / total) * 100);
+                // Maps closer to the actual line position in the viewport
+                if (isMissing) markers.push(((i) / total) * 100);
             });
             return markers;
         }
 
-        const total = filteredKeys.length;
-        if (total === 0) return markers;
+        const totalKeys = filteredKeys.length;
+        if (totalKeys === 0) return markers;
 
-        filteredKeys.forEach((k, i) => {
-            const isMissing = !originalTranslations[k] || originalTranslations[k].trim() === "";
-            // Maps exactly to the physical center height proportion of the scroll track
-            if (isMissing) markers.push(((i + 0.5) / total) * 100);
+        let totalEstY = 0;
+        const positions = filteredKeys.map(k => {
+            const defText = defaultTrans[k] || "";
+            const isTextarea = defText.length > 80 || defText.includes("\n");
+            // 103px is exact Grid Row height for standard inputs; 153px for 3-row textareas
+            const h = isTextarea ? 153 : 103; 
+            const y = totalEstY;
+            totalEstY += h;
+            return { k, center: y + (h / 2) };
+        });
+
+        positions.forEach((pos) => {
+            const isMissing = !originalTranslations[pos.k] || originalTranslations[pos.k].trim() === "";
+            // Maps to the physical height proportion exactly honoring varying item sizes
+            if (isMissing) markers.push((pos.center / totalEstY) * 100);
         });
         return markers;
-    }, [filteredKeys, originalTranslations, isJsonMode, jsonContent]);
+    }, [filteredKeys, originalTranslations, isJsonMode, jsonContent, defaultTrans]);
 
     const parentRef = useRef<HTMLDivElement>(null);
     const virtualizer = useVirtualizer({
         count: filteredKeys.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 82, 
-        overscan: 10,
-        measureElement: el => el?.getBoundingClientRect().height ?? 82,
+        estimateSize: (index) => {
+            const k = filteredKeys[index];
+            if (!k) return 103;
+            const defText = defaultTrans[k] || "";
+            return (defText.length > 80 || defText.includes("\n")) ? 153 : 103;
+        },
+        overscan: 25,
+        measureElement: el => el?.getBoundingClientRect().height ?? 103,
+        rangeExtractor: useCallback((range: any) => {
+            const active = new Set<number>();
+            const start = Math.max(0, range.startIndex - 25);
+            const end = Math.min(filteredKeys.length - 1, range.endIndex + 25);
+
+            for (let i = start; i <= end; i++) active.add(i);
+
+            if (targetLoadIndex !== null) {
+                // Connect the gap so it can naturally scroll through rendered elements without mounting
+                const min = Math.min(start, targetLoadIndex);
+                const max = Math.max(end, targetLoadIndex + 5);
+                
+                // If the gap is manageable, render everything in between to ensure 60fps tweens
+                if (max - min < 150) {
+                    for (let i = min; i <= max; i++) active.add(i);
+                } else {
+                    for (let i = Math.max(0, targetLoadIndex - 20); i <= Math.min(filteredKeys.length - 1, targetLoadIndex + 20); i++) active.add(i);
+                }
+            }
+            return Array.from(active).sort((a, b) => a - b);
+        }, [filteredKeys.length, targetLoadIndex]),
         scrollToFn: (offset, canSmooth, instance) => {
             const el = parentRef.current;
             if (!el) return;
@@ -833,16 +882,34 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
 
         // 1. Check current filtered list (translations)
-        const nextTrIndex = filteredKeys.findIndex(k => !originalTranslations[k] || originalTranslations[k].trim() === "");
-        if (nextTrIndex !== -1) {
-            const nextTr = filteredKeys[nextTrIndex];
-            virtualizer.scrollToIndex(nextTrIndex, { align: "center", behavior: "smooth" });
+        const currentOffset = virtualizer.scrollOffset || 0;
+        const currentIndex = Math.floor(currentOffset / 82);
+        
+        // Find all missing indices
+        const missingIndices = filteredKeys
+            .map((k, i) => (!originalTranslations[k] || originalTranslations[k].trim() === "") ? i : -1)
+            .filter(idx => idx !== -1);
+
+        if (missingIndices.length > 0) {
+            // Find the first missing index that is AFTER our current view
+            let nextTrIndex = missingIndices.find(idx => idx > currentIndex + 1);
             
+            // If none found after, loop back to the first missing one (from the top)
+            if (nextTrIndex === undefined) nextTrIndex = missingIndices[0];
+
+            const nextTr = filteredKeys[nextTrIndex];
+            setTargetLoadIndex(nextTrIndex);
+
             setTimeout(() => {
-                setHighlightKey(nextTr);
-                inputRefs.current[nextTr]?.focus();
-                setTimeout(() => setHighlightKey(null), 1500);
-            }, 850);
+                virtualizer.scrollToIndex(nextTrIndex, { align: "center", behavior: "smooth" });
+                
+                setTimeout(() => {
+                    setTargetLoadIndex(null);
+                    setHighlightKey(nextTr);
+                    inputRefs.current[nextTr]?.focus();
+                    setTimeout(() => setHighlightKey(null), 1500);
+                }, 850);
+            }, 60);
             return;
         }
 
@@ -1023,7 +1090,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
                     {/* ── Translation Area ── */}
                     <div className="flex-1 min-h-0 bg-white/[0.015] backdrop-blur-md border border-white/[0.05] rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence mode="popLayout">
                             {!isJsonMode ? (
                                 <motion.div key={`ui-mode-${uiKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0">
                                     <div className="grid grid-cols-2 bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] sticky top-0 z-20">
@@ -1092,14 +1159,14 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                             )}
                         </AnimatePresence>
 
-                        {/* ── Global Minimap (Fixed to workspace, independent of scroll) ── */}
-                        <div className="absolute right-0 w-1.5 pointer-events-none z-[100] bg-white/[0.01] border-l border-white/[0.04]" style={{ top: 45, bottom: 0 }}>
+                        {/* ── Global Minimap (Precision Glow markers) ── */}
+                        <div className="absolute right-3 w-[8px] pointer-events-none z-[100] bg-white/[0.015] border-x border-white/[0.04]" style={{ top: 45, bottom: 0 }}>
                             <div className="relative w-full h-full">
                                 {minimapMarkers.map((pos, i) => (
                                     <div 
                                         key={i} 
-                                        className="absolute left-0 w-full h-[2px] bg-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.7)] transition-opacity duration-300" 
-                                        style={{ top: `${pos}%` }} 
+                                        className="absolute right-[1px] w-[5px] h-[5px] bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8),0_0_20px_rgba(245,158,11,0.6)] transition-opacity duration-300 rounded-full" 
+                                        style={{ top: `${pos}%`, transform: 'translateY(-50%)' }} 
                                     />
                                 ))}
                             </div>
