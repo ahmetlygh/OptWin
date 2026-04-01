@@ -73,10 +73,10 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
                     return (
                         <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/[0.015] transition-all ${termMatch ? "bg-[#6b5be6]/5" : ""} ${!termMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
                             <div className="shrink-0 flex items-center pr-2">
-                                 <span className="text-white/20 mr-1">&quot;</span>
-                                 <span className="text-[#b39ddb] font-bold">{key}</span>
-                                 <span className="text-white/20 ml-1">&quot;</span>
-                                 <span className="text-white/25 ml-2">:</span>
+                                 <span className="text-white/30 mr-1">&quot;</span>
+                                 <span className="text-[#a78bfa] font-black drop-shadow-[0_0_8px_rgba(167,139,250,0.3)]">{key}</span>
+                                 <span className="text-white/30 ml-1">&quot;</span>
+                                 <span className="text-white/40 ml-2">:</span>
                             </div>
                             <div className={`flex-1 relative flex items-start flex-wrap transition-colors border ${isEmptyNow ? "bg-amber-500/10 border-amber-500/30 rounded-md" : "border-transparent"}`}>
                                 <span className={`text-white/20 ml-2 mr-0.5 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
@@ -104,12 +104,12 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
                                         if (e.key === "ArrowUp") { e.preventDefault(); inputRefs.current[i - 1]?.focus(); }
                                         if (e.key === "Escape") { e.stopPropagation(); e.currentTarget.blur(); }
                                     }}
-                                    className={`bg-transparent overflow-hidden resize-none outline-none caret-white transition-colors py-0 mt-0.5 min-h-[1.5em] w-auto inline-block min-w-[20px] whitespace-nowrap ${isEmptyNow ? "text-amber-100/90" : "text-[#a5d6a7] focus:text-white"}`}
+                                    className={`bg-transparent overflow-hidden resize-none outline-none caret-white transition-colors py-0 mt-0.5 min-h-[1.5em] w-auto inline-block min-w-[20px] whitespace-nowrap ${isEmptyNow ? "text-amber-300/90 font-medium" : "text-[#34d399] font-medium focus:text-white"}`}
                                     placeholder="..."
                                     style={{ width: `${Math.max(2, String(val).length)}ch`, minWidth: '1ch' }}
                                 />
-                                <span className={`text-white/20 ml-0.5 mr-1 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
-                                {i < Object.keys(localData).length - 1 && <span className="text-white/10 mt-[2px]">,</span>}
+                                <span className={`text-white/30 ml-0.5 mr-1 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
+                                {i < Object.keys(localData).length - 1 && <span className="text-white/20 mt-[2px]">,</span>}
                             </div>
                         </div>
                     );
@@ -130,10 +130,10 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
                 return (
                     <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/[0.015] transition-all ${isMatch ? "bg-[#6b5be6]/5" : ""} ${!isMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
                         <div className="shrink-0 flex items-center pr-2">
-                             <span className="text-white/20 mr-1">&quot;</span>
-                             <span className="text-[#b39ddb] font-bold">{key}</span>
-                             <span className="text-white/20 ml-1">&quot;</span>
-                             <span className="text-white/25 ml-2">:</span>
+                             <span className="text-white/30 mr-1">&quot;</span>
+                             <span className="text-[#a78bfa] font-black drop-shadow-[0_0_8px_rgba(167,139,250,0.3)]">{key}</span>
+                             <span className="text-white/30 ml-1">&quot;</span>
+                             <span className="text-white/40 ml-2">:</span>
                         </div>
                         <div className={`flex-1 relative flex items-start flex-wrap transition-colors border ${isEmptyNow ? "bg-amber-500/10 border-amber-500/30 rounded-md" : "border-transparent"}`}>
                             <span className={`text-white/20 ml-2 mr-0.5 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
@@ -173,12 +173,12 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
                                         e.currentTarget.blur();
                                     }
                                 }}
-                                className={`bg-transparent overflow-hidden resize-none outline-none caret-white transition-colors py-0 mt-0.5 min-h-[1.5em] w-auto inline-block min-w-[20px] whitespace-nowrap ${isEmptyNow ? "text-amber-100/90" : "text-[#a5d6a7] focus:text-white"}`}
+                                className={`bg-transparent overflow-hidden resize-none outline-none caret-white transition-colors py-0 mt-0.5 min-h-[1.5em] w-auto inline-block min-w-[20px] whitespace-nowrap ${isEmptyNow ? "text-amber-100/90" : "text-[#34d399] focus:text-white"}`}
                                 placeholder="..."
                                 style={{ width: `${Math.max(2, String(val).length)}ch`, minWidth: '1ch' }}
                             />
-                            <span className={`text-white/20 ml-0.5 mr-1 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
-                            {i < Object.keys(localData).length - 2 && <span className="text-white/10 mt-[2px]">,</span>}
+                            <span className={`text-white/40 ml-0.5 mr-1 mt-[2px] shrink-0 select-none ${isEmptyNow ? "text-amber-500/50" : ""}`}>&quot;</span>
+                            {i < Object.keys(localData).length - 1 && <span className="text-white/40 mt-[2px]">,</span>}
                         </div>
                     </div>
                 );
