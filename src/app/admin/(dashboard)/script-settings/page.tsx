@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Languages, Download, FileCode2, FileUp, FileDown } from "lucide-react";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
@@ -64,6 +64,28 @@ export default function ScriptDefaultsPage() {
     const totalMissingForActive = useMemo(() => {
         return (missingTranslations[activeLang] || []).length;
     }, [missingTranslations, activeLang]);
+
+    // CSS-based animation state for the missing badge
+    const [badgeMounted, setBadgeMounted] = useState(false);
+    const [badgeClass, setBadgeClass] = useState("missing-badge-enter");
+    const prevMissingRef = useRef(0);
+
+    useEffect(() => {
+        const wasVisible = prevMissingRef.current > 0;
+        const isVisible = totalMissingForActive > 0;
+        prevMissingRef.current = totalMissingForActive;
+
+        if (isVisible && !wasVisible) {
+            // Mount and run enter animation
+            setBadgeClass("missing-badge-enter");
+            setBadgeMounted(true);
+        } else if (!isVisible && wasVisible) {
+            // Run exit animation then unmount
+            setBadgeClass("missing-badge-exit");
+            const timer = setTimeout(() => setBadgeMounted(false), 310);
+            return () => clearTimeout(timer);
+        }
+    }, [totalMissingForActive]);
 
     const handleTranslateMissingLang = async (lang: string) => {
         const missing = missingTranslations[lang];
@@ -627,20 +649,24 @@ export default function ScriptDefaultsPage() {
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 custom-scrollbar">
-                    <AnimatePresence>
-                        {totalMissingForActive > 0 && (
-                            <motion.button
-                                initial={{ opacity: 0, width: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, width: "auto", scale: 1 }}
-                                exit={{ opacity: 0, width: 0, scale: 0.8 }}
+                <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
+                    {badgeMounted && (
+                        <div className={`relative z-[100] flex items-center shrink-0 ${badgeClass}`} style={{ willChange: 'transform, opacity' }}>
+                            <button
                                 onClick={() => setShowMissingModal(true)}
-                                className="flex items-center gap-2 px-6 py-3 mr-2 bg-amber-500/10 backdrop-blur-md hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)] text-amber-500 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 whitespace-nowrap overflow-hidden"
+                                className="flex items-center gap-2 px-4 py-2.5 mr-2 bg-gradient-to-r from-red-500/10 to-amber-500/10 backdrop-blur-xl border border-amber-500/30 text-amber-400 hover:from-red-500/20 hover:to-amber-500/15 hover:border-amber-400/50 transition-all duration-300 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 shadow-[0_4px_20px_rgba(245,158,11,0.12)] whitespace-nowrap relative overflow-hidden"
                             >
-                                <Languages size={14} /> EKSİKLER ({totalMissingForActive})
-                            </motion.button>
-                        )}
-                    </AnimatePresence>
+                                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/10 to-transparent missing-badge-shine pointer-events-none" />
+                                <div className="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center border border-amber-500/25 shrink-0">
+                                    <Languages size={13} className="text-amber-400" />
+                                </div>
+                                <span>EKSİKLER</span>
+                                <span className="flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-md bg-amber-500/25 text-[10px] font-black text-amber-300 border border-amber-500/30">
+                                    {totalMissingForActive}
+                                </span>
+                            </button>
+                        </div>
+                    )}
                     
                     {activeLang !== "en" && (
                         <button

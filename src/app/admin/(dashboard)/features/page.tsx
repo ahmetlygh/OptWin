@@ -771,22 +771,38 @@ export default function AdminFeaturesPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                    <AnimatePresence mode="popLayout">
+                    <AnimatePresence>
                         {displayLang !== "en" && missingCount > 0 && (
-                            <motion.button
-                                key="missing-btn"
-                                layout
-                                initial={{ opacity: 0, scale: 0.92 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.92 }}
-                                transition={{ duration: 0.2 }}
-                                onClick={() => setShowMissingModal(true)}
-                                className="h-9 px-3 flex items-center gap-2 rounded-xl text-[11px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors"
+                            <motion.div
+                                key="missing-btn-wrapper"
+                                initial={{ opacity: 0, scale: 0.9, x: -10, filter: 'blur(8px)' }}
+                                animate={{ opacity: 1, scale: 1, x: 0, filter: 'blur(0px)' }}
+                                exit={{ opacity: 0, scale: 0.9, x: 10, filter: 'blur(8px)' }}
+                                transition={{ 
+                                    type: "spring",
+                                    stiffness: 400,
+                                    damping: 30
+                                }}
+                                className="flex items-center"
                             >
-                                <Languages size={14} />
-                                <span className="whitespace-nowrap">{displayLang.toUpperCase()} Eksikler</span>
-                                <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500/20 text-[9px] font-black text-amber-300">{missingCount}</span>
-                            </motion.button>
+                                <button
+                                    onClick={() => setShowMissingModal(true)}
+                                    className="h-9 px-3 flex items-center gap-2 rounded-xl text-[11px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-all duration-300 whitespace-nowrap active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.05)] hover:shadow-[0_0_25px_rgba(245,158,11,0.1)]"
+                                >
+                                    <div className="relative">
+                                        <Languages size={14} className="shrink-0 relative z-10" />
+                                        <motion.div 
+                                            animate={{ scale: [1, 1.2, 1] }} 
+                                            transition={{ repeat: Infinity, duration: 2 }} 
+                                            className="absolute inset-0 bg-amber-400/20 blur-sm rounded-full -z-0" 
+                                        />
+                                    </div>
+                                    <span className="tracking-wide">{displayLang.toUpperCase()} Eksikler</span>
+                                    <span className="flex items-center shrink-0 justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500/25 text-[9px] font-black text-amber-300 border border-amber-500/20">
+                                        {missingCount}
+                                    </span>
+                                </button>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                     <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
