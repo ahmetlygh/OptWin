@@ -996,7 +996,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const pulseClass = "highlight-pulse-ui";
 
     return (
-        <div className="w-full h-[calc(100vh-90px)] max-w-[1920px] mx-auto flex flex-col pt-6 pb-2 px-4 lg:px-8 overflow-hidden">
+        <div className="w-full h-[calc(100vh-150px)] max-w-[1920px] mx-auto flex flex-col overflow-hidden">
             <style>{`
                 .optwin-pro-scroll::-webkit-scrollbar { width: 16px; height: 16px; }
                 .optwin-pro-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 4px; }
@@ -1310,7 +1310,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     />
                 )}
                 {showDefaultModal && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowDefaultModal(false)} />
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-md p-6 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(245,158,11,0.1)]">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl pointer-events-none" />

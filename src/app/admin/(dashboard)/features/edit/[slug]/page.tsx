@@ -54,6 +54,7 @@ export default function FeatureEditBySlugPage() {
 
     const [feature, setFeature] = useState<Feature | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [activeLangs, setActiveLangs] = useState<string[]>(["en"]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
 
@@ -61,8 +62,13 @@ export default function FeatureEditBySlugPage() {
         Promise.all([
             fetch("/api/admin/features").then(r => r.json()),
             fetch("/api/admin/categories").then(r => r.json()),
-        ]).then(([fData, cData]) => {
+            fetch("/api/admin/languages").then(r => r.json()),
+        ]).then(([fData, cData, lData]) => {
             if (cData.success) setCategories(cData.categories);
+            if (Array.isArray(lData)) {
+                const active = lData.filter((l: any) => l.isActive).map((l: any) => l.code);
+                if (active.length > 0) setActiveLangs(active);
+            }
             if (fData.success) {
                 const found = fData.features.find((f: Feature) => f.slug.toLowerCase() === slug.toLowerCase());
                 if (found) {
@@ -110,6 +116,7 @@ export default function FeatureEditBySlugPage() {
         <SlugFeatureEditor
             feature={feature!}
             categories={categories}
+            activeLangs={activeLangs}
             onSave={reloadFeature}
             onCancel={() => router.push("/admin/features")}
             onDelete={() => router.push("/admin/features")}
@@ -120,26 +127,33 @@ export default function FeatureEditBySlugPage() {
 function SlugFeatureEditor({
     feature,
     categories,
+    activeLangs: dbLangs,
     onSave,
     onCancel,
     onDelete: onDeleteCallback,
 }: {
     feature: Feature;
     categories: Category[];
+    activeLangs: string[];
     onSave: () => void;
     onCancel: () => void;
     onDelete: () => void;
 }) {
     const availableLangs = useMemo(() => {
-        const ALL_LANGS = ["en", "tr", "de", "es", "fr", "hi", "zh"];
-        const langs = new Set<string>(ALL_LANGS);
+        const langs = new Set<string>(dbLangs);
         feature.translations.forEach(t => langs.add(t.lang));
         feature.commands.forEach(c => langs.add(c.lang));
         return Array.from(langs).sort();
-    }, [feature]);
+    }, [feature, dbLangs]);
 
-    const [translationLang, setTranslationLang] = useState("en");
-    const [commandLang, setCommandLang] = useState("en");
+    const [translationLang, setTranslationLang] = useState(() => {
+        if (typeof window !== "undefined") return localStorage.getItem("optwin-admin-lang") || "en";
+        return "en";
+    });
+    const [commandLang, setCommandLang] = useState(() => {
+        if (typeof window !== "undefined") return localStorage.getItem("optwin-admin-lang") || "en";
+        return "en";
+    });
     const [saving, setSaving] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [translateToast, setTranslateToast] = useState("");
@@ -403,42 +417,35 @@ function SlugFeatureEditor({
             className="space-y-5"
         >
             {/* Header */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-3">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => tryNavigate(onCancel)}
-                        className="size-9 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-all border border-white/[0.04]"
+                        className="size-9 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/40 hover:text-white/70 transition-all border border-white/[0.06]"
                     >
                         <ChevronLeft size={16} />
                     </motion.button>
                     <div>
-                        <h1 className="text-2xl font-black text-white tracking-tight">Özellik Düzenle</h1>
-                        <p className="text-[10px] text-white/20 font-mono mt-0.5">{feature.slug}</p>
+                        <h1 className="text-lg font-black text-white uppercase tracking-tight leading-tight">Özellik Düzenle</h1>
+                        <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] font-mono mt-0.5">{feature.slug}</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <AdminActionBar
-                        show={hasChanges}
-                        saving={saving}
-                        saved={saved}
-                        onSave={handleSubmit}
-                        onCancel={() => setForm(buildInitialState())}
-                    />
 
                     <motion.button
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         onClick={() => setShowDeleteModal(true)}
-                        className="h-9 px-3 rounded-xl text-sm font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
+                        className="h-9 px-3 rounded-xl text-[11px] font-bold uppercase tracking-wider text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
                     >
                         <Trash2 size={13} />
                         Sil
                     </motion.button>
                 </div>
-            </div>
+            </motion.div>
 
             {error && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/10 text-red-400 text-sm">
@@ -757,6 +764,14 @@ function SlugFeatureEditor({
             />
 
             {/* Managed by UnsavedChangesProvider */}
+
+            <AdminActionBar
+                show={hasChanges}
+                saving={saving}
+                saved={saved}
+                onSave={handleSubmit}
+                onCancel={() => setForm(buildInitialState())}
+            />
         </motion.div>
     );
 }

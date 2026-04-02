@@ -181,38 +181,49 @@ export default function AdminCategoriesPage() {
                 if (!cat) return null;
                 const hasFeatures = cat._count.features > 0;
                 return (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 backdrop-blur-xl" onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }}>
-                        <div className="bg-[#1a1a24] border border-[#2b2938] rounded-2xl p-6 max-w-sm w-full mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-                            <h3 className="text-lg font-bold text-white mb-2">Kategoriyi Sil?</h3>
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }}>
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+                        <div className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 max-w-sm w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                            {/* ambient glow */}
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-red-500/8 blur-3xl pointer-events-none" />
 
-                            {!cascadeConfirm ? (
-                                <>
-                                    {hasFeatures ? (
-                                        <p className="text-sm text-red-400 mb-6">Bu kategori icinde <b>{cat._count.features}</b> adet ozellik bulunuyor! &quot;Hepsini Sil&quot; diyerek kategoriyi ve icindeki tum ozellikleri tamamen silebilirsiniz.</p>
-                                    ) : (
-                                        <p className="text-sm text-[#a19eb7] mb-6">Bu kategoriyi silmek istediginizden emin misiniz?</p>
-                                    )}
-                                    <div className="flex gap-3">
-                                        <button onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">Iptal</button>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="size-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                    </div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-tight">Kategoriyi Sil</h3>
+                                </div>
+
+                                {!cascadeConfirm ? (
+                                    <>
                                         {hasFeatures ? (
-                                            <button onClick={() => setCascadeConfirm(true)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">Hepsini Sil</button>
+                                            <p className="text-[12px] text-red-400/80 mb-5 leading-relaxed">Bu kategori içinde <b className="text-red-400">{cat._count.features}</b> adet özellik bulunuyor! &quot;Hepsini Sil&quot; diyerek kategoriyi ve içindeki tüm özellikleri tamamen silebilirsiniz.</p>
                                         ) : (
-                                            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-sm">Sil</button>
+                                            <p className="text-[12px] text-white/40 mb-5 leading-relaxed">Bu kategoriyi silmek istediğinizden emin misiniz?</p>
                                         )}
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
-                                        <p className="text-sm text-red-400 font-bold mb-1">Bu islem geri alinamaz!</p>
-                                        <p className="text-sm text-red-400/80">Kategoriyi icindeki <b>{cat._count.features}</b> ozellikle beraber kalici olarak silmek istediginize emin misiniz? Tum ozellikler, ceviriler ve PowerShell komutlari da silinecektir.</p>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setCascadeConfirm(false)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-sm">Geri Don</button>
-                                        <button onClick={() => handleDelete(deleteConfirm, true)} className="flex-1 h-10 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all text-sm">Evet, Kalici Olarak Sil</button>
-                                    </div>
-                                </>
-                            )}
+                                        <div className="flex gap-3">
+                                            <button onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">İptal</button>
+                                            {hasFeatures ? (
+                                                <button onClick={() => setCascadeConfirm(true)} className="flex-1 h-10 bg-red-600 hover:bg-red-500 text-white font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-600/15 active:scale-95">Hepsini Sil</button>
+                                            ) : (
+                                                <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-10 bg-red-600 hover:bg-red-500 text-white font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-600/15 active:scale-95">Sil</button>
+                                            )}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="bg-red-500/10 border border-red-500/15 rounded-xl p-4 mb-5">
+                                            <p className="text-[12px] text-red-400 font-bold mb-1">Bu işlem geri alınamaz!</p>
+                                            <p className="text-[11px] text-red-400/70 leading-relaxed">Kategoriyi içindeki <b>{cat._count.features}</b> özellikle beraber kalıcı olarak silmek istediğinize emin misiniz? Tüm özellikler, çeviriler ve PowerShell komutları da silinecektir.</p>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <button onClick={() => setCascadeConfirm(false)} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">Geri Dön</button>
+                                            <button onClick={() => handleDelete(deleteConfirm, true)} className="flex-1 h-10 bg-red-700 hover:bg-red-600 text-white font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-700/15 active:scale-95">Kalıcı Olarak Sil</button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 );

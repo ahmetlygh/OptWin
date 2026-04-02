@@ -67,7 +67,7 @@ export function AdminActionBar({
                     animate={{ y: -32, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                    className="fixed bottom-0 left-[260px] xl:left-[280px] 2xl:left-[300px] right-0 flex justify-center z-[110] pointer-events-none px-6"
+                    className="fixed bottom-0 left-[260px] xl:left-[280px] 2xl:left-[300px] right-0 flex justify-center z-[9950] pointer-events-none px-6"
                 >
                     <div className="pointer-events-auto flex flex-col items-center gap-3">
                         {error && (

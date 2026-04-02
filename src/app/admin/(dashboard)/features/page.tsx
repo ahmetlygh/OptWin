@@ -24,6 +24,7 @@ import {
     ChevronsDownUp,
     Languages,
     List,
+    Sparkles,
 } from "lucide-react";
 import { AdminSelect } from "@/components/admin/AdminSelect";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
@@ -162,7 +163,8 @@ export default function AdminFeaturesPage() {
     const [showCategoryOrder, setShowCategoryOrder] = useState(false);
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [newCatSlug, setNewCatSlug] = useState("");
-    const [newCatNames, setNewCatNames] = useState<Record<string, string>>({ en: "", tr: "", de: "", fr: "", es: "", zh: "", hi: "" });
+    const [activeLangs, setActiveLangs] = useState<string[]>(["en"]);
+    const [newCatNames, setNewCatNames] = useState<Record<string, string>>({ en: "" });
     const [newCatOrder, setNewCatOrder] = useState(0);
     const [savingCategory, setSavingCategory] = useState(false);
     const [translatingCat, setTranslatingCat] = useState(false);
@@ -170,7 +172,16 @@ export default function AdminFeaturesPage() {
     const [orderedCategories, setOrderedCategories] = useState<(Category & { _count?: { features: number } })[]>([]);
 
     // M7-M10 states
-    const [displayLang, setDisplayLang] = useState("en");
+    const [displayLang, setDisplayLangRaw] = useState(() => {
+        if (typeof window !== "undefined") {
+            return localStorage.getItem("optwin-admin-lang") || "en";
+        }
+        return "en";
+    });
+    const setDisplayLang = useCallback((lang: string) => {
+        setDisplayLangRaw(lang);
+        localStorage.setItem("optwin-admin-lang", lang);
+    }, []);
     const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => {
         if (typeof window !== "undefined") {
             try {
@@ -194,6 +205,132 @@ export default function AdminFeaturesPage() {
     const [moveCatTarget, setMoveCatTarget] = useState("");
     const [showUnsavedModal, setShowUnsavedModal] = useState(false); // We keep this if needed for internal page logic, but preferably we use openModal
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
+    const searchRef = useRef<HTMLInputElement>(null);
+    const [showMissingModal, setShowMissingModal] = useState(false);
+    const [translatingMissing, setTranslatingMissing] = useState(false);
+    const [translateMissingProgress, setTranslateMissingProgress] = useState("");
+
+    // ─── Missing translations for SELECTED lang only ─────────────────
+    type MissingItem = { type: "feature"; featureId: string; label: string; missingTitle: boolean; missingDesc: boolean; missingScript: boolean }
+        | { type: "category"; categoryId: string; label: string };
+
+    const missingForSelectedLang = useMemo((): MissingItem[] => {
+        if (displayLang === "en") return [];
+        const lang = displayLang;
+        const results: MissingItem[] = [];
+
+        // 1) Category names
+        for (const cat of categories) {
+            const enName = cat.translations.find(t => t.lang === "en")?.name;
+            if (!enName) continue;
+            const tr = cat.translations.find(t => t.lang === lang);
+            if (!tr || !tr.name || tr.name.trim() === "") {
+                results.push({ type: "category", categoryId: cat.id, label: enName });
+            }
+        }
+
+        // 2) Feature translations + scriptMessage
+        for (const f of features) {
+            const enTr = f.translations.find(t => t.lang === "en");
+            if (!enTr || !enTr.title) continue;
+            const tr = f.translations.find(t => t.lang === lang);
+            const enCmd = f.commands.find(c => c.lang === "en");
+            const cmd = f.commands.find(c => c.lang === lang);
+
+            const missingTitle = !tr || !tr.title || tr.title.trim() === "";
+            const missingDesc = !!(enTr.desc && enTr.desc.trim() !== "" && (!tr || !tr.desc || tr.desc.trim() === ""));
+            const missingScript = !!(enCmd?.scriptMessage && enCmd.scriptMessage.trim() !== "" && (!cmd || !cmd.scriptMessage || cmd.scriptMessage.trim() === ""));
+
+            if (missingTitle || missingDesc || missingScript) {
+                results.push({ type: "feature", featureId: f.id, label: enTr.title, missingTitle, missingDesc, missingScript });
+            }
+        }
+        return results;
+    }, [features, categories, displayLang]);
+
+    const missingCount = missingForSelectedLang.length;
+
+    const handleTranslateMissing = async () => {
+        if (missingCount === 0) return;
+        const lang = displayLang;
+        setTranslatingMissing(true);
+        setTranslateMissingProgress(`${lang.toUpperCase()} çevriliyor...`);
+        let done = 0;
+        try {
+            // Translate categories
+            const catItems = missingForSelectedLang.filter((m): m is MissingItem & { type: "category" } => m.type === "category");
+            for (const item of catItems) {
+                try {
+                    const res = await fetch("/api/admin/translate", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: item.label, sourceLang: "en", targetLangs: [lang] }),
+                    });
+                    const data = await res.json();
+                    if (data.success && data.translations?.[lang]) {
+                        await fetch("/api/admin/categories", {
+                            method: "PUT", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: item.categoryId, translations: [{ lang, name: data.translations[lang] }] }),
+                        });
+                        done++;
+                    }
+                } catch { /* skip */ }
+                setTranslateMissingProgress(`Kategoriler: ${done}/${catItems.length}`);
+            }
+
+            // Translate features
+            const featItems = missingForSelectedLang.filter((m): m is MissingItem & { type: "feature" } => m.type === "feature");
+            for (let i = 0; i < featItems.length; i++) {
+                const item = featItems[i];
+                const feature = features.find(f => f.id === item.featureId);
+                if (!feature) continue;
+                const enTr = feature.translations.find(t => t.lang === "en");
+                const enCmd = feature.commands.find(c => c.lang === "en");
+                if (!enTr) continue;
+                try {
+                    // Translate title & desc
+                    const pairs: { text: string; field: string }[] = [];
+                    if (item.missingTitle && enTr.title) pairs.push({ text: enTr.title, field: "title" });
+                    if (item.missingDesc && enTr.desc) pairs.push({ text: enTr.desc, field: "desc" });
+                    for (const p of pairs) {
+                        const res = await fetch("/api/admin/translate", {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ text: p.text, sourceLang: "en", targetLangs: [lang] }),
+                        });
+                        const data = await res.json();
+                        if (data.success && data.translations?.[lang]) {
+                            await fetch("/api/admin/features", {
+                                method: "PUT", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: item.featureId, translations: [{ lang, [p.field]: data.translations[lang] }] }),
+                            });
+                        }
+                    }
+                    // Translate scriptMessage
+                    if (item.missingScript && enCmd?.scriptMessage) {
+                        const res = await fetch("/api/admin/translate", {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ text: enCmd.scriptMessage, sourceLang: "en", targetLangs: [lang] }),
+                        });
+                        const data = await res.json();
+                        if (data.success && data.translations?.[lang]) {
+                            await fetch("/api/admin/features", {
+                                method: "PUT", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: item.featureId, commands: [{ lang, scriptMessage: data.translations[lang] }] }),
+                            });
+                        }
+                    }
+                    done++;
+                } catch { /* skip */ }
+                setTranslateMissingProgress(`Özellikler: ${i + 1}/${featItems.length}`);
+            }
+            setTranslateMissingProgress(`${done} öğe çevrildi ✓`);
+            await fetchFeatures();
+            await fetchCategories();
+        } catch {
+            setTranslateMissingProgress("Çeviri başarısız");
+        } finally {
+            setTimeout(() => { setTranslatingMissing(false); setTranslateMissingProgress(""); }, 1500);
+        }
+    };
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -210,7 +347,19 @@ export default function AdminFeaturesPage() {
     }, []);
 
     useEffect(() => {
-        Promise.all([fetchFeatures(), fetchCategories()]).then(() => setLoading(false));
+        Promise.all([
+            fetchFeatures(),
+            fetchCategories(),
+            fetch("/api/admin/languages").then(r => r.json()).then(data => {
+                if (Array.isArray(data)) {
+                    const active = data.filter((l: any) => l.isActive).map((l: any) => l.code);
+                    if (active.length > 0) {
+                        setActiveLangs(active);
+                        setNewCatNames(Object.fromEntries(active.map((c: string) => [c, ""])));
+                    }
+                }
+            }),
+        ]).then(() => setLoading(false));
     }, [fetchFeatures, fetchCategories]);
 
     const toggleEnabled = async (e: React.MouseEvent, feature: Feature) => {
@@ -367,6 +516,25 @@ export default function AdminFeaturesPage() {
         };
     }, [saveAllOrders, cancelAllOrders, onSave, onDiscard, hasOrderChanges, catNameDirty, editingCatName, cancelCatNameEdit]);
 
+    // Keyboard shortcuts: Ctrl+F focuses search, Ctrl+S saves
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                searchRef.current?.focus();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (hasOrderChanges || catNameDirty) {
+                    if (catNameDirty && editingCatName) saveCatNameInternal(editingCatName);
+                    else saveAllOrders();
+                }
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [hasOrderChanges, catNameDirty, editingCatName, saveAllOrders]);
+
     const handleCategoryDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -423,7 +591,7 @@ export default function AdminFeaturesPage() {
                 setCategories(prev => [...prev, data.category]);
                 setShowNewCategory(false);
                 setNewCatSlug("");
-                setNewCatNames({ en: "", tr: "", de: "", fr: "", es: "", zh: "", hi: "" });
+                setNewCatNames(Object.fromEntries(activeLangs.map(c => [c, ""])));
                 setNewCatOrder(0);
             }
         } finally {
@@ -545,19 +713,19 @@ export default function AdminFeaturesPage() {
     return (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
                         <Puzzle size={18} className="text-[#6b5be6]" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white tracking-tight">Özellikler</h1>
-                        <p className="text-xs text-white/30 mt-0.5">
+                        <h1 className="text-lg font-black text-white uppercase tracking-tight leading-tight">Özellikler</h1>
+                        <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">
                             {features.filter(f => f.enabled && categories.find(c => c.id === f.categoryId)?.enabled).length} / {features.length} aktif özellik
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <AdminActionBar
                         show={hasOrderChanges || catNameDirty}
                         saving={saving}
@@ -567,17 +735,34 @@ export default function AdminFeaturesPage() {
                         saveText={catNameDirty ? "İsim Kaydet" : "Sıralamayı Kaydet"}
                     />
                     <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
-                    <motion.button onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }} className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"><ArrowUpDown size={14} /> Kategorileri Sırala</motion.button>
-                    <motion.button onClick={() => setShowNewCategory(true)} className="h-9 px-4 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 font-medium text-sm rounded-xl transition-all flex items-center gap-2 border border-white/[0.04]"><FolderPlus size={14} /> Yeni Kategori</motion.button>
-                    <motion.button onClick={() => router.push("/admin/features/new")} className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"><Plus size={15} /> Yeni Özellik</motion.button>
+                    <motion.button onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><ArrowUpDown size={14} /> Kategorileri Sırala</motion.button>
+                    <motion.button onClick={() => setShowNewCategory(true)} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><FolderPlus size={14} /> Yeni Kategori</motion.button>
+                    <AnimatePresence>
+                        {displayLang !== "en" && missingCount > 0 && (
+                            <motion.button
+                                key="missing-btn"
+                                initial={{ opacity: 0, scale: 0.9, width: 0 }}
+                                animate={{ opacity: 1, scale: 1, width: "auto" }}
+                                exit={{ opacity: 0, scale: 0.9, width: 0 }}
+                                transition={{ duration: 0.25 }}
+                                onClick={() => setShowMissingModal(true)}
+                                className="h-9 px-3 flex items-center gap-2 rounded-xl text-[11px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors overflow-hidden"
+                            >
+                                <Languages size={14} />
+                                <span className="whitespace-nowrap">{displayLang.toUpperCase()} Eksikler</span>
+                                <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500/20 text-[9px] font-black text-amber-300">{missingCount}</span>
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+                    <motion.button onClick={() => router.push("/admin/features/new")} className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[11px] uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"><Plus size={15} /> Yeni Özellik</motion.button>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 p-4 rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/[0.05] shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="relative flex-1">
                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/15" />
-                    <input type="text" placeholder="Özellik ara..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-9 pl-9 pr-4 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors" />
+                    <input ref={searchRef} type="text" placeholder="Özellik ara..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-9 pl-9 pr-4 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors" />
                 </div>
                 <AdminSelect options={categoryOptions} value={filterCategory} onChange={setFilterCategory} placeholder="Tüm Kategoriler" className="w-[200px]" />
                 <AdminSelect options={riskOptions} value={filterRisk} onChange={setFilterRisk} placeholder="Tüm Risk" className="w-[150px]" />
@@ -622,36 +807,40 @@ export default function AdminFeaturesPage() {
             <AnimatePresence>
                 {/* Category Reorder Modal - Premium Revamp */}
                 {showCategoryOrder && (
-                    <div key="reorder-modal" className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                    <div key="reorder-modal" className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowCategoryOrder(false)}>
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
                             exit={{ opacity: 0 }} 
-                            className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
-                            onClick={() => setShowCategoryOrder(false)} 
+                            className="absolute inset-0 bg-black/70 backdrop-blur-md" 
                         />
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 12 }} 
+                            initial={{ opacity: 0, scale: 0.92, y: 20 }} 
                             animate={{ opacity: 1, scale: 1, y: 0 }} 
-                            exit={{ opacity: 0, scale: 0.95, y: 12 }}
-                            transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                            className="relative bg-[#0f0f18] border border-white/[0.08] rounded-[2rem] p-6 w-full max-w-md shadow-2xl"
+                            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
-                                    <List size={20} className="text-[#6b5be6]" />
+                            {/* ambient glow */}
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-[#6b5be6]/8 blur-3xl pointer-events-none" />
+
+                            <div className="relative z-10 flex items-start justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
+                                        <List size={18} className="text-[#6b5be6]" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-tight">Kategorileri Sırala</h3>
+                                        <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Sürükle ve bırak</p>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-white tracking-tight">Kategorileri Sırala</h3>
-                                    <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">Sürükle ve Bırak</p>
-                                </div>
-                                <button onClick={() => setShowCategoryOrder(false)} className="p-2 text-white/20 hover:text-white/60 transition-colors">
-                                    <X size={18} />
+                                <button onClick={() => setShowCategoryOrder(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors">
+                                    <X size={16} />
                                 </button>
                             </div>
 
-                            <div className="max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar mb-6">
+                            <div className="relative z-10 max-h-[40vh] overflow-y-auto pr-2 admin-scrollbar mb-5">
                                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
                                     <SortableContext items={orderedCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
                                         <div className="space-y-1">
@@ -661,9 +850,9 @@ export default function AdminFeaturesPage() {
                                 </DndContext>
                             </div>
                             
-                            <div className="flex gap-3 mt-4">
-                                <button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-11 bg-white/[0.03] border border-white/[0.05] rounded-xl text-sm font-semibold text-white/40 hover:bg-white/[0.06] transition-all">İptal</button>
-                                <button onClick={saveCategoryOrder} className="flex-1 h-11 bg-[#6b5be6] hover:bg-[#5a4bd4] shadow-lg shadow-[#6b5be6]/15 rounded-xl text-sm font-bold text-white transition-all">Kaydetti ve Uygula</button>
+                            <div className="relative z-10 flex gap-3">
+                                <button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">İptal</button>
+                                <button onClick={saveCategoryOrder} className="flex-1 h-10 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[12px] uppercase tracking-wider rounded-xl shadow-lg shadow-[#6b5be6]/15 transition-all active:scale-95">Kaydet ve Uygula</button>
                             </div>
                         </motion.div>
                     </div>
@@ -671,95 +860,100 @@ export default function AdminFeaturesPage() {
 
                 {/* New Category Modal - Premium Revamp */}
                 {showNewCategory && (
-                    <div key="new-category-modal" className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+                    <div key="new-category-modal" className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowNewCategory(false)}>
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
                             exit={{ opacity: 0 }} 
-                            className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
-                            onClick={() => setShowNewCategory(false)} 
+                            className="absolute inset-0 bg-black/70 backdrop-blur-md" 
                         />
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 12 }} 
+                            initial={{ opacity: 0, scale: 0.92, y: 20 }} 
                             animate={{ opacity: 1, scale: 1, y: 0 }} 
-                            exit={{ opacity: 0, scale: 0.95, y: 12 }}
-                            transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                            className="relative bg-[#0f0f18] border border-white/[0.08] rounded-[2rem] p-6 w-full max-w-md shadow-2xl"
+                            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
+                            {/* ambient glow */}
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-[#6b5be6]/8 blur-3xl pointer-events-none" />
+
                             {/* Header */}
-                            <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
-                                        <Plus size={20} className="text-[#6b5be6]" />
+                            <div className="relative z-10 flex items-start justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
+                                        <Plus size={18} className="text-[#6b5be6]" />
                                     </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-white tracking-tight">Yeni Kategori</h3>
-                                        <p className="text-[10px] text-white/20 uppercase tracking-widest font-black">Optimizasyon Gruplama</p>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-tight">Yeni Kategori</h3>
+                                        <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Optimizasyon gruplama</p>
                                     </div>
-                                    <button onClick={() => setShowNewCategory(false)} className="p-2 text-white/20 hover:text-white/60 transition-colors">
-                                        <X size={18} />
-                                    </button>
+                                </div>
+                                <button onClick={() => setShowNewCategory(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors">
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            <div className="relative z-10 space-y-4">
+                                {/* Slug Input */}
+                                <div>
+                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5 ml-1">Kategori ID (Slug)</label>
+                                    <input 
+                                        value={newCatSlug} 
+                                        onChange={e => setNewCatSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
+                                        placeholder="örn: system-cleanup" 
+                                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/[0.04] transition-all" 
+                                    />
                                 </div>
 
-                                <div className="space-y-4">
-                                    {/* Slug Input */}
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5 ml-1">Kategori ID (Slug)</label>
-                                        <input 
-                                            value={newCatSlug} 
-                                            onChange={e => setNewCatSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
-                                            placeholder="örn: system-cleanup" 
-                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-sm text-white placeholder-white/10 focus:outline-none focus:border-[#6b5be6]/40 transition-all font-medium" 
+                                {/* Multi-lang Name Input */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider ml-1">Kategori Adı</label>
+                                        <AdminLangPicker 
+                                            value={newCatLang} 
+                                            onChange={setNewCatLang} 
                                         />
                                     </div>
-
-                                    {/* Multi-lang Name Input */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider ml-1">Kategori Adı</label>
-                                            <AdminLangPicker 
-                                                value={newCatLang} 
-                                                onChange={setNewCatLang} 
-                                            />
-                                        </div>
-                                        <div className="relative group">
-                                            <input 
-                                                value={newCatNames[newCatLang as keyof typeof newCatNames] || ""} 
-                                                onChange={e => setNewCatNames(prev => ({ ...prev, [newCatLang]: e.target.value }))} 
-                                                placeholder={`${newCatLang.toUpperCase()} dilli ismi...`} 
-                                                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 pr-20 text-sm text-white focus:outline-none focus:border-[#6b5be6]/40 transition-all font-medium" 
-                                            />
-                                            {newCatNames.en && (
-                                                <button 
-                                                    onClick={translateCatName} 
-                                                    className="absolute right-2 top-2 h-8 px-3 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
-                                                >
-                                                    Tümüne Çevir
-                                                </button>
-                                            )}
-                                        </div>
+                                    <div className="relative group">
+                                        <input 
+                                            value={newCatNames[newCatLang as keyof typeof newCatNames] || ""} 
+                                            onChange={e => setNewCatNames(prev => ({ ...prev, [newCatLang]: e.target.value }))} 
+                                            placeholder={`${newCatLang.toUpperCase()} dilli ismi...`} 
+                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 pr-24 text-[13px] text-white focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/[0.04] transition-all" 
+                                        />
+                                        {newCatNames.en && (
+                                            <button 
+                                                onClick={translateCatName} 
+                                                className="absolute right-2 top-1.5 h-7 px-3 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-1.5"
+                                            >
+                                                <Languages size={11} />
+                                                Tümüne Çevir
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Actions */}
-                                <div className="flex gap-3 mt-8">
-                                    <button 
-                                        onClick={() => setShowNewCategory(false)} 
-                                        className="flex-1 h-11 bg-white/[0.03] border border-white/[0.05] rounded-xl text-sm font-semibold text-white/40 hover:bg-white/[0.06] transition-all"
-                                    >
-                                        İptal
-                                    </button>
-                                    <button 
-                                        onClick={createCategory} 
-                                        disabled={!newCatSlug || !newCatNames.en}
-                                        className="flex-1 h-11 bg-[#6b5be6] hover:bg-[#5a4bd4] shadow-lg shadow-[#6b5be6]/15 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                                    >
-                                        Kategori Oluştur
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
+                            {/* Actions */}
+                            <div className="relative z-10 flex gap-3 mt-6">
+                                <button 
+                                    onClick={() => setShowNewCategory(false)} 
+                                    className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]"
+                                >
+                                    İptal
+                                </button>
+                                <button 
+                                    onClick={createCategory} 
+                                    disabled={!newCatSlug || !newCatNames.en}
+                                    className="flex-1 h-10 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[12px] uppercase tracking-wider rounded-xl shadow-lg shadow-[#6b5be6]/15 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    Kategori Oluştur
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
 
                 {/* Confirm Deletion */}
                 {deleteCatId && (
@@ -772,6 +966,85 @@ export default function AdminFeaturesPage() {
                         confirmText="Kategoriyi Sil" 
                         variant="danger" 
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Missing Translations Modal for selected language */}
+            <AnimatePresence>
+                {showMissingModal && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => !translatingMissing && setShowMissingModal(false)}>
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ duration: 0.2 }}
+                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 max-w-xl w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/8 blur-3xl pointer-events-none" />
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                            <Languages size={18} className="text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black text-white uppercase tracking-tight">{displayLang.toUpperCase()} — Eksik Çeviriler</h3>
+                                            <p className="text-[10px] text-white/30 mt-0.5">
+                                                {missingForSelectedLang.filter(m => m.type === "category").length} kategori, {missingForSelectedLang.filter(m => m.type === "feature").length} özellik eksik
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => !translatingMissing && setShowMissingModal(false)} className="size-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition-colors">
+                                        <X size={14} className="text-white/40" />
+                                    </button>
+                                </div>
+
+                                {translateMissingProgress && (
+                                    <div className="mb-4 px-3 py-2 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 text-[11px] text-[#6b5be6] font-bold flex items-center gap-2">
+                                        <Loader2 size={12} className="animate-spin" />
+                                        {translateMissingProgress}
+                                    </div>
+                                )}
+
+                                <div className="space-y-1.5 max-h-[50vh] overflow-y-auto admin-scrollbar pr-1">
+                                    {missingForSelectedLang.map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                                            <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${item.type === "category" ? "bg-purple-500/10 text-purple-400 border border-purple-500/15" : "bg-blue-500/10 text-blue-400 border border-blue-500/15"}`}>
+                                                {item.type === "category" ? "KAT" : "ÖZL"}
+                                            </span>
+                                            <span className="text-[11px] text-white/50 truncate flex-1">{item.label}</span>
+                                            {item.type === "feature" && (
+                                                <span className="text-[9px] text-amber-400/60 whitespace-nowrap">
+                                                    {item.missingTitle ? "[başlık]" : ""}{item.missingDesc ? "[açıklama]" : ""}{item.missingScript ? "[script]" : ""}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {missingCount === 0 && (
+                                        <div className="text-center py-8">
+                                            <Check size={24} className="mx-auto text-emerald-400 mb-2" />
+                                            <p className="text-[12px] text-emerald-400 font-bold">Tüm çeviriler tamamlanmış!</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {missingCount > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-white/[0.04]">
+                                        <button
+                                            onClick={handleTranslateMissing}
+                                            disabled={translatingMissing}
+                                            className="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-[11px] font-bold bg-[#6b5be6] hover:bg-[#5a4bd4] text-white transition-all shadow-lg shadow-[#6b5be6]/15 active:scale-[0.98] disabled:opacity-30"
+                                        >
+                                            <Sparkles size={13} />
+                                            Tümünü Otomatik Çevir ({missingCount} öğe)
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </motion.div>

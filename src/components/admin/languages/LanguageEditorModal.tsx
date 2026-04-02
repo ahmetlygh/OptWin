@@ -101,7 +101,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
     }, [onClose]);
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
             {/* Backdrop */}
             <motion.div
                 initial={{ opacity: 0 }}

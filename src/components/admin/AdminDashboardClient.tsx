@@ -153,15 +153,15 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
         >
             {/* Welcome Header */}
             <motion.div variants={itemVariants}>
-                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-6 relative overflow-hidden">
+                <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] backdrop-blur-md p-5 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(circle,rgba(107,91,230,0.06),transparent_70%)] pointer-events-none" />
                     <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h1 className="text-3xl font-black text-white tracking-tight">
+                            <h1 className="text-xl font-black text-white tracking-tight">
                                 {getGreeting()} <span className="text-gradient">{userName.split(" ")[0]}</span>
                             </h1>
-                            <p className="text-sm text-white/30 mt-1">
-                                OptWin yönetim paneline hoş geldiniz. Uygulamanızın genel durumunu buradan takip edebilirsiniz.
+                            <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-1">
+                                OptWin yönetim paneli genel durum
                             </p>
                         </div>
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors duration-500 ${
@@ -223,7 +223,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
                         whileHover={{ y: -2, transition: { duration: 0.2 } }}
-                        className="relative group rounded-2xl border border-white/[0.04] bg-white/[0.02] p-6 overflow-hidden"
+                        className="relative group rounded-2xl border border-white/[0.05] bg-white/[0.02] backdrop-blur-md p-5 overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)]"
                     >
                         {/* Hover glow */}
                         <div
@@ -260,7 +260,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
             {/* Top Features */}
             {data.topFeatures.length > 0 && (
                 <motion.div variants={itemVariants}>
-                    <div className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-5">
+                    <div className="rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <Puzzle size={16} className="text-white/20" />
@@ -316,7 +316,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                 {/* Recent Messages */}
                 <motion.div
                     variants={itemVariants}
-                    className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-5"
+                    className="rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
                 >
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -367,7 +367,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                 {/* Quick Actions */}
                 <motion.div
                     variants={itemVariants}
-                    className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-5"
+                    className="rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
                 >
                     <h3 className="text-sm font-bold text-white/70 mb-4">Hızlı İşlemler</h3>
                     <div className="space-y-2">

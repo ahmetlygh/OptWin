@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { Loader } from "@/components/shared/Loader";
 import { AdminActionBar } from "@/components/admin/AdminActionBar";
+import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
-import { Globe, Plus, Trash2, Pencil, Check, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 type DnsProvider = {
     id: string;
@@ -159,18 +160,16 @@ export default function AdminDnsPage() {
                 ))}
             </div>
 
-            {deleteConfirm && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 backdrop-blur-xl" onClick={() => setDeleteConfirm(null)}>
-                    <div className="bg-[#1a1a24] border border-[#2b2938] rounded-2xl p-6 max-w-sm w-full mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-white mb-2 italic tracking-tight">Kanalı Temizle?</h3>
-                        <p className="text-xs text-[#a19eb7]/60 mb-6 font-medium leading-relaxed">Bu DNS sağlayıcısını seçim listesinden kalıcı olarak kaldıracaktır.</p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all text-xs">İptal</button>
-                            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-10 bg-red-500/80 hover:bg-red-600 text-white font-bold rounded-xl transition-all text-xs">Sil</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <AdminConfirmModal
+                open={!!deleteConfirm}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+                title="DNS Sağlayıcıyı Sil"
+                description="Bu DNS sağlayıcısını seçim listesinden kalıcı olarak kaldıracaktır. Bu işlem geri alınamaz."
+                confirmText="Sil"
+                cancelText="İptal"
+                variant="danger"
+            />
         </div>
     );
 }

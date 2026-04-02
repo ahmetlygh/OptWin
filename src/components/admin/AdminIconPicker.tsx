@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Search, ChevronDown, Upload, X,
@@ -177,13 +178,34 @@ interface AdminIconPickerProps {
 export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
     const ref = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
+    const measurePosition = useCallback(() => {
+        if (!ref.current) return;
+        const rect = ref.current.getBoundingClientRect();
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const openUp = spaceBelow < 340 && spaceAbove > 340;
+        setDropdownStyle({
+            position: "fixed",
+            left: rect.left,
+            width: rect.width,
+            ...(openUp
+                ? { bottom: window.innerHeight - rect.top + 6 }
+                : { top: rect.bottom + 6 }),
+        });
+    }, []);
+
     useEffect(() => {
+        if (!isOpen) return;
         const handleClickOutside = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node) &&
+                panelRef.current && !panelRef.current.contains(e.target as Node)) {
+                setIsOpen(false);
+            }
         };
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === "Escape") setIsOpen(false);
@@ -194,7 +216,18 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
             document.removeEventListener("mousedown", handleClickOutside);
             document.removeEventListener("keydown", handleEsc);
         };
-    }, []);
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const reposition = () => measurePosition();
+        window.addEventListener("scroll", reposition, true);
+        window.addEventListener("resize", reposition);
+        return () => {
+            window.removeEventListener("scroll", reposition, true);
+            window.removeEventListener("resize", reposition);
+        };
+    }, [isOpen, measurePosition]);
 
     const filtered = useMemo(() => {
         if (!search) return Object.entries(ICON_MAP);
@@ -234,23 +267,108 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
         }
     };
 
+    const dropdownPanel = (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    ref={panelRef}
+                    initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
+                    style={dropdownStyle}
+                    className="z-[9990] rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                >
+                    {/* Search */}
+                    <div className="p-2 border-b border-white/[0.04]">
+                        <div className="relative">
+                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" />
+                            <input
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                placeholder="İkon ara..."
+                                className="w-full h-7 pl-7 pr-2 bg-white/[0.03] border border-white/[0.04] rounded-lg text-xs text-white/70 placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30"
+                                autoFocus
+                            />
+                            {search && (
+                                <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2">
+                                    <X size={11} className="text-white/20" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Icons grid */}
+                    <div className="max-h-[280px] overflow-y-auto p-2 admin-scrollbar">
+                        <div className="grid grid-cols-7 gap-1">
+                            {filtered.map(([key, data]) => {
+                                const IconComp = data.icon;
+                                const isSelected = key === value;
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => { onChange(key); setIsOpen(false); }}
+                                        className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-all ${
+                                            isSelected
+                                                ? "bg-[#6b5be6]/15 text-[#6b5be6]"
+                                                : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
+                                        }`}
+                                        title={`${data.label} (${key})`}
+                                    >
+                                        <IconComp size={16} />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {filtered.length === 0 && (
+                            <p className="text-center text-[10px] text-white/20 py-4">İkon bulunamadı</p>
+                        )}
+                    </div>
+
+                    {/* Upload */}
+                    <div className="p-2 border-t border-white/[0.04]">
+                        <button
+                            type="button"
+                            onClick={() => fileRef.current?.click()}
+                            disabled={uploading}
+                            className="w-full flex items-center justify-center gap-1.5 h-7 rounded-lg text-[11px] font-medium text-white/30 hover:text-white/60 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] transition-all disabled:opacity-50"
+                        >
+                            {uploading ? (
+                                <><span className="w-3 h-3 border-2 border-white/20 border-t-[#6b5be6] rounded-full animate-spin" /> Yükleniyor...</>
+                            ) : (
+                                <><Upload size={12} /> Dosyadan Yükle (PNG, WebP, SVG)</>
+                            )}
+                        </button>
+                        <input
+                            ref={fileRef}
+                            type="file"
+                            accept=".png,.webp,.svg,.jpg,.jpeg,.gif,image/png,image/webp,image/svg+xml,image/jpeg,image/gif"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                        />
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+
     return (
         <div ref={ref} className="relative">
             <button
                 type="button"
                 onClick={() => {
-                    if (!isOpen && ref.current) {
-                        const rect = ref.current.getBoundingClientRect();
-                        const spaceAbove = rect.top;
-                        const spaceBelow = window.innerHeight - rect.bottom;
-                        setOpenDirection(spaceBelow > 340 ? "down" : spaceAbove > 340 ? "up" : spaceBelow >= spaceAbove ? "down" : "up");
+                    if (!isOpen) {
+                        measurePosition();
+                        setTimeout(() => setIsOpen(true), 0);
+                    } else {
+                        setIsOpen(false);
                     }
-                    setIsOpen(!isOpen);
                 }}
                 className={`w-full h-9 px-3 flex items-center gap-2 rounded-xl text-sm transition-all border ${
                     isOpen
-                        ? "bg-white/[0.04] border-[#6b5be6]/30 text-white/80"
-                        : "bg-white/[0.02] border-white/[0.04] text-white/60 hover:border-white/[0.08]"
+                        ? "bg-white/[0.04] border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
+                        : "bg-white/[0.02] border-white/[0.06] text-white/60 hover:border-white/[0.1]"
                 }`}
             >
                 <span className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -266,87 +384,8 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
                 <ChevronDown size={13} className="text-white/25 shrink-0" />
             </button>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-                        className={`absolute z-[100] left-0 right-0 rounded-xl border border-white/[0.06] bg-[#0f0f18]/95 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden ${openDirection === "up" ? "bottom-full mb-1" : "top-full mt-1"}`}
-                    >
-                        {/* Search */}
-                        <div className="p-2 border-b border-white/[0.04]">
-                            <div className="relative">
-                                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" />
-                                <input
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    placeholder="İkon ara..."
-                                    className="w-full h-7 pl-7 pr-2 bg-white/[0.03] border border-white/[0.04] rounded-lg text-xs text-white/70 placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30"
-                                    autoFocus
-                                />
-                                {search && (
-                                    <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2">
-                                        <X size={11} className="text-white/20" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Icons grid */}
-                        <div className="max-h-[280px] overflow-y-auto p-2 custom-scrollbar">
-                            <div className="grid grid-cols-7 gap-1">
-                                {filtered.map(([key, data]) => {
-                                    const IconComp = data.icon;
-                                    const isSelected = key === value;
-                                    return (
-                                        <button
-                                            key={key}
-                                            type="button"
-                                            onClick={() => { onChange(key); setIsOpen(false); }}
-                                            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-all ${
-                                                isSelected
-                                                    ? "bg-[#6b5be6]/15 text-[#6b5be6]"
-                                                    : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
-                                            }`}
-                                            title={`${data.label} (${key})`}
-                                        >
-                                            <IconComp size={16} />
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            {filtered.length === 0 && (
-                                <p className="text-center text-[10px] text-white/20 py-4">İkon bulunamadı</p>
-                            )}
-                        </div>
-
-                        {/* Upload */}
-                        <div className="p-2 border-t border-white/[0.04]">
-                            <button
-                                type="button"
-                                onClick={() => fileRef.current?.click()}
-                                disabled={uploading}
-                                className="w-full flex items-center justify-center gap-1.5 h-7 rounded-lg text-[11px] font-medium text-white/30 hover:text-white/60 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] transition-all disabled:opacity-50"
-                            >
-                                {uploading ? (
-                                    <><span className="w-3 h-3 border-2 border-white/20 border-t-[#6b5be6] rounded-full animate-spin" /> Yükleniyor...</>
-                                ) : (
-                                    <><Upload size={12} /> Dosyadan Yükle (PNG, WebP, SVG)</>
-                                )}
-                            </button>
-                            <input
-                                ref={fileRef}
-                                type="file"
-                                accept=".png,.webp,.svg,.jpg,.jpeg,.gif,image/png,image/webp,image/svg+xml,image/jpeg,image/gif"
-                                onChange={handleFileUpload}
-                                className="hidden"
-                            />
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* ── portal dropdown ── */}
+            {typeof document !== "undefined" && createPortal(dropdownPanel, document.body)}
         </div>
     );
 }

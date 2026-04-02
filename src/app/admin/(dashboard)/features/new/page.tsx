@@ -28,11 +28,19 @@ type Category = {
 export default function NewFeaturePage() {
     const router = useRouter();
     const [categories, setCategories] = useState<Category[]>([]);
+    const [activeLangs, setActiveLangs] = useState<string[]>(["en"]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/admin/categories").then(r => r.json()).then(cData => {
+        Promise.all([
+            fetch("/api/admin/categories").then(r => r.json()),
+            fetch("/api/admin/languages").then(r => r.json()),
+        ]).then(([cData, lData]) => {
             if (cData.success) setCategories(cData.categories);
+            if (Array.isArray(lData)) {
+                const active = lData.filter((l: any) => l.isActive).map((l: any) => l.code);
+                if (active.length > 0) setActiveLangs(active);
+            }
             setLoading(false);
         });
     }, []);
@@ -48,6 +56,7 @@ export default function NewFeaturePage() {
     return (
         <NewFeatureEditor
             categories={categories}
+            activeLangs={activeLangs}
             onCancel={() => router.push("/admin/features")}
         />
     );
@@ -55,12 +64,14 @@ export default function NewFeaturePage() {
 
 function NewFeatureEditor({
     categories,
+    activeLangs: dbLangs,
     onCancel,
 }: {
     categories: Category[];
+    activeLangs: string[];
     onCancel: () => void;
 }) {
-    const availableLangs = ["en", "tr", "de", "es", "fr", "hi", "zh"];
+    const availableLangs = dbLangs.length > 0 ? dbLangs : ["en"];
 
     const buildInitialState = useCallback(() => ({
         slug: "",
@@ -81,8 +92,14 @@ function NewFeatureEditor({
         ),
     }), [categories]);
 
-    const [translationLang, setTranslationLang] = useState("en");
-    const [commandLang, setCommandLang] = useState("en");
+    const [translationLang, setTranslationLang] = useState(() => {
+        if (typeof window !== "undefined") return localStorage.getItem("optwin-admin-lang") || "en";
+        return "en";
+    });
+    const [commandLang, setCommandLang] = useState(() => {
+        if (typeof window !== "undefined") return localStorage.getItem("optwin-admin-lang") || "en";
+        return "en";
+    });
     const [saving, setSaving] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [translateToast, setTranslateToast] = useState("");
@@ -308,33 +325,24 @@ function NewFeatureEditor({
             className="space-y-5"
         >
             {/* Header */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-3">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => tryNavigate(onCancel)}
-                        className="size-9 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-all border border-white/[0.04]"
+                        className="size-9 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/40 hover:text-white/70 transition-all border border-white/[0.06]"
                     >
                         <ChevronLeft size={16} />
                     </motion.button>
                     <div>
-                        <h1 className="text-2xl font-black text-white tracking-tight">Yeni Özellik</h1>
-                        <p className="text-[10px] text-white/20 uppercase tracking-wide mt-0.5">Optimizasyon listesine girdi ekleyin</p>
+                        <h1 className="text-lg font-black text-white uppercase tracking-tight leading-tight">Yeni Özellik</h1>
+                        <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Optimizasyon listesine girdi ekleyin</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <AdminActionBar
-                        show={hasChanges}
-                        saving={saving}
-                        saved={saved}
-                        onSave={handleSubmit}
-                        onCancel={() => setForm(buildInitialState())}
-                        saveText="Özellik Oluştur"
-                    />
-                </div>
-            </div>
+                <div className="flex items-center gap-2" />
+            </motion.div>
 
             {error && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/10 text-red-400 text-sm">
@@ -631,6 +639,15 @@ function NewFeatureEditor({
                     />
                 </div>
             </div>
+
+            <AdminActionBar
+                show={hasChanges}
+                saving={saving}
+                saved={saved}
+                onSave={handleSubmit}
+                onCancel={() => setForm(buildInitialState())}
+                saveText="Özellik Oluştur"
+            />
         </motion.div>
     );
 }

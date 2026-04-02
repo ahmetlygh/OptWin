@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { FlagIcon } from "@/components/shared/FlagIcon";
 
 interface AdminLangPickerProps {
@@ -14,9 +15,9 @@ interface AdminLangPickerProps {
 }
 
 export function AdminLangPicker({ value, onChange, availableLangs, variant = "header", className = "" }: AdminLangPickerProps) {
-
     const [isOpen, setIsOpen] = useState(false);
     const [langs, setLangs] = useState<any[]>([]);
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -25,9 +26,7 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
                 .then(r => r.json())
                 .then(data => {
                     if (Array.isArray(data)) {
-                        // Filter for active languages only (except for the main table)
                         let fetched = data.filter((l: any) => l.isActive);
-                        
                         if (availableLangs && availableLangs.length > 0) {
                             fetched = fetched.filter((l: any) => availableLangs.includes(l.code));
                         }
@@ -36,16 +35,40 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
                 })
                 .catch(() => {});
         };
-
         fetchLangs();
-
         window.addEventListener("optwin:languages-updated", fetchLangs);
         return () => window.removeEventListener("optwin:languages-updated", fetchLangs);
     }, [availableLangs]);
 
     const selected = langs.find(l => l.code === value) || langs[0];
 
+    const isForm = variant === "form";
+    const isSettings = variant === "settings";
+
+    /* ── position calculation for portal ── */
+    const measurePosition = useCallback(() => {
+        if (!ref.current) return;
+        const rect = ref.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const dropdownHeight = Math.min(langs.length * 40 + 8, 248);
+        const openAbove = spaceBelow < dropdownHeight && rect.top > spaceBelow;
+        const minW = isSettings ? rect.width : Math.max(200, rect.width);
+
+        setDropdownStyle({
+            position: "fixed",
+            width: isSettings ? rect.width : minW,
+            ...(isSettings
+                ? { left: rect.left }
+                : { right: window.innerWidth - rect.right }),
+            ...(openAbove
+                ? { bottom: window.innerHeight - rect.top + 6 }
+                : { top: rect.bottom + 6 }),
+        });
+    }, [langs.length, isSettings]);
+
+    /* ── click-outside + ESC ── */
     useEffect(() => {
+        if (!isOpen) return;
         const handleClickOutside = (e: MouseEvent) => {
             if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
         };
@@ -58,26 +81,95 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
             document.removeEventListener("mousedown", handleClickOutside);
             document.removeEventListener("keydown", handleEsc);
         };
-    }, []);
+    }, [isOpen]);
 
-    const isForm = variant === "form";
-    const isSettings = variant === "settings";
+    /* ── reposition on scroll/resize ── */
+    useEffect(() => {
+        if (!isOpen) return;
+        const reposition = () => measurePosition();
+        window.addEventListener("scroll", reposition, true);
+        window.addEventListener("resize", reposition);
+        return () => {
+            window.removeEventListener("scroll", reposition, true);
+            window.removeEventListener("resize", reposition);
+        };
+    }, [isOpen, measurePosition]);
+
+    const toggle = () => {
+        if (!isOpen) {
+            measurePosition();
+            setTimeout(() => setIsOpen(true), 0);
+        } else {
+            setIsOpen(false);
+        }
+    };
+
+    const dropdownPanel = (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    style={dropdownStyle}
+                    className="z-[9990] rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                >
+                    <div className="py-1 max-h-60 overflow-y-auto admin-scrollbar">
+                        {langs.map((lang) => {
+                            const isSelected = lang.code === value;
+                            return (
+                                <button
+                                    key={lang.code}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(lang.code);
+                                        setIsOpen(false);
+                                    }}
+                                    className={`w-full flex items-center justify-between gap-3 px-3.5 py-2 text-[12px] font-medium transition-all duration-150 ${
+                                        isSelected
+                                            ? "text-[#6b5be6] bg-[#6b5be6]/[0.08]"
+                                            : "text-white/50 hover:text-white/90 hover:bg-white/[0.04]"
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-2.5 overflow-hidden">
+                                        <FlagIcon flagSvg={lang.flagSvg} size="xs" />
+                                        <span className="truncate">{lang.nativeName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[10px] font-mono uppercase tracking-wider ${isSelected ? "text-[#6b5be6]/50" : "text-white/10"}`}>
+                                            {lang.code}
+                                        </span>
+                                        {isSelected && (
+                                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}>
+                                                <Check size={12} className="text-[#6b5be6] shrink-0" />
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 
     return (
         <div ref={ref} className={`relative shrink-0 ${isSettings ? "w-full" : isForm ? "min-w-[130px]" : "min-w-[70px]"} ${className}`}>
-
+            {/* ── trigger ── */}
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center justify-between rounded-lg font-bold transition-all appearance-none cursor-pointer w-full group ${
+                onClick={toggle}
+                className={`flex items-center justify-between rounded-xl font-bold transition-all appearance-none cursor-pointer w-full group ${
                     isSettings || isForm
                         ? `bg-white/[0.03] border px-3 py-1.5 text-[12px] text-white/80 ${
-                            isOpen ? "border-[#6b5be6]/40 shadow-[0_0_15px_rgba(107,91,230,0.1)]" : "border-white/[0.08] hover:border-white/[0.15]"
+                            isOpen ? "border-[#6b5be6]/40 shadow-[0_0_15px_rgba(107,91,230,0.08)]" : "border-white/[0.06] hover:border-white/[0.12]"
                           }`
                         : `gap-2 h-7 px-2 text-[11px] border ${
                             isOpen
                                 ? "bg-white/[0.04] border-[#6b5be6]/25 text-white/70"
-                                : "bg-white/[0.02] border-white/[0.04] text-white/40 hover:text-white/60 hover:border-white/[0.08]"
+                                : "bg-white/[0.02] border-white/[0.06] text-white/40 hover:text-white/60 hover:border-white/[0.1]"
                         }`
                 }`}
             >
@@ -96,48 +188,8 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
                 </motion.div>
             </button>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 6, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className={`absolute z-[999] mt-1.5 rounded-xl border border-white/[0.08] bg-[#0f0f18]/98 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden ${
-                            isSettings ? "left-0 w-full origin-top" : isForm ? "right-0 min-w-[200px] origin-top-right" : "right-0 top-full min-w-[200px] origin-top-right"
-                        }`}
-                    >
-                        <div className="py-2 max-h-60 overflow-y-auto overflow-x-hidden custom-scrollbar divide-y divide-white/[0.03]">
-                            {langs.map((lang) => {
-                                const isSelected = lang.code === value;
-                                return (
-                                    <button
-                                        key={lang.code}
-                                        type="button"
-                                        onClick={() => {
-                                            onChange(lang.code);
-                                            setIsOpen(false);
-                                        }}
-                                        className={`w-full flex items-center justify-between gap-3 px-3.5 py-2 text-[12px] font-medium transition-all duration-150 ${
-                                            isSelected
-                                                ? "text-[#6b5be6] bg-[#6b5be6]/[0.08]"
-                                                : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]"
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-2.5 overflow-hidden">
-                                            <FlagIcon flagSvg={lang.flagSvg} size="xs" />
-                                            <span className="truncate">{lang.nativeName}</span>
-                                        </div>
-                                        <span className={`text-[10px] font-mono uppercase tracking-wider ${isSelected ? "text-[#6b5be6]/50" : "text-white/10"}`}>
-                                            {lang.code}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* ── portal dropdown ── */}
+            {typeof document !== "undefined" && createPortal(dropdownPanel, document.body)}
         </div>
     );
 }

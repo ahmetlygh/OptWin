@@ -70,8 +70,8 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         }).catch(() => setMaintenanceLoading(false));
 
         fetch("/api/admin/languages").then(r => r.json()).then(d => {
-            if (d.success) {
-                const codes = d.languages.map((l: any) => l.code);
+            if (Array.isArray(d)) {
+                const codes = d.filter((l: any) => l.isActive).map((l: any) => l.code);
                 setReasonLangs(codes);
                 setMReasons(Object.fromEntries(codes.map((c: string) => [c, ""])));
                 setMReasonLang(codes.includes("tr") ? "tr" : (codes[0] || "en"));
@@ -326,29 +326,37 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             {/* Maintenance On Modal — custom with reason + estimated time */}
             <AnimatePresence>
                 {showMaintenanceOn && (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setShowMaintenanceOn(false)}>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowMaintenanceOn(false)}>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-md" />
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                            initial={{ opacity: 0, scale: 0.92, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.92, y: 12 }}
-                            transition={{ duration: 0.25 }}
-                            className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-5 max-w-md w-full mx-4 shadow-2xl"
+                            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 max-w-md w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                    <AlertTriangle size={16} className="text-amber-400" />
+                            {/* ambient glow */}
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/8 blur-3xl pointer-events-none" />
+
+                            {/* header */}
+                            <div className="relative z-10 flex items-start justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                        <AlertTriangle size={18} className="text-amber-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-tight">Bakıma Al</h3>
+                                        <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Ziyaretçiler bakım sayfasına yönlendirilecek</p>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-white">Bakıma Al</h3>
-                                    <p className="text-[11px] text-white/30">Tüm ziyaretçiler bakım sayfasına yönlendirilecek</p>
-                                </div>
-                                <button onClick={() => setShowMaintenanceOn(false)} className="p-1 text-white/30 hover:text-white/60"><X size={16} /></button>
+                                <button onClick={() => setShowMaintenanceOn(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors">
+                                    <X size={16} />
+                                </button>
                             </div>
 
                             {/* Reason — per language */}
-                            <div className="mb-4">
+                            <div className="relative z-10 mb-4">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
                                     <AdminLangPicker
@@ -362,7 +370,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                     onChange={e => setMReasons(prev => ({ ...prev, [mReasonLang]: e.target.value }))}
                                     placeholder={mReasonLang === "tr" ? "Sistem güncellemesi, veritabanı bakımı..." : "System update, database maintenance..."}
                                     rows={2}
-                                    className="w-full bg-white/[0.02] border border-white/[0.04] rounded-xl px-3 py-2 text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors resize-none"
+                                    className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 text-[13px] text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/50 transition-colors resize-none"
                                 />
                                 {mReasons[mReasonLang]?.trim() && (
                                     <button
@@ -401,7 +409,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                             </div>
 
                             {/* Estimated End */}
-                            <div className="mb-4">
+                            <div className="relative z-10 mb-5">
                                 <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5">Tahmini Bitiş <span className="text-white/15">(opsiyonel)</span></label>
 
                                 {/* Mode toggle */}
@@ -409,7 +417,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                     <button
                                         onClick={() => setMTimeMode("duration")}
                                         className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${
-                                            mTimeMode === "duration" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                            mTimeMode === "duration" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.06] hover:text-white/50"
                                         }`}
                                     >
                                         Süre seç
@@ -417,7 +425,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                     <button
                                         onClick={switchToDatetime}
                                         className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${
-                                            mTimeMode === "datetime" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                            mTimeMode === "datetime" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/[0.02] text-white/30 border-white/[0.06] hover:text-white/50"
                                         }`}
                                     >
                                         Tarih ve saat
@@ -432,7 +440,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                                     key={p.minutes}
                                                     onClick={() => { setMMinutes(mMinutes === p.minutes ? null : p.minutes); setMCustom(false); }}
                                                     className={`h-8 rounded-lg text-[11px] font-bold transition-all border ${
-                                                        !mCustom && mMinutes === p.minutes ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                                        !mCustom && mMinutes === p.minutes ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.06] hover:text-white/50"
                                                     }`}
                                                 >
                                                     {p.label}
@@ -441,7 +449,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                             <button
                                                 onClick={() => { setMCustom(!mCustom); setMMinutes(null); }}
                                                 className={`h-8 rounded-lg text-[11px] font-bold transition-all border ${
-                                                    mCustom ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.04] hover:text-white/50"
+                                                    mCustom ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-white/30 border-white/[0.06] hover:text-white/50"
                                                 }`}
                                             >
                                                 Özel
@@ -455,7 +463,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                                     value={mCustomMinutes}
                                                     onChange={e => setMCustomMinutes(e.target.value.replace(/[^0-9]/g, ""))}
                                                     placeholder="Dakika girin"
-                                                    className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-amber-500/30 transition-colors"
+                                                    className="flex-1 h-9 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-amber-500/30 transition-colors"
                                                     autoFocus
                                                 />
                                                 <span className="text-[10px] text-white/25 font-medium">dakika</span>
@@ -468,13 +476,13 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                             type="date"
                                             value={mDate}
                                             onChange={e => setMDate(e.target.value)}
-                                            className="flex-1 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
+                                            className="flex-1 h-9 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
                                         />
                                         <input
                                             type="time"
                                             value={mTime}
                                             onChange={e => setMTime(e.target.value)}
-                                            className="w-28 h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
+                                            className="w-28 h-9 px-3 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors [color-scheme:dark]"
                                         />
                                         <span className="flex items-center text-[10px] text-white/20 font-mono">UTC+3</span>
                                     </div>
@@ -482,13 +490,13 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2">
-                                <button onClick={() => setShowMaintenanceOn(false)} className="flex-1 h-9 rounded-xl text-sm font-medium text-white/40 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all">
+                            <div className="relative z-10 flex gap-3">
+                                <button onClick={() => setShowMaintenanceOn(false)} className="flex-1 h-10 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white/50 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-all">
                                     İptal
                                 </button>
                                 <button
                                     onClick={() => toggleMaintenance(true)}
-                                    className="flex-1 h-9 rounded-xl text-sm font-bold text-white bg-amber-600 hover:bg-amber-500 transition-all shadow-lg shadow-amber-600/20 flex items-center justify-center gap-2"
+                                    className="flex-1 h-10 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white bg-amber-600 hover:bg-amber-500 transition-all shadow-lg shadow-amber-600/15 flex items-center justify-center gap-2 active:scale-95"
                                 >
                                     <AlertTriangle size={13} />
                                     Bakıma Al

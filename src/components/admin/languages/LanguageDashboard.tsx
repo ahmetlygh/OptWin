@@ -31,15 +31,42 @@ const SortingModal = ({ languages, onClose, onSave }: { languages: Language[], o
     const [items, setItems] = useState<Language[]>([]);
     useEffect(() => { setItems([...languages]); }, [languages]);
 
+    /* ESC to close */
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+        document.addEventListener("keydown", handleEsc);
+        return () => document.removeEventListener("keydown", handleEsc);
+    }, [onClose]);
+
     return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-[#0d0d12] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                <div className="p-5 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.02]">
-                    <div className="flex items-center gap-2"><ListOrdered size={18} className="text-[#6b5be6]" /><h2 className="text-lg font-bold text-white uppercase tracking-tighter">SIRALAMAYI DÜZENLE</h2></div>
-                    <button onClick={onClose} className="p-2 text-white/30 hover:text-white transition-colors"><X size={20} /></button>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+            <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col max-h-[80vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* ambient glow */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-[#6b5be6]/8 blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 p-5 border-b border-white/[0.04] flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
+                            <ListOrdered size={18} className="text-[#6b5be6]" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-black text-white uppercase tracking-tight">Sıralamayı Düzenle</h2>
+                            <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Sürükle ve bırak</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors">
+                        <X size={16} />
+                    </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div className="relative z-10 flex-1 overflow-y-auto p-4 admin-scrollbar">
                     <Reorder.Group axis="y" values={items} onReorder={setItems} className="space-y-2">
                         {items.map((lang) => (
                             <Reorder.Item key={lang.id} value={lang} className="p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl flex items-center gap-3 cursor-grab active:cursor-grabbing hover:bg-white/[0.05] transition-colors">
@@ -51,8 +78,9 @@ const SortingModal = ({ languages, onClose, onSave }: { languages: Language[], o
                         ))}
                     </Reorder.Group>
                 </div>
-                <div className="p-4 border-t border-white/[0.05] bg-white/[0.01] flex gap-3">
-                    <button onClick={() => onSave(items)} className="flex-1 py-3 bg-[#6b5be6] hover:bg-[#5a4cc2] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-900/20 transition-all active:scale-95">KAYDET</button>
+                <div className="relative z-10 p-4 border-t border-white/[0.04] flex gap-3">
+                    <button onClick={onClose} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">Vazgeç</button>
+                    <button onClick={() => onSave(items)} className="flex-1 h-10 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[12px] uppercase tracking-wider rounded-xl shadow-lg shadow-[#6b5be6]/15 transition-all active:scale-95">Kaydet</button>
                 </div>
             </motion.div>
         </div>
@@ -132,24 +160,29 @@ export function LanguageDashboard() {
     const defaultKeys = Object.keys(defaultLang?.translations || {});
 
     return (
-        <div className="p-5 md:p-6 lg:p-8 h-full flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex items-center justify-between shrink-0">
-                <div>
-                    <h1 className="text-2xl font-black tracking-tighter text-white mb-1 uppercase">DİL YÖNETİMİ</h1>
-                    <p className="text-xs text-white/30 font-bold uppercase tracking-widest">Platform dillerini ve sıralamasını optimize edin.</p>
-                </div>
+        <div className="h-full flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)] shrink-0">
                 <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
+                        <ListOrdered size={18} className="text-[#6b5be6]" />
+                    </div>
+                    <div>
+                        <h1 className="text-lg font-black tracking-tight text-white uppercase leading-tight">Dil Yönetimi</h1>
+                        <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Platform dillerini ve sıralamasını optimize edin</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
                     <button
                         onClick={() => setIsSortingMode(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] text-white/40 hover:text-white border border-white/[0.06] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+                        className="flex items-center gap-2 h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 border border-white/[0.06] rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95"
                     >
-                        <ListOrdered size={14} /> SIRALAMAYI DÜZENLE
+                        <ListOrdered size={14} /> Sıralamayı Düzenle
                     </button>
                     <button
                         onClick={() => { setActiveLang(null); setIsEditModalOpen(true); }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#6b5be6] hover:bg-[#5a4cc2] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-purple-900/20 transition-all active:scale-95"
+                        className="flex items-center gap-2 h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-lg shadow-[#6b5be6]/20 transition-all active:scale-95"
                     >
-                        <Plus size={14} /> YENİ DİL EKLE
+                        <Plus size={14} /> Yeni Dil Ekle
                     </button>
                 </div>
             </motion.div>

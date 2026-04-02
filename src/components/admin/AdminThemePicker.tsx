@@ -2,93 +2,98 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Moon, Sun } from "lucide-react";
+import { ChevronDown, Moon, Sun, Check } from "lucide-react";
 
 interface AdminThemePickerProps {
     value: string;
     onChange: (value: string) => void;
 }
 
+const themes = [
+    { value: "dark", label: "Koyu Tema", icon: Moon, color: "text-indigo-400", activeBg: "bg-[#6b5be6]/10" },
+    { value: "light", label: "Açık Tema", icon: Sun, color: "text-amber-400", activeBg: "bg-amber-500/10" },
+];
+
 export function AdminThemePicker({ value, onChange }: AdminThemePickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
+    /* ── click-outside + ESC ── */
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setIsOpen(false);
-            }
+            if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+        };
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setIsOpen(false);
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener("keydown", handleEsc);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleEsc);
+        };
     }, []);
 
-    const isDark = value === "dark";
+    const current = themes.find(t => t.value === value) || themes[0];
+    const CurrentIcon = current.icon;
 
     return (
         <div ref={ref} className="relative w-full">
+            {/* ── trigger ── */}
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full h-9 px-3 flex items-center justify-between gap-2 rounded-xl text-sm transition-all duration-200 border outline-none focus:ring-2 focus:ring-[#6b5be6]/30 focus:border-[#6b5be6]/50 ${
+                className={`w-full h-9 px-3 flex items-center justify-between gap-2 rounded-xl text-sm transition-all duration-200 border ${
                     isOpen
-                        ? "bg-[#6b5be6]/5 border-[#6b5be6]/30 text-white"
-                        : "bg-white/[0.02] border-white/[0.04] text-white/60 hover:border-white/[0.08] hover:text-white/80"
+                        ? "bg-white/[0.04] border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
+                        : "bg-white/[0.02] border-white/[0.06] text-white/60 hover:border-white/[0.1] hover:text-white/80"
                 }`}
             >
                 <div className="flex items-center gap-2">
-                    {isDark ? (
-                        <Moon size={14} className="text-indigo-400" />
-                    ) : (
-                        <Sun size={14} className="text-amber-400" />
-                    )}
-                    <span className="font-medium truncate">{isDark ? "Koyu Tema" : "Açık Tema"}</span>
+                    <CurrentIcon size={14} className={current.color} />
+                    <span className="font-medium truncate">{current.label}</span>
                 </div>
                 <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                    <ChevronDown size={14} className={isOpen ? "text-[#6b5be6]" : "text-white/30"} />
+                    <ChevronDown size={14} className="text-white/30 shrink-0" />
                 </motion.div>
             </button>
 
+            {/* ── dropdown panel ── */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                        initial={{ opacity: 0, y: -4, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute z-[100] left-0 right-0 top-full mt-1.5 rounded-xl border border-white/[0.06] bg-[#0f0f18]/95 backdrop-blur-xl shadow-2xl p-1"
+                        exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute z-[9990] left-0 right-0 top-full mt-1.5 rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden py-1"
                     >
-                        <button
-                            type="button"
-                            onClick={() => { onChange("dark"); setIsOpen(false); }}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 group ${
-                                isDark
-                                    ? "bg-[#6b5be6]/10 text-white font-semibold"
-                                    : "text-white/50 hover:bg-white/[0.03] hover:text-white/80"
-                            }`}
-                        >
-                            <div className={`p-1.5 rounded-md ${isDark ? "bg-[#6b5be6]/20" : "bg-white/[0.03] group-hover:bg-white/[0.06]"}`}>
-                                <Moon size={14} className={isDark ? "text-indigo-400" : "text-white/40"} />
-                            </div>
-                            <span className="flex-1 text-left">Koyu Tema</span>
-                            {isDark && <motion.div layoutId="theme-active" className="w-1.5 h-1.5 rounded-full bg-[#6b5be6]" />}
-                        </button>
-                        
-                        <button
-                            type="button"
-                            onClick={() => { onChange("light"); setIsOpen(false); }}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 mt-1 group ${
-                                !isDark
-                                    ? "bg-amber-500/10 text-white font-semibold"
-                                    : "text-white/50 hover:bg-white/[0.03] hover:text-white/80"
-                            }`}
-                        >
-                            <div className={`p-1.5 rounded-md ${!isDark ? "bg-amber-500/20" : "bg-white/[0.03] group-hover:bg-white/[0.06]"}`}>
-                                <Sun size={14} className={!isDark ? "text-amber-400" : "text-white/40"} />
-                            </div>
-                            <span className="flex-1 text-left">Açık Tema</span>
-                            {!isDark && <motion.div layoutId="theme-active" className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-                        </button>
+                        {themes.map((theme) => {
+                            const isSelected = theme.value === value;
+                            const Icon = theme.icon;
+                            return (
+                                <button
+                                    key={theme.value}
+                                    type="button"
+                                    onClick={() => { onChange(theme.value); setIsOpen(false); }}
+                                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] font-medium transition-all duration-150 ${
+                                        isSelected
+                                            ? `${theme.activeBg} text-white`
+                                            : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
+                                    }`}
+                                >
+                                    <div className={`p-1.5 rounded-md ${isSelected ? theme.activeBg : "bg-white/[0.03]"}`}>
+                                        <Icon size={14} className={isSelected ? theme.color : "text-white/40"} />
+                                    </div>
+                                    <span className="flex-1 text-left">{theme.label}</span>
+                                    {isSelected && (
+                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}>
+                                            <Check size={12} className="text-[#6b5be6] shrink-0" />
+                                        </motion.div>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </motion.div>
                 )}
             </AnimatePresence>

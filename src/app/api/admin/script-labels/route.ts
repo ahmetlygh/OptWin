@@ -23,8 +23,15 @@ export async function GET() {
         grouped[label.lang][label.key] = label.value;
     }
 
-    // Get unique languages
-    const languages = [...new Set(labels.map(l => l.lang))].sort();
+    // Get unique languages from labels AND from active Language records
+    const activeLangsFromDb = await prisma.language.findMany({
+        where: { isActive: true },
+        select: { code: true },
+        orderBy: { sortOrder: "asc" },
+    });
+    const langCodesFromLabels = [...new Set(labels.map(l => l.lang))];
+    const langCodesFromDb = activeLangsFromDb.map(l => l.code);
+    const languages = [...new Set([...langCodesFromDb, ...langCodesFromLabels])].sort();
 
     let extraLines = [];
     let lineOverrides = {};

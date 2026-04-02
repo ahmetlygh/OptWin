@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AlertCircle, X } from "lucide-react";
 
 interface AdminConfirmModalProps {
     open: boolean;
@@ -24,6 +25,7 @@ export function AdminConfirmModal({
     cancelText = "İptal",
     variant = "default",
 }: AdminConfirmModalProps) {
+    /* ── ESC to close ── */
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === "Escape" && open) onClose();
@@ -32,45 +34,78 @@ export function AdminConfirmModal({
         return () => document.removeEventListener("keydown", handleEsc);
     }, [open, onClose]);
 
-    const confirmColors =
-        variant === "danger"
-            ? "bg-red-500/80 hover:bg-red-500 text-white"
-            : "bg-[#6b5be6] hover:bg-[#5a4bd4] text-white";
+    const isDanger = variant === "danger";
+    const accentColor = isDanger ? "red" : "#6b5be6";
 
     return (
         <AnimatePresence>
             {open && (
-                <div className="fixed inset-0 z-[400] flex items-center justify-center" onClick={onClose}>
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
+                    {/* ── backdrop ── */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/70 backdrop-blur-md"
                     />
+
+                    {/* ── modal content ── */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                        initial={{ opacity: 0, scale: 0.92, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.92, y: 12 }}
-                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-                        className="relative bg-[#0f0f18] border border-white/[0.06] rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl"
+                        exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
+                        className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-sm overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-                        <p className="text-sm text-white/40 mb-6 leading-relaxed">{description}</p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={onClose}
-                                className="flex-1 h-9 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-medium rounded-xl transition-all text-sm border border-white/[0.04]"
-                            >
-                                {cancelText}
-                            </button>
-                            <button
-                                onClick={onConfirm}
-                                className={`flex-1 h-9 font-medium rounded-xl transition-all text-sm ${confirmColors}`}
-                            >
-                                {confirmText}
-                            </button>
+                        {/* ambient glow */}
+                        <div
+                            className="absolute top-0 right-0 w-32 h-32 blur-3xl pointer-events-none"
+                            style={{ background: isDanger ? "rgba(239,68,68,0.08)" : "rgba(107,91,230,0.08)" }}
+                        />
+
+                        <div className="p-6 relative z-10">
+                            {/* header */}
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className={`size-10 rounded-xl flex items-center justify-center ${
+                                        isDanger ? "bg-red-500/10 border border-red-500/20" : "bg-[#6b5be6]/10 border border-[#6b5be6]/20"
+                                    }`}>
+                                        <AlertCircle size={18} className={isDanger ? "text-red-400" : "text-[#6b5be6]"} />
+                                    </div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-tight">{title}</h3>
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            {/* description */}
+                            <p className="text-[13px] text-white/40 leading-relaxed font-medium mb-6">{description}</p>
+
+                            {/* actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={onClose}
+                                    className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/70 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]"
+                                >
+                                    {cancelText}
+                                </button>
+                                <button
+                                    onClick={onConfirm}
+                                    className={`flex-1 h-10 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 ${
+                                        isDanger
+                                            ? "bg-red-500/80 hover:bg-red-500 text-white shadow-red-500/15"
+                                            : "bg-[#6b5be6] hover:bg-[#5a4bd4] text-white shadow-[#6b5be6]/15"
+                                    }`}
+                                >
+                                    {confirmText}
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 </div>

@@ -167,6 +167,18 @@ export default function GeneralSettings() {
         return () => unsavedCtx.setHasUnsavedChanges(false);
     }, [hasChanges, unsavedCtx]);
 
+    // Keyboard shortcut: Ctrl+S saves
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (hasChanges) handleSave();
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [hasChanges]);
+
     const handleSave = async () => {
         if (!hasChanges) return;
         setSaving(true);
