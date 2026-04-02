@@ -746,10 +746,20 @@ export default function AdminFeaturesPage() {
     const riskOptions = [{ value: "", label: "Tüm Risk Seviyeleri" }, { value: "low", label: "Düşük" }, { value: "medium", label: "Orta" }, { value: "high", label: "Yüksek" }];
 
     return (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
-            {/* Header */}
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
-                <div className="flex items-center gap-3">
+        <>
+            <AdminActionBar
+                show={hasOrderChanges || catNameDirty}
+                saving={saving}
+                saved={saved}
+                onSave={() => { if (catNameDirty && editingCatName) saveCatNameInternal(editingCatName); else saveAllOrders(); }}
+                onCancel={() => { if (catNameDirty) cancelCatNameEdit(); else cancelAllOrders(); }}
+                saveText={catNameDirty ? "İsim Kaydet" : "Sıralamayı Kaydet"}
+            />
+
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
+                {/* Header */}
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+                    <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
                         <Puzzle size={18} className="text-[#6b5be6]" />
                     </div>
@@ -761,14 +771,6 @@ export default function AdminFeaturesPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                    <AdminActionBar
-                        show={hasOrderChanges || catNameDirty}
-                        saving={saving}
-                        saved={saved}
-                        onSave={() => { if (catNameDirty && editingCatName) saveCatNameInternal(editingCatName); else saveAllOrders(); }}
-                        onCancel={() => { if (catNameDirty) cancelCatNameEdit(); else cancelAllOrders(); }}
-                        saveText={catNameDirty ? "İsim Kaydet" : "Sıralamayı Kaydet"}
-                    />
                     <AnimatePresence mode="popLayout">
                         {displayLang !== "en" && missingCount > 0 && (
                             <motion.button
@@ -836,6 +838,8 @@ export default function AdminFeaturesPage() {
                     );
                 })}
             </div>
+
+            </motion.div>
 
             {/* Modals */}
             <AdminConfirmModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)} title="Sil" description="Emin misiniz?" />
@@ -1113,6 +1117,6 @@ export default function AdminFeaturesPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </>
     );
 }

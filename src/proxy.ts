@@ -27,10 +27,37 @@ async function checkMaintenance(origin: string): Promise<MaintenanceInfo> {
 }
 
 /* ── Locales Logic with Memory Fail-Safe ── */
-async function getLanguageSets() {
+async function getLanguageSets(request: NextRequest) {
     try {
         const activeRaw = await redisCache.get("optwin:languages:active");
         const allRaw = await redisCache.get("optwin:languages:all");
+
+        if (!activeRaw || !allRaw) {
+            try {
+                const res = await fetch(`${request.nextUrl.origin}/api/admin/languages`, { 
+                    cache: 'no-store',
+                    headers: { 'x-internal-fetch': 'true' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        const active = data.filter((l: any) => l.isActive).map((l: any) => l.code);
+                        const all = data.map((l: any) => l.code);
+                        
+                        LATEST_ACTIVE_LOCALES = active;
+                        LATEST_ALL_LOCALES = all;
+                        
+                        // Fire and forget updating Redis to prevent 404s until the cache is formally rebuilt
+                        redisCache.set("optwin:languages:active", JSON.stringify(data.filter((l: any) => l.isActive)), 86400).catch(()=>{});
+                        redisCache.set("optwin:languages:all", JSON.stringify(data), 86400).catch(()=>{});
+    
+                        return { active, all };
+                    }
+                }
+            } catch (fetchErr) {
+                console.error("[Middleware] Fallback API Language Fetch Failed.", fetchErr);
+            }
+        }
         
         const active = activeRaw ? JSON.parse(activeRaw).map((l: any) => l.code) : LATEST_ACTIVE_LOCALES;
         const all = allRaw ? JSON.parse(allRaw).map((l: any) => l.code) : LATEST_ALL_LOCALES;
@@ -82,7 +109,13 @@ const LOCALE_BYPASS = [
 export default async function proxy(request: NextRequest) {
     try {
         const { pathname } = request.nextUrl;
-        const { active: ACTIVE_LOCALES, all: ALL_LOCALES } = await getLanguageSets();
+        
+        // 0. EXTREMELY IMPORTANT: Prevent infinite loop for internal fallback fetches
+        if (request.headers.get('x-internal-fetch') === 'true') {
+            return NextResponse.next();
+        }
+
+        const { active: ACTIVE_LOCALES, all: ALL_LOCALES } = await getLanguageSets(request);
 
         const response = NextResponse.next();
         response.headers.set('x-next-pathname', pathname || '/');

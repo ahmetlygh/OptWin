@@ -156,26 +156,26 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
     );
 
     return (
-        <div ref={ref} className={`relative shrink-0 ${isSettings ? "w-full" : isForm ? "min-w-[130px]" : "min-w-[70px]"} ${className}`}>
+        <div ref={ref} className={`relative shrink-0 ${isSettings ? "w-full" : isForm ? "min-w-[130px]" : "min-w-[100px]"} ${className}`}>
             {/* ── trigger ── */}
             <button
                 type="button"
                 onClick={toggle}
-                className={`flex items-center justify-between rounded-xl font-bold transition-all appearance-none cursor-pointer w-full group ${
+                className={`flex items-center justify-between rounded-xl font-black transition-all appearance-none cursor-pointer w-full group ${
                     isSettings || isForm
                         ? `bg-white/[0.03] border px-3 py-1.5 text-[12px] text-white/80 ${
                             isOpen ? "border-[#6b5be6]/40 shadow-[0_0_15px_rgba(107,91,230,0.08)]" : "border-white/[0.06] hover:border-white/[0.12]"
                           }`
-                        : `gap-2 h-7 px-2 text-[11px] border ${
+                        : `gap-2 h-[42px] px-4 text-[11px] uppercase tracking-[0.2em] border backdrop-blur-md ${
                             isOpen
-                                ? "bg-white/[0.04] border-[#6b5be6]/25 text-white/70"
-                                : "bg-white/[0.02] border-white/[0.06] text-white/40 hover:text-white/60 hover:border-white/[0.1]"
+                                ? "bg-white/[0.06] border-white/[0.2] text-white"
+                                : "bg-white/[0.04] border-white/[0.1] text-white/50 hover:text-white/80 hover:border-white/[0.2]"
                         }`
                 }`}
             >
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <FlagIcon flagSvg={selected?.flagSvg} size="xs" />
-                    <span className={`truncate ${isSettings || isForm ? "" : "uppercase tracking-widest text-[10px]"}`}>
+                    <FlagIcon flagSvg={selected?.flagSvg} size="sm" />
+                    <span className={`truncate ${isSettings || isForm ? "" : "hidden sm:inline"}`}>
                         {selected ? (isSettings || isForm ? selected.nativeName : selected.code) : value}
                     </span>
                 </div>

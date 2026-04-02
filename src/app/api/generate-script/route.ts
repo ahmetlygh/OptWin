@@ -4,12 +4,10 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { checkMaintenanceStatus } from "@/lib/maintenance";
 
-const SUPPORTED_LANGS = ["en", "tr", "de", "fr", "es", "zh", "hi"] as const;
-
 const scriptRequestSchema = z.object({
     features: z.array(z.string().max(100)).min(1).max(200),
     dnsProvider: z.string().max(50).nullable().optional(),
-    lang: z.enum(SUPPORTED_LANGS).default("en"),
+    lang: z.string().min(2).max(10).default("en"),
     createRestorePoint: z.boolean().default(false),
 });
 

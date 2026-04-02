@@ -318,12 +318,13 @@ function NewFeatureEditor({
     const labelCls = "block text-[10px] font-bold text-white/20 uppercase tracking-wider mb-1.5";
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="space-y-5"
-        >
+        <>
+            <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="space-y-5"
+            >
             {/* Header */}
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-3">
@@ -639,15 +640,16 @@ function NewFeatureEditor({
                     />
                 </div>
             </div>
-
-            <AdminActionBar
-                show={hasChanges}
-                saving={saving}
-                saved={saved}
-                onSave={handleSubmit}
-                onCancel={() => setForm(buildInitialState())}
-                saveText="Özellik Oluştur"
-            />
         </motion.div>
+
+        <AdminActionBar
+            show={hasChanges}
+            saving={saving}
+            saved={saved}
+            onSave={handleSubmit}
+            onCancel={() => setForm(buildInitialState())}
+            saveText="Özellik Oluştur"
+        />
+        </>
     );
 }
