@@ -78,7 +78,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
             const segments = pathname.split('/');
             if (segments.length > 1 && localeCodes.includes(segments[1])) {
                 segments[1] = newLang;
-                document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000`;
+                setLang(newLang);
                 router.push(segments.join('/') || '/');
                 return;
             }

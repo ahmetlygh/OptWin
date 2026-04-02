@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Trash2, CheckCircle2, AlertCircle, Activity, Settings, GripVertical, ListOrdered, Save, X, Settings2 } from "lucide-react";
+import { Plus, Trash2, GripVertical, ListOrdered, X, Settings2 } from "lucide-react";
 import { useOptWinStore } from "@/store/useOptWinStore";
 import { LanguageEditorModal } from "./LanguageEditorModal";
 import { useRouter } from "next/navigation";
@@ -99,26 +99,120 @@ export function LanguageDashboard() {
     const [activeLang, setActiveLang] = useState<Language | null>(null);
     const [langToDelete, setLangToDelete] = useState<Language | null>(null);
 
+    // Extra data for comprehensive progress
+    type FeatureData = { translations: { lang: string; title: string; desc: string }[]; commands: { lang: string; scriptMessage: string }[] };
+    type CategoryData = { translations: { lang: string; name: string }[] };
+    const [features, setFeatures] = useState<FeatureData[]>([]);
+    const [categories, setCategories] = useState<CategoryData[]>([]);
+    const [scriptLabels, setScriptLabels] = useState<Record<string, Record<string, string>>>({});
+    const [enLabelKeys, setEnLabelKeys] = useState<string[]>([]);
+
     useEffect(() => {
-        fetchLanguages();
+        fetchAll();
     }, []);
 
-    const fetchLanguages = async () => {
+    const fetchAll = async () => {
         setIsLoading(true);
+        try {
+            const [langRes, featRes, catRes, labRes] = await Promise.all([
+                fetch("/api/admin/languages"),
+                fetch("/api/admin/features"),
+                fetch("/api/admin/categories"),
+                fetch("/api/admin/script-labels"),
+            ]);
+            const langData = await langRes.json();
+            const featData = await featRes.json();
+            const catData = await catRes.json();
+            const labData = await labRes.json();
+
+            if (Array.isArray(langData)) setLanguages(langData);
+            if (featData.success) setFeatures(featData.features || []);
+            if (catData.success) setCategories(catData.categories || []);
+            if (labData.success) {
+                setScriptLabels(labData.labels || {});
+                setEnLabelKeys(Object.keys(labData.labels?.en || {}));
+            }
+            window.dispatchEvent(new CustomEvent('optwin:languages-updated'));
+        } catch {
+            showToast("Veri çekme hatası.", "error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchLanguages = async () => {
         try {
             const res = await fetch("/api/admin/languages");
             if (res.ok) {
                 const data = await res.json();
                 setLanguages(data);
                 window.dispatchEvent(new CustomEvent('optwin:languages-updated'));
-            } else {
-                showToast("Diller getirilemedi.", "error");
             }
-        } catch {
-            showToast("Veri çekme hatası.", "error");
-        } finally {
-            setIsLoading(false);
+        } catch { /* ignore */ }
+    };
+
+    // Compute extra progress data per language
+    const getExtraData = (langCode: string): import("@/lib/translationUtils").ExtraProgressData => {
+        if (langCode === (defaultLang?.code || "en")) {
+            // Default language is always 100% filled
+            const totalFeats = features.length * 3; // title + desc + scriptMessage
+            const totalCats = categories.length;
+            return {
+                totalFeatures: totalFeats, filledFeatures: totalFeats,
+                totalScriptLabels: enLabelKeys.length, filledScriptLabels: enLabelKeys.length,
+                totalCategories: totalCats, filledCategories: totalCats,
+            };
         }
+
+        // Features: count title, desc, scriptMessage separately
+        let totalFeatureFields = 0;
+        let filledFeatureFields = 0;
+        for (const f of features) {
+            const enTr = f.translations.find(t => t.lang === "en");
+            if (!enTr?.title) continue;
+            // Title always counts
+            totalFeatureFields++;
+            const tr = f.translations.find(t => t.lang === langCode);
+            if (tr?.title?.trim()) filledFeatureFields++;
+            // Desc only counts if EN has it
+            if (enTr.desc?.trim()) {
+                totalFeatureFields++;
+                if (tr?.desc?.trim()) filledFeatureFields++;
+            }
+            // ScriptMessage
+            const enCmd = f.commands.find(c => c.lang === "en");
+            if (enCmd?.scriptMessage?.trim()) {
+                totalFeatureFields++;
+                const cmd = f.commands.find(c => c.lang === langCode);
+                if (cmd?.scriptMessage?.trim()) filledFeatureFields++;
+            }
+        }
+
+        // Script labels
+        const filledLabels = enLabelKeys.filter(k => {
+            const val = scriptLabels[langCode]?.[k];
+            return val && val.trim() !== "";
+        }).length;
+
+        // Categories
+        let totalCats = 0;
+        let filledCats = 0;
+        for (const cat of categories) {
+            const enName = cat.translations.find(t => t.lang === "en")?.name;
+            if (!enName) continue;
+            totalCats++;
+            const tr = cat.translations.find(t => t.lang === langCode);
+            if (tr?.name?.trim()) filledCats++;
+        }
+
+        return {
+            totalFeatures: totalFeatureFields,
+            filledFeatures: filledFeatureFields,
+            totalScriptLabels: enLabelKeys.length,
+            filledScriptLabels: filledLabels,
+            totalCategories: totalCats,
+            filledCategories: filledCats,
+        };
     };
 
     const handleSaveOrder = async (reordered: Language[]) => {
@@ -144,7 +238,7 @@ export function LanguageDashboard() {
             if (res.ok) {
                 showToast("Dil silindi", "success");
                 setLangToDelete(null);
-                fetchLanguages();
+                fetchAll();
                 window.dispatchEvent(new CustomEvent('optwin:languages-updated'));
             } else {
                 const data = await res.json();
@@ -190,7 +284,8 @@ export function LanguageDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                     {languages.map((lang) => {
-                        const { percentage } = calculateProgress(lang.translations, lang.seoMetadata, defaultKeys);
+                        const extra = getExtraData(lang.code);
+                        const { percentage } = calculateProgress(lang.translations, lang.seoMetadata, defaultKeys, extra);
                         const isSuccess = percentage >= 90;
                         const isCaution = percentage >= 50 && percentage < 90;
                         const barColorClass = isSuccess ? "bg-gradient-to-r from-[#04d16d] to-[#00f8da] shadow-[0_0_15px_rgba(0,248,218,0.3)]" : isCaution ? "bg-amber-500" : "bg-orange-600";
@@ -201,7 +296,7 @@ export function LanguageDashboard() {
                                 key={lang.id} 
                                 initial={{ opacity: 0, scale: 0.98 }} 
                                 animate={{ opacity: 1, scale: 1 }} 
-                                transition={{ duration: 0.2 }} // Optimized lightweight animation (Task 2)
+                                transition={{ duration: 0.2 }}
                                 className={`bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 hover:bg-white/[0.04] transition-colors relative overflow-hidden group shadow-2xl ${!lang.isActive ? "opacity-60 saturate-50" : ""}`}
                             >
                                 {lang.isDefault && (
@@ -212,7 +307,6 @@ export function LanguageDashboard() {
                                 )}
                                 
                                 <div className="flex items-start justify-between gap-4 mb-4">
-                                    {/* Task 1: Info Left */}
                                     <div className="flex items-center gap-4">
                                         <div className="shrink-0"><FlagIcon flagSvg={lang.flagSvg} size="lg" /></div>
                                         <div>
@@ -225,7 +319,6 @@ export function LanguageDashboard() {
                                         </div>
                                     </div>
 
-                                    {/* Task 1: Buttons Right-Stacked */}
                                     <div className="flex flex-col gap-2 shrink-0">
                                         <button
                                             onClick={() => router.push(`/admin/languages/${lang.code}`)}
@@ -244,7 +337,7 @@ export function LanguageDashboard() {
                                     </div>
                                 </div>
 
-                                {/* Task 3: Animated Progress Bar */}
+                                {/* Progress Bar */}
                                 <div className="w-full space-y-2 mt-4">
                                     <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-white/20">
                                         <span>YÜZDE</span>
@@ -254,7 +347,7 @@ export function LanguageDashboard() {
                                         <motion.div 
                                             initial={{ width: 0 }} 
                                             animate={{ width: `${percentage}%` }} 
-                                            transition={{ duration: 1.2, ease: "circOut" }} // Fill-up animation (Task 3)
+                                            transition={{ duration: 1.2, ease: "circOut" }}
                                             className={`h-full rounded-full ${barColorClass}`} 
                                         />
                                     </div>

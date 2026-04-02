@@ -41,6 +41,19 @@ const createFeatureSchema = z.object({
     commands: z.array(commandSchema).default([]),
 });
 
+// Partial schemas for update operations (only update provided fields)
+const partialTranslationSchema = z.object({
+    lang: z.string().max(5),
+    title: z.string().max(500).optional(),
+    desc: z.string().max(2000).optional(),
+});
+
+const partialCommandSchema = z.object({
+    lang: z.string().max(5),
+    command: z.string().max(10000).optional(),
+    scriptMessage: z.string().max(500).optional(),
+});
+
 const updateFeatureSchema = z.object({
     id: z.string().min(1),
     slug: z.string().min(1).max(100).optional(),
@@ -53,8 +66,8 @@ const updateFeatureSchema = z.object({
     enabled: z.boolean().optional(),
     newBadge: z.boolean().optional(),
     newBadgeExpiry: z.string().nullable().optional(),
-    translations: z.array(translationSchema).optional(),
-    commands: z.array(commandSchema).optional(),
+    translations: z.array(partialTranslationSchema).optional(),
+    commands: z.array(partialCommandSchema).optional(),
 });
 
 const bulkMoveSchema = z.object({
@@ -191,20 +204,28 @@ export async function PUT(req: NextRequest) {
 
         if (translations) {
             for (const t of translations) {
+                const updateData: Record<string, string> = {};
+                const createData: Record<string, string> = { featureId: id, lang: t.lang, title: "", desc: "" };
+                if (t.title !== undefined) { updateData.title = t.title; createData.title = t.title; }
+                if (t.desc !== undefined) { updateData.desc = t.desc; createData.desc = t.desc; }
                 upsertOps.push(prisma.featureTranslation.upsert({
                     where: { featureId_lang: { featureId: id, lang: t.lang } },
-                    create: { featureId: id, lang: t.lang, title: t.title, desc: t.desc },
-                    update: { title: t.title, desc: t.desc },
+                    create: createData as any,
+                    update: updateData,
                 }));
             }
         }
 
         if (commands) {
             for (const c of commands) {
+                const updateData: Record<string, string> = {};
+                const createData: Record<string, string> = { featureId: id, lang: c.lang, command: "", scriptMessage: "" };
+                if (c.command !== undefined) { updateData.command = c.command; createData.command = c.command; }
+                if (c.scriptMessage !== undefined) { updateData.scriptMessage = c.scriptMessage; createData.scriptMessage = c.scriptMessage; }
                 upsertOps.push(prisma.featureCommand.upsert({
                     where: { featureId_lang: { featureId: id, lang: c.lang } },
-                    create: { featureId: id, lang: c.lang, command: c.command, scriptMessage: c.scriptMessage },
-                    update: { command: c.command, scriptMessage: c.scriptMessage },
+                    create: createData as any,
+                    update: updateData,
                 }));
             }
         }

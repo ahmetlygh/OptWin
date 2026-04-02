@@ -88,10 +88,11 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 // ─── Sortable Feature Row ────────────────────────────────────────────
-function SortableFeatureRow({ feature, onClick, onToggle, lang }: {
+function SortableFeatureRow({ feature, onClick, onToggle, onDelete, lang }: {
     feature: Feature;
     onClick: () => void;
     onToggle: (e: React.MouseEvent) => void;
+    onDelete: (e: React.MouseEvent) => void;
     lang: string;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: feature.id });
@@ -119,6 +120,13 @@ function SortableFeatureRow({ feature, onClick, onToggle, lang }: {
                     {RISK_LABELS[feature.risk] || feature.risk}
                 </span>
             )}
+            <button
+                onClick={onDelete}
+                onPointerDown={e => e.stopPropagation()}
+                className="shrink-0 size-7 flex items-center justify-center rounded-lg text-red-500/0 group-hover:text-red-500/40 hover:!text-red-500 hover:!bg-red-500/10 transition-all"
+            >
+                <Trash2 size={13} />
+            </button>
             <button
                 onClick={onToggle}
                 onPointerDown={e => e.stopPropagation()}
@@ -203,12 +211,22 @@ export default function AdminFeaturesPage() {
     const [deleteCatId, setDeleteCatId] = useState<string | null>(null);
     const [cascadeConfirmCat, setCascadeConfirmCat] = useState(false);
     const [moveCatTarget, setMoveCatTarget] = useState("");
-    const [showUnsavedModal, setShowUnsavedModal] = useState(false); // We keep this if needed for internal page logic, but preferably we use openModal
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const [showMissingModal, setShowMissingModal] = useState(false);
     const [translatingMissing, setTranslatingMissing] = useState(false);
     const [translateMissingProgress, setTranslateMissingProgress] = useState("");
+    const [translatedIndices, setTranslatedIndices] = useState<Set<number>>(new Set());
+    const [deleteFeatureId, setDeleteFeatureId] = useState<string | null>(null);
+
+    const handleDeleteFeature = async (featureId: string) => {
+        try {
+            await fetch(`/api/admin/features?id=${featureId}`, { method: "DELETE" });
+            setDeleteFeatureId(null);
+            await fetchFeatures();
+        } catch { /* ignore */ }
+    };
 
     // ─── Missing translations for SELECTED lang only ─────────────────
     type MissingItem = { type: "feature"; featureId: string; label: string; missingTitle: boolean; missingDesc: boolean; missingScript: boolean }
@@ -254,73 +272,90 @@ export default function AdminFeaturesPage() {
         if (missingCount === 0) return;
         const lang = displayLang;
         setTranslatingMissing(true);
+        setTranslatedIndices(new Set());
         setTranslateMissingProgress(`${lang.toUpperCase()} çevriliyor...`);
         let done = 0;
+        const items = missingForSelectedLang;
         try {
-            // Translate categories
-            const catItems = missingForSelectedLang.filter((m): m is MissingItem & { type: "category" } => m.type === "category");
-            for (const item of catItems) {
+            for (let idx = 0; idx < items.length; idx++) {
+                const item = items[idx];
+                setTranslateMissingProgress(`${done + 1}/${items.length} çevriliyor...`);
                 try {
-                    const res = await fetch("/api/admin/translate", {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ text: item.label, sourceLang: "en", targetLangs: [lang] }),
-                    });
-                    const data = await res.json();
-                    if (data.success && data.translations?.[lang]) {
-                        await fetch("/api/admin/categories", {
-                            method: "PUT", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ id: item.categoryId, translations: [{ lang, name: data.translations[lang] }] }),
+                    if (item.type === "category") {
+                        const res = await fetch("/api/admin/translate", {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ text: item.label, sourceLang: "en", targetLangs: [lang] }),
                         });
-                        done++;
-                    }
-                } catch { /* skip */ }
-                setTranslateMissingProgress(`Kategoriler: ${done}/${catItems.length}`);
-            }
+                        const data = await res.json();
+                        if (data.success && data.translations?.[lang]) {
+                            await fetch("/api/admin/categories", {
+                                method: "PUT", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: item.categoryId, translations: [{ lang, name: data.translations[lang] }] }),
+                            });
+                            done++;
+                            setTranslatedIndices(prev => new Set(prev).add(idx));
+                        }
+                    } else {
+                        const feature = features.find(f => f.id === item.featureId);
+                        if (!feature) continue;
+                        const enTr = feature.translations.find(t => t.lang === "en");
+                        const enCmd = feature.commands.find(c => c.lang === "en");
+                        if (!enTr) continue;
+                        let itemSuccess = false;
 
-            // Translate features
-            const featItems = missingForSelectedLang.filter((m): m is MissingItem & { type: "feature" } => m.type === "feature");
-            for (let i = 0; i < featItems.length; i++) {
-                const item = featItems[i];
-                const feature = features.find(f => f.id === item.featureId);
-                if (!feature) continue;
-                const enTr = feature.translations.find(t => t.lang === "en");
-                const enCmd = feature.commands.find(c => c.lang === "en");
-                if (!enTr) continue;
-                try {
-                    // Translate title & desc
-                    const pairs: { text: string; field: string }[] = [];
-                    if (item.missingTitle && enTr.title) pairs.push({ text: enTr.title, field: "title" });
-                    if (item.missingDesc && enTr.desc) pairs.push({ text: enTr.desc, field: "desc" });
-                    for (const p of pairs) {
-                        const res = await fetch("/api/admin/translate", {
-                            method: "POST", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ text: p.text, sourceLang: "en", targetLangs: [lang] }),
-                        });
-                        const data = await res.json();
-                        if (data.success && data.translations?.[lang]) {
-                            await fetch("/api/admin/features", {
-                                method: "PUT", headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: item.featureId, translations: [{ lang, [p.field]: data.translations[lang] }] }),
+                        // Title
+                        if (item.missingTitle && enTr.title) {
+                            const res = await fetch("/api/admin/translate", {
+                                method: "POST", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ text: enTr.title, sourceLang: "en", targetLangs: [lang] }),
                             });
+                            const data = await res.json();
+                            if (data.success && data.translations?.[lang]) {
+                                await fetch("/api/admin/features", {
+                                    method: "PUT", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: item.featureId, translations: [{ lang, title: data.translations[lang] }] }),
+                                });
+                                itemSuccess = true;
+                            }
+                        }
+
+                        // Desc
+                        if (item.missingDesc && enTr.desc) {
+                            const res = await fetch("/api/admin/translate", {
+                                method: "POST", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ text: enTr.desc, sourceLang: "en", targetLangs: [lang] }),
+                            });
+                            const data = await res.json();
+                            if (data.success && data.translations?.[lang]) {
+                                await fetch("/api/admin/features", {
+                                    method: "PUT", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: item.featureId, translations: [{ lang, desc: data.translations[lang] }] }),
+                                });
+                                itemSuccess = true;
+                            }
+                        }
+
+                        // ScriptMessage
+                        if (item.missingScript && enCmd?.scriptMessage) {
+                            const res = await fetch("/api/admin/translate", {
+                                method: "POST", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ text: enCmd.scriptMessage, sourceLang: "en", targetLangs: [lang] }),
+                            });
+                            const data = await res.json();
+                            if (data.success && data.translations?.[lang]) {
+                                await fetch("/api/admin/features", {
+                                    method: "PUT", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: item.featureId, commands: [{ lang, scriptMessage: data.translations[lang] }] }),
+                                });
+                                itemSuccess = true;
+                            }
+                        }
+                        if (itemSuccess) {
+                            done++;
+                            setTranslatedIndices(prev => new Set(prev).add(idx));
                         }
                     }
-                    // Translate scriptMessage
-                    if (item.missingScript && enCmd?.scriptMessage) {
-                        const res = await fetch("/api/admin/translate", {
-                            method: "POST", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ text: enCmd.scriptMessage, sourceLang: "en", targetLangs: [lang] }),
-                        });
-                        const data = await res.json();
-                        if (data.success && data.translations?.[lang]) {
-                            await fetch("/api/admin/features", {
-                                method: "PUT", headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: item.featureId, commands: [{ lang, scriptMessage: data.translations[lang] }] }),
-                            });
-                        }
-                    }
-                    done++;
                 } catch { /* skip */ }
-                setTranslateMissingProgress(`Özellikler: ${i + 1}/${featItems.length}`);
             }
             setTranslateMissingProgress(`${done} öğe çevrildi ✓`);
             await fetchFeatures();
@@ -328,7 +363,7 @@ export default function AdminFeaturesPage() {
         } catch {
             setTranslateMissingProgress("Çeviri başarısız");
         } finally {
-            setTimeout(() => { setTranslatingMissing(false); setTranslateMissingProgress(""); }, 1500);
+            setTimeout(() => { setTranslatingMissing(false); setTranslateMissingProgress(""); setTranslatedIndices(new Set()); }, 2000);
         }
     };
 
@@ -734,19 +769,17 @@ export default function AdminFeaturesPage() {
                         onCancel={() => { if (catNameDirty) cancelCatNameEdit(); else cancelAllOrders(); }}
                         saveText={catNameDirty ? "İsim Kaydet" : "Sıralamayı Kaydet"}
                     />
-                    <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
-                    <motion.button onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><ArrowUpDown size={14} /> Kategorileri Sırala</motion.button>
-                    <motion.button onClick={() => setShowNewCategory(true)} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><FolderPlus size={14} /> Yeni Kategori</motion.button>
-                    <AnimatePresence>
+                    <AnimatePresence mode="popLayout">
                         {displayLang !== "en" && missingCount > 0 && (
                             <motion.button
                                 key="missing-btn"
-                                initial={{ opacity: 0, scale: 0.9, width: 0 }}
-                                animate={{ opacity: 1, scale: 1, width: "auto" }}
-                                exit={{ opacity: 0, scale: 0.9, width: 0 }}
-                                transition={{ duration: 0.25 }}
+                                layout
+                                initial={{ opacity: 0, scale: 0.92 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.92 }}
+                                transition={{ duration: 0.2 }}
                                 onClick={() => setShowMissingModal(true)}
-                                className="h-9 px-3 flex items-center gap-2 rounded-xl text-[11px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors overflow-hidden"
+                                className="h-9 px-3 flex items-center gap-2 rounded-xl text-[11px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors"
                             >
                                 <Languages size={14} />
                                 <span className="whitespace-nowrap">{displayLang.toUpperCase()} Eksikler</span>
@@ -754,6 +787,9 @@ export default function AdminFeaturesPage() {
                             </motion.button>
                         )}
                     </AnimatePresence>
+                    <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
+                    <motion.button onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><ArrowUpDown size={14} /> Kategorileri Sırala</motion.button>
+                    <motion.button onClick={() => setShowNewCategory(true)} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><FolderPlus size={14} /> Yeni Kategori</motion.button>
                     <motion.button onClick={() => router.push("/admin/features/new")} className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[11px] uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"><Plus size={15} /> Yeni Özellik</motion.button>
                 </div>
             </motion.div>
@@ -790,7 +826,7 @@ export default function AdminFeaturesPage() {
                                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleFeatureDragEnd(e, cat.id)}>
                                         <SortableContext items={catFeatures.map(f => f.id)} strategy={verticalListSortingStrategy}>
                                             {catFeatures.map(f => (
-                                                <SortableFeatureRow key={f.id} feature={f} lang={displayLang} onClick={() => router.push(`/admin/features/edit/${f.slug}`)} onToggle={(e) => toggleEnabled(e, f)} />
+                                                <SortableFeatureRow key={f.id} feature={f} lang={displayLang} onClick={() => router.push(`/admin/features/edit/${f.slug}`)} onToggle={(e) => toggleEnabled(e, f)} onDelete={(e) => { e.stopPropagation(); setDeleteFeatureId(f.id); }} />
                                             ))}
                                         </SortableContext>
                                     </DndContext>
@@ -969,10 +1005,31 @@ export default function AdminFeaturesPage() {
                 )}
             </AnimatePresence>
 
+            {/* Feature Delete Confirm */}
+            <AdminConfirmModal
+                open={!!deleteFeatureId}
+                onClose={() => setDeleteFeatureId(null)}
+                onConfirm={() => deleteFeatureId && handleDeleteFeature(deleteFeatureId)}
+                title="Özelliği Sil"
+                description="Bu özellik kalıcı olarak silinecektir. Tüm çeviriler ve komutlar da kaldırılacaktır. Devam etmek istiyor musunuz?"
+                confirmText="Evet, Sil"
+                cancelText="İptal"
+                variant="danger"
+            />
+
             {/* Missing Translations Modal for selected language */}
             <AnimatePresence>
                 {showMissingModal && (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => !translatingMissing && setShowMissingModal(false)}>
+                    <motion.div
+                        key="missing-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                        onClick={() => !translatingMissing && setShowMissingModal(false)}
+                        onKeyDown={(e) => { if (e.key === "Escape" && !translatingMissing) setShowMissingModal(false); }}
+                    >
                         <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -1009,19 +1066,28 @@ export default function AdminFeaturesPage() {
                                 )}
 
                                 <div className="space-y-1.5 max-h-[50vh] overflow-y-auto admin-scrollbar pr-1">
-                                    {missingForSelectedLang.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                                            <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${item.type === "category" ? "bg-purple-500/10 text-purple-400 border border-purple-500/15" : "bg-blue-500/10 text-blue-400 border border-blue-500/15"}`}>
-                                                {item.type === "category" ? "KAT" : "ÖZL"}
-                                            </span>
-                                            <span className="text-[11px] text-white/50 truncate flex-1">{item.label}</span>
-                                            {item.type === "feature" && (
-                                                <span className="text-[9px] text-amber-400/60 whitespace-nowrap">
-                                                    {item.missingTitle ? "[başlık]" : ""}{item.missingDesc ? "[açıklama]" : ""}{item.missingScript ? "[script]" : ""}
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))}
+                                    {missingForSelectedLang.map((item, idx) => {
+                                        const isDone = translatedIndices.has(idx);
+                                        return (
+                                            <div key={idx} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all duration-300 ${isDone ? "bg-emerald-500/5 border-emerald-500/15" : "bg-white/[0.02] border-white/[0.04]"}`}>
+                                                {isDone ? (
+                                                    <span className="size-5 flex items-center justify-center rounded-full bg-emerald-500/20 shrink-0">
+                                                        <Check size={11} className="text-emerald-400" />
+                                                    </span>
+                                                ) : (
+                                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded shrink-0 ${item.type === "category" ? "bg-purple-500/10 text-purple-400 border border-purple-500/15" : "bg-blue-500/10 text-blue-400 border border-blue-500/15"}`}>
+                                                        {item.type === "category" ? "KAT" : "ÖZL"}
+                                                    </span>
+                                                )}
+                                                <span className={`text-[11px] truncate flex-1 transition-colors duration-300 ${isDone ? "text-emerald-400/60 line-through" : "text-white/50"}`}>{item.label}</span>
+                                                {item.type === "feature" && !isDone && (
+                                                    <span className="text-[9px] text-amber-400/60 whitespace-nowrap">
+                                                        {item.missingTitle ? "[başlık]" : ""}{item.missingDesc ? "[açıklama]" : ""}{item.missingScript ? "[script]" : ""}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                     {missingCount === 0 && (
                                         <div className="text-center py-8">
                                             <Check size={24} className="mx-auto text-emerald-400 mb-2" />
@@ -1044,7 +1110,7 @@ export default function AdminFeaturesPage() {
                                 )}
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </motion.div>

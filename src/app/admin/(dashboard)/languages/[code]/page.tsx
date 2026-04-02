@@ -12,7 +12,7 @@ import { Language } from "@/components/admin/languages/LanguageDashboard";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader } from "@/components/shared/Loader";
 import { LanguageEditorModal } from "@/components/admin/languages/LanguageEditorModal";
-import { calculateProgress, SEO_KEYS, PAGE_KEYS } from "@/lib/translationUtils";
+import { calculateProgress, SEO_KEYS, PAGE_KEYS, type ExtraProgressData } from "@/lib/translationUtils";
 
 /* ── Shared neon input class ── */
 const neonInput = "w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.06] rounded-xl px-4 py-2.5 text-[12px] text-white placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/70 focus:shadow-[0_0_15px_rgba(107,91,230,0.15)] focus:bg-white/[0.03] transition-all duration-300";
@@ -368,6 +368,14 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
     const seoRefs = useRef<Record<string, HTMLInputElement | null>>({});
     const pageTitleRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
+    // Extra data for comprehensive progress (features, categories, script labels)
+    type FeatureData = { translations: { lang: string; title: string; desc: string }[]; commands: { lang: string; scriptMessage: string }[] };
+    type CategoryData = { translations: { lang: string; name: string }[] };
+    const [extraFeatures, setExtraFeatures] = useState<FeatureData[]>([]);
+    const [extraCategories, setExtraCategories] = useState<CategoryData[]>([]);
+    const [extraScriptLabels, setExtraScriptLabels] = useState<Record<string, Record<string, string>>>({});
+    const [extraEnLabelKeys, setExtraEnLabelKeys] = useState<string[]>([]);
+
     /* ── Data Fetch ── */
     useEffect(() => {
         const init = async () => {
@@ -415,7 +423,26 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                 setLoading(false);
             }
         };
+        const initExtra = async () => {
+            try {
+                const [fRes, cRes, lRes] = await Promise.all([
+                    fetch("/api/admin/features"),
+                    fetch("/api/admin/categories"),
+                    fetch("/api/admin/script-labels"),
+                ]);
+                const fData = await fRes.json();
+                const cData = await cRes.json();
+                const lData = await lRes.json();
+                if (fData.success) setExtraFeatures(fData.features || []);
+                if (cData.success) setExtraCategories(cData.categories || []);
+                if (lData.success) {
+                    setExtraScriptLabels(lData.labels || {});
+                    setExtraEnLabelKeys(Object.keys(lData.labels?.en || {}));
+                }
+            } catch { /* ignore */ }
+        };
         init();
+        initExtra();
     }, [code]);
 
 
@@ -709,7 +736,38 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
         }
     }, [missingCount, showMissingOnly]);
 
-    const { percentage } = useMemo(() => calculateProgress({ ...translations, ...pageTitles }, seoMetadata, allKeys), [translations, pageTitles, seoMetadata, allKeys]);
+    // Compute extra data for this language
+    const extraData = useMemo((): ExtraProgressData => {
+        const defCode = defaultLang?.code || "en";
+        if (code === defCode) {
+            const t = extraFeatures.length * 3;
+            const c = extraCategories.length;
+            return { totalFeatures: t, filledFeatures: t, totalScriptLabels: extraEnLabelKeys.length, filledScriptLabels: extraEnLabelKeys.length, totalCategories: c, filledCategories: c };
+        }
+        let totalF = 0, filledF = 0;
+        for (const f of extraFeatures) {
+            const enTr = f.translations.find(t => t.lang === "en");
+            if (!enTr?.title) continue;
+            totalF++;
+            const tr = f.translations.find(t => t.lang === code);
+            if (tr?.title?.trim()) filledF++;
+            if (enTr.desc?.trim()) { totalF++; if (tr?.desc?.trim()) filledF++; }
+            const enCmd = f.commands.find(c => c.lang === "en");
+            if (enCmd?.scriptMessage?.trim()) { totalF++; const cmd = f.commands.find(c => c.lang === code); if (cmd?.scriptMessage?.trim()) filledF++; }
+        }
+        const filledLabels = extraEnLabelKeys.filter(k => { const v = extraScriptLabels[code]?.[k]; return v && v.trim() !== ""; }).length;
+        let totalC = 0, filledC = 0;
+        for (const cat of extraCategories) {
+            const enN = cat.translations.find(t => t.lang === "en")?.name;
+            if (!enN) continue;
+            totalC++;
+            const tr = cat.translations.find(t => t.lang === code);
+            if (tr?.name?.trim()) filledC++;
+        }
+        return { totalFeatures: totalF, filledFeatures: filledF, totalScriptLabels: extraEnLabelKeys.length, filledScriptLabels: filledLabels, totalCategories: totalC, filledCategories: filledC };
+    }, [code, defaultLang, extraFeatures, extraCategories, extraScriptLabels, extraEnLabelKeys]);
+
+    const { percentage, breakdown } = useMemo(() => calculateProgress({ ...translations, ...pageTitles }, seoMetadata, allKeys, extraData), [translations, pageTitles, seoMetadata, allKeys, extraData]);
     
     // Global minimap markers (works for both UI and JSON modes)
     const minimapMarkers = useMemo(() => {
@@ -1213,14 +1271,33 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden mb-3 relative z-10">
                             <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 1.2, ease: "circOut" }} className={`h-full rounded-full ${barGradient}`} />
                         </div>
-                        {/* Task 2: Interactive missing counter */}
+
+                        {/* Breakdown details */}
+                        {breakdown && percentage < 100 && (
+                            <div className="space-y-1.5 mb-3 relative z-10">
+                                {[
+                                    { label: "Arayüz", total: breakdown.uiKeys.total, filled: breakdown.uiKeys.filled },
+                                    { label: "SEO", total: breakdown.seoKeys.total, filled: breakdown.seoKeys.filled },
+                                    { label: "Sayfalar", total: breakdown.pageKeys.total, filled: breakdown.pageKeys.filled },
+                                    { label: "Özellikler", total: breakdown.features.total, filled: breakdown.features.filled },
+                                    { label: "Script Et.", total: breakdown.scriptLabels.total, filled: breakdown.scriptLabels.filled },
+                                    { label: "Kategoriler", total: breakdown.categories.total, filled: breakdown.categories.filled },
+                                ].filter(s => s.total > 0 && s.total - s.filled > 0).map((s, i) => (
+                                    <div key={i} className="flex items-center justify-between text-[9px]">
+                                        <span className="text-white/25 font-bold uppercase tracking-wider">{s.label}</span>
+                                        <span className="text-amber-400/60 font-bold">{s.total - s.filled} eksik</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {missingCount > 0 ? (
                             <button onClick={jumpToNextMissing} className="text-[9px] font-bold text-amber-400/80 hover:text-amber-300 flex items-center gap-1.5 relative z-10 transition-colors group/miss">
-                                <AlertCircle size={10} className="group-hover/miss:animate-bounce" /> Şu anda {missingCount} eksik var.
+                                <AlertCircle size={10} className="group-hover/miss:animate-bounce" /> Şu anda {missingCount} UI key eksik.
                             </button>
                         ) : (
                             <p className="text-[9px] font-bold text-white/25 flex items-center gap-1.5 relative z-10">
-                                <Sparkles size={10} className="text-[#00f8da]" /> Tamamlandı
+                                <Sparkles size={10} className="text-[#00f8da]" /> {percentage >= 100 ? "Tamamlandı" : "UI key'ler tamam"}
                             </p>
                         )}
                         <AnimatePresence>

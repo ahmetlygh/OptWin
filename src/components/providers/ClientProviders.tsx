@@ -8,7 +8,7 @@ import { RestorePointModal } from "@/components/modals/RestorePointModal";
 import { ScriptOverlay } from "@/components/modals/ScriptOverlay";
 import { Toast } from "@/components/modals/Toast";
 
-const LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
+const FALLBACK_LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
 
 interface ClientProvidersProps {
     children: React.ReactNode;
@@ -35,6 +35,17 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
 
     const pathname = usePathname();
 
+    // Dynamic locale list from server-injected language data
+    const locales = (() => {
+        try {
+            if (serverSettings._languagesData) {
+                const langs = JSON.parse(serverSettings._languagesData);
+                if (Array.isArray(langs) && langs.length > 0) return langs.map((l: any) => l.code as string);
+            }
+        } catch { /* ignore */ }
+        return FALLBACK_LOCALES;
+    })();
+
     const mounted = useSyncExternalStore(
         () => () => {},
         () => true,
@@ -45,7 +56,7 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
     useEffect(() => {
         if (!mounted || !pathname) return;
         const segments = pathname.split('/');
-        if (segments.length > 1 && LOCALES.includes(segments[1])) {
+        if (segments.length > 1 && locales.includes(segments[1])) {
             const urlLocale = segments[1] as Lang;
             if (lang !== urlLocale) setLang(urlLocale);
         }
@@ -111,7 +122,7 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
 
                 const livePath = window.location.pathname;
                 const segments = livePath.split('/');
-                const pathLocale = (segments.length > 1 && LOCALES.includes(segments[1])) ? segments[1] : 'en';
+                const pathLocale = (segments.length > 1 && locales.includes(segments[1])) ? segments[1] : 'en';
                 const isOnMaintenancePage = segments.some(s => s === 'maintenance');
 
                 // Case 1: Maintenance just turned ON → redirect to maintenance page

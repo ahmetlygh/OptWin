@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Lang = "en" | "tr" | "zh" | "es" | "hi" | "de" | "fr";
+export type Lang = string;
 export type Theme = "dark" | "light";
 
 interface OptWinState {
