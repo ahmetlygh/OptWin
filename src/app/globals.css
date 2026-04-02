@@ -567,3 +567,83 @@ body.theme-ready nav {
   align-items: center;
   justify-content: center;
 }
+
+/* ============================================================
+   SPLASH SCREEN — instant pre-hydration loader 
+   ============================================================ */
+#optwin-splash {
+  position: fixed; inset: 0; z-index: 99999;
+  background: #08080d;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 32px;
+  transition: opacity 0.4s ease;
+}
+#optwin-splash.fade-out { opacity: 0; pointer-events: none; }
+
+.splash-glow-1 {
+  position: absolute; top: -20%; right: -10%;
+  width: 60vw; height: 60vw; max-width: 800px; max-height: 800px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(107,91,230,0.12) 0%, transparent 70%);
+  animation: splash-pulse 4s ease-in-out infinite;
+}
+.splash-glow-2 {
+  position: absolute; bottom: -10%; left: -10%;
+  width: 50vw; height: 50vw; max-width: 600px; max-height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(147,51,234,0.10) 0%, transparent 70%);
+  animation: splash-pulse 4s ease-in-out 1s infinite;
+}
+.splash-spinner-wrap {
+  position: relative; z-index: 1;
+  width: 88px; height: 88px;
+  display: flex; align-items: center; justify-content: center;
+}
+.splash-glow-ring {
+  position: absolute; inset: -40px; border-radius: 50%;
+  background: rgba(107,91,230,0.18); filter: blur(40px);
+  animation: splash-glow-breathe 3s ease-in-out infinite;
+}
+.splash-glow-ring-2 {
+  position: absolute; inset: -20px; border-radius: 50%;
+  background: rgba(147,51,234,0.12); filter: blur(30px);
+  animation: splash-glow-breathe 4s ease-in-out 1s infinite;
+}
+.splash-gear-circle {
+  position: relative; z-index: 2;
+  width: 88px; height: 88px; border-radius: 50%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  animation: splash-float 2s ease-in-out infinite;
+}
+.splash-gear {
+  width: 48px; height: 48px; color: #6b5be6;
+  filter: drop-shadow(0 0 12px rgba(107,91,230,0.6));
+  animation: splash-rotate 3s linear infinite;
+}
+.splash-text {
+  position: relative; z-index: 1;
+  font-size: 10px; font-weight: 900; letter-spacing: 0.6em;
+  text-transform: uppercase; color: rgba(255,255,255,0.35);
+  font-family: 'Inter', sans-serif;
+}
+.splash-dots {
+  position: relative; z-index: 1;
+  display: flex; gap: 10px;
+}
+.splash-dots span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(107,91,230,0.4);
+  animation: splash-dot-pulse 1.5s ease-in-out infinite;
+}
+.splash-dots span:nth-child(2) { animation-delay: 0.2s; }
+.splash-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes splash-pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+@keyframes splash-glow-breathe { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.15);opacity:1} }
+@keyframes splash-float { 0%,100%{transform:translateY(-2px)} 50%{transform:translateY(2px)} }
+@keyframes splash-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes splash-dot-pulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3);background:rgba(107,91,230,1)} }

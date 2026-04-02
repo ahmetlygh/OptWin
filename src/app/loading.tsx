@@ -1,9 +1,8 @@
-import { Loader } from "@/components/shared/Loader";
-
+// Loading is handled by:
+// 1. The inline HTML splash screen in layout.tsx (initial page load, F5)
+// 2. ChangingLocaleLoader in ClientProviders (language transitions)
+// This file intentionally returns null to avoid triple-loading stacking.
 export default function Loading() {
-    return (
-        <div className="flex items-center justify-center min-h-[60vh]">
-            <Loader text="OptWin" />
-        </div>
-    );
+    return null;
 }
+

@@ -7,6 +7,7 @@ import { WarningModal } from "@/components/modals/WarningModal";
 import { RestorePointModal } from "@/components/modals/RestorePointModal";
 import { ScriptOverlay } from "@/components/modals/ScriptOverlay";
 import { Toast } from "@/components/modals/Toast";
+import { ChangingLocaleLoader } from "@/components/layout/ChangingLocaleLoader";
 
 const FALLBACK_LOCALES = ['en', 'tr', 'de', 'fr', 'es', 'zh', 'hi'];
 
@@ -21,6 +22,8 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
     const lang = useOptWinStore((state) => state.lang);
     const setLang = useOptWinStore((state) => state.setLang);
     const loadTranslations = useOptWinStore((state) => state.loadTranslations);
+    const isChangingLocale = useOptWinStore((state) => state.isChangingLocale);
+    const setIsChangingLocale = useOptWinStore((state) => state.setIsChangingLocale);
 
     // Initial injection of SSR-fetched translations into Zustand
     const hasInitialInjected = useRef(false);
@@ -85,7 +88,19 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
     useEffect(() => {
         if (!mounted) return;
         document.documentElement.lang = lang;
-    }, [lang, mounted]);
+
+        // Task: When pathname segments match current lang, we consider navigation finished.
+        // We add a tiny delay to ensure React has painted the new translated state.
+        if (isChangingLocale && pathname) {
+            const segments = pathname.split('/');
+            if (segments.length > 1 && segments[1] === lang) {
+                const timer = setTimeout(() => {
+                    setIsChangingLocale(false);
+                }, 500); // Fluidity delay for premium feel
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [lang, mounted, pathname, isChangingLocale, setIsChangingLocale]);
 
     // ── Unified SSE: Single listener handles BOTH directions ──
     // ON → redirect to /maintenance (if on public page)
@@ -156,6 +171,7 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
 
     return (
         <>
+            <ChangingLocaleLoader />
             {/* 
               Zero-FOUC Implementation: 
               We no longer use artificial hydration timers or fullscreen loaders. 

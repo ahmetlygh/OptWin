@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, ExternalLink, Clock, Loader2, ChevronRight, X, AlertTriangle, Languages } from "lucide-react";
+import { LogOut, ExternalLink, Clock, Loader2, ChevronRight, X, AlertTriangle, Languages, Eraser, Trash2 } from "lucide-react";
 import { AdminConfirmModal } from "./AdminConfirmModal";
 import { AdminLangPicker } from "./AdminLangPicker";
 
@@ -114,7 +114,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             const res = await fetch("/api/admin/maintenance", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enabled, reason: enabled ? JSON.stringify(mReasons) : "", estimatedEnd: enabled ? estimatedEnd : "" }),
+                body: JSON.stringify({ enabled, reason: JSON.stringify(mReasons), estimatedEnd: enabled ? estimatedEnd : "" }),
             });
             const data = await res.json();
             if (data.success) {
@@ -126,11 +126,32 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         setMaintenanceLoading(false);
         setShowMaintenanceOn(false);
         setShowMaintenanceOff(false);
-        if (!enabled) { setMReasons(Object.fromEntries(reasonLangs.map(l => [l, ""]))); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); }
+        if (!enabled) { 
+            // Keep reasons in mReasons for persistence, just reset UI flags
+            setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); 
+        }
     };
 
-    const openMaintenanceModal = () => {
-        setMReasons(Object.fromEntries(reasonLangs.map(l => [l, ""]))); setMReasonLang(reasonLangs.includes("tr") ? "tr" : (reasonLangs[0] || "en")); setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
+    const openMaintenanceModal = async () => {
+        // Fetch current reason if mReasons is empty
+        const allEmpty = Object.values(mReasons).every(v => !v?.trim());
+        if (allEmpty) {
+            try {
+                const res = await fetch("/api/admin/maintenance");
+                const data = await res.json();
+                if (data.reason) {
+                    try {
+                        const parsed = JSON.parse(data.reason);
+                        setMReasons(parsed);
+                    } catch {
+                        // fallback if not JSON
+                        setMReasons(prev => ({ ...prev, [mReasonLang]: data.reason }));
+                    }
+                }
+            } catch { /* ignore */ }
+        }
+
+        setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
         setShowMaintenanceOn(true);
     };
 
@@ -359,11 +380,30 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                             <div className="relative z-10 mb-4">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
-                                    <AdminLangPicker
-                                        value={mReasonLang}
-                                        onChange={setMReasonLang}
-                                        availableLangs={reasonLangs}
-                                    />
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded-xl px-1 h-7">
+                                            <button 
+                                                onClick={() => setMReasons(prev => ({ ...prev, [mReasonLang]: "" }))}
+                                                className="p-1.5 text-white/20 hover:text-orange-400 transition-colors"
+                                                title="Dili temizle"
+                                            >
+                                                <Eraser size={11} />
+                                            </button>
+                                            <div className="w-px h-3 bg-white/5" />
+                                            <button 
+                                                onClick={() => setMReasons(Object.fromEntries(reasonLangs.map(l => [l, ""])))}
+                                                className="p-1.5 text-white/20 hover:text-red-400 transition-colors"
+                                                title="Tümünü temizle"
+                                            >
+                                                <Trash2 size={11} />
+                                            </button>
+                                        </div>
+                                        <AdminLangPicker
+                                            value={mReasonLang}
+                                            onChange={setMReasonLang}
+                                            availableLangs={reasonLangs}
+                                        />
+                                    </div>
                                 </div>
                                 <textarea
                                     value={mReasons[mReasonLang] || ""}

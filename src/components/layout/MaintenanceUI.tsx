@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, ChevronDown, Globe } from "lucide-react";
+import { Settings, ChevronDown, Globe, Check } from "lucide-react";
 import Image from "next/image";
 
 import { LanguageData } from "@/lib/languageService";
@@ -47,8 +47,15 @@ export function MaintenanceUI({
         const handler = (e: MouseEvent) => {
             if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
         };
+        const keyHandler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setLangOpen(false);
+        };
         document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
+        document.addEventListener("keydown", keyHandler);
+        return () => {
+            document.removeEventListener("mousedown", handler);
+            document.removeEventListener("keydown", keyHandler);
+        };
     }, []);
 
     const mt = (key: string, fallback: string) => translations[key] || fallback;
@@ -109,28 +116,74 @@ export function MaintenanceUI({
                 <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
             </div>
 
-            {/* Language dropdown */}
+            {/* Language dropdown — glassmorphism standard */}
             <div ref={langRef} className="absolute top-6 right-6 z-20">
-                <button onClick={() => setLangOpen(!langOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-white/40 hover:text-white/60 transition-all">
-                    <Globe size={12} className="text-white/25" />
-                    <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-sm overflow-hidden bg-white/5 [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover [&>svg]:scale-110" dangerouslySetInnerHTML={{ __html: currentLang.flagSvg || "" }}></span>
-                    <span>{currentLang.nativeName}</span>
-                    <ChevronDown size={11} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
+                <button
+                    onClick={() => setLangOpen(!langOpen)}
+                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all duration-200 border backdrop-blur-xl ${
+                        langOpen
+                            ? "bg-white/[0.06] border-[#6b5be6]/30 text-white/70 shadow-[0_0_20px_rgba(107,91,230,0.1)]"
+                            : "bg-white/[0.03] border-white/[0.06] text-white/40 hover:text-white/60 hover:border-white/[0.1]"
+                    }`}
+                >
+                    {currentLang.flagSvg ? (
+                        <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-[2px] overflow-hidden [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: currentLang.flagSvg }} />
+                    ) : (
+                        <Globe size={12} className="text-white/25 shrink-0" />
+                    )}
+                    <span className="uppercase tracking-widest text-[10px]">{currentLang.code}</span>
+                    <motion.div animate={{ rotate: langOpen ? 180 : 0 }} transition={{ duration: 0.2, ease: "circOut" }} className="shrink-0">
+                        <ChevronDown size={11} className="text-white/20" />
+                    </motion.div>
                 </button>
                 <AnimatePresence>
                     {langOpen && (
-                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }} className="absolute right-0 mt-1 min-w-[140px] bg-[#13131d] border border-white/[0.06] rounded-lg shadow-xl overflow-hidden">
-                            {languagesData.filter(l => (settings.active_languages || "tr,en,de,fr,es,zh,hi").split(',').map(s=>s.trim()).includes(l.code)).map((l) => (
-                                <button key={l.code} onClick={() => { 
-                                    setLangOpen(false); 
-                                    document.cookie = `NEXT_LOCALE=${l.code}; path=/; max-age=31536000`;
-                                    
-                                    // Navigate to the maintenance page in the new locale
-                                    window.location.href = `/${l.code}/maintenance`;
-                                }} className={`w-full text-left px-3 py-2 text-[11px] font-medium transition-all flex items-center gap-2 ${locale === l.code ? "bg-[#6b5be6]/10 text-[#6b5be6]" : "text-white/40 hover:text-white/70 hover:bg-white/[0.03]"}`}>
-                                    <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-sm overflow-hidden bg-white/5 [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover [&>svg]:scale-110" dangerouslySetInnerHTML={{ __html: l.flagSvg || "" }}></span><span>{l.nativeName}</span>
-                                </button>
-                            ))}
+                        <motion.div
+                            initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                            className="absolute right-0 mt-2 min-w-[180px] rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                        >
+                            <div className="py-1 max-h-60 overflow-y-auto">
+                                {languagesData.filter(l => l.isActive !== false).map((l) => {
+                                    const isSelected = locale === l.code;
+                                    return (
+                                        <button
+                                            key={l.code}
+                                            onClick={() => {
+                                                setLangOpen(false);
+                                                document.cookie = `NEXT_LOCALE=${l.code}; path=/; max-age=31536000`;
+                                                window.location.href = `/${l.code}/maintenance`;
+                                            }}
+                                            className={`w-full flex items-center justify-between gap-3 px-3.5 py-2 text-[12px] font-medium transition-all duration-150 ${
+                                                isSelected
+                                                    ? "text-[#6b5be6] bg-[#6b5be6]/[0.08]"
+                                                    : "text-white/50 hover:text-white/90 hover:bg-white/[0.04]"
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2.5 overflow-hidden">
+                                                {l.flagSvg ? (
+                                                    <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-[2px] overflow-hidden [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: l.flagSvg }} />
+                                                ) : (
+                                                    <span className="w-4 h-3 bg-white/10 rounded-[2px] shrink-0" />
+                                                )}
+                                                <span className="truncate">{l.nativeName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-mono uppercase tracking-wider ${isSelected ? "text-[#6b5be6]/50" : "text-white/10"}`}>
+                                                    {l.code}
+                                                </span>
+                                                {isSelected && (
+                                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}>
+                                                        <Check size={12} className="text-[#6b5be6] shrink-0" />
+                                                    </motion.div>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>

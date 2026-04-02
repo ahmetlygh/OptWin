@@ -59,6 +59,10 @@ interface OptWinState {
     toast: { show: boolean; message: string; type: "success" | "warning" | "error" } | null;
     showToast: (message: string, type?: "success" | "warning" | "error") => void;
     hideToast: () => void;
+
+    // Transition State
+    isChangingLocale: boolean;
+    setIsChangingLocale: (val: boolean) => void;
 }
 
 export const useOptWinStore = create<OptWinState>()(
@@ -194,6 +198,10 @@ export const useOptWinStore = create<OptWinState>()(
                 setTimeout(() => set({ toast: null }), 3000);
             },
             hideToast: () => set({ toast: null }),
+
+            // Transition
+            isChangingLocale: false,
+            setIsChangingLocale: (val) => set({ isChangingLocale: val }),
         }),
         {
             name: "optwin-store",

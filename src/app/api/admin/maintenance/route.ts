@@ -3,6 +3,7 @@ import { checkAdmin, unauthorizedResponse } from "@/lib/admin-guard";
 import { z } from "zod";
 import { settingsService } from "@/lib/settingsService";
 import { redisClient, redisCache } from "@/lib/redis";
+import { prisma } from "@/lib/db";
 
 const maintenanceSchema = z.object({
     enabled: z.boolean(),
@@ -47,16 +48,16 @@ export async function PUT(req: Request) {
         }
         const { enabled, reason, estimatedEnd } = parsed.data;
 
+        // Persist the reason even if disabled, so it's there next time they open the modal
         await settingsService.updateSettings([
             { key: "maintenanceMode", value: enabled ? "true" : "false", type: "boolean", description: "Site bakım modu" },
-            { key: "maintenanceReason", value: reason, type: "string", description: "Bakım sebebi" },
+            { key: "maintenanceReason", value: reason || (await settingsService.getSetting("maintenanceReason", "")), type: "string", description: "Bakım sebebi" },
             { key: "maintenanceEstimatedEnd", value: estimatedEnd, type: "string", description: "Tahmini bitiş zamanı (ISO UTC)" }
         ]);
 
-        // Purge ONLY public content caches (translations, features, presets)
-        // DO NOT purge maintenance keys — proxy.ts reads them directly from Redis
-        // and they MUST be present when SSE-triggered redirects arrive
-        const LOCALES = ["en", "tr", "de", "fr", "es", "zh", "hi"];
+        // Purge ONLY public content caches
+        const languages = await prisma.language.findMany({ select: { code: true } });
+        const LOCALES = languages.map(l => l.code);
         const contentKeysToPurge = [
             "optwin:entity:feature_slugs",
             "optwin:entity:dns",

@@ -60,13 +60,13 @@ export async function purgeTranslationCache(lang?: string) {
     } else {
         try {
             const langs = await prisma.language.findMany({ select: { code: true } });
-            const keys = langs.map((l: { code: string }) => `optwin:translations:${l.code}`);
+            const keys = langs.map(l => `optwin:translations:${l.code}`);
             if (keys.length > 0) {
                 await redisCache.del(keys);
             }
         } catch {
             const defaultLangs = ["en", "tr", "de", "fr", "es", "zh", "hi"];
-            const keys = defaultLangs.map((l: string) => `optwin:translations:${l}`);
+            const keys = defaultLangs.map(l => `optwin:translations:${l}`);
             await redisCache.del(keys);
         }
     }

@@ -27,6 +27,21 @@ export const cacheService = {
   /**
    * Fetches localized Categories from Cache or DB
    */
+  /**
+   * Helper to get all active locales for invalidation
+   */
+  async _getAllLocales() {
+    try {
+      const langs = await prisma.language.findMany({ where: { isActive: true }, select: { code: true } });
+      return langs.map(l => l.code);
+    } catch {
+      return ["en", "tr", "de", "fr", "es", "zh", "hi"];
+    }
+  },
+
+  /**
+   * Fetches localized Categories from Cache or DB
+   */
   async getCategories(lang: string) {
     const cacheKey = `${KEY_CATEGORY}${lang}`;
     const cached = await redisCache.get(cacheKey);
@@ -36,25 +51,35 @@ export const cacheService = {
       where: { enabled: true },
       orderBy: { order: "asc" },
       include: {
-        translations: { where: { lang } },
+        translations: { where: { OR: [{ lang }, { lang: "en" }] } },
         features: {
           where: { enabled: true },
           orderBy: { order: "asc" },
-          include: { translations: { where: { lang } } },
+          include: { 
+            translations: { where: { OR: [{ lang }, { lang: "en" }] } }
+          },
         },
       },
     });
 
     // Format for easier frontend ingestion
-    const formatted = categories.map((cat) => ({
-      ...cat,
-      name: cat.translations[0]?.name || cat.slug,
-      features: cat.features.map((f) => ({
-        ...f,
-        title: f.translations[0]?.title || f.slug,
-        desc: f.translations[0]?.desc || "",
-      })),
-    }));
+    const formatted = categories.map((cat) => {
+      // Find target or fallback (en)
+      const catTrans = cat.translations.find(t => t.lang === lang) || cat.translations.find(t => t.lang === "en");
+      
+      return {
+        ...cat,
+        name: catTrans?.name || cat.slug,
+        features: cat.features.map((f) => {
+          const fTrans = f.translations.find(t => t.lang === lang) || f.translations.find(t => t.lang === "en");
+          return {
+            ...f,
+            title: fTrans?.title || f.slug,
+            desc: fTrans?.desc || "",
+          };
+        }),
+      };
+    });
 
     await redisCache.set(cacheKey, JSON.stringify(formatted), 86400); // 24H TTL
     return formatted;
@@ -115,14 +140,17 @@ export const cacheService = {
       where: { enabled: true },
       orderBy: { order: "asc" },
       include: {
-        translations: { where: { lang } },
+        translations: { where: { OR: [{ lang }, { lang: "en" }] } },
       },
     });
 
-    const formatted = presets.map((p) => ({
-      ...p,
-      name: p.translations[0]?.name || p.slug,
-    }));
+    const formatted = presets.map((p) => {
+      const pTrans = p.translations.find(t => t.lang === lang) || p.translations.find(t => t.lang === "en");
+      return {
+        ...p,
+        name: pTrans?.name || p.slug,
+      };
+    });
 
     await redisCache.set(cacheKey, JSON.stringify(formatted), 86400);
     return formatted;
@@ -132,21 +160,21 @@ export const cacheService = {
    * Invalidate specific or ALL entity caches
    */
   async invalidate(type: "feature" | "category" | "dns" | "preset") {
-    const LOCALES = ["en", "tr", "de", "fr", "es", "zh", "hi"];
+    const locales = await this._getAllLocales();
     const keys: string[] = [];
 
     if (type === "dns") {
       keys.push(KEY_DNS);
     } else if (type === "feature" || type === "category") {
       keys.push(KEY_FEATURE_SLUGS);
-      LOCALES.forEach((l) => {
+      locales.forEach((l) => {
         keys.push(`${KEY_FEATURE}${l}`);
         keys.push(`${KEY_CATEGORY}${l}`);
         keys.push(`optwin:cache:features_all:${l}`);
         keys.push(`optwin:cache:labels:${l}`);
       });
     } else {
-      LOCALES.forEach((l) => keys.push(`${KEY_PRESET}${l}`));
+      locales.forEach((l) => keys.push(`${KEY_PRESET}${l}`));
     }
 
     if (keys.length > 0) {

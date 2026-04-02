@@ -48,6 +48,10 @@ export function calculateProgress(
     defaultKeys: string[] = [],
     extra?: ExtraProgressData
 ): CalculationResult {
+    // Guard: DB may return null for newly added languages with no translations yet
+    translations = translations ?? {};
+    seoMetadata = seoMetadata ?? {};
+
     // 1. Standard UI Keys (Excluding special ones)
     const uiKeys = defaultKeys.filter(k => !k.startsWith("seo.") && !k.startsWith("page."));
     const totalUiKeys = uiKeys.length;

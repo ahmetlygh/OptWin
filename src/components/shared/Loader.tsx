@@ -17,55 +17,81 @@ export function Loader({
     showDots = true 
 }: LoaderProps) {
     return (
-        <div className={`flex flex-col items-center justify-center gap-6 ${className}`}>
-            <div className="relative">
-                {/* Outer Glow */}
-                <div className="absolute inset-0 bg-[#6b5be6]/15 blur-3xl rounded-full scale-[2.5]" />
+        <div className={`flex flex-col items-center justify-center gap-8 ${className}`}>
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative"
+            >
+                {/* Dynamic Ambient Background Glows */}
+                <motion.div 
+                    animate={{ 
+                        scale: [1, 1.2, 1],
+                        opacity: [0.15, 0.25, 0.15],
+                        rotate: [0, 90, 0]
+                    }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute inset-[-40px] bg-[var(--accent-color)] blur-[50px] rounded-full" 
+                />
+                <motion.div 
+                    animate={{ 
+                        scale: [1.2, 1, 1.2],
+                        opacity: [0.1, 0.2, 0.1],
+                        rotate: [0, -90, 0]
+                    }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute inset-[-20px] bg-[#9333ea] blur-[40px] rounded-full" 
+                />
                 
-                {/* Settings Spinner */}
+                {/* Settings Spinner with Floating Motion */}
                 <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                    className="relative z-10"
+                    animate={{ 
+                        rotate: 360,
+                        y: [-2, 2, -2]
+                    }}
+                    transition={{ 
+                        rotate: { duration: 3, repeat: Infinity, ease: "linear" },
+                        y: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                    }}
+                    className="relative z-10 p-4 rounded-full bg-white/[0.03] border border-white/[0.05] backdrop-blur-md shadow-2xl"
                 >
                     <Settings 
                         size={size} 
-                        className="text-[#6b5be6] opacity-80" 
+                        className="text-[var(--accent-color)] drop-shadow-[0_0_15px_rgba(107,91,230,0.5)]" 
                         strokeWidth={1.5} 
                     />
                 </motion.div>
+            </motion.div>
 
-                {/* Pulse Disk */}
-                <div className="absolute inset-0 flex items-center justify-center z-20">
-                    <div className="w-2 h-2 rounded-full bg-[#6b5be6] shadow-[0_0_20px_rgba(107,91,230,0.9)] animate-ping" />
-                </div>
-            </div>
-
-            {/* Indicator */}
-            <div className="flex flex-col items-center gap-3 relative z-10">
+            {/* Indicator Text & Dots */}
+            <div className="flex flex-col items-center gap-4 relative z-10">
                 {text && (
-                    <span className="text-[11px] font-black text-white/30 tracking-[0.4em] uppercase italic">
+                    <motion.span 
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[10px] font-black text-white/40 tracking-[0.6em] uppercase text-center"
+                    >
                         {text}
-                    </span>
+                    </motion.span>
                 )}
                 
                 {showDots && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2.5">
                         {[0, 1, 2].map((i) => (
                             <motion.div
                                 key={i}
                                 animate={{ 
                                     opacity: [0.3, 1, 0.3],
-                                    scale: [0.8, 1.2, 0.8],
-                                    y: [0, -2, 0]
+                                    scale: [0.8, 1.3, 0.8],
+                                    backgroundColor: ["rgba(107,91,230,0.3)", "rgba(107,91,230,1)", "rgba(107,91,230,0.3)"]
                                 }}
                                 transition={{ 
-                                    duration: 1.2, 
+                                    duration: 1.5, 
                                     repeat: Infinity, 
-                                    delay: i * 0.15,
+                                    delay: i * 0.2,
                                     ease: "easeInOut" 
                                 }}
-                                className="w-1 h-1 rounded-full bg-[#6b5be6]/60"
+                                className="w-1.5 h-1.5 rounded-full"
                             />
                         ))}
                     </div>

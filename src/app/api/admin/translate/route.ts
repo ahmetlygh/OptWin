@@ -6,6 +6,32 @@ const LANG_CODES: Record<string, string> = {
     en: "en", tr: "tr", de: "de", fr: "fr", es: "es", zh: "zh-CN", hi: "hi",
 };
 
+/**
+ * Helper to match the case of the translated text with the source text.
+ */
+function matchCase(source: string, target: string): string {
+    if (!source || !target) return target;
+    
+    // 1. ALL UPPERCASE (e.g. "HELLO" -> "MERHABA")
+    if (source === source.toUpperCase() && source !== source.toLowerCase()) {
+        return target.toUpperCase();
+    }
+    
+    // 2. Title Case / Capitalized (e.g. "Hello" -> "Merhaba")
+    // Check if first char is upper and rest has some lower or it's just one char
+    const firstChar = source[0];
+    if (firstChar === firstChar.toUpperCase() && firstChar !== firstChar.toLowerCase()) {
+        return target.charAt(0).toUpperCase() + target.slice(1);
+    }
+    
+    // 3. all lowercase (e.g. "hello" -> "merhaba")
+    if (source === source.toLowerCase() && source !== source.toUpperCase()) {
+        return target.toLowerCase();
+    }
+    
+    return target;
+}
+
 // Primary: Google Translate (unofficial, free, better quality)
 async function translateWithGoogle(text: string, source: string, target: string): Promise<string | null> {
     try {
@@ -34,12 +60,7 @@ async function translateWithMyMemory(text: string, source: string, target: strin
         const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         const data = await res.json();
         if (data.responseStatus === 200 && data.responseData?.translatedText) {
-            const translated = data.responseData.translatedText;
-            // MyMemory sometimes returns UPPERCASED text — normalize
-            if (translated === translated.toUpperCase() && text !== text.toUpperCase()) {
-                return translated.charAt(0).toUpperCase() + translated.slice(1).toLowerCase();
-            }
-            return translated;
+            return data.responseData.translatedText;
         }
         return null;
     } catch {
@@ -50,8 +71,13 @@ async function translateWithMyMemory(text: string, source: string, target: strin
 async function translateText(text: string, source: string, target: string): Promise<string | null> {
     // Try Google first, then MyMemory as fallback
     const result = await translateWithGoogle(text, source, target);
-    if (result) return result;
-    return translateWithMyMemory(text, source, target);
+    const finalResult = result || (await translateWithMyMemory(text, source, target));
+    
+    if (finalResult) {
+        return matchCase(text, finalResult);
+    }
+    
+    return null;
 }
 
 export async function POST(req: Request) {

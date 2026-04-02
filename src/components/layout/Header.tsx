@@ -24,7 +24,7 @@ interface HeaderProps {
 }
 
 export function Header({ adminSession = null, serverSettings = {} }: HeaderProps) {
-    const { lang, setLang, theme, toggleTheme, setSupportModalOpen } = useOptWinStore();
+    const { lang, setLang, theme, toggleTheme, setSupportModalOpen, setIsChangingLocale } = useOptWinStore();
     const { t } = useTranslation();
     const router = useRouter();
     const pathname = usePathname();
@@ -73,17 +73,26 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
     }, [isLangOpen]);
 
     const handleLangSwitch = (newLang: Lang) => {
+        if (newLang === lang) { closeLangDropdown(); return; }
+        
+        setIsChangingLocale(true);
         closeLangDropdown();
-        if (pathname) {
-            const segments = pathname.split('/');
-            if (segments.length > 1 && localeCodes.includes(segments[1])) {
-                segments[1] = newLang;
-                setLang(newLang);
-                router.push(segments.join('/') || '/');
-                return;
+
+        // Give some time for the exit animation of dropdown and entrance of loader
+        setTimeout(() => {
+            if (pathname) {
+                const segments = pathname.split('/');
+                if (segments.length > 1 && localeCodes.includes(segments[1])) {
+                    segments[1] = newLang;
+                    // Note: We DON'T call setLang(newLang) here anymore.
+                    // ClientProviders will sync lang with the URL after navigation.
+                    router.push(segments.join('/') || '/');
+                    return;
+                }
             }
-        }
-        setLang(newLang);
+            // Fallback for non-localized paths
+            router.push(`/${newLang}`);
+        }, 50);
     };
 
     const closeAdminDropdown = useCallback(() => {
