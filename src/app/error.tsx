@@ -45,7 +45,7 @@ export default function ErrorBoundary({
     const t = translations[lang as keyof typeof translations];
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0a0a10] bg-[url('/grid.svg')] bg-center relative overflow-hidden w-full fixed inset-0 z-[9999]">
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a10] bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:24px_24px] relative overflow-hidden w-full fixed inset-0 z-[9999]">
             {/* Glows */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-500/10 blur-[150px] rounded-full pointer-events-none" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#6b5be6]/10 blur-[100px] rounded-full pointer-events-none" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Languages, Download, FileCode2, FileUp, FileDown } from "lucide-react";
+import { Languages, Download, FileCode2, FileUp, FileDown, Navigation2 } from "lucide-react";
 import { AdminLangPicker } from "@/components/admin/AdminLangPicker";
 import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
 import { useUnsavedChanges } from "@/components/admin/UnsavedChangesContext";
@@ -12,7 +12,7 @@ import { FlagIcon } from "@/components/shared/FlagIcon";
 import { toPowerShellSafe } from "@/lib/powershell-safe";
 
 import { LabelsMap, PreviewLine, ExtraLine, LABEL_DESCRIPTIONS } from "@/components/admin/script-settings/ScriptSettingsTypes";
-import { LabelsTable } from "@/components/admin/script-settings/LabelsTable";
+import { LabelsTable, LabelsTableRef } from "@/components/admin/script-settings/LabelsTable";
 import { TerminalPreview } from "@/components/admin/script-settings/TerminalPreview";
 import { MissingTranslationsModal } from "@/components/admin/script-settings/MissingTranslationsModal";
 
@@ -46,6 +46,8 @@ export default function ScriptDefaultsPage() {
     const [translatingMissing, setTranslatingMissing] = useState(false);
     const [translateProgress, setTranslateProgress] = useState("");
     
+    const labelsTableRef = useRef<LabelsTableRef>(null);
+
     const unsavedCtx = useUnsavedChanges();
 
     const missingTranslations = useMemo(() => {
@@ -193,10 +195,12 @@ export default function ScriptDefaultsPage() {
                 const savedLang = localStorage.getItem("optwin_active_script_lang");
                 const firstLang = langData.find((l:any)=>l.code === savedLang)?.code || langData[0]?.code || "en";
                 setActiveLang(firstLang);
-
-                const initOrder = buildKeyOrder(data.labels[firstLang] || {});
-                setKeyOrder(initOrder);
-                setOriginalKeyOrder(JSON.parse(JSON.stringify(initOrder)));
+                let initialOrder = data.keyOrder;
+                if (!initialOrder || Object.keys(initialOrder).length === 0) {
+                    initialOrder = buildKeyOrder(data.labels[firstLang] || {});
+                }
+                setKeyOrder(initialOrder);
+                setOriginalKeyOrder(JSON.parse(JSON.stringify(initialOrder)));
 
                 if (Array.isArray(data.extraLines)) {
                     setExtraLines(data.extraLines);
@@ -262,22 +266,35 @@ export default function ScriptDefaultsPage() {
         setSaving(true);
         setError("");
         try {
+            const deletedKeysSet = new Set<string>();
             const changedLabels: { lang: string; key: string; value: string }[] = [];
             for (const langObj of languages) {
                 const lang = langObj.code || langObj;
                 const current = labels[lang] || {};
                 const original = originalLabels[lang] || {};
+                
+                // Track additions and changes
                 for (const key of Object.keys(current)) {
                     if (current[key] !== original[key]) {
                         changedLabels.push({ lang, key, value: current[key] });
                     }
                 }
+                
+                // Track complete deletions
+                for (const key of Object.keys(original)) {
+                    if (current[key] === undefined) {
+                        deletedKeysSet.add(key);
+                    }
+                }
             }
+            
             const payload: Record<string, unknown> = {};
             if (changedLabels.length > 0) payload.labels = changedLabels;
+            if (deletedKeysSet.size > 0) payload.deletedKeys = Array.from(deletedKeysSet);
             if (JSON.stringify(extraLines) !== JSON.stringify(originalExtraLines)) payload.extraLines = extraLines;
             if (JSON.stringify(lineOverrides) !== JSON.stringify(originalLineOverrides)) payload.lineOverrides = lineOverrides;
             if (JSON.stringify(deletedPreviewLines) !== JSON.stringify(originalDeletedPreviewLines)) payload.deletedPreviewLines = deletedPreviewLines;
+            if (JSON.stringify(keyOrder) !== JSON.stringify(originalKeyOrder)) payload.keyOrder = keyOrder;
 
             if (Object.keys(payload).length > 0) {
                 const res = await fetch("/api/admin/script-labels", {
@@ -397,19 +414,6 @@ export default function ScriptDefaultsPage() {
             delete next[oldKey];
             return next;
         });
-        setOriginalLabels(prev => {
-            const updated = { ...prev };
-            for (const langObj of languages) {
-                const lang = langObj.code || langObj;
-                if (updated[lang]?.[oldKey] !== undefined) {
-                    const copy = { ...updated[lang] };
-                    copy[nk] = copy[oldKey];
-                    delete copy[oldKey];
-                    updated[lang] = copy;
-                }
-            }
-            return updated;
-        });
     };
 
     const handleMoveUp = (key: string) => {
@@ -453,20 +457,6 @@ export default function ScriptDefaultsPage() {
             const next = { ...prev };
             delete next[key];
             return next;
-        });
-        for (const langObj of languages) {
-            const lang = langObj.code || langObj;
-            await fetch(`/api/admin/script-labels?lang=${lang}&key=${key}`, { method: "DELETE" });
-        }
-        setOriginalLabels(prev => {
-            const updated = { ...prev };
-            for (const langObj of languages) {
-                const lang = langObj.code || langObj;
-                const copy = { ...updated[lang] };
-                delete copy[key];
-                updated[lang] = copy;
-            }
-            return updated;
         });
     };
 
@@ -654,16 +644,23 @@ export default function ScriptDefaultsPage() {
                         <div className={`relative z-[100] flex items-center shrink-0 ${badgeClass}`} style={{ willChange: 'transform, opacity' }}>
                             <button
                                 onClick={() => setShowMissingModal(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 mr-2 bg-gradient-to-r from-red-500/10 to-amber-500/10 backdrop-blur-xl border border-amber-500/30 text-amber-400 hover:from-red-500/20 hover:to-amber-500/15 hover:border-amber-400/50 transition-all duration-300 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 shadow-[0_4px_20px_rgba(245,158,11,0.12)] whitespace-nowrap relative overflow-hidden"
+                                className="flex items-center gap-2 px-4 py-2.5 mr-2 bg-gradient-to-r from-red-500/10 to-amber-500/10 backdrop-blur-xl border border-amber-500/30 text-amber-400 hover:from-red-500/20 hover:to-amber-500/15 hover:border-amber-400/50 transition-all duration-300 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 shadow-[0_4px_20px_rgba(245,158,11,0.12)] whitespace-nowrap relative overflow-hidden cursor-pointer"
                             >
                                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/10 to-transparent missing-badge-shine pointer-events-none" />
                                 <div className="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center border border-amber-500/25 shrink-0">
                                     <Languages size={13} className="text-amber-400" />
                                 </div>
-                                <span>EKSİKLER</span>
+                                <span>AI-ÇEVİRİ</span>
                                 <span className="flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-md bg-amber-500/25 text-[10px] font-black text-amber-300 border border-amber-500/30">
                                     {totalMissingForActive}
                                 </span>
+                            </button>
+                            <button
+                                onClick={() => labelsTableRef.current?.jumpToNextMissing?.()}
+                                className="flex items-center justify-center p-2.5 mr-2 bg-white/[0.04] backdrop-blur-md hover:bg-amber-500/10 text-white/40 hover:text-amber-400 border border-white/[0.1] hover:border-amber-500/40 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)] rounded-xl transition-all duration-300 active:scale-95 cursor-pointer"
+                                title="Sonraki Eksikliğe Git"
+                            >
+                                <Navigation2 size={16} />
                             </button>
                         </div>
                     )}
@@ -671,7 +668,7 @@ export default function ScriptDefaultsPage() {
                     {activeLang !== "en" && (
                         <button
                             onClick={handleFillEnglish}
-                            className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-indigo-500/20 border border-white/[0.1] hover:border-indigo-500/50 text-white/50 hover:text-indigo-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0"
+                            className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-indigo-500/20 border border-white/[0.1] hover:border-indigo-500/50 text-white/50 hover:text-indigo-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer"
                             title="CMD karakter desteği olmayan diller için İngilizceyi uygular"
                         >
                             VARSAYILAN DİLİ KULLAN
@@ -712,6 +709,7 @@ export default function ScriptDefaultsPage() {
                     {/* Left: Table */}
                     <div className="flex flex-col h-full min-h-0">
                         <LabelsTable 
+                            ref={labelsTableRef}
                             keys={keys}
                             currentLabels={currentLabels}
                             originalLabels={originalLabels}

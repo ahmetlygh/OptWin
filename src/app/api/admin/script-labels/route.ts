@@ -11,7 +11,7 @@ export async function GET() {
             orderBy: [{ lang: "asc" }, { key: "asc" }],
         }),
         prisma.siteSetting.findMany({
-            where: { key: { in: ["site_version", "script_extra_lines", "script_line_overrides", "script_deleted_preview_lines"] } },
+            where: { key: { in: ["site_version", "script_extra_lines", "script_line_overrides", "script_deleted_preview_lines", "script_key_order"] } },
         }),
     ]);
     const settingsMap = metaSettings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {} as Record<string, string>);
@@ -36,9 +36,11 @@ export async function GET() {
     let extraLines = [];
     let lineOverrides = {};
     let deletedPreviewLines: number[] = [];
+    let keyOrder = {};
     try { extraLines = JSON.parse(settingsMap.script_extra_lines || "[]"); } catch {}
     try { lineOverrides = JSON.parse(settingsMap.script_line_overrides || "{}"); } catch {}
     try { deletedPreviewLines = JSON.parse(settingsMap.script_deleted_preview_lines || "[]"); } catch {}
+    try { keyOrder = JSON.parse(settingsMap.script_key_order || "{}"); } catch {}
 
     return NextResponse.json({
         success: true,
@@ -48,6 +50,7 @@ export async function GET() {
         extraLines,
         lineOverrides,
         deletedPreviewLines,
+        keyOrder,
     });
 }
 
@@ -57,11 +60,13 @@ export async function PUT(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { labels, extraLines, lineOverrides, deletedPreviewLines } = body as {
+        const { labels, deletedKeys, extraLines, lineOverrides, deletedPreviewLines, keyOrder } = body as {
             labels?: { lang: string; key: string; value: string }[];
+            deletedKeys?: string[];
             extraLines?: unknown;
             lineOverrides?: unknown;
             deletedPreviewLines?: unknown;
+            keyOrder?: unknown;
         };
 
         if (labels && Array.isArray(labels)) {
@@ -72,6 +77,12 @@ export async function PUT(req: NextRequest) {
                     create: { lang: label.lang, key: label.key, value: label.value },
                 });
             }
+        }
+
+        if (deletedKeys && Array.isArray(deletedKeys) && deletedKeys.length > 0) {
+            await prisma.scriptLabel.deleteMany({
+                where: { key: { in: deletedKeys } }
+            });
         }
 
         if (extraLines !== undefined) {
@@ -95,12 +106,20 @@ export async function PUT(req: NextRequest) {
                 create: { key: "script_deleted_preview_lines", value: JSON.stringify(deletedPreviewLines) },
             });
         }
+        if (keyOrder !== undefined) {
+            await prisma.siteSetting.upsert({
+                where: { key: "script_key_order" },
+                update: { value: JSON.stringify(keyOrder) },
+                create: { key: "script_key_order", value: JSON.stringify(keyOrder) },
+            });
+        }
 
         // Invalidate Redis cache for any SiteSetting keys modified
         const invalidateKeys: string[] = [];
         if (extraLines !== undefined) invalidateKeys.push("optwin:setting:script_extra_lines");
         if (lineOverrides !== undefined) invalidateKeys.push("optwin:setting:script_line_overrides");
         if (deletedPreviewLines !== undefined) invalidateKeys.push("optwin:setting:script_deleted_preview_lines");
+        if (keyOrder !== undefined) invalidateKeys.push("optwin:setting:script_key_order");
         if (invalidateKeys.length > 0) {
             await redisCache.del(invalidateKeys);
         }
@@ -112,7 +131,7 @@ export async function PUT(req: NextRequest) {
     }
 }
 
-// DELETE /api/admin/script-labels — delete a specific label
+// DELETE /api/admin/script-labels — delete a specific label or a key across all languages
 export async function DELETE(req: NextRequest) {
     if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -120,14 +139,21 @@ export async function DELETE(req: NextRequest) {
     const lang = searchParams.get("lang");
     const key = searchParams.get("key");
 
-    if (!lang || !key) {
-        return NextResponse.json({ error: "lang and key are required" }, { status: 400 });
+    if (!key) {
+        return NextResponse.json({ error: "key is required" }, { status: 400 });
     }
 
     try {
-        await prisma.scriptLabel.delete({
-            where: { lang_key: { lang, key } },
-        });
+        if (lang) {
+            await prisma.scriptLabel.delete({
+                where: { lang_key: { lang, key } },
+            });
+        } else {
+            // Delete from all languages
+            await prisma.scriptLabel.deleteMany({
+                where: { key: key },
+            });
+        }
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Delete script label error:", error);

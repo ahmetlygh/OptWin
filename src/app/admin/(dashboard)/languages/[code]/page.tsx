@@ -1103,11 +1103,11 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
                 <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 custom-scrollbar">
-                    <button onClick={() => setIsInfoModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-[#6b5be6]/20 border border-white/[0.1] hover:border-[#6b5be6]/50 hover:shadow-[0_0_25px_rgba(107,91,230,0.2)] text-white/70 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0">
+                    <button onClick={() => setIsInfoModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-[#6b5be6]/20 border border-white/[0.1] hover:border-[#6b5be6]/50 hover:shadow-[0_0_25px_rgba(107,91,230,0.2)] text-white/70 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer">
                         <Settings2 size={14} /> DÜZENLE
                     </button>
-                    <label className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-emerald-500/15 border border-white/[0.1] hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0 group">
-                        <FileUp size={14} className="group-hover:animate-bounce" /><span className="font-black">İÇE AKTAR</span>
+                    <label className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-emerald-500/15 border border-white/[0.1] hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0">
+                        <FileUp size={14} /><span className="font-black">İÇE AKTAR</span>
                         <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                     </label>
                     <button onClick={() => {
@@ -1117,8 +1117,8 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         const a = document.createElement("a");
                         a.href = url; a.download = `${code}.json`; a.click();
                         URL.revokeObjectURL(url);
-                    }} className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-amber-500/15 border border-white/[0.1] hover:border-amber-500/40 text-white/50 hover:text-amber-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 group">
-                        <FileDown size={14} className="group-hover:animate-pulse" /><span className="font-black">DIŞA AKTAR</span>
+                    }} className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-amber-500/15 border border-white/[0.1] hover:border-amber-500/40 text-white/50 hover:text-amber-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer">
+                        <FileDown size={14} /><span className="font-black">DIŞA AKTAR</span>
                     </button>
                 </div>
             </motion.div>
