@@ -34,7 +34,7 @@ export function MissingTranslationsModal({
     return (
         <AnimatePresence>
             {open && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -48,7 +48,7 @@ export function MissingTranslationsModal({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ duration: 0.2 }}
-                        className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 max-w-lg w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
+                        className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 max-w-lg w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                     >
                         {/* ambient glow */}
                         <div className="absolute top-0 left-0 w-40 h-40 bg-[#6b5be6]/8 blur-3xl pointer-events-none" />
@@ -64,7 +64,7 @@ export function MissingTranslationsModal({
                                         <p className="text-[10px] text-white/30 mt-0.5">EN baz alınarak hesaplanmıştır</p>
                                     </div>
                                 </div>
-                                <button onClick={() => !translatingMissing && onClose()} className="size-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition-colors">
+                                <button onClick={() => !translatingMissing && onClose()} className="size-8 rounded-lg bg-white/3 hover:bg-white/6 flex items-center justify-center transition-colors">
                                     <X size={14} className="text-white/40" />
                                 </button>
                             </div>
@@ -86,7 +86,7 @@ export function MissingTranslationsModal({
 
                             <div className="space-y-2 max-h-[70vh] overflow-y-auto admin-scrollbar pr-1">
                                 {Object.entries(missingTranslations).map(([lang, keys]) => (
-                                    <div key={lang} className="flex items-center justify-between px-3.5 py-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.03] transition-colors">
+                                    <div key={lang} className="flex items-center justify-between px-3.5 py-3 rounded-xl bg-white/2 border border-white/4 hover:bg-white/3 transition-colors">
                                         <div className="flex items-center gap-3">
                                             <span className="text-[11px] font-mono font-black text-amber-400 uppercase w-6">{lang}</span>
                                             <span className="text-[11px] text-white/40">
@@ -103,7 +103,7 @@ export function MissingTranslationsModal({
                                                 disabled={translatingMissing}
                                                 className={`h-7 px-3 flex items-center gap-1.5 rounded-lg text-[10px] font-bold transition-all border ${
                                                     translatingMissing
-                                                        ? "bg-white/[0.02] border-white/[0.05] text-white/30 cursor-not-allowed"
+                                                        ? "bg-white/2 border-white/5 text-white/30 cursor-not-allowed"
                                                         : "bg-[#6b5be6]/10 border-[#6b5be6]/20 text-[#6b5be6] hover:bg-[#6b5be6]/20"
                                                 }`}
                                             >
@@ -122,7 +122,7 @@ export function MissingTranslationsModal({
                             </div>
 
                             {Object.keys(missingTranslations).length > 1 && (
-                                <div className="mt-4 pt-4 border-t border-white/[0.04]">
+                                <div className="mt-4 pt-4 border-t border-white/4">
                                     <button
                                         onClick={onTranslateAll}
                                         disabled={translatingMissing}

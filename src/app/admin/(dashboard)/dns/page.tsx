@@ -106,7 +106,7 @@ export default function AdminDnsPage() {
                 </div>
                 <button
                     onClick={() => setIsCreating(true)}
-                    className="h-10 px-5 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold text-sm rounded-xl transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5 shadow-lg shadow-[var(--accent-color)]/20"
+                    className="h-10 px-5 bg-(--accent-color) hover:bg-(--accent-hover) text-white font-bold text-sm rounded-xl transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5 shadow-lg shadow-(--accent-color)/20"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     Add Provider
@@ -143,7 +143,7 @@ export default function AdminDnsPage() {
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                                 onClick={() => setEditing(p)}
-                                className="flex-1 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent-color)]/10 text-[var(--accent-color)] text-xs font-bold hover:bg-[var(--accent-color)]/20 transition-all"
+                                className="flex-1 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-(--accent-color)/10 text-(--accent-color) text-xs font-bold hover:bg-(--accent-color)/20 transition-all"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                                 Edit

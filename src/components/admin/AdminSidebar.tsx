@@ -36,10 +36,10 @@ type MenuItem = {
     badge?: number;
 };
 
-export function AdminSidebar({ 
-    unreadMessages = 0, 
-    siteName = "OptWin", 
-    siteVersion = "1.3" 
+export function AdminSidebar({
+    unreadMessages = 0,
+    siteName = "OptWin",
+    siteVersion = "1.3"
 }: AdminSidebarProps) {
     const pathname = usePathname();
     const [isMobileOpen, setMobileOpen] = useState(false);
@@ -67,11 +67,11 @@ export function AdminSidebar({
         <aside className="flex flex-col h-screen w-[260px] xl:w-[280px] 2xl:w-[300px] relative overflow-hidden shrink-0 transition-all duration-300">
             {/* Background */}
             <div className="absolute inset-0 bg-[#0a0a10]/95 backdrop-blur-2xl" />
-            <div className="absolute inset-0 border-r border-white/[0.05]" />
+            <div className="absolute inset-0 border-r border-white/5" />
             <div className="absolute top-0 left-0 w-full h-40 bg-[radial-gradient(ellipse_at_top_left,rgba(107,91,230,0.08),transparent_70%)] pointer-events-none" />
 
             {/* Header — OptWin Logo + Glow */}
-            <div className="relative z-10 px-4 py-4 border-b border-white/[0.05]">
+            <div className="relative z-10 px-4 py-4 border-b border-white/5">
                 <Link href="/admin" className="flex items-center gap-3 group">
                     <div className="h-9 w-9 flex items-center justify-center shrink-0">
                         <Image
@@ -84,7 +84,7 @@ export function AdminSidebar({
                     </div>
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
-                            <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] truncate max-w-[120px]" title={siteName}>{siteName}</span>
+                            <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white via-white to-[#6b5be6] truncate max-w-[120px]" title={siteName}>{siteName}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest text-[#6b5be6] bg-[#6b5be6]/10 px-1.5 py-0.5 rounded-md">
                                 Admin
                             </span>
@@ -127,9 +127,8 @@ export function AdminSidebar({
                                 initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.3, delay: index * 0.03, ease: "easeOut" }}
-                                className={`relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-200 group ${
-                                    active ? "text-white" : "text-white/35 hover:text-white/75 hover:bg-white/[0.04]"
-                                }`}
+                                className={`relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors duration-200 group ${active ? "text-white" : "text-white/35 hover:text-white/75 hover:bg-white/4"
+                                    }`}
                             >
                                 {active && (
                                     <motion.div
@@ -158,7 +157,7 @@ export function AdminSidebar({
             </nav>
 
             {/* Footer — Version */}
-            <div className="relative z-10 px-4 py-3 border-t border-white/[0.05]">
+            <div className="relative z-10 px-4 py-3 border-t border-white/5">
                 <p className="text-[10px] text-white/15 font-medium text-center">{siteName} Admin v{siteVersion}</p>
             </div>
         </aside>
@@ -175,7 +174,7 @@ export function AdminSidebar({
             <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setMobileOpen(!isMobileOpen)}
-                className="md:hidden fixed top-4 left-4 z-[300] size-9 flex items-center justify-center rounded-xl bg-[#0a0a10]/90 backdrop-blur-xl border border-white/[0.06] text-white shadow-2xl"
+                className="md:hidden fixed top-4 left-4 z-300 size-9 flex items-center justify-center rounded-xl bg-[#0a0a10]/90 backdrop-blur-xl border border-white/6 text-white shadow-2xl"
             >
                 {isMobileOpen ? <X size={16} /> : <Menu size={16} />}
             </motion.button>
@@ -183,7 +182,7 @@ export function AdminSidebar({
             {/* Mobile overlay */}
             <AnimatePresence>
                 {isMobileOpen && (
-                    <div className="md:hidden fixed inset-0 z-[250]">
+                    <div className="md:hidden fixed inset-0 z-250">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

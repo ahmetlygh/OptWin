@@ -277,17 +277,17 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
                     exit={{ opacity: 0, y: -4, scale: 0.96 }}
                     transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
                     style={dropdownStyle}
-                    className="z-[9990] rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                    className="z-9990 rounded-xl border border-white/8 bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
                     {/* Search */}
-                    <div className="p-2 border-b border-white/[0.04]">
+                    <div className="p-2 border-b border-white/4">
                         <div className="relative">
                             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" />
                             <input
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                                 placeholder="İkon ara..."
-                                className="w-full h-7 pl-7 pr-2 bg-white/[0.03] border border-white/[0.04] rounded-lg text-xs text-white/70 placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30"
+                                className="w-full h-7 pl-7 pr-2 bg-white/3 border border-white/4 rounded-lg text-xs text-white/70 placeholder-white/20 focus:outline-none focus:border-[#6b5be6]/30"
                                 autoFocus
                             />
                             {search && (
@@ -312,7 +312,7 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
                                         className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-all ${
                                             isSelected
                                                 ? "bg-[#6b5be6]/15 text-[#6b5be6]"
-                                                : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
+                                                : "text-white/40 hover:text-white/70 hover:bg-white/4"
                                         }`}
                                         title={`${data.label} (${key})`}
                                     >
@@ -327,12 +327,12 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
                     </div>
 
                     {/* Upload */}
-                    <div className="p-2 border-t border-white/[0.04]">
+                    <div className="p-2 border-t border-white/4">
                         <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
                             disabled={uploading}
-                            className="w-full flex items-center justify-center gap-1.5 h-7 rounded-lg text-[11px] font-medium text-white/30 hover:text-white/60 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] transition-all disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-1.5 h-7 rounded-lg text-[11px] font-medium text-white/30 hover:text-white/60 bg-white/2 hover:bg-white/4 border border-white/4 transition-all disabled:opacity-50"
                         >
                             {uploading ? (
                                 <><span className="w-3 h-3 border-2 border-white/20 border-t-[#6b5be6] rounded-full animate-spin" /> Yükleniyor...</>
@@ -367,8 +367,8 @@ export function AdminIconPicker({ value, onChange }: AdminIconPickerProps) {
                 }}
                 className={`w-full h-9 px-3 flex items-center gap-2 rounded-xl text-sm transition-all border ${
                     isOpen
-                        ? "bg-white/[0.04] border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
-                        : "bg-white/[0.02] border-white/[0.06] text-white/60 hover:border-white/[0.1]"
+                        ? "bg-white/4 border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
+                        : "bg-white/2 border-white/6 text-white/60 hover:border-white/10"
                 }`}
             >
                 <span className="w-5 h-5 flex items-center justify-center shrink-0">

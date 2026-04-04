@@ -106,7 +106,7 @@ export function MaintenanceUI({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
-            className="fixed inset-0 z-[10000] flex flex-col items-center justify-center overflow-hidden bg-[#08080d]"
+            className="fixed inset-0 z-10000 flex flex-col items-center justify-center overflow-hidden bg-[#08080d]"
         >
             <div className="absolute inset-0 bg-[#08080d]">
                 <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle,rgba(107,91,230,0.14)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '4s' }} />
@@ -122,8 +122,8 @@ export function MaintenanceUI({
                     onClick={() => setLangOpen(!langOpen)}
                     className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all duration-200 border backdrop-blur-xl ${
                         langOpen
-                            ? "bg-white/[0.06] border-[#6b5be6]/30 text-white/70 shadow-[0_0_20px_rgba(107,91,230,0.1)]"
-                            : "bg-white/[0.03] border-white/[0.06] text-white/40 hover:text-white/60 hover:border-white/[0.1]"
+                            ? "bg-white/6 border-[#6b5be6]/30 text-white/70 shadow-[0_0_20px_rgba(107,91,230,0.1)]"
+                            : "bg-white/3 border-white/6 text-white/40 hover:text-white/60 hover:border-white/10"
                     }`}
                 >
                     {currentLang.flagSvg ? (
@@ -143,7 +143,7 @@ export function MaintenanceUI({
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -4, scale: 0.96 }}
                             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                            className="absolute right-0 mt-2 min-w-[180px] rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                            className="absolute right-0 mt-2 min-w-[180px] rounded-xl border border-white/8 bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
                         >
                             <div className="py-1 max-h-60 overflow-y-auto">
                                 {languagesData.filter(l => l.isActive !== false).map((l) => {
@@ -158,8 +158,8 @@ export function MaintenanceUI({
                                             }}
                                             className={`w-full flex items-center justify-between gap-3 px-3.5 py-2 text-[12px] font-medium transition-all duration-150 ${
                                                 isSelected
-                                                    ? "text-[#6b5be6] bg-[#6b5be6]/[0.08]"
-                                                    : "text-white/50 hover:text-white/90 hover:bg-white/[0.04]"
+                                                    ? "text-[#6b5be6] bg-[#6b5be6]/8"
+                                                    : "text-white/50 hover:text-white/90 hover:bg-white/4"
                                             }`}
                                         >
                                             <div className="flex items-center gap-2.5 overflow-hidden">
@@ -192,14 +192,14 @@ export function MaintenanceUI({
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative z-10 flex flex-col items-center text-center px-6 max-w-lg">
                 <div className="flex items-center gap-4 mb-10 select-none">
                     <Image src={settings.site_logo_url || "/optwin.png"} alt={siteName} width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
-                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">{siteName}</h1>
+                    <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">{siteName}</h1>
                 </div>
 
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="mb-6">
                     <Settings size={68} className="text-[#6b5be6]/35" strokeWidth={1.5} />
                 </motion.div>
 
-                <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl px-6 py-5 mb-6 max-w-[460px] w-full backdrop-blur-sm">
+                <div className="bg-white/2 border border-white/5 rounded-2xl px-6 py-5 mb-6 max-w-[460px] w-full backdrop-blur-sm">
                     <p className="text-white/50 text-[18px] leading-[1.7] mb-2">
                         {mt("maintenance.msg", "Our site is currently under maintenance.")}
                     </p>
@@ -209,7 +209,7 @@ export function MaintenanceUI({
                 </div>
 
                 {reason && reason.trim() !== "" && (
-                    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
+                    <div className="bg-white/3 border border-white/6 rounded-xl px-5 py-3.5 mb-6 max-w-[460px] w-full text-left">
                         <p className="text-[12px] font-bold text-white/35 uppercase tracking-wider mb-1">
                             {mt("maintenance.reasonLabel", "Reason:")}
                         </p>
@@ -218,8 +218,8 @@ export function MaintenanceUI({
                 )}
 
                 <div className="w-full max-w-[384px] mb-2.5">
-                    <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden relative">
-                        <motion.div className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-[#6b5be6]/60 to-transparent rounded-full" animate={{ x: ["-100%", "400%"] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+                    <div className="h-[3px] bg-white/6 rounded-full overflow-hidden relative">
+                        <motion.div className="absolute top-0 left-0 h-full w-1/3 bg-linear-to-r from-transparent via-[#6b5be6]/60 to-transparent rounded-full" animate={{ x: ["-100%", "400%"] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
                     </div>
                 </div>
 
@@ -243,7 +243,7 @@ export function MaintenanceUI({
                 </p>
 
                 {hasCountdown && isMounted && (
-                    <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl px-6 py-5 mb-5 max-w-[460px] w-full">
+                    <div className="bg-white/2 border border-white/4 rounded-2xl px-6 py-5 mb-5 max-w-[460px] w-full">
                         <p className="text-[13px] font-bold text-white/25 uppercase tracking-wider mb-4">
                             {mt("maintenance.estLabel", "Estimated Completion")}
                         </p>
@@ -254,7 +254,7 @@ export function MaintenanceUI({
                                 { v: cd.m, u: mt("maintenance.min", "Min") },
                                 { v: cd.s, u: mt("maintenance.sec", "Sec") },
                             ].map((item, i) => (
-                                <div key={i} className="bg-[#6b5be6]/[0.07] border border-[#6b5be6]/[0.14] rounded-xl px-4 py-3 min-w-[72px] text-center">
+                                <div key={i} className="bg-[#6b5be6]/7 border border-[#6b5be6]/14 rounded-xl px-4 py-3 min-w-[72px] text-center">
                                     <p className="text-3xl font-extrabold text-[#6b5be6]/70 font-mono tabular-nums">{item.v}</p>
                                     <p className="text-[10px] text-white/18 uppercase tracking-wider mt-1">{item.u}</p>
                                 </div>
@@ -273,7 +273,7 @@ export function MaintenanceUI({
                     <span className="text-[14px] text-white/10 font-medium select-none tracking-tight">
                         &copy; {copyrightYear} {copyrightText}
                     </span>
-                    <span className="hidden md:inline size-1 rounded-full bg-white/[0.06]"></span>
+                    <span className="hidden md:inline size-1 rounded-full bg-white/6"></span>
                     <span className="text-[14px] text-white/10 font-medium select-none tracking-tight">
                         {mt("footer.allRights", "") || "All rights reserved."}
                     </span>

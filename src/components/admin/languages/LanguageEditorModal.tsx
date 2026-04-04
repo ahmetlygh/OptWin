@@ -18,7 +18,7 @@ const FieldLabel = ({ icon, children }: { icon: React.ReactNode; children: React
     </label>
 );
 
-const inputClasses = "w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 text-[13px] text-white focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/[0.04] transition-all placeholder-white/15";
+const inputClasses = "w-full bg-white/3 border border-white/6 rounded-xl px-4 py-2.5 text-[13px] text-white focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/4 transition-all placeholder-white/15";
 
 export function LanguageEditorModal({ language, onClose, onSave, displayOnly = false }: Props) {
     const { showToast } = useOptWinStore();
@@ -101,7 +101,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
     }, [onClose]);
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4" onClick={onClose}>
             {/* Backdrop */}
             <motion.div
                 initial={{ opacity: 0 }}
@@ -117,14 +117,14 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
                 exit={{ opacity: 0, scale: 0.92, y: 20 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6),0_0_60px_rgba(107,91,230,0.08)] flex flex-col"
+                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6),0_0_60px_rgba(107,91,230,0.08)] flex flex-col"
             >
                 {/* Ambient Glows */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-[#6b5be6]/8 blur-3xl pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-600/5 blur-3xl pointer-events-none" />
 
                 {/* Header */}
-                <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/[0.04]">
+                <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/4">
                     <div>
                         <h2 className="text-sm font-black text-white uppercase tracking-tight">
                             {isEdit ? "DİL AYARLARI" : "YENİ DİL EKLE"}
@@ -133,7 +133,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
                             {isEdit ? "Mevcut dil bilgilerini güncelleyin" : "Platforma yeni bir dil ekleyin"}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 text-white/30 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all">
+                    <button onClick={onClose} className="p-2 text-white/30 hover:text-white hover:bg-white/5 rounded-xl transition-all">
                         <X size={18} />
                     </button>
                 </div>
@@ -159,7 +159,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
                                 <button 
                                     type="button" 
                                     onClick={() => setFormData(p => ({ ...p, utcOffset: p.utcOffset - 0.5 }))}
-                                    className="h-[42px] px-4 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white/40 hover:text-white hover:bg-white/[0.06] transition-all font-black"
+                                    className="h-[42px] px-4 bg-white/3 border border-white/6 rounded-xl text-white/40 hover:text-white hover:bg-white/6 transition-all font-black"
                                 >
                                     -
                                 </button>
@@ -169,7 +169,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
                                 <button 
                                     type="button" 
                                     onClick={() => setFormData(p => ({ ...p, utcOffset: p.utcOffset + 0.5 }))}
-                                    className="h-[42px] px-4 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white/40 hover:text-white hover:bg-white/[0.06] transition-all font-black"
+                                    className="h-[42px] px-4 bg-white/3 border border-white/6 rounded-xl text-white/40 hover:text-white hover:bg-white/6 transition-all font-black"
                                 >
                                     +
                                 </button>
@@ -179,7 +179,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
 
                     {/* ISO Code Change Warning */}
                     {isEdit && language && formData.code !== language.code && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-3 bg-amber-500/[0.05] border border-amber-500/20 rounded-xl flex gap-2.5 items-start">
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl flex gap-2.5 items-start">
                             <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={14} />
                             <div>
                                 <p className="text-[10px] font-black text-amber-400 uppercase tracking-wider">ISO Kodu Değişimi</p>
@@ -229,7 +229,7 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
                     <div>
                         <div className="flex items-center justify-between mb-1.5">
                             <FieldLabel icon={<Flag size={11} />}>Bayrak (SVG)</FieldLabel>
-                            <span className="text-[8px] text-amber-500/60 border border-amber-500/15 bg-amber-500/[0.03] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1">
+                            <span className="text-[8px] text-amber-500/60 border border-amber-500/15 bg-amber-500/3 px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1">
                                 <AlertCircle size={8} /> Sadece SVG
                             </span>
                         </div>
@@ -243,8 +243,8 @@ export function LanguageEditorModal({ language, onClose, onSave, displayOnly = f
                     </div>
 
                     {/* Footer Buttons */}
-                    <div className="pt-4 border-t border-white/[0.04] flex justify-end gap-2.5">
-                        <button type="button" onClick={onClose} disabled={isSaving} className="px-5 py-2.5 rounded-xl text-[11px] font-bold text-white/40 hover:text-white/70 hover:bg-white/[0.03] transition-all">
+                    <div className="pt-4 border-t border-white/4 flex justify-end gap-2.5">
+                        <button type="button" onClick={onClose} disabled={isSaving} className="px-5 py-2.5 rounded-xl text-[11px] font-bold text-white/40 hover:text-white/70 hover:bg-white/3 transition-all">
                             İptal
                         </button>
                         <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#6b5be6] hover:bg-[#5a4cc2] text-white text-[11px] font-black uppercase tracking-wider shadow-lg shadow-purple-900/20 transition-all active:scale-95 disabled:opacity-50">

@@ -34,15 +34,15 @@ export function HeroStats({ totalVisits, totalScripts, totalDownloads, featuresC
             {stats.map((stat, i) => (
                 <div key={stat.labelKey} className={`items-end gap-4 sm:gap-7 ${stat.mobileHidden ? "hidden sm:flex" : "flex"}`}>
                     <div className="flex flex-col justify-end group">
-                        <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight group-hover:text-[var(--accent-color)] transition-all duration-300 leading-none">
+                        <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight group-hover:text-(--accent-color) transition-all duration-300 leading-none">
                             <CountUp end={stat.value} formatter={stat.suffix ? undefined : formatStat} />{stat.suffix || ""}
                         </span>
-                        <span className="text-[10px] sm:text-xs text-[var(--text-secondary)] uppercase tracking-[0.15em] font-semibold mt-1.5 whitespace-nowrap leading-none">
+                        <span className="text-[10px] sm:text-xs text-(--text-secondary) uppercase tracking-[0.15em] font-semibold mt-1.5 whitespace-nowrap leading-none">
                             {t[stat.labelKey]}
                         </span>
                     </div>
                     {i < stats.length - 1 && (
-                        <div className={`w-px h-10 sm:h-12 bg-gradient-to-b from-transparent via-[var(--accent-color)]/30 to-transparent shrink-0 ${stat.mobileHidden ? "hidden sm:block" : ""}`}></div>
+                        <div className={`w-px h-10 sm:h-12 bg-linear-to-b from-transparent via-(--accent-color)/30 to-transparent shrink-0 ${stat.mobileHidden ? "hidden sm:block" : ""}`}></div>
                     )}
                 </div>
             ))}

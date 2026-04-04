@@ -107,9 +107,9 @@ function SortableFeatureRow({ feature, onClick, onToggle, onDelete, lang }: {
             {...attributes}
             {...listeners}
             onClick={onClick}
-            className={`flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors cursor-grab active:cursor-grabbing group touch-none ${isDragging ? "bg-white/[0.04] shadow-lg rounded-lg" : ""}`}
+            className={`flex items-center gap-2 px-3 py-2.5 border-b border-white/3 hover:bg-white/2 transition-colors cursor-grab active:cursor-grabbing group touch-none ${isDragging ? "bg-white/4 shadow-lg rounded-lg" : ""}`}
         >
-            <GripVertical size={13} className="shrink-0 text-white/[0.06] group-hover:text-white/15 transition-colors" />
+            <GripVertical size={13} className="shrink-0 text-white/6 group-hover:text-white/15 transition-colors" />
             <span className="w-7 text-center text-[10px] font-mono text-white/15 shrink-0">{feature.order}</span>
             <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-white/80 group-hover:text-white transition-colors truncate">{title}</p>
@@ -123,14 +123,14 @@ function SortableFeatureRow({ feature, onClick, onToggle, onDelete, lang }: {
             <button
                 onClick={onDelete}
                 onPointerDown={e => e.stopPropagation()}
-                className="shrink-0 size-7 flex items-center justify-center rounded-lg text-red-500/0 group-hover:text-red-500/40 hover:!text-red-500 hover:!bg-red-500/10 transition-all"
+                className="shrink-0 size-7 flex items-center justify-center rounded-lg text-red-500/0 group-hover:text-red-500/40 hover:text-red-500! hover:bg-red-500/10! transition-all"
             >
                 <Trash2 size={13} />
             </button>
             <button
                 onClick={onToggle}
                 onPointerDown={e => e.stopPropagation()}
-                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative shrink-0 ${feature.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
+                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative shrink-0 ${feature.enabled ? "bg-emerald-500/80" : "bg-white/6"}`}
             >
                 <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${feature.enabled ? "left-[19px]" : "left-[3px]"}`} />
             </button>
@@ -143,7 +143,7 @@ function SortableCategoryRow({ cat, getTrName }: { cat: Category & { _count?: { 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
     const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.5 : 1 };
     return (
-        <div ref={setNodeRef} style={style} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] bg-white/[0.01]">
+        <div ref={setNodeRef} style={style} className="flex items-center gap-3 px-4 py-3 border-b border-white/4 bg-white/1">
             <button {...attributes} {...listeners} className="shrink-0 p-1 text-white/15 hover:text-white/40 cursor-grab active:cursor-grabbing touch-none">
                 <GripVertical size={14} />
             </button>
@@ -758,7 +758,7 @@ export default function AdminFeaturesPage() {
 
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
                 {/* Header */}
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/2 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
                         <Puzzle size={18} className="text-[#6b5be6]" />
@@ -794,7 +794,7 @@ export default function AdminFeaturesPage() {
                                         <motion.div 
                                             animate={{ scale: [1, 1.2, 1] }} 
                                             transition={{ repeat: Infinity, duration: 2 }} 
-                                            className="absolute inset-0 bg-amber-400/20 blur-sm rounded-full -z-0" 
+                                            className="absolute inset-0 bg-amber-400/20 blur-sm rounded-full z-0" 
                                         />
                                     </div>
                                     <span className="tracking-wide">{displayLang.toUpperCase()} Eksikler</span>
@@ -806,17 +806,17 @@ export default function AdminFeaturesPage() {
                         )}
                     </AnimatePresence>
                     <AdminLangPicker value={displayLang} onChange={setDisplayLang} />
-                    <motion.button onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><ArrowUpDown size={14} /> Kategorileri Sırala</motion.button>
-                    <motion.button onClick={() => setShowNewCategory(true)} className="h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/[0.06]"><FolderPlus size={14} /> Yeni Kategori</motion.button>
+                    <motion.button onClick={() => { setOrderedCategories([...categories].sort((a, b) => a.order - b.order)); setShowCategoryOrder(true); }} className="h-9 px-4 bg-white/4 hover:bg-white/8 text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/6"><ArrowUpDown size={14} /> Kategorileri Sırala</motion.button>
+                    <motion.button onClick={() => setShowNewCategory(true)} className="h-9 px-4 bg-white/4 hover:bg-white/8 text-white/50 hover:text-white/80 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-white/6"><FolderPlus size={14} /> Yeni Kategori</motion.button>
                     <motion.button onClick={() => router.push("/admin/features/new")} className="h-9 px-5 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[11px] uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-lg shadow-[#6b5be6]/20"><Plus size={15} /> Yeni Özellik</motion.button>
                 </div>
             </motion.div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-2 p-4 rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/[0.05] shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+            <div className="flex flex-col sm:flex-row gap-2 p-4 rounded-2xl bg-white/2 backdrop-blur-md border border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="relative flex-1">
                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/15" />
-                    <input ref={searchRef} type="text" placeholder="Özellik ara..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-9 pl-9 pr-4 bg-white/[0.02] border border-white/[0.04] rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors" />
+                    <input ref={searchRef} type="text" placeholder="Özellik ara..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-9 pl-9 pr-4 bg-white/2 border border-white/4 rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors" />
                 </div>
                 <AdminSelect options={categoryOptions} value={filterCategory} onChange={setFilterCategory} placeholder="Tüm Kategoriler" className="w-[200px]" />
                 <AdminSelect options={riskOptions} value={filterRisk} onChange={setFilterRisk} placeholder="Tüm Risk" className="w-[150px]" />
@@ -827,16 +827,16 @@ export default function AdminFeaturesPage() {
                 {groupedFeatures.map(({ category: cat, features: catFeatures }) => {
                     const isCollapsed = collapsedCategories.has(cat.id);
                     return (
-                        <div key={cat.id} className={`rounded-2xl border bg-white/[0.015] overflow-hidden transition-colors ${cat.enabled ? "border-white/[0.04]" : "border-white/[0.02] opacity-60"}`}>
-                            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer group" onClick={() => toggleCollapse(cat.id)}>
+                        <div key={cat.id} className={`rounded-2xl border bg-white/15 overflow-hidden transition-colors ${cat.enabled ? "border-white/4" : "border-white/2 opacity-60"}`}>
+                            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/6 bg-white/2 cursor-pointer group" onClick={() => toggleCollapse(cat.id)}>
                                 <ChevronRight size={14} className={`text-[#6b5be6]/60 transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
                                 {editingCatName === cat.id ? (
-                                    <input autoFocus value={editingCatValue} onChange={e => { setEditingCatValue(e.target.value); setCatNameDirty(e.target.value.trim() !== originalCatValue); }} onKeyDown={e => { if (e.key === "Enter") saveCatNameInternal(cat.id); if (e.key === "Escape") cancelCatNameEdit(); }} onClick={e => e.stopPropagation()} className="text-[11px] font-bold text-white/70 bg-white/[0.04] border border-[#6b5be6]/30 rounded px-2" />
+                                    <input autoFocus value={editingCatValue} onChange={e => { setEditingCatValue(e.target.value); setCatNameDirty(e.target.value.trim() !== originalCatValue); }} onKeyDown={e => { if (e.key === "Enter") saveCatNameInternal(cat.id); if (e.key === "Escape") cancelCatNameEdit(); }} onClick={e => e.stopPropagation()} className="text-[11px] font-bold text-white/70 bg-white/4 border border-[#6b5be6]/30 rounded px-2" />
                                 ) : (
-                                    <><span className="text-[11px] font-bold text-white/50 uppercase tracking-wider">{getCatDisplayName(cat)}</span><button onClick={(e) => startCatNameEdit(e, cat.id)} className="size-6 flex items-center justify-center rounded-md text-white/0 group-hover:text-white/25 hover:!text-white/50 transition-all"><Pencil size={11} /></button></>
+                                    <><span className="text-[11px] font-bold text-white/50 uppercase tracking-wider">{getCatDisplayName(cat)}</span><button onClick={(e) => startCatNameEdit(e, cat.id)} className="size-6 flex items-center justify-center rounded-md text-white/0 group-hover:text-white/25 hover:text-white/50! transition-all"><Pencil size={11} /></button></>
                                 )}
                                 <span className="flex-1" /><span className="text-[10px] text-white/20">{catFeatures.length} özellik</span>
-                                <button onClick={(e) => toggleCatEnabled(e, cat)} className={`w-8 h-[18px] rounded-full relative transition-colors ${cat.enabled ? "bg-emerald-500/70" : "bg-white/[0.06]"}`}><span className={`absolute top-[2px] w-3 h-3 rounded-full bg-white transition-all ${cat.enabled ? "left-[17px]" : "left-[3px]"}`} /></button>
+                                <button onClick={(e) => toggleCatEnabled(e, cat)} className={`w-8 h-[18px] rounded-full relative transition-colors ${cat.enabled ? "bg-emerald-500/70" : "bg-white/6"}`}><span className={`absolute top-[2px] w-3 h-3 rounded-full bg-white transition-all ${cat.enabled ? "left-[17px]" : "left-[3px]"}`} /></button>
                                 <button onClick={(e) => { e.stopPropagation(); setDeleteCatId(cat.id); }} className="size-6 flex items-center justify-center text-white/15 hover:text-red-400 transition-colors"><Trash2 size={11} /></button>
                             </div>
                             <AnimatePresence>{!isCollapsed && (
@@ -863,7 +863,7 @@ export default function AdminFeaturesPage() {
             <AnimatePresence>
                 {/* Category Reorder Modal - Premium Revamp */}
                 {showCategoryOrder && (
-                    <div key="reorder-modal" className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowCategoryOrder(false)}>
+                    <div key="reorder-modal" className="fixed inset-0 z-9999 flex items-center justify-center p-4" onClick={() => setShowCategoryOrder(false)}>
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -875,7 +875,7 @@ export default function AdminFeaturesPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }} 
                             exit={{ opacity: 0, scale: 0.92, y: 20 }}
                             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
+                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
                             {/* ambient glow */}
@@ -891,7 +891,7 @@ export default function AdminFeaturesPage() {
                                         <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Sürükle ve bırak</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowCategoryOrder(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors">
+                                <button onClick={() => setShowCategoryOrder(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors">
                                     <X size={16} />
                                 </button>
                             </div>
@@ -907,7 +907,7 @@ export default function AdminFeaturesPage() {
                             </div>
                             
                             <div className="relative z-10 flex gap-3">
-                                <button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">İptal</button>
+                                <button onClick={() => setShowCategoryOrder(false)} className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6">İptal</button>
                                 <button onClick={saveCategoryOrder} className="flex-1 h-10 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[12px] uppercase tracking-wider rounded-xl shadow-lg shadow-[#6b5be6]/15 transition-all active:scale-95">Kaydet ve Uygula</button>
                             </div>
                         </motion.div>
@@ -916,7 +916,7 @@ export default function AdminFeaturesPage() {
 
                 {/* New Category Modal - Premium Revamp */}
                 {showNewCategory && (
-                    <div key="new-category-modal" className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowNewCategory(false)}>
+                    <div key="new-category-modal" className="fixed inset-0 z-9999 flex items-center justify-center p-4" onClick={() => setShowNewCategory(false)}>
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -928,7 +928,7 @@ export default function AdminFeaturesPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }} 
                             exit={{ opacity: 0, scale: 0.92, y: 20 }}
                             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
+                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
                             {/* ambient glow */}
@@ -945,7 +945,7 @@ export default function AdminFeaturesPage() {
                                         <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Optimizasyon gruplama</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowNewCategory(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors">
+                                <button onClick={() => setShowNewCategory(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors">
                                     <X size={16} />
                                 </button>
                             </div>
@@ -958,7 +958,7 @@ export default function AdminFeaturesPage() {
                                         value={newCatSlug} 
                                         onChange={e => setNewCatSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
                                         placeholder="örn: system-cleanup" 
-                                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/[0.04] transition-all" 
+                                        className="w-full bg-white/3 border border-white/6 rounded-xl px-4 py-2.5 text-[13px] text-white placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/4 transition-all" 
                                     />
                                 </div>
 
@@ -976,7 +976,7 @@ export default function AdminFeaturesPage() {
                                             value={newCatNames[newCatLang as keyof typeof newCatNames] || ""} 
                                             onChange={e => setNewCatNames(prev => ({ ...prev, [newCatLang]: e.target.value }))} 
                                             placeholder={`${newCatLang.toUpperCase()} dilli ismi...`} 
-                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 pr-24 text-[13px] text-white focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/[0.04] transition-all" 
+                                            className="w-full bg-white/3 border border-white/6 rounded-xl px-4 py-2.5 pr-24 text-[13px] text-white focus:outline-none focus:border-[#6b5be6]/50 focus:bg-white/4 transition-all" 
                                         />
                                         {newCatNames.en && (
                                             <button 
@@ -995,7 +995,7 @@ export default function AdminFeaturesPage() {
                             <div className="relative z-10 flex gap-3 mt-6">
                                 <button 
                                     onClick={() => setShowNewCategory(false)} 
-                                    className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]"
+                                    className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6"
                                 >
                                     İptal
                                 </button>
@@ -1046,7 +1046,7 @@ export default function AdminFeaturesPage() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                        className="fixed inset-0 z-9999 flex items-center justify-center p-4"
                         onClick={() => !translatingMissing && setShowMissingModal(false)}
                         onKeyDown={(e) => { if (e.key === "Escape" && !translatingMissing) setShowMissingModal(false); }}
                     >
@@ -1056,7 +1056,7 @@ export default function AdminFeaturesPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             transition={{ duration: 0.2 }}
-                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 max-w-xl w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
+                            className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 max-w-xl w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/8 blur-3xl pointer-events-none" />
@@ -1073,7 +1073,7 @@ export default function AdminFeaturesPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <button onClick={() => !translatingMissing && setShowMissingModal(false)} className="size-8 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] flex items-center justify-center transition-colors">
+                                    <button onClick={() => !translatingMissing && setShowMissingModal(false)} className="size-8 rounded-lg bg-white/3 hover:bg-white/6 flex items-center justify-center transition-colors">
                                         <X size={14} className="text-white/40" />
                                     </button>
                                 </div>
@@ -1089,7 +1089,7 @@ export default function AdminFeaturesPage() {
                                     {missingForSelectedLang.map((item, idx) => {
                                         const isDone = translatedIndices.has(idx);
                                         return (
-                                            <div key={idx} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all duration-300 ${isDone ? "bg-emerald-500/5 border-emerald-500/15" : "bg-white/[0.02] border-white/[0.04]"}`}>
+                                            <div key={idx} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all duration-300 ${isDone ? "bg-emerald-500/5 border-emerald-500/15" : "bg-white/2 border-white/4"}`}>
                                                 {isDone ? (
                                                     <span className="size-5 flex items-center justify-center rounded-full bg-emerald-500/20 shrink-0">
                                                         <Check size={11} className="text-emerald-400" />
@@ -1117,7 +1117,7 @@ export default function AdminFeaturesPage() {
                                 </div>
 
                                 {missingCount > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-white/[0.04]">
+                                    <div className="mt-4 pt-4 border-t border-white/4">
                                         <button
                                             onClick={handleTranslateMissing}
                                             disabled={translatingMissing}

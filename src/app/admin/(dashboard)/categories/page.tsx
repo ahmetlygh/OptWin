@@ -94,7 +94,7 @@ export default function AdminCategoriesPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-2 border-[var(--accent-color)] border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-(--accent-color) border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
@@ -112,7 +112,7 @@ export default function AdminCategoriesPage() {
                 </div>
                 <button
                     onClick={() => setIsCreating(true)}
-                    className="h-10 px-5 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold text-sm rounded-xl transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5 shadow-lg shadow-[var(--accent-color)]/20"
+                    className="h-10 px-5 bg-(--accent-color) hover:bg-(--accent-hover) text-white font-bold text-sm rounded-xl transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5 shadow-lg shadow-(--accent-color)/20"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     Add Category
@@ -160,7 +160,7 @@ export default function AdminCategoriesPage() {
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => setEditing(cat)}
-                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-[var(--accent-color)]/15 text-[#a19eb7] hover:text-[var(--accent-color)] transition-all"
+                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-(--accent-color)/15 text-[#a19eb7] hover:text-(--accent-color) transition-all"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                                 </button>
@@ -181,9 +181,9 @@ export default function AdminCategoriesPage() {
                 if (!cat) return null;
                 const hasFeatures = cat._count.features > 0;
                 return (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }}>
+                    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4" onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }}>
                         <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
-                        <div className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-6 max-w-sm w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 max-w-sm w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden animate-fade-in-up" onClick={e => e.stopPropagation()}>
                             {/* ambient glow */}
                             <div className="absolute top-0 right-0 w-40 h-40 bg-red-500/8 blur-3xl pointer-events-none" />
 
@@ -203,7 +203,7 @@ export default function AdminCategoriesPage() {
                                             <p className="text-[12px] text-white/40 mb-5 leading-relaxed">Bu kategoriyi silmek istediğinizden emin misiniz?</p>
                                         )}
                                         <div className="flex gap-3">
-                                            <button onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">İptal</button>
+                                            <button onClick={() => { setDeleteConfirm(null); setCascadeConfirm(false); }} className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6">İptal</button>
                                             {hasFeatures ? (
                                                 <button onClick={() => setCascadeConfirm(true)} className="flex-1 h-10 bg-red-600 hover:bg-red-500 text-white font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-600/15 active:scale-95">Hepsini Sil</button>
                                             ) : (
@@ -218,7 +218,7 @@ export default function AdminCategoriesPage() {
                                             <p className="text-[11px] text-red-400/70 leading-relaxed">Kategoriyi içindeki <b>{cat._count.features}</b> özellikle beraber kalıcı olarak silmek istediğinize emin misiniz? Tüm özellikler, çeviriler ve PowerShell komutları da silinecektir.</p>
                                         </div>
                                         <div className="flex gap-3">
-                                            <button onClick={() => setCascadeConfirm(false)} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">Geri Dön</button>
+                                            <button onClick={() => setCascadeConfirm(false)} className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6">Geri Dön</button>
                                             <button onClick={() => handleDelete(deleteConfirm, true)} className="flex-1 h-10 bg-red-700 hover:bg-red-600 text-white font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-700/15 active:scale-95">Kalıcı Olarak Sil</button>
                                         </div>
                                     </>
@@ -258,7 +258,7 @@ function CategoryForm({ category, isCreating, saving, onSave, onCancel }: {
         onSave(data);
     };
 
-    const inputClass = "w-full h-10 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-[#a19eb7]/50 focus:outline-none focus:border-[var(--accent-color)]/50 transition-colors";
+    const inputClass = "w-full h-10 px-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder-[#a19eb7]/50 focus:outline-none focus:border-(--accent-color)/50 transition-colors";
     const labelClass = "block text-xs font-bold text-[#a19eb7] uppercase tracking-wider mb-1.5";
 
     return (
@@ -270,7 +270,7 @@ function CategoryForm({ category, isCreating, saving, onSave, onCancel }: {
                     </button>
                     <h2 className="text-2xl font-black text-white tracking-tight">{isCreating ? "New Category" : "Edit Category"}</h2>
                 </div>
-                <button onClick={handleSubmit} disabled={saving || !slug || !nameEn} className="h-10 px-6 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-all flex items-center gap-2">
+                <button onClick={handleSubmit} disabled={saving || !slug || !nameEn} className="h-10 px-6 bg-(--accent-color) hover:bg-(--accent-hover) disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-all flex items-center gap-2">
                     {saving ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</> : <>{isCreating ? "Create" : "Save"}</>}
                 </button>
             </div>

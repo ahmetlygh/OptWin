@@ -15,7 +15,7 @@ export function ChangingLocaleLoader() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="fixed inset-0 z-[9999] bg-[var(--bg-color)]/80 backdrop-blur-md flex flex-col items-center justify-center pointer-events-auto"
+                    className="fixed inset-0 z-9999 bg-(--bg-color)/80 backdrop-blur-md flex flex-col items-center justify-center pointer-events-auto"
                 >
                     <Loader text="OptWin" />
                 </motion.div>

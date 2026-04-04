@@ -1,6 +1,6 @@
 export default function MaintenanceLoading() {
     return (
-        <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center overflow-hidden bg-[#08080d]">
+        <div className="fixed inset-0 z-10000 flex flex-col items-center justify-center overflow-hidden bg-[#08080d]">
             {/* Background orbs matching maintenance page */}
             <div className="absolute inset-0 bg-[#08080d]">
                 <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle,rgba(107,91,230,0.14)_0%,transparent_70%)] animate-pulse" style={{ animationDuration: '4s' }} />

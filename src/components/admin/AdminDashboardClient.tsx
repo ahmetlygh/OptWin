@@ -153,7 +153,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
         >
             {/* Welcome Header */}
             <motion.div variants={itemVariants}>
-                <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] backdrop-blur-md p-5 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+                <div className="rounded-2xl border border-white/5 bg-white/2 backdrop-blur-md p-5 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(circle,rgba(107,91,230,0.06),transparent_70%)] pointer-events-none" />
                     <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
                         <div>
@@ -165,9 +165,9 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                             </p>
                         </div>
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors duration-500 ${
-                            maintenanceLoading ? "bg-white/[0.02] border-white/5" : maintenance
-                                ? "bg-amber-500/[0.06] border-amber-500/10"
-                                : "bg-emerald-500/[0.06] border-emerald-500/10"
+                            maintenanceLoading ? "bg-white/2 border-white/5" : maintenance
+                                ? "bg-amber-500/6 border-amber-500/10"
+                                : "bg-emerald-500/6 border-emerald-500/10"
                         }`}>
                             {maintenanceLoading ? (
                                 <Loader2 size={12} className="text-white/20 animate-spin" />
@@ -189,7 +189,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
             {/* Unread Messages Alert */}
             {data.unreadMessages > 0 && (
                 <motion.div variants={itemVariants}>
-                    <div className="relative overflow-hidden rounded-2xl border border-red-500/15 bg-red-500/[0.04] p-4">
+                    <div className="relative overflow-hidden rounded-2xl border border-red-500/15 bg-red-500/4 p-4">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-[radial-gradient(circle,rgba(239,68,68,0.1),transparent_70%)] pointer-events-none" />
                         <div className="relative flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
@@ -203,7 +203,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                                     Yeni iletişim formu gönderileri var
                                 </p>
                             </div>
-                            <div className="text-xs text-white/15 bg-white/[0.03] px-3 py-1.5 rounded-lg border border-white/[0.04]">
+                            <div className="text-xs text-white/15 bg-white/3 px-3 py-1.5 rounded-lg border border-white/4">
                                 Yakında
                             </div>
                         </div>
@@ -223,11 +223,11 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
                         whileHover={{ y: -2, transition: { duration: 0.2 } }}
-                        className="relative group rounded-2xl border border-white/[0.05] bg-white/[0.02] backdrop-blur-md p-5 overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)]"
+                        className="relative group rounded-2xl border border-white/5 bg-white/2 backdrop-blur-md p-5 overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)]"
                     >
                         {/* Hover glow */}
                         <div
-                            className="absolute top-0 right-0 w-28 h-28 rounded-full blur-[40px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                            className="absolute top-0 right-0 w-28 h-28 rounded-full blur-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                             style={{ backgroundColor: stat.glow }}
                         />
 
@@ -260,7 +260,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
             {/* Top Features */}
             {data.topFeatures.length > 0 && (
                 <motion.div variants={itemVariants}>
-                    <div className="rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]">
+                    <div className="rounded-2xl border border-white/4 bg-white/2 backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <Puzzle size={16} className="text-white/20" />
@@ -268,7 +268,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                             </div>
                             <Link
                                 href="/admin/features"
-                                className="text-[10px] font-medium text-[var(--accent-color)]/60 hover:text-[var(--accent-color)] transition-colors"
+                                className="text-[10px] font-medium text-(--accent-color)/60 hover:text-(--accent-color) transition-colors"
                             >
                                 Tümünü gör
                             </Link>
@@ -283,11 +283,11 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                                         initial={{ opacity: 0, x: -6 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: 0.3 + i * 0.04 }}
-                                        className="relative overflow-hidden rounded-xl p-3 hover:bg-white/[0.02] transition-colors"
+                                        className="relative overflow-hidden rounded-xl p-3 hover:bg-white/2 transition-colors"
                                     >
                                         {/* Progress bar background */}
                                         <div
-                                            className="absolute inset-y-0 left-0 bg-[var(--accent-color)]/[0.04] rounded-xl transition-all duration-700"
+                                            className="absolute inset-y-0 left-0 bg-(--accent-color)/4 rounded-xl transition-all duration-700"
                                             style={{ width: `${pct}%` }}
                                         />
                                         <div className="relative z-10 flex items-center justify-between">
@@ -295,7 +295,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                                                 <p className="text-sm text-white/70 font-medium truncate">{f.title}</p>
                                                 <p className="text-[10px] text-white/15 mt-0.5">{f.category}</p>
                                             </div>
-                                            <span className="text-xs font-bold text-[var(--accent-color)]/60 tabular-nums ml-3 shrink-0">
+                                            <span className="text-xs font-bold text-(--accent-color)/60 tabular-nums ml-3 shrink-0">
                                                 {f.selectCount.toLocaleString()}
                                             </span>
                                         </div>
@@ -316,7 +316,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                 {/* Recent Messages */}
                 <motion.div
                     variants={itemVariants}
-                    className="rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
+                    className="rounded-2xl border border-white/4 bg-white/2 backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
                 >
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -343,7 +343,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                                     initial={{ opacity: 0, x: -8 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.4 + i * 0.05 }}
-                                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.02] transition-colors"
+                                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/2 transition-colors"
                                 >
                                     <div className={`w-2 h-2 rounded-full shrink-0 ${msg.read ? "bg-white/10" : "bg-red-400"}`} />
                                     <div className="flex-1 min-w-0">
@@ -367,7 +367,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                 {/* Quick Actions */}
                 <motion.div
                     variants={itemVariants}
-                    className="rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
+                    className="rounded-2xl border border-white/4 bg-white/2 backdrop-blur-md p-5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"
                 >
                     <h3 className="text-sm font-bold text-white/70 mb-4">Hızlı İşlemler</h3>
                     <div className="space-y-2">
@@ -383,7 +383,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                             >
                                 <Link
                                     href={action.href}
-                                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/[0.03] border border-transparent hover:border-white/[0.04] transition-all duration-200 group"
+                                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/3 border border-transparent hover:border-white/4 transition-all duration-200 group"
                                 >
                                     <div
                                         className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -406,7 +406,7 @@ export function AdminDashboardClient({ data, userName = "Admin" }: { data: Dashb
                         ))}
 
                         {/* Disabled actions hint */}
-                        <div className="mt-3 pt-3 border-t border-white/[0.04]">
+                        <div className="mt-3 pt-3 border-t border-white/4">
                             <p className="text-[11px] text-white/15 text-center">
                                 Daha fazla bölüm yakında — Kategoriler, Mesajlar, Ayarlar...
                             </p>

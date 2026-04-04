@@ -14,10 +14,10 @@ export default function AdminLoginPage() {
 
             <div className="relative w-full max-w-md animate-fade-in-up">
                 {/* Card */}
-                <div className="bg-[#1a1a24]/80 backdrop-blur-xl border border-[#2b2938] rounded-3xl p-8 md:p-10 shadow-2xl shadow-[var(--accent-color)]/5">
+                <div className="bg-[#1a1a24]/80 backdrop-blur-xl border border-[#2b2938] rounded-3xl p-8 md:p-10 shadow-2xl shadow-(--accent-color)/5">
                     {/* Logo */}
                     <div className="flex flex-col items-center text-center mb-8">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent-color)] to-purple-500 flex items-center justify-center mb-4 shadow-lg shadow-[var(--accent-color)]/30">
+                        <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-(--accent-color) to-purple-500 flex items-center justify-center mb-4 shadow-lg shadow-(--accent-color)/30">
                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
                                 <path d="m9 12 2 2 4-4" />

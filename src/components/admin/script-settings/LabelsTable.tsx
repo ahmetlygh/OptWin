@@ -66,13 +66,14 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
 
     const searchRef = useRef<HTMLInputElement>(null);
 
-    // Use originalLabels for missing detection — typing should NOT un-mark a key as missing until saved
-    const missingKeys = activeLang !== "en"
-        ? keys.filter(key => {
-            const saved = originalLabels[activeLang]?.[key];
-            return !saved || saved.trim() === "";
-        })
-        : [];
+    // Use currentLabels for missing detection so it dynamically updates when typing
+    const missingKeys = React.useMemo(() => {
+        if (activeLang === "en") return [];
+        return keys.filter(key => {
+            const val = currentLabels[key];
+            return !val || val.trim() === "";
+        });
+    }, [activeLang, keys, currentLabels]);
 
     const missingCount = missingKeys.length;
 
@@ -112,20 +113,19 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
         });
     }, [currentLabels]);
 
-    const filteredKeys = keys.filter(key => {
-        if (showMissingOnly && activeLang !== "en") {
-            // Filter using ORIGINAL (saved) values so typing doesn't remove from list
-            const saved = originalLabels[activeLang]?.[key];
-            const isMissing = !saved || saved.trim() === "";
-            if (!isMissing) return false;
-        }
-        if (searchQuery) {
-            const lowQ = searchQuery.toLowerCase();
-            const val = currentLabels[key] || "";
-            if (!key.toLowerCase().includes(lowQ) && !val.toLowerCase().includes(lowQ)) return false;
-        }
-        return true;
-    });
+    const filteredKeys = React.useMemo(() => {
+        return keys.filter(key => {
+            if (showMissingOnly && activeLang !== "en") {
+                if (!missingKeys.includes(key)) return false;
+            }
+            if (searchQuery) {
+                const lowQ = searchQuery.toLowerCase();
+                const val = currentLabels[key] || "";
+                if (!key.toLowerCase().includes(lowQ) && !val.toLowerCase().includes(lowQ)) return false;
+            }
+            return true;
+        });
+    }, [keys, showMissingOnly, activeLang, missingKeys, searchQuery, currentLabels]);
 
     const updateScrollbarSpots = useCallback(() => {
         const container = scrollContainerRef.current;
@@ -147,7 +147,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
             });
         }
         setMissingPositions(prev => {
-            if (prev.length === spots.length && prev.every((v, i) => v === spots[i])) return prev;
+            if (prev.length === spots.length && prev.every((v, i) => Math.abs(v - spots[i]) < 0.01)) return prev;
             return spots;
         });
     }, [missingKeys, missingCount, showMissingOnly]);
@@ -194,25 +194,29 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
             if (nextRow) {
                 container.scrollTo({ top: nextRow.offsetTop - 20, behavior: 'smooth' });
                 nextRow.style.transition = "none";
-                nextRow.style.backgroundColor = "rgba(245, 158, 11, 0.4)";
+                nextRow.style.boxShadow = "inset 0 0 0 2px rgba(245, 158, 11, 0.8), inset 0 0 20px rgba(245, 158, 11, 0.4)";
+                nextRow.style.backgroundColor = "rgba(245, 158, 11, 0.15)";
                 
                 // Force reflow and apply fade out
                 void nextRow.offsetHeight;
                 
-                nextRow.style.transition = "background-color 1.5s ease-out";
+                nextRow.style.transition = "all 0.5s ease-out";
                 setTimeout(() => {
-                    if (nextRow) nextRow.style.backgroundColor = "";
-                }, 50);
+                    if (nextRow) {
+                        nextRow.style.boxShadow = "inset 0 0 0 0px rgba(245, 158, 11, 0)";
+                        nextRow.style.backgroundColor = "";
+                    }
+                }, 500);
             }
         }
     }));
 
     return (
-        <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] backdrop-blur-md overflow-hidden flex flex-col h-full shadow-2xl">
-            <div className="px-5 py-3 border-b border-white/[0.04] flex flex-col xl:flex-row xl:items-center justify-between shrink-0 gap-3">
+        <div className="rounded-2xl border border-white/4 bg-white/15 backdrop-blur-md overflow-hidden flex flex-col h-full shadow-2xl">
+            <div className="px-5 py-3 border-b border-white/4 flex flex-col xl:flex-row xl:items-center justify-between shrink-0 gap-3">
                 <div className="flex items-center gap-3">
                     <h3 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] hidden sm:block">ANAHTAR-DEĞER</h3>
-                    <span className="text-[10px] bg-white/[0.05] border border-white/[0.05] px-2 py-0.5 rounded text-white/40 font-mono font-bold tracking-wider">
+                    <span className="text-[10px] bg-white/5 border border-white/5 px-2 py-0.5 rounded text-white/40 font-mono font-bold tracking-wider">
                         {activeLang !== "en" && missingCount > 0
                             ? <><span className="text-amber-400">{keys.length - missingCount}</span>/{keys.length} etiket</>
                             : <>{filteredKeys.length} / {keys.length} etiket</>
@@ -221,23 +225,23 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                 </div>
                 <div className="flex items-center gap-2">
                     {filterBtnMounted && (
-                        <div className={`relative z-[50] flex items-center shrink-0 ${filterBtnClass}`} style={{ willChange: 'transform, opacity' }}>
+                        <div className={`relative z-50 flex items-center shrink-0 ${filterBtnClass}`} style={{ willChange: 'transform, opacity' }}>
                             <button
                                 onClick={() => setShowMissingOnly(!showMissingOnly)}
                                 className={`h-8 px-3 flex items-center gap-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border shrink-0 cursor-pointer relative overflow-hidden ${
                                     showMissingOnly
-                                        ? "bg-gradient-to-r from-red-500/15 to-amber-500/15 border-amber-500/40 text-amber-400 shadow-[0_4px_15px_rgba(245,158,11,0.1)]"
-                                        : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:bg-white/[0.06] hover:text-white/60"
+                                        ? "bg-linear-to-r from-red-500/15 to-amber-500/15 border-amber-500/40 text-amber-400 shadow-[0_4px_15px_rgba(245,158,11,0.1)]"
+                                        : "bg-white/3 border-white/8 text-white/40 hover:bg-white/6 hover:text-white/60"
                                 }`}
                             >
                                 {showMissingOnly && (
-                                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/10 to-transparent missing-badge-shine pointer-events-none" />
+                                    <span className="absolute inset-0 bg-linear-to-r from-transparent via-amber-300/10 to-transparent missing-badge-shine pointer-events-none" />
                                 )}
                                 <Filter size={11} className={showMissingOnly ? "text-amber-400" : "text-white/30"} />
                                 EKSİKLERİ FİLTRELE
                                 {missingCount > 0 && (
                                     <span className={`flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded text-[9px] font-black ${
-                                        showMissingOnly ? "bg-amber-500/30 text-amber-300 border border-amber-500/30" : "bg-white/[0.07] text-white/30 border border-white/[0.06]"
+                                        showMissingOnly ? "bg-amber-500/30 text-amber-300 border border-amber-500/30" : "bg-white/7 text-white/30 border border-white/6"
                                     }`}>{missingCount}</span>
                                 )}
                             </button>
@@ -250,7 +254,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             placeholder="Anahtar veya çeviri ara..."
-                            className="h-8 w-full bg-[#0a0a0f] border border-white/[0.05] rounded-lg pl-8 pr-3 text-[11px] font-medium text-white/90 placeholder-white/20 hover:border-white/[0.1] focus:border-[#6b5be6]/50 focus:bg-[#6b5be6]/[0.02] focus:outline-none transition-all duration-300 focus:shadow-[0_0_20px_rgba(107,91,230,0.15)] ring-1 ring-transparent focus:ring-[#6b5be6]/30"
+                            className="h-8 w-full bg-[#0a0a0f] border border-white/5 rounded-lg pl-8 pr-3 text-[11px] font-medium text-white/90 placeholder-white/20 hover:border-white/10 focus:border-[#6b5be6]/50 focus:bg-[#6b5be6]/2 focus:outline-none transition-all duration-300 focus:shadow-[0_0_20px_rgba(107,91,230,0.15)] ring-1 ring-transparent focus:ring-[#6b5be6]/30"
                         />
                     </div>
                 </div>
@@ -282,7 +286,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                     const isMissing = missingKeys.includes(key);
 
                     return (
-                        <div key={key} ref={el => { rowRefs.current[key] = el; }} className={`flex flex-col sm:flex-row p-3 gap-2 border-b border-white/[0.03] transition-colors group/row ${(changed && !isMissing) ? "bg-[#6b5be6]/[0.05]" : ""} ${isMissing ? "bg-amber-500/[0.08]" : "hover:bg-white/[0.015]"}`}>
+                        <div key={key} ref={el => { rowRefs.current[key] = el; }} className={`flex flex-col sm:flex-row p-3 gap-2 border-b border-white/3 transition-colors group/row ${(changed && !isMissing) ? "bg-[#6b5be6]/5" : ""} ${isMissing ? "bg-amber-500/8" : "hover:bg-white/15"}`}>
                             
                             <div className="flex items-start sm:items-center sm:w-[220px] shrink-0 gap-3">
                                 <span className="text-center text-[10px] font-mono font-bold text-white/20 pt-1 shrink-0 w-6">{i + 1}</span>
@@ -315,7 +319,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                     onKeyDown={e => { if (e.key === "Escape") (e.target as HTMLTextAreaElement).blur(); }}
                                     rows={1}
                                     placeholder="Değer girin..."
-                                    className="w-full bg-white/[0.02] border border-white/[0.04] p-2 hover:border-[#6b5be6]/30 hover:bg-[#6b5be6]/[0.02] focus:border-[#6b5be6]/50 focus:bg-[#6b5be6]/5 rounded-xl text-[13px] text-white/80 placeholder-white/20 focus:outline-none transition-all resize-none shadow-sm pb-2.5"
+                                    className="w-full bg-white/2 border border-white/4 p-2 hover:border-[#6b5be6]/30 hover:bg-[#6b5be6]/2 focus:border-[#6b5be6]/50 focus:bg-[#6b5be6]/5 rounded-xl text-[13px] text-white/80 placeholder-white/20 focus:outline-none transition-all resize-none shadow-sm pb-2.5"
                                     style={{ minHeight: "38px", scrollbarWidth: "none" }}
                                     onInput={(e) => {
                                         const t = e.target as HTMLTextAreaElement;
@@ -330,13 +334,13 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                     <button 
                                         onClick={() => handleMoveUp(key)}
                                         disabled={i === 0 || searchQuery !== "" || showMissingOnly}
-                                        className="size-4 flex items-center justify-center rounded bg-white/[0.05] hover:bg-white/[0.1] text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto"
+                                        className="size-4 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto"
                                         title="Yukarı Taşı"
                                     ><ArrowUp size={10} /></button>
                                     <button 
                                         onClick={() => handleMoveDown(key)}
                                         disabled={i === filteredKeys.length - 1 || searchQuery !== "" || showMissingOnly}
-                                        className="size-4 flex items-center justify-center rounded bg-white/[0.05] hover:bg-white/[0.1] text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto"
+                                        className="size-4 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto"
                                         title="Aşağı Taşı"
                                     ><ArrowDown size={10} /></button>
                                 </div>
@@ -360,7 +364,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                            className="flex flex-col sm:flex-row p-3 gap-2 border-b border-white/[0.04] bg-[#6b5be6]/[0.05]"
+                            className="flex flex-col sm:flex-row p-3 gap-2 border-b border-white/4 bg-[#6b5be6]/5"
                         >
                             <div className="flex items-start sm:w-[220px] shrink-0 gap-3">
                                 <span className="block text-center text-[10px] font-mono text-white/15 pt-2 w-6">—</span>
@@ -370,7 +374,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                         value={newKey}
                                         onChange={e => handleNewKeyChange(e.target.value)}
                                         placeholder="Anahtar adı"
-                                        className="w-full bg-[#6b5be6]/[0.05] border border-[#6b5be6]/30 focus:border-[#6b5be6]/70 rounded px-3 py-2 text-[12px] font-mono text-white/80 placeholder-white/30 focus:outline-none transition-all focus:shadow-[0_0_15px_rgba(107,91,230,0.15)]"
+                                        className="w-full bg-[#6b5be6]/5 border border-[#6b5be6]/30 focus:border-[#6b5be6]/70 rounded px-3 py-2 text-[12px] font-mono text-white/80 placeholder-white/30 focus:outline-none transition-all focus:shadow-[0_0_15px_rgba(107,91,230,0.15)]"
                                     />
                                     {suggestions.length > 0 && (
                                         <div className="absolute left-0 right-0 top-full z-20 mt-2 bg-[#14141f] border border-[#6b5be6]/20 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
@@ -378,7 +382,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                                 <button
                                                     key={s}
                                                     onClick={() => handleSelectSuggestion(s)}
-                                                    className="w-full px-4 py-2.5 text-left text-[11px] font-mono text-white/60 text-[#a78bfa] hover:bg-[#6b5be6]/20 hover:text-white transition-colors flex items-center justify-between"
+                                                    className="w-full px-4 py-2.5 text-left text-[11px] font-mono text-[#a78bfa] hover:bg-[#6b5be6]/20 hover:text-white transition-colors flex items-center justify-between"
                                                 >
                                                     <span className="font-bold">{s}</span>
                                                     {LABEL_DESCRIPTIONS[s] && (
@@ -396,7 +400,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                     value={newValue}
                                     onChange={e => setNewValue(e.target.value)}
                                     placeholder="Değer girin..."
-                                    className="w-full bg-[#6b5be6]/[0.05] border border-[#6b5be6]/30 focus:border-[#6b5be6]/70 rounded-xl px-3 py-2 text-[13px] text-white/80 placeholder-white/30 focus:outline-none transition-all focus:shadow-[0_0_15px_rgba(107,91,230,0.15)]"
+                                    className="w-full bg-[#6b5be6]/5 border border-[#6b5be6]/30 focus:border-[#6b5be6]/70 rounded-xl px-3 py-2 text-[13px] text-white/80 placeholder-white/30 focus:outline-none transition-all focus:shadow-[0_0_15px_rgba(107,91,230,0.15)]"
                                     onKeyDown={e => e.key === "Enter" && handleAddRow()}
                                 />
                             </div>
@@ -411,7 +415,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                 </button>
                                 <button
                                     onClick={() => { setShowNewRow(false); setNewKey(""); setNewValue(""); }}
-                                    className="size-9 flex items-center justify-center rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-white/40 hover:text-white transition-all border border-white/[0.05]"
+                                    className="size-9 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5"
                                     title="İptal"
                                 >
                                     <X size={14} />
@@ -424,17 +428,19 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
             </div>
 
 
-            <div className="px-5 py-4 border-t border-white/[0.04] shrink-0 bg-white/[0.01]">
-                <button
-                    onClick={() => {
-                        setShowNewRow(true);
-                        setTimeout(() => newKeyRef.current?.focus(), 100);
-                    }}
-                    className="flex items-center gap-2 text-[11px] font-black text-white/30 hover:text-[#6b5be6] uppercase tracking-[0.1em] transition-colors"
-                >
-                    <Plus size={14} /> YENİ ETİKET EKLE
-                </button>
-            </div>
+            {!showNewRow && (
+                <div className="px-5 py-4 border-t border-white/4 shrink-0 bg-white/1">
+                    <button
+                        onClick={() => {
+                            setShowNewRow(true);
+                            setTimeout(() => newKeyRef.current?.focus(), 100);
+                        }}
+                        className="flex items-center gap-2 text-[11px] font-black text-white/30 hover:text-[#6b5be6] uppercase tracking-widest transition-colors cursor-pointer"
+                    >
+                        <Plus size={14} /> YENİ ETİKET EKLE
+                    </button>
+                </div>
+            )}
         </div>
     );
 }));

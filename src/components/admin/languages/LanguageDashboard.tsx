@@ -39,20 +39,20 @@ const SortingModal = ({ languages, onClose, onSave }: { languages: Language[], o
     }, [onClose]);
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/70 backdrop-blur-md" />
             <motion.div
                 initial={{ opacity: 0, scale: 0.92, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.92, y: 20 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col max-h-[80vh]"
+                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl w-full max-w-md shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col max-h-[80vh]"
                 onClick={e => e.stopPropagation()}
             >
                 {/* ambient glow */}
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#6b5be6]/8 blur-3xl pointer-events-none" />
 
-                <div className="relative z-10 p-5 border-b border-white/[0.04] flex items-center justify-between">
+                <div className="relative z-10 p-5 border-b border-white/4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="size-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
                             <ListOrdered size={18} className="text-[#6b5be6]" />
@@ -62,14 +62,14 @@ const SortingModal = ({ languages, onClose, onSave }: { languages: Language[], o
                             <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Sürükle ve bırak</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors">
+                    <button onClick={onClose} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors">
                         <X size={16} />
                     </button>
                 </div>
                 <div className="relative z-10 flex-1 overflow-y-auto p-4 admin-scrollbar">
                     <Reorder.Group axis="y" values={items} onReorder={setItems} className="space-y-2">
                         {items.map((lang) => (
-                            <Reorder.Item key={lang.id} value={lang} className="p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl flex items-center gap-3 cursor-grab active:cursor-grabbing hover:bg-white/[0.05] transition-colors">
+                            <Reorder.Item key={lang.id} value={lang} className="p-3 bg-white/3 border border-white/6 rounded-xl flex items-center gap-3 cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors">
                                 <GripVertical size={16} className="text-white/15" />
                                 <FlagIcon flagSvg={lang.flagSvg} size="sm" />
                                 <span className="text-sm font-bold text-white/80 flex-1 uppercase tracking-tight">{lang.nativeName}</span>
@@ -78,8 +78,8 @@ const SortingModal = ({ languages, onClose, onSave }: { languages: Language[], o
                         ))}
                     </Reorder.Group>
                 </div>
-                <div className="relative z-10 p-4 border-t border-white/[0.04] flex gap-3">
-                    <button onClick={onClose} className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]">Vazgeç</button>
+                <div className="relative z-10 p-4 border-t border-white/4 flex gap-3">
+                    <button onClick={onClose} className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6">Vazgeç</button>
                     <button onClick={() => onSave(items)} className="flex-1 h-10 bg-[#6b5be6] hover:bg-[#5a4bd4] text-white font-bold text-[12px] uppercase tracking-wider rounded-xl shadow-lg shadow-[#6b5be6]/15 transition-all active:scale-95">Kaydet</button>
                 </div>
             </motion.div>
@@ -255,7 +255,7 @@ export function LanguageDashboard() {
 
     return (
         <div className="h-full flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)] shrink-0">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/2 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)] shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#6b5be6]/10 border border-[#6b5be6]/20 flex items-center justify-center">
                         <ListOrdered size={18} className="text-[#6b5be6]" />
@@ -268,7 +268,7 @@ export function LanguageDashboard() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setIsSortingMode(true)}
-                        className="flex items-center gap-2 h-9 px-4 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 border border-white/[0.06] rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95"
+                        className="flex items-center gap-2 h-9 px-4 bg-white/4 hover:bg-white/8 text-white/50 hover:text-white/80 border border-white/6 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95"
                     >
                         <ListOrdered size={14} /> Sıralamayı Düzenle
                     </button>
@@ -288,7 +288,7 @@ export function LanguageDashboard() {
                         const { percentage } = calculateProgress(lang.translations, lang.seoMetadata, defaultKeys, extra);
                         const isSuccess = percentage >= 90;
                         const isCaution = percentage >= 50 && percentage < 90;
-                        const barColorClass = isSuccess ? "bg-gradient-to-r from-[#04d16d] to-[#00f8da] shadow-[0_0_15px_rgba(0,248,218,0.3)]" : isCaution ? "bg-amber-500" : "bg-orange-600";
+                        const barColorClass = isSuccess ? "bg-linear-to-r from-[#04d16d] to-[#00f8da] shadow-[0_0_15px_rgba(0,248,218,0.3)]" : isCaution ? "bg-amber-500" : "bg-orange-600";
                         const textColorClass = isSuccess ? "text-[#00f8da]" : isCaution ? "text-amber-400" : "text-orange-500";
 
                         return (
@@ -297,7 +297,7 @@ export function LanguageDashboard() {
                                 initial={{ opacity: 0, scale: 0.98 }} 
                                 animate={{ opacity: 1, scale: 1 }} 
                                 transition={{ duration: 0.2 }}
-                                className={`bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 hover:bg-white/[0.04] transition-colors relative overflow-hidden group shadow-2xl ${!lang.isActive ? "opacity-60 saturate-50" : ""}`}
+                                className={`bg-white/2 border border-white/5 rounded-2xl p-6 hover:bg-white/4 transition-colors relative overflow-hidden group shadow-2xl ${!lang.isActive ? "opacity-60 saturate-50" : ""}`}
                             >
                                 {lang.isDefault && (
                                     <div className="absolute top-0 right-0 px-3 py-1 bg-amber-500 text-black text-[9px] font-black uppercase tracking-wider rounded-bl-xl z-10 shadow-lg">VARSAYILAN</div>
@@ -322,7 +322,7 @@ export function LanguageDashboard() {
                                     <div className="flex flex-col gap-2 shrink-0">
                                         <button
                                             onClick={() => router.push(`/admin/languages/${lang.code}`)}
-                                            className="px-3 py-2 bg-white/[0.03] hover:bg-[#6b5be6] text-white/40 hover:text-white border border-white/[0.06] hover:border-[#6b5be6] rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shrink-0 group/btn"
+                                            className="px-3 py-2 bg-white/3 hover:bg-[#6b5be6] text-white/40 hover:text-white border border-white/6 hover:border-[#6b5be6] rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shrink-0 group/btn"
                                         >
                                             <Settings2 size={12} className="text-white/20 group-hover/btn:text-white" /> DİL AYARLARI
                                         </button>

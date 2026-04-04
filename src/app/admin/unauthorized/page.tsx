@@ -35,7 +35,7 @@ export default function UnauthorizedPage() {
                         </button>
                         <a
                             href="/"
-                            className="w-full h-12 flex items-center justify-center bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white font-bold rounded-xl transition-all duration-300"
+                            className="w-full h-12 flex items-center justify-center bg-(--accent-color) hover:bg-(--accent-hover) text-white font-bold rounded-xl transition-all duration-300"
                         >
                             ← <TranslatableText en="Back to OptWin" tr="OptWin'e Dön" />
                         </a>

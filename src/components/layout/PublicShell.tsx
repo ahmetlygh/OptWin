@@ -14,7 +14,7 @@ import { ScrollRestorer } from "@/components/shared/ScrollRestorer";
 /* ── Ambient Background ──────────────────────────────────────── */
 function AmbientBackground() {
     return (
-        <div className="fixed inset-0 pointer-events-none z-[-1] bg-[var(--bg-color)]">
+        <div className="fixed inset-0 pointer-events-none z-[-1] bg-(--bg-color)">
             <div className="absolute top-[-20%] right-[-10%] w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-[radial-gradient(circle,rgba(107,91,230,0.12)_0%,transparent_70%)]"></div>
             <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-[radial-gradient(circle,rgba(147,51,234,0.12)_0%,transparent_70%)]"></div>
             <div className="absolute top-[40%] left-[30%] w-[70vw] h-[70vw] max-w-[1000px] max-h-[1000px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.08)_0%,transparent_70%)]"></div>

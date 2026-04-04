@@ -374,8 +374,16 @@ export default function ScriptDefaultsPage() {
     };
 
     const handleAddRow = () => {
-        if (!newKey.trim()) return;
+        if (!newKey || !newKey.trim()) return;
         const key = newKey.trim();
+        
+        // Validation: Prevent duplicate keys
+        if (Object.keys(currentLabels).includes(key)) {
+            setError(`"${key}" anahtarı zaten mevcut.`);
+            setTimeout(() => setError(""), 3000);
+            return;
+        }
+
         setLabels(prev => {
             const updated = { ...prev };
             for (const langObj of languages) {
@@ -395,8 +403,16 @@ export default function ScriptDefaultsPage() {
     };
 
     const handleRenameKey = (oldKey: string, newKeyName: string) => {
-        if (!newKeyName.trim() || newKeyName === oldKey) return;
+        if (!newKeyName || !newKeyName.trim() || newKeyName === oldKey) return;
         const nk = newKeyName.trim();
+        
+        // Validation: Prevent renaming to an existing key
+        if (Object.keys(currentLabels).includes(nk)) {
+            setError(`"${nk}" anahtarı zaten mevcut.`);
+            setTimeout(() => setError(""), 3000);
+            return;
+        }
+
         setLabels(prev => {
             const updated = { ...prev };
             for (const langObj of languages) {
@@ -613,7 +629,7 @@ export default function ScriptDefaultsPage() {
             <AdminActionBar show={hasChanges} saving={saving} saved={saved} onSave={handleSave} onCancel={handleCancel} />
 
             {/* Header matches Languages UI */}
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 shadow-[0_4px_30px_rgba(0,0,0,0.1)] shrink-0">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/2 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 shadow-[0_4px_30px_rgba(0,0,0,0.1)] shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                         <FileCode2 size={18} className="text-emerald-400" />
@@ -628,7 +644,7 @@ export default function ScriptDefaultsPage() {
                                     <span className="text-[9px] text-white/20 font-bold uppercase tracking-[0.15em]">{activeLanguageObj.turkishName}</span>
                                 )}
                             </div>
-                            <div className="h-3 w-[1px] bg-white/10" />
+                            <div className="h-3 w-px bg-white/10" />
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Durum:</span>
                                 <span className={`text-[10px] font-black tracking-wider ${totalMissingForActive === 0 ? "text-emerald-400" : "text-amber-400"}`}>
@@ -641,12 +657,12 @@ export default function ScriptDefaultsPage() {
                 
                 <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
                     {badgeMounted && (
-                        <div className={`relative z-[100] flex items-center shrink-0 ${badgeClass}`} style={{ willChange: 'transform, opacity' }}>
+                        <div className={`relative z-100 flex items-center shrink-0 ${badgeClass}`} style={{ willChange: 'transform, opacity' }}>
                             <button
                                 onClick={() => setShowMissingModal(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 mr-2 bg-gradient-to-r from-red-500/10 to-amber-500/10 backdrop-blur-xl border border-amber-500/30 text-amber-400 hover:from-red-500/20 hover:to-amber-500/15 hover:border-amber-400/50 transition-all duration-300 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 shadow-[0_4px_20px_rgba(245,158,11,0.12)] whitespace-nowrap relative overflow-hidden cursor-pointer"
+                                className="flex items-center gap-2 px-4 py-2.5 mr-2 bg-linear-to-r from-red-500/10 to-amber-500/10 backdrop-blur-xl border border-amber-500/30 text-amber-400 hover:from-red-500/20 hover:to-amber-500/15 hover:border-amber-400/50 transition-all duration-300 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 shadow-[0_4px_20px_rgba(245,158,11,0.12)] whitespace-nowrap relative overflow-hidden cursor-pointer"
                             >
-                                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/10 to-transparent missing-badge-shine pointer-events-none" />
+                                <span className="absolute inset-0 bg-linear-to-r from-transparent via-amber-300/10 to-transparent missing-badge-shine pointer-events-none" />
                                 <div className="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center border border-amber-500/25 shrink-0">
                                     <Languages size={13} className="text-amber-400" />
                                 </div>
@@ -657,7 +673,7 @@ export default function ScriptDefaultsPage() {
                             </button>
                             <button
                                 onClick={() => labelsTableRef.current?.jumpToNextMissing?.()}
-                                className="flex items-center justify-center p-2.5 mr-2 bg-white/[0.04] backdrop-blur-md hover:bg-amber-500/10 text-white/40 hover:text-amber-400 border border-white/[0.1] hover:border-amber-500/40 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)] rounded-xl transition-all duration-300 active:scale-95 cursor-pointer"
+                                className="flex items-center justify-center p-2.5 mr-2 bg-white/4 backdrop-blur-md hover:bg-amber-500/10 text-white/40 hover:text-amber-400 border border-white/10 hover:border-amber-500/40 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)] rounded-xl transition-all duration-300 active:scale-95 cursor-pointer"
                                 title="Sonraki Eksikliğe Git"
                             >
                                 <Navigation2 size={16} />
@@ -668,13 +684,13 @@ export default function ScriptDefaultsPage() {
                     {activeLang !== "en" && (
                         <button
                             onClick={handleFillEnglish}
-                            className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-indigo-500/20 border border-white/[0.1] hover:border-indigo-500/50 text-white/50 hover:text-indigo-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer"
+                            className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-indigo-500/20 border border-white/10 hover:border-indigo-500/50 text-white/50 hover:text-indigo-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer"
                             title="CMD karakter desteği olmayan diller için İngilizceyi uygular"
                         >
                             VARSAYILAN DİLİ KULLAN
                         </button>
                     )}
-                    <label className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-emerald-500/15 border border-white/[0.1] hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0">
+                    <label className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0">
                         <FileUp size={14} className="text-white/40 group-hover:text-amber-400 transition-colors" /><span className="font-black hidden xl:inline">İÇE AKTAR</span>
                         <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                     </label>
@@ -687,13 +703,13 @@ export default function ScriptDefaultsPage() {
                             a.href = url; a.download = `optwin_scripts_${activeLang}.json`; a.click();
                             URL.revokeObjectURL(url);
                         }}
-                        className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-amber-500/15 border border-white/[0.1] hover:border-amber-500/40 text-white/50 hover:text-amber-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0"
+                        className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-amber-500/15 border border-white/10 hover:border-amber-500/40 text-white/50 hover:text-amber-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0"
                     >
                         <FileDown size={14} className="text-white/40 group-hover:text-emerald-400 transition-colors" /><span className="font-black hidden xl:inline">DIŞA AKTAR</span>
                     </button>
                     <button
                         onClick={handleDownloadPreview}
-                        className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.1] hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer shrink-0"
+                        className="flex items-center gap-2 px-6 py-3 bg-white/4 hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer shrink-0"
                     >
                         <Download size={14} className="text-white/40" /><span className="font-black hidden xl:inline">ÖNİZLEME</span>
                     </button>

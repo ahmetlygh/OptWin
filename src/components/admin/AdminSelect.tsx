@@ -116,7 +116,7 @@ export function AdminSelect({
                     exit={{ opacity: 0, y: -4, scale: 0.96 }}
                     transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
                     style={dropdownStyle}
-                    className="z-[9990] rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                    className="z-9990 rounded-xl border border-white/8 bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
                     <div className="max-h-[240px] overflow-y-auto py-1 admin-scrollbar">
                         {options.map((opt) => {
@@ -128,8 +128,8 @@ export function AdminSelect({
                                     onClick={() => handleSelect(opt.value)}
                                     className={`w-full flex items-center gap-2 px-3 py-2 text-[12px] font-medium transition-all duration-150 ${
                                         isSelected
-                                            ? "text-[#6b5be6] bg-[#6b5be6]/[0.08]"
-                                            : "text-white/50 hover:text-white/90 hover:bg-white/[0.04]"
+                                            ? "text-[#6b5be6] bg-[#6b5be6]/8"
+                                            : "text-white/50 hover:text-white/90 hover:bg-white/4"
                                     }`}
                                 >
                                     <span className="flex-1 text-left truncate">{opt.label}</span>
@@ -159,8 +159,8 @@ export function AdminSelect({
                 onClick={toggle}
                 className={`w-full h-9 px-3 flex items-center justify-between gap-2 rounded-xl text-sm transition-all duration-200 border ${
                     isOpen
-                        ? "bg-white/[0.04] border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
-                        : "bg-white/[0.02] border-white/[0.06] text-white/60 hover:border-white/[0.1] hover:text-white/80"
+                        ? "bg-white/4 border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
+                        : "bg-white/2 border-white/6 text-white/60 hover:border-white/10 hover:text-white/80"
                 }`}
             >
                 <span className={`truncate ${!selectedOption ? "text-white/25" : ""}`}>

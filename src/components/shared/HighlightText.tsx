@@ -26,10 +26,10 @@ export const HighlightText = memo(function HighlightText({ text }: { text: strin
     const query = searchQuery.trim();
 
     return (
-        <span className="break-words">
+        <span className="wrap-break-word">
             {parts.map((part, i) =>
                 part.toLowerCase() === query.toLowerCase() ? (
-                    <span key={i} className="bg-[var(--accent-color)]/30 text-[var(--text-primary)] font-bold rounded-sm px-0.5">
+                    <span key={i} className="bg-(--accent-color)/30 text-(--text-primary) font-bold rounded-sm px-0.5">
                         {part}
                     </span>
                 ) : (

@@ -15,11 +15,11 @@ import { LanguageEditorModal } from "@/components/admin/languages/LanguageEditor
 import { calculateProgress, SEO_KEYS, PAGE_KEYS, type ExtraProgressData } from "@/lib/translationUtils";
 
 /* ── Shared neon input class ── */
-const neonInput = "w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.06] rounded-xl px-4 py-2.5 text-[12px] text-white placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/70 focus:shadow-[0_0_15px_rgba(107,91,230,0.15)] focus:bg-white/[0.03] transition-all duration-300";
+const neonInput = "w-full bg-white/2 backdrop-blur-md border border-white/6 rounded-xl px-4 py-2.5 text-[12px] text-white placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/70 focus:shadow-[0_0_15px_rgba(107,91,230,0.15)] focus:bg-white/3 transition-all duration-300";
 
 /* ── Task 1: SEO Live Preview ── */
 const SeoPreview = ({ title, description, code }: { title: string; description: string; code: string }) => (
-    <div className="mt-3 p-3 bg-white/[0.015] border border-white/[0.04] rounded-xl space-y-1">
+    <div className="mt-3 p-3 bg-white/15 border border-white/4 rounded-xl space-y-1">
         <div className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">Google Önizleme</div>
         <p className="text-[13px] text-[#8ab4f8] font-medium truncate leading-snug">{title || "Sayfa Başlığı"}</p>
         <p className="text-[10px] text-emerald-400/70 truncate">optwin.tech/{code}</p>
@@ -57,7 +57,7 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
     const term = (searchTerm || "").toLowerCase();
 
     return (
-        <div className="font-mono text-[13px] leading-relaxed p-8 custom-scrollbar min-h-full bg-black/[0.1]">
+        <div className="font-mono text-[13px] leading-relaxed p-8 custom-scrollbar min-h-full bg-black/10">
             <div className="text-white/30">{'{'}</div>
             {Object.entries(localData).map(([key, val], i) => {
                 if (key === "_config.order") return null;
@@ -71,7 +71,7 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
                     if (isMissingModeActive && !isEmptyNow) return null;
                     
                     return (
-                        <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/[0.015] transition-all ${termMatch ? "bg-[#6b5be6]/5" : ""} ${!termMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
+                        <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/15 transition-all ${termMatch ? "bg-[#6b5be6]/5" : ""} ${!termMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
                             <div className="shrink-0 flex items-center pr-2">
                                  <span className="text-white/30 mr-1">&quot;</span>
                                  <span className="text-[#a78bfa] font-black drop-shadow-[0_0_8px_rgba(167,139,250,0.3)]">{key}</span>
@@ -128,7 +128,7 @@ const SmartJsonEditor = memo(({ content, onUpdate, onRevert, searchTerm, showMis
                 const isMatch = termMatch || (showMissingOnly && wasOriginallyEmpty);
 
                 return (
-                    <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/[0.015] transition-all ${isMatch ? "bg-[#6b5be6]/5" : ""} ${!isMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
+                    <div key={key} className={`group flex items-start pl-4 border-l-2 border-transparent hover:bg-white/15 transition-all ${isMatch ? "bg-[#6b5be6]/5" : ""} ${!isMatch && term ? "opacity-30" : "opacity-100"} ${highlightKey === 'json-' + key ? 'highlight-pulse-raw' : ''}`}>
                         <div className="shrink-0 flex items-center pr-2">
                              <span className="text-white/30 mr-1">&quot;</span>
                              <span className="text-[#a78bfa] font-black drop-shadow-[0_0_8px_rgba(167,139,250,0.3)]">{key}</span>
@@ -197,12 +197,12 @@ const TranslationRow = memo(({ k, defText, trText, isMissingInDb, onUpdate, forw
     const isTextarea = defText?.length > 80 || defText?.includes("\n");
     const isEmpty = trText === "";
     return (
-        <div className={`grid grid-cols-1 lg:grid-cols-2 lg:gap-4 border-b border-white/[0.04] group transition-all duration-200 ${isEmpty ? "bg-amber-500/[0.015]" : "hover:bg-white/[0.008]"}`}>
-            <div className="p-6 break-words text-[13px] text-white/50 font-medium leading-relaxed min-w-0 border-r border-white/[0.04] select-none">
+        <div className={`grid grid-cols-1 lg:grid-cols-2 lg:gap-4 border-b border-white/4 group transition-all duration-200 ${isEmpty ? "bg-amber-500/15" : "hover:bg-white/8"}`}>
+            <div className="p-6 wrap-break-word text-[13px] text-white/50 font-medium leading-relaxed min-w-0 border-r border-white/4 select-none">
                 <div className="text-[10px] font-mono text-[#6b5be6]/80 mb-2 uppercase tracking-[0.18em] group-hover:text-[#6b5be6] transition-colors duration-300">{k}</div>
                 {defText}
             </div>
-            <div className={`p-6 flex items-start min-w-0 relative ${isEmpty ? "bg-amber-500/[0.01]" : "bg-transparent"}`}>
+            <div className={`p-6 flex items-start min-w-0 relative ${isEmpty ? "bg-amber-500/1" : "bg-transparent"}`}>
                 {isTextarea ? (
                     <textarea ref={forwardRef as React.Ref<HTMLTextAreaElement>} value={trText} spellCheck={false} onFocus={(e) => e.target.scrollIntoView({ behavior: "smooth", block: "center" })} onChange={e => onUpdate(k, e.target.value)} placeholder="..." rows={3} className={`${neonInput} p-4 resize-none min-h-[60px] custom-scrollbar text-[14px] font-medium leading-6`} />
                 ) : (
@@ -218,8 +218,8 @@ TranslationRow.displayName = "TranslationRow";
 /* ── Collapsible Sidebar Section ── */
 const SidebarSection = ({ title, icon, children, isOpen, onToggle, isWarning = false }: { title: string; icon: React.ReactNode; children: React.ReactNode; isOpen: boolean; onToggle: () => void; isWarning?: boolean }) => {
     return (
-        <div className={`border rounded-2xl overflow-hidden transition-all duration-500 backdrop-blur-md ${isWarning ? "bg-amber-500/[0.02] border-amber-500/15 shadow-[0_4px_30px_rgba(245,158,11,0.04)]" : "bg-white/[0.02] border-white/[0.05] shadow-[0_4px_30px_rgba(0,0,0,0.15)]"}`}>
-            <button onClick={onToggle} className="w-full flex items-center justify-between p-4 group/acc hover:bg-white/[0.02] transition-all duration-300">
+        <div className={`border rounded-2xl overflow-hidden transition-all duration-500 backdrop-blur-md ${isWarning ? "bg-amber-500/2 border-amber-500/15 shadow-[0_4px_30px_rgba(245,158,11,0.04)]" : "bg-white/2 border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.15)]"}`}>
+            <button onClick={onToggle} className="w-full flex items-center justify-between p-4 group/acc hover:bg-white/2 transition-all duration-300">
                 <div className="flex items-center gap-2.5">
                     <span className={`transition-colors duration-300 ${isWarning ? "text-amber-400 group-hover/acc:text-amber-300" : "text-[#6b5be6]/60 group-hover/acc:text-[#6b5be6]"}`}>{icon}</span>
                     <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${isWarning ? "text-amber-400/90 group-hover/acc:text-amber-300" : "text-white/50 group-hover/acc:text-white/80"}`}>{title}</span>
@@ -237,7 +237,7 @@ const SidebarSection = ({ title, icon, children, isOpen, onToggle, isWarning = f
                         transition={{ duration: 0.5, ease: [0.33, 1, 0.68, 1] }} 
                         className="overflow-hidden"
                     >
-                        <div className="px-4 pb-4 space-y-4 border-t border-white/[0.03] select-none">
+                        <div className="px-4 pb-4 space-y-4 border-t border-white/3 select-none">
                             {children}
                         </div>
                     </motion.div>
@@ -1047,8 +1047,8 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
 
     const progressColor = percentage >= 90 ? "text-[#00f8da]" : percentage >= 50 ? "text-amber-400" : "text-white/40";
     const barGradient = percentage >= 90
-        ? "bg-gradient-to-r from-[#04d16d] to-[#00f8da] shadow-[0_0_20px_rgba(0,248,218,0.25)]"
-        : "bg-gradient-to-r from-[#5a4cc2] to-[#6b5be6] shadow-[0_0_20px_rgba(107,91,230,0.25)]";
+        ? "bg-linear-to-r from-[#04d16d] to-[#00f8da] shadow-[0_0_20px_rgba(0,248,218,0.25)]"
+        : "bg-linear-to-r from-[#5a4cc2] to-[#6b5be6] shadow-[0_0_20px_rgba(107,91,230,0.25)]";
 
     /* highlight pulse CSS class */
     const pulseClass = "highlight-pulse-ui";
@@ -1082,9 +1082,9 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
             <AdminActionBar show={hasChanges} saving={saving} saved={saved} onSave={handleSave} onCancel={handleCancel} error={error || undefined} />
 
             {/* ── Header ── */}
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/2 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => router.push("/admin/languages")} className="p-2.5 bg-white/[0.02] backdrop-blur-md hover:bg-white/[0.06] border border-white/[0.06] rounded-xl transition-all duration-300 text-white/40 hover:text-white hover:shadow-[0_0_15px_rgba(107,91,230,0.1)] hover:border-[#6b5be6]/30 active:scale-95 shrink-0">
+                    <button onClick={() => router.push("/admin/languages")} className="p-2.5 bg-white/2 backdrop-blur-md hover:bg-white/6 border border-white/6 rounded-xl transition-all duration-300 text-white/40 hover:text-white hover:shadow-[0_0_15px_rgba(107,91,230,0.1)] hover:border-[#6b5be6]/30 active:scale-95 shrink-0">
                         <ArrowLeft size={18} />
                     </button>
                     <div className="flex items-center gap-3">
@@ -1103,10 +1103,10 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
                 <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 custom-scrollbar">
-                    <button onClick={() => setIsInfoModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-[#6b5be6]/20 border border-white/[0.1] hover:border-[#6b5be6]/50 hover:shadow-[0_0_25px_rgba(107,91,230,0.2)] text-white/70 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer">
+                    <button onClick={() => setIsInfoModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-[#6b5be6]/20 border border-white/10 hover:border-[#6b5be6]/50 hover:shadow-[0_0_25px_rgba(107,91,230,0.2)] text-white/70 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer">
                         <Settings2 size={14} /> DÜZENLE
                     </button>
-                    <label className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-emerald-500/15 border border-white/[0.1] hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0">
+                    <label className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0">
                         <FileUp size={14} /><span className="font-black">İÇE AKTAR</span>
                         <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                     </label>
@@ -1117,7 +1117,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         const a = document.createElement("a");
                         a.href = url; a.download = `${code}.json`; a.click();
                         URL.revokeObjectURL(url);
-                    }} className="flex items-center gap-2 px-6 py-3 bg-white/[0.04] backdrop-blur-md hover:bg-amber-500/15 border border-white/[0.1] hover:border-amber-500/40 text-white/50 hover:text-amber-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer">
+                    }} className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-amber-500/15 border border-white/10 hover:border-amber-500/40 text-white/50 hover:text-amber-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer">
                         <FileDown size={14} /><span className="font-black">DIŞA AKTAR</span>
                     </button>
                 </div>
@@ -1129,7 +1129,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                 {/* ── Left Column ── */}
                 <div className="h-full flex flex-col space-y-5 min-h-0">
                     {/* Search + Mode Toggles + Task 5 shortcut hint */}
-                    <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/[0.05] shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+                    <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-white/2 backdrop-blur-md border border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                         <div className="relative w-full sm:w-80">
                             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                             <input ref={searchRef} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Anahtar veya çeviri ara..." className={`${neonInput} pl-10`} />
@@ -1139,7 +1139,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                 <Settings2 size={13} className={isJsonMode ? "text-[#34d399]" : "text-[#6b5be6]"} /> {isJsonMode ? "UI MOD" : "RAW JSON"}
                             </button>
                             {missingCount > 0 && (
-                                <button onClick={() => setShowMissingOnly(!showMissingOnly)} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${showMissingOnly ? "bg-amber-500 text-black border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:bg-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]" : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:border-amber-500/40 hover:text-white hover:bg-white/[0.04] hover:shadow-[0_0_15px_rgba(245,158,11,0.15)]"}`}>
+                                <button onClick={() => setShowMissingOnly(!showMissingOnly)} className={`px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 active:scale-95 ${showMissingOnly ? "bg-amber-500 text-black border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:bg-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]" : "bg-white/2 text-white/50 border-white/6 hover:border-amber-500/40 hover:text-white hover:bg-white/4 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)]"}`}>
                                     EKSİKLER
                                 </button>
                             )}
@@ -1147,16 +1147,16 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     </div>
 
                     {/* ── Translation Area ── */}
-                    <div className="flex-1 min-h-0 bg-white/[0.015] backdrop-blur-md border border-white/[0.05] rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
+                    <div className="flex-1 min-h-0 bg-white/15 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
                         <AnimatePresence mode="popLayout">
                             {!isJsonMode ? (
                                 <motion.div key={`ui-mode-${uiKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0">
-                                    <div className="grid grid-cols-2 bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] sticky top-0 z-20">
+                                    <div className="grid grid-cols-2 bg-white/2 backdrop-blur-md border-b border-white/5 sticky top-0 z-20">
                                         <div className="p-3.5 px-5 text-[10px] flex items-center gap-2 font-black text-white/30 uppercase tracking-[0.2em]">
                                             <FlagIcon flagSvg={defaultLang?.flagSvg ?? ""} size="sm" /> 
                                             <span className="truncate">{defaultLang?.turkishName || "Referans"} ({defaultLang?.code?.toUpperCase()})</span>
                                         </div>
-                                        <div className="p-3.5 px-5 text-[10px] flex items-center justify-between font-black text-[#6b5be6]/60 uppercase tracking-[0.2em] border-l border-white/[0.04]">
+                                        <div className="p-3.5 px-5 text-[10px] flex items-center justify-between font-black text-[#6b5be6]/60 uppercase tracking-[0.2em] border-l border-white/4">
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <FlagIcon flagSvg={language.flagSvg} size="sm" />
                                                 <span className="truncate">{language.turkishName} ({language.nativeName})</span>
@@ -1185,7 +1185,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                             ) : (
                                 /* ── Structural JSON Editor ── */
                                 <motion.div key="json-mode" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0 z-10">
-                                    <div className="bg-white/[0.02] backdrop-blur-md border-b border-white/[0.05] h-[45px] px-6 flex items-center justify-between shrink-0">
+                                    <div className="bg-white/2 backdrop-blur-md border-b border-white/5 h-[45px] px-6 flex items-center justify-between shrink-0">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em]">Raw JSON Editor</span>
                                         </div>
@@ -1218,12 +1218,12 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         </AnimatePresence>
 
                         {/* ── Global Minimap (Precision Glow markers) ── */}
-                        <div className="absolute right-3 w-[8px] pointer-events-none z-[100] bg-white/[0.015] border-x border-white/[0.04]" style={{ top: 45, bottom: 0 }}>
+                        <div className="absolute right-3 w-[8px] pointer-events-none z-100 bg-white/15 border-x border-white/4" style={{ top: 45, bottom: 0 }}>
                             <div className="relative w-full h-full">
                                 {minimapMarkers.map((pos, i) => (
                                     <div 
                                         key={i} 
-                                        className="absolute right-[1px] w-[5px] h-[5px] bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8),0_0_20px_rgba(245,158,11,0.6)] transition-opacity duration-300 rounded-full" 
+                                        className="absolute right-px w-[5px] h-[5px] bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8),0_0_20px_rgba(245,158,11,0.6)] transition-opacity duration-300 rounded-full" 
                                         style={{ top: `${pos}%`, transform: 'translateY(-50%)' }} 
                                     />
                                 ))}
@@ -1253,7 +1253,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         ) : (
                             <button
                                 onClick={() => setShowDefaultModal(true)}
-                                className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-white/[0.02] hover:bg-amber-500/10 border border-white/[0.05] hover:border-amber-500/30 text-white/50 hover:text-amber-400 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300"
+                                className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-white/2 hover:bg-amber-500/10 border border-white/5 hover:border-amber-500/30 text-white/50 hover:text-amber-400 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300"
                             >
                                 <Globe size={13} /> Varsayılan Yap
                             </button>
@@ -1261,14 +1261,14 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     </SidebarSection>
 
                     {/* İlerleme Kartı */}
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-5 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.15)]">
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-[#6b5be6]/[0.06] blur-3xl pointer-events-none" />
-                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/[0.03] blur-3xl pointer-events-none" />
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="bg-white/2 backdrop-blur-md border border-white/5 rounded-2xl p-5 relative overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.15)]">
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-[#6b5be6]/6 blur-3xl pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/3 blur-3xl pointer-events-none" />
                         <div className="flex items-center justify-between mb-3 relative z-10">
                             <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Tamamlanma Oranı</span>
                             <span className={`text-[12px] font-black tabular-nums ${progressColor}`}>%{percentage}</span>
                         </div>
-                        <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden mb-3 relative z-10">
+                        <div className="h-1.5 w-full bg-white/4 rounded-full overflow-hidden mb-3 relative z-10">
                             <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 1.2, ease: "circOut" }} className={`h-full rounded-full ${barGradient}`} />
                         </div>
 
@@ -1311,7 +1311,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                     <button onClick={handleAITranslate} disabled={isTranslating} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#6b5be6] hover:bg-[#5a4cc2] text-white rounded-xl text-[9px] font-black uppercase tracking-[0.12em] transition-all duration-300 active:scale-95 disabled:opacity-40 shadow-[0_4px_20px_rgba(107,91,230,0.2)] hover:shadow-[0_4px_25px_rgba(107,91,230,0.3)]">
                                         {isTranslating ? <RefreshCw size={11} className="animate-spin" /> : <Bot size={11} />} {isTranslating ? "..." : "AI-ÇEVİRİ"}
                                     </button>
-                                    <button onClick={jumpToNextMissing} className="p-2.5 bg-white/[0.02] backdrop-blur-md hover:bg-white/[0.06] text-white/30 hover:text-white border border-white/[0.06] hover:border-[#6b5be6]/30 hover:shadow-[0_0_12px_rgba(107,91,230,0.1)] rounded-xl transition-all duration-300 active:scale-95" title="Sonraki Eksikliğe Git">
+                                    <button onClick={jumpToNextMissing} className="p-2.5 bg-white/2 backdrop-blur-md hover:bg-white/6 text-white/30 hover:text-white border border-white/6 hover:border-[#6b5be6]/30 hover:shadow-[0_0_12px_rgba(107,91,230,0.1)] rounded-xl transition-all duration-300 active:scale-95" title="Sonraki Eksikliğe Git">
                                         <Navigation2 size={14} />
                                     </button>
                                 </motion.div>
@@ -1387,16 +1387,16 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     />
                 )}
                 {showDefaultModal && (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowDefaultModal(false)} />
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-md p-6 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(245,158,11,0.1)]">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl w-full max-w-md p-6 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(245,158,11,0.1)]">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl pointer-events-none" />
                             <h2 className="text-sm font-black text-white uppercase tracking-tight mb-2 relative z-10 flex items-center gap-2">
                                 <AlertCircle size={16} className="text-amber-500" /> Varsayılan Dili Değiştir
                             </h2>
                             
                             <div className="my-6 space-y-4 relative z-10">
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-white/2 border border-white/5">
                                     <div className="flex items-center gap-3">
                                         <FlagIcon flagSvg={defaultLang?.flagSvg ?? ""} size="sm" />
                                         <div className="flex flex-col">
@@ -1411,7 +1411,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                                     <ChevronDown size={16} />
                                 </div>
 
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/[0.04] border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.05)]">
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/4 border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.05)]">
                                     <div className="flex items-center gap-3">
                                         <FlagIcon flagSvg={language.flagSvg} size="sm" />
                                         <div className="flex flex-col">
@@ -1428,7 +1428,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                             </p>
 
                             <div className="flex justify-end gap-3 relative z-10">
-                                <button onClick={() => setShowDefaultModal(false)} className="px-5 py-2.5 rounded-xl text-[11px] font-bold text-white/40 hover:text-white/70 hover:bg-white/[0.03] transition-all">
+                                <button onClick={() => setShowDefaultModal(false)} className="px-5 py-2.5 rounded-xl text-[11px] font-bold text-white/40 hover:text-white/70 hover:bg-white/3 transition-all">
                                     İptal
                                 </button>
                                 <button onClick={handleMakeDefault} className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-black uppercase tracking-wider transition-all shadow-lg active:scale-95">

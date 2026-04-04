@@ -324,7 +324,7 @@ export default function ContentSettings() {
             />
 
             {error && (
-                <div className="flex items-center gap-2 p-4 rounded-2xl bg-red-500/[0.08] border border-red-500/15 text-red-400 text-sm animate-shake">
+                <div className="flex items-center gap-2 p-4 rounded-2xl bg-red-500/8 border border-red-500/15 text-red-400 text-sm animate-shake">
                     <AlertCircle size={16} /> {error}
                 </div>
             )}
@@ -336,8 +336,8 @@ export default function ContentSettings() {
                 className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-270px)]"
             >
                 {/* Section Sidebar */}
-                <div className="lg:w-[260px] shrink-0 rounded-3xl border border-white/[0.04] bg-white/[0.02] flex flex-col shadow-inner">
-                    <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                <div className="lg:w-[260px] shrink-0 rounded-3xl border border-white/4 bg-white/2 flex flex-col shadow-inner">
+                    <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
                         <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.15em]">Bölümler</h3>
                         <div className="w-1.5 h-1.5 rounded-full bg-[#6b5be6] opacity-30 shadow-[0_0_8px_#6b5be6]"></div>
                     </div>
@@ -349,7 +349,7 @@ export default function ContentSettings() {
                                 className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-semibold transition-all duration-300 group ${
                                     activeSection === section.id
                                         ? "text-white"
-                                        : "text-white/35 hover:text-white/60 hover:bg-white/[0.03]"
+                                        : "text-white/35 hover:text-white/60 hover:bg-white/3"
                                 }`}
                             >
                                 {activeSection === section.id && (
@@ -380,13 +380,13 @@ export default function ContentSettings() {
                 </div>
 
                 {/* Right — content fields */}
-                <div className="flex-1 rounded-3xl border border-white/[0.04] bg-white/[0.02] overflow-hidden flex flex-col shadow-inner">
+                <div className="flex-1 rounded-3xl border border-white/4 bg-white/2 overflow-hidden flex flex-col shadow-inner">
                     {(() => {
                         const section = CONTENT_SECTIONS.find(s => s.id === activeSection);
                         if (!section) return null;
                         return (
                             <>
-                                <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.01]">
+                                <div className="px-6 py-4 border-b border-white/6 flex items-center justify-between bg-white/1">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: `${section.color}15`, color: section.color, border: `1px solid ${section.color}25` }}>
                                             {section.icon}
@@ -415,7 +415,7 @@ export default function ContentSettings() {
                                                 const originalValue = originalTranslations[activeLang]?.[kd.key] || "";
                                                 const changed = value !== originalValue;
                                                 return (
-                                                    <div key={kd.key} className={`group rounded-2xl border transition-all duration-300 ${changed ? "border-[#6b5be6]/30 bg-[#6b5be6]/[0.05] shadow-[0_4px_15px_rgba(107,91,230,0.05)]" : "border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/[0.08]"} p-4`}>
+                                                    <div key={kd.key} className={`group rounded-2xl border transition-all duration-300 ${changed ? "border-[#6b5be6]/30 bg-[#6b5be6]/5 shadow-[0_4px_15px_rgba(107,91,230,0.05)]" : "border-white/4 bg-white/1 hover:bg-white/2 hover:border-white/8"} p-4`}>
                                                         <div className="flex items-center justify-between mb-2">
                                                             <div className="flex items-center gap-2.5">
                                                                 <span className="text-[13px] font-bold text-white/70 group-hover:text-white/90 transition-colors uppercase tracking-tight">{kd.label}</span>
@@ -434,7 +434,7 @@ export default function ContentSettings() {
                                                                 onChange={e => setTranslations(prev => ({ ...prev, [activeLang]: { ...prev[activeLang], [kd.key]: e.target.value } }))}
                                                                 placeholder={kd.placeholder}
                                                                 rows={3}
-                                                                className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] focus:border-[#6b5be6]/40 focus:bg-white/[0.04] rounded-xl px-4 py-3 text-[14px] text-white/80 placeholder-white/10 focus:outline-none transition-all resize-none shadow-sm font-medium leading-relaxed"
+                                                                className="w-full bg-white/2 border border-white/6 hover:border-white/12 focus:border-[#6b5be6]/40 focus:bg-white/4 rounded-xl px-4 py-3 text-[14px] text-white/80 placeholder-white/10 focus:outline-none transition-all resize-none shadow-sm font-medium leading-relaxed"
                                                             />
                                                         ) : (
                                                             <input
@@ -442,7 +442,7 @@ export default function ContentSettings() {
                                                                 value={value}
                                                                 onChange={e => setTranslations(prev => ({ ...prev, [activeLang]: { ...prev[activeLang], [kd.key]: e.target.value } }))}
                                                                 placeholder={kd.placeholder}
-                                                                className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] focus:border-[#6b5be6]/40 focus:bg-white/[0.04] rounded-xl px-4 py-3 text-[14px] text-white/80 placeholder-white/10 focus:outline-none transition-all shadow-sm font-medium"
+                                                                className="w-full bg-white/2 border border-white/6 hover:border-white/12 focus:border-[#6b5be6]/40 focus:bg-white/4 rounded-xl px-4 py-3 text-[14px] text-white/80 placeholder-white/10 focus:outline-none transition-all shadow-sm font-medium"
                                                             />
                                                         )}
                                                     </div>

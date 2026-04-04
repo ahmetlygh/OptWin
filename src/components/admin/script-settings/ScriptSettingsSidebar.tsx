@@ -12,15 +12,15 @@ interface SidebarSectionProps {
 const SidebarSection: React.FC<SidebarSectionProps> = ({ title, icon, children, defaultOpen = true }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-        <div className="bg-white/[0.015] backdrop-blur-md border border-white/[0.05] rounded-2xl overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#6b5be6]/[0.03] blur-3xl pointer-events-none" />
+        <div className="bg-white/15 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#6b5be6]/3 blur-3xl pointer-events-none" />
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-4 bg-white/[0.01] hover:bg-white/[0.03] transition-colors"
+                className="w-full flex items-center justify-between p-4 bg-white/1 hover:bg-white/3 transition-colors"
             >
                 <div className="flex items-center gap-2.5">
                     <div className="p-1.5 rounded-lg bg-[#6b5be6]/10 text-[#6b5be6]">{icon}</div>
-                    <span className="text-[11px] font-black text-white/50 uppercase tracking-[0.1em]">{title}</span>
+                    <span className="text-[11px] font-black text-white/50 uppercase tracking-widest">{title}</span>
                 </div>
                 <ChevronDown size={14} className={`text-white/20 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
             </button>
@@ -47,10 +47,10 @@ export function ScriptSettingsSidebar({ keysCount, totalMissing, activeLangFullN
     const percentage = keysCount > 0 ? Math.round(((keysCount - (totalMissing || 0)) / keysCount) * 100) : 100;
     const progressColor = percentage >= 90 ? "text-[#00f8da]" : percentage >= 50 ? "text-amber-400" : "text-orange-500";
     const barGradient = percentage >= 90
-        ? "bg-gradient-to-r from-[#04d16d] to-[#00f8da] shadow-[0_0_20px_rgba(0,248,218,0.25)]"
+        ? "bg-linear-to-r from-[#04d16d] to-[#00f8da] shadow-[0_0_20px_rgba(0,248,218,0.25)]"
         : percentage >= 50 
-        ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]"
-        : "bg-gradient-to-r from-red-500 to-orange-500";
+        ? "bg-linear-to-r from-amber-500 to-yellow-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]"
+        : "bg-linear-to-r from-red-500 to-orange-500";
 
     return (
         <div className="h-full overflow-y-auto optwin-pro-scroll space-y-4 pr-1 pb-4 flex-1">
@@ -59,7 +59,7 @@ export function ScriptSettingsSidebar({ keysCount, totalMissing, activeLangFullN
                     <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{activeLangFullName}</span>
                     <span className={`text-[12px] font-black tabular-nums ${progressColor}`}>%{percentage}</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden mb-3">
+                <div className="h-1.5 w-full bg-white/4 rounded-full overflow-hidden mb-3">
                     <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 1.2, ease: "circOut" }} className={`h-full rounded-full ${barGradient}`} />
                 </div>
                 <div className="space-y-1.5 mb-2 mt-4 text-[10px]">

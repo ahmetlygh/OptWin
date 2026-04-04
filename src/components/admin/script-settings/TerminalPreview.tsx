@@ -91,9 +91,9 @@ export const TerminalPreview = React.memo(({
     };
 
     return (
-        <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] backdrop-blur-md overflow-hidden flex flex-col h-full shadow-2xl">
+        <div className="rounded-2xl border border-white/4 bg-white/15 backdrop-blur-md overflow-hidden flex flex-col h-full shadow-2xl">
             {/* Terminal header */}
-            <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between shrink-0 bg-[#0d0d14]">
+            <div className="px-5 py-3 border-b border-white/4 flex items-center justify-between shrink-0 bg-[#0d0d14]">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer z-10" title="Önizlemeyi kontrol et">
                         <button className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 focus:outline-none" title="Silinen satırları temizle" onClick={() => setDeletedPreviewLines([])}></button>
@@ -136,7 +136,7 @@ export const TerminalPreview = React.memo(({
 
                             if (isEditingExtra) {
                                 return (
-                                    <div key={`extra-${ei}`} className="flex items-center gap-0 px-3 py-1 bg-amber-500/[0.08]" data-extra-row={ei}>
+                                    <div key={`extra-${ei}`} className="flex items-center gap-0 px-3 py-1 bg-amber-500/8" data-extra-row={ei}>
                                         <input
                                             type="number"
                                             min={1}
@@ -148,7 +148,7 @@ export const TerminalPreview = React.memo(({
                                                 }
                                             }}
                                             onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                                            className="w-10 text-right text-[11px] font-mono font-bold text-amber-500 bg-amber-500/[0.1] border border-amber-500/30 rounded px-1 py-0.5 shrink-0 focus:outline-none focus:border-amber-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            className="w-10 text-right text-[11px] font-mono font-bold text-amber-500 bg-amber-500/10 border border-amber-500/30 rounded px-1 py-0.5 shrink-0 focus:outline-none focus:border-amber-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                             title="Satır konumunu değiştir"
                                         />
                                         <span className="w-px h-5 bg-amber-500/20 mx-2.5 shrink-0" />
@@ -172,7 +172,7 @@ export const TerminalPreview = React.memo(({
                                                 if (row?.contains(e.relatedTarget as Node)) return;
                                                 setEditingLineIdx(null);
                                             }}
-                                            className="flex-1 bg-amber-500/[0.08] border border-amber-500/30 rounded px-3 py-1.5 text-[12px] font-mono text-amber-200 focus:outline-none focus:border-amber-500 transition-all mr-3"
+                                            className="flex-1 bg-amber-500/8 border border-amber-500/30 rounded px-3 py-1.5 text-[12px] font-mono text-amber-200 focus:outline-none focus:border-amber-500 transition-all mr-3"
                                             placeholder='Satır içeriği... (<version> gibi placeholder kullanabilirsiniz)'
                                         />
                                         <button
@@ -189,13 +189,13 @@ export const TerminalPreview = React.memo(({
                             return (
                                 <div
                                     key={`extra-${ei}`}
-                                    className="flex items-start gap-0 px-3 py-0.5 group cursor-pointer hover:bg-white/[0.03]"
+                                    className="flex items-start gap-0 px-3 py-0.5 group cursor-pointer hover:bg-white/3"
                                     onClick={() => { setEditingLineIdx(-(ei + 1)); setEditingLineKey(null); }}
                                 >
-                                    <span className="w-10 text-right text-[11px] font-mono font-bold text-white/[0.15] shrink-0 select-none pt-[3px]">{lineNum}</span>
-                                    <span className="w-px h-5 bg-white/[0.06] mx-2.5 shrink-0 mt-[2px]" />
+                                    <span className="w-10 text-right text-[11px] font-mono font-bold text-white/15 shrink-0 select-none pt-[3px]">{lineNum}</span>
+                                    <span className="w-px h-5 bg-white/6 mx-2.5 shrink-0 mt-[2px]" />
                                     {extraLabel ? (
-                                        <span className="text-[10px] font-mono text-white/[0.15] group-hover:text-white/30 w-[90px] text-right pr-2 shrink-0 truncate pt-[3px] transition-colors" title={extraLabel}>{extraLabel}</span>
+                                        <span className="text-[10px] font-mono text-white/15 group-hover:text-white/30 w-[90px] text-right pr-2 shrink-0 truncate pt-[3px] transition-colors" title={extraLabel}>{extraLabel}</span>
                                     ) : (
                                         <span className="w-[90px] shrink-0" />
                                     )}
@@ -216,7 +216,7 @@ export const TerminalPreview = React.memo(({
 
                         if (isEditingKey && line.key) {
                             return (
-                                <div key={`pv-${idx}-${line.key}`} className="flex items-center gap-0 px-3 py-1 bg-[#6b5be6]/[0.08]">
+                                <div key={`pv-${idx}-${line.key}`} className="flex items-center gap-0 px-3 py-1 bg-[#6b5be6]/8">
                                     <span className="w-10 text-right text-[11px] font-mono font-bold text-[#6b5be6] shrink-0 select-none">{lineNum}</span>
                                     <span className="w-px h-5 bg-[#6b5be6]/30 mx-2.5 shrink-0" />
                                     <span className="text-[10px] font-mono font-bold text-[#6b5be6]/70 w-[90px] text-right pr-2 shrink-0 truncate" title={line.key}>{line.key}</span>
@@ -229,7 +229,7 @@ export const TerminalPreview = React.memo(({
                                                 if (e.key === "Escape") setEditingLineKey(null);
                                             }}
                                             onBlur={() => { if (!line.valueKey) setEditingLineKey(null); }}
-                                            className={`bg-[#6b5be6]/[0.1] border border-[#6b5be6]/40 rounded px-3 py-1.5 text-[12px] font-mono text-white focus:outline-none focus:border-[#6b5be6] transition-all ${line.valueKey ? "w-1/2" : "flex-1"}`}
+                                            className={`bg-[#6b5be6]/10 border border-[#6b5be6]/40 rounded px-3 py-1.5 text-[12px] font-mono text-white focus:outline-none focus:border-[#6b5be6] transition-all ${line.valueKey ? "w-1/2" : "flex-1"}`}
                                             placeholder="Etiket..."
                                         />
                                         {line.valueKey && (
@@ -243,7 +243,7 @@ export const TerminalPreview = React.memo(({
                                                         if (e.key === "Escape") setEditingLineKey(null);
                                                     }}
                                                     onBlur={() => setEditingLineKey(null)}
-                                                    className="flex-1 bg-[#6b5be6]/[0.1] border border-[#6b5be6]/40 rounded px-3 py-1.5 text-[12px] font-mono text-white focus:outline-none focus:border-[#6b5be6] transition-all"
+                                                    className="flex-1 bg-[#6b5be6]/10 border border-[#6b5be6]/40 rounded px-3 py-1.5 text-[12px] font-mono text-white focus:outline-none focus:border-[#6b5be6] transition-all"
                                                     placeholder="Değer..."
                                                 />
                                             </>
@@ -262,7 +262,7 @@ export const TerminalPreview = React.memo(({
 
                         if (isEditingIdx) {
                             return (
-                                <div key={`pv-${idx}-static-edit`} className="flex items-center gap-0 px-3 py-1 bg-amber-500/[0.08]">
+                                <div key={`pv-${idx}-static-edit`} className="flex items-center gap-0 px-3 py-1 bg-amber-500/8">
                                     <span className="w-10 text-right text-[11px] font-mono font-bold text-amber-500 shrink-0 select-none">{lineNum}</span>
                                     <span className="w-px h-5 bg-amber-500/30 mx-2.5 shrink-0" />
                                     <span className="w-[90px] shrink-0" />
@@ -275,7 +275,7 @@ export const TerminalPreview = React.memo(({
                                             if (e.key === "Enter") setEditingLineIdx(null);
                                         }}
                                         onBlur={() => setEditingLineIdx(null)}
-                                        className="flex-1 bg-amber-500/[0.1] border border-amber-500/40 rounded px-3 py-1.5 text-[12px] font-mono text-white focus:outline-none focus:border-amber-500 transition-all mr-3"
+                                        className="flex-1 bg-amber-500/10 border border-amber-500/40 rounded px-3 py-1.5 text-[12px] font-mono text-white focus:outline-none focus:border-amber-500 transition-all mr-3"
                                         placeholder="Satır içeriği..."
                                     />
                                     <button
@@ -292,7 +292,7 @@ export const TerminalPreview = React.memo(({
                         return (
                             <div
                                 key={`pv-${idx}-${line.key || 'static'}`}
-                                className="flex items-start gap-0 px-3 py-0.5 group cursor-pointer hover:bg-white/[0.03]"
+                                className="flex items-start gap-0 px-3 py-0.5 group cursor-pointer hover:bg-white/3"
                                 onClick={() => {
                                     if (line.key) {
                                         setEditingLineKey(line.key);
@@ -303,10 +303,10 @@ export const TerminalPreview = React.memo(({
                                     }
                                 }}
                             >
-                                <span className="w-10 text-right text-[11px] font-mono font-bold text-white/[0.15] shrink-0 select-none pt-[3px]">{lineNum}</span>
-                                <span className="w-px h-5 bg-white/[0.06] mx-2.5 shrink-0 mt-[2px]" />
+                                <span className="w-10 text-right text-[11px] font-mono font-bold text-white/15 shrink-0 select-none pt-[3px]">{lineNum}</span>
+                                <span className="w-px h-5 bg-white/6 mx-2.5 shrink-0 mt-[2px]" />
                                 {line.key ? (
-                                    <span className="text-[10px] font-mono text-white/[0.15] group-hover:text-white/30 w-[90px] text-right pr-2 shrink-0 truncate pt-[3px] transition-colors" title={line.key}>{line.key}</span>
+                                    <span className="text-[10px] font-mono text-white/15 group-hover:text-white/30 w-[90px] text-right pr-2 shrink-0 truncate pt-[3px] transition-colors" title={line.key}>{line.key}</span>
                                 ) : (
                                     <span className="w-[90px] shrink-0" />
                                 )}
@@ -316,7 +316,7 @@ export const TerminalPreview = React.memo(({
                                 <Pencil size={10} className="text-white/0 group-hover:text-white/30 transition-colors mt-[5px] ml-2 shrink-0" />
                                 <button
                                     onClick={e => { e.stopPropagation(); setDeletedPreviewLines(prev => [...prev, idx]); setEditingLineKey(null); setEditingLineIdx(null); }}
-                                    className="size-5 flex items-center justify-center rounded text-white/0 group-hover:text-red-400/40 hover:!text-white hover:!bg-red-500 transition-all shrink-0 ml-1.5 mt-0.5"
+                                    className="size-5 flex items-center justify-center rounded text-white/0 group-hover:text-red-400/40 hover:text-white! hover:bg-red-500! transition-all shrink-0 ml-1.5 mt-0.5"
                                     title="Satırı sil"
                                 >
                                     <Trash2 size={10} />
@@ -328,7 +328,7 @@ export const TerminalPreview = React.memo(({
             </div>
 
             {/* Terminal footer */}
-            <div className="px-5 py-3 border-t border-white/[0.04] bg-[#0d0d14] flex items-center justify-between shrink-0 relative overflow-visible">
+            <div className="px-5 py-3 border-t border-white/4 bg-[#0d0d14] flex items-center justify-between shrink-0 relative overflow-visible">
                 <div className="flex items-center gap-4">
                     <span className="text-[10px] font-mono font-bold text-white/20">{mergedItems.length} satır</span>
                     

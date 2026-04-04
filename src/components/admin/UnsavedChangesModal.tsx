@@ -29,7 +29,7 @@ export function UnsavedChangesModal({
     return (
         <AnimatePresence>
             {open && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
                     {/* ── backdrop ── */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -45,7 +45,7 @@ export function UnsavedChangesModal({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.92, y: 20 }}
                         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative w-full max-w-[400px] bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
+                        className="relative w-full max-w-[400px] bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                         onClick={e => e.stopPropagation()}
                     >
                         {/* ambient glows */}
@@ -66,7 +66,7 @@ export function UnsavedChangesModal({
                                 </div>
                                 <button
                                     onClick={onClose}
-                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors"
+                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors"
                                 >
                                     <X size={16} />
                                 </button>
@@ -90,14 +90,14 @@ export function UnsavedChangesModal({
                                 <div className="grid grid-cols-2 gap-2.5">
                                     <button
                                         onClick={onDiscardAndLeave}
-                                        className="h-10 bg-white/[0.03] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 text-white/50 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06] flex items-center justify-center gap-2"
+                                        className="h-10 bg-white/3 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 text-white/50 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all border border-white/6 flex items-center justify-center gap-2"
                                     >
                                         <LogOut size={13} />
                                         Kaydetmeden Çık
                                     </button>
                                     <button
                                         onClick={onClose}
-                                        className="h-10 bg-white/[0.02] hover:bg-white/[0.06] text-white/30 hover:text-white/60 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06] flex items-center justify-center"
+                                        className="h-10 bg-white/2 hover:bg-white/6 text-white/30 hover:text-white/60 font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all border border-white/6 flex items-center justify-center"
                                     >
                                         İptal
                                     </button>

@@ -31,7 +31,7 @@ export function Loader({
                         rotate: [0, 90, 0]
                     }}
                     transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute inset-[-40px] bg-[var(--accent-color)] blur-[50px] rounded-full" 
+                    className="absolute inset-[-40px] bg-(--accent-color) blur-[50px] rounded-full" 
                 />
                 <motion.div 
                     animate={{ 
@@ -40,7 +40,7 @@ export function Loader({
                         rotate: [0, -90, 0]
                     }}
                     transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute inset-[-20px] bg-[#9333ea] blur-[40px] rounded-full" 
+                    className="absolute inset-[-20px] bg-[#9333ea] blur-2xl rounded-full" 
                 />
                 
                 {/* Settings Spinner with Floating Motion */}
@@ -53,11 +53,11 @@ export function Loader({
                         rotate: { duration: 3, repeat: Infinity, ease: "linear" },
                         y: { duration: 2, repeat: Infinity, ease: "easeInOut" }
                     }}
-                    className="relative z-10 p-4 rounded-full bg-white/[0.03] border border-white/[0.05] backdrop-blur-md shadow-2xl"
+                    className="relative z-10 p-4 rounded-full bg-white/3 border border-white/5 backdrop-blur-md shadow-2xl"
                 >
                     <Settings 
                         size={size} 
-                        className="text-[var(--accent-color)] drop-shadow-[0_0_15px_rgba(107,91,230,0.5)]" 
+                        className="text-(--accent-color) drop-shadow-[0_0_15px_rgba(107,91,230,0.5)]" 
                         strokeWidth={1.5} 
                     />
                 </motion.div>

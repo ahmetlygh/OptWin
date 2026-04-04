@@ -41,7 +41,7 @@ export function HeroTitle() {
                         return (
                             <span 
                                 key={i} 
-                                className={`text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-color)] to-purple-400 ${isZh ? '!mr-0 !pr-0' : ''}`}
+                                className={`text-transparent bg-clip-text bg-linear-to-r from-(--accent-color) to-purple-400 ${isZh ? 'mr-0! pr-0!' : ''}`}
                             >
                                 {highlightWord}
                             </span>
@@ -58,7 +58,7 @@ export function HeroTitle() {
             </h2>
 
             {/* Subtitle */}
-            <p className="text-[var(--text-secondary)] text-[13px] sm:text-base md:text-lg leading-relaxed mb-6 sm:mb-8 max-w-md lg:max-w-lg animate-fade-in-up opacity-90" style={{ animationDelay: "0.2s" }}>
+            <p className="text-(--text-secondary) text-[13px] sm:text-base md:text-lg leading-relaxed mb-6 sm:mb-8 max-w-md lg:max-w-lg animate-fade-in-up opacity-90" style={{ animationDelay: "0.2s" }}>
                 {t["hero.subtitle"]}
             </p>
         </div>

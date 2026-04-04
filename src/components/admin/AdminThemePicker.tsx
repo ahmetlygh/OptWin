@@ -45,8 +45,8 @@ export function AdminThemePicker({ value, onChange }: AdminThemePickerProps) {
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-full h-9 px-3 flex items-center justify-between gap-2 rounded-xl text-sm transition-all duration-200 border ${
                     isOpen
-                        ? "bg-white/[0.04] border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
-                        : "bg-white/[0.02] border-white/[0.06] text-white/60 hover:border-white/[0.1] hover:text-white/80"
+                        ? "bg-white/4 border-[#6b5be6]/30 text-white/80 shadow-[0_0_15px_rgba(107,91,230,0.08)]"
+                        : "bg-white/2 border-white/6 text-white/60 hover:border-white/10 hover:text-white/80"
                 }`}
             >
                 <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export function AdminThemePicker({ value, onChange }: AdminThemePickerProps) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -4, scale: 0.96 }}
                         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute z-[9990] left-0 right-0 top-full mt-1.5 rounded-xl border border-white/[0.08] bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden py-1"
+                        className="absolute z-9990 left-0 right-0 top-full mt-1.5 rounded-xl border border-white/8 bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden py-1"
                     >
                         {themes.map((theme) => {
                             const isSelected = theme.value === value;
@@ -79,10 +79,10 @@ export function AdminThemePicker({ value, onChange }: AdminThemePickerProps) {
                                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] font-medium transition-all duration-150 ${
                                         isSelected
                                             ? `${theme.activeBg} text-white`
-                                            : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
+                                            : "text-white/50 hover:bg-white/4 hover:text-white/80"
                                     }`}
                                 >
-                                    <div className={`p-1.5 rounded-md ${isSelected ? theme.activeBg : "bg-white/[0.03]"}`}>
+                                    <div className={`p-1.5 rounded-md ${isSelected ? theme.activeBg : "bg-white/3"}`}>
                                         <Icon size={14} className={isSelected ? theme.color : "text-white/40"} />
                                     </div>
                                     <span className="flex-1 text-left">{theme.label}</span>

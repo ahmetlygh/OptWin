@@ -70,13 +70,15 @@ export async function PUT(req: NextRequest) {
         };
 
         if (labels && Array.isArray(labels)) {
-            for (const label of labels) {
-                await prisma.scriptLabel.upsert({
-                    where: { lang_key: { lang: label.lang, key: label.key } },
-                    update: { value: label.value },
-                    create: { lang: label.lang, key: label.key, value: label.value },
-                });
-            }
+            await prisma.$transaction(
+                labels.map((label) => 
+                    prisma.scriptLabel.upsert({
+                        where: { lang_key: { lang: label.lang, key: label.key } },
+                        update: { value: label.value },
+                        create: { lang: label.lang, key: label.key, value: label.value },
+                    })
+                )
+            );
         }
 
         if (deletedKeys && Array.isArray(deletedKeys) && deletedKeys.length > 0) {
@@ -85,33 +87,37 @@ export async function PUT(req: NextRequest) {
             });
         }
 
-        if (extraLines !== undefined) {
-            await prisma.siteSetting.upsert({
-                where: { key: "script_extra_lines" },
-                update: { value: JSON.stringify(extraLines) },
-                create: { key: "script_extra_lines", value: JSON.stringify(extraLines) },
-            });
-        }
-        if (lineOverrides !== undefined) {
-            await prisma.siteSetting.upsert({
-                where: { key: "script_line_overrides" },
-                update: { value: JSON.stringify(lineOverrides) },
-                create: { key: "script_line_overrides", value: JSON.stringify(lineOverrides) },
-            });
-        }
-        if (deletedPreviewLines !== undefined) {
-            await prisma.siteSetting.upsert({
-                where: { key: "script_deleted_preview_lines" },
-                update: { value: JSON.stringify(deletedPreviewLines) },
-                create: { key: "script_deleted_preview_lines", value: JSON.stringify(deletedPreviewLines) },
-            });
-        }
-        if (keyOrder !== undefined) {
-            await prisma.siteSetting.upsert({
-                where: { key: "script_key_order" },
-                update: { value: JSON.stringify(keyOrder) },
-                create: { key: "script_key_order", value: JSON.stringify(keyOrder) },
-            });
+        if (extraLines !== undefined || lineOverrides !== undefined || deletedPreviewLines !== undefined || keyOrder !== undefined) {
+            const updates = [];
+            if (extraLines !== undefined) {
+                updates.push(prisma.siteSetting.upsert({
+                    where: { key: "script_extra_lines" },
+                    update: { value: JSON.stringify(extraLines) },
+                    create: { key: "script_extra_lines", value: JSON.stringify(extraLines) },
+                }));
+            }
+            if (lineOverrides !== undefined) {
+                updates.push(prisma.siteSetting.upsert({
+                    where: { key: "script_line_overrides" },
+                    update: { value: JSON.stringify(lineOverrides) },
+                    create: { key: "script_line_overrides", value: JSON.stringify(lineOverrides) },
+                }));
+            }
+            if (deletedPreviewLines !== undefined) {
+                updates.push(prisma.siteSetting.upsert({
+                    where: { key: "script_deleted_preview_lines" },
+                    update: { value: JSON.stringify(deletedPreviewLines) },
+                    create: { key: "script_deleted_preview_lines", value: JSON.stringify(deletedPreviewLines) },
+                }));
+            }
+            if (keyOrder !== undefined) {
+                updates.push(prisma.siteSetting.upsert({
+                    where: { key: "script_key_order" },
+                    update: { value: JSON.stringify(keyOrder) },
+                    create: { key: "script_key_order", value: JSON.stringify(keyOrder) },
+                }));
+            }
+            if (updates.length > 0) await prisma.$transaction(updates);
         }
 
         // Invalidate Redis cache for any SiteSetting keys modified

@@ -148,7 +148,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
     const currentLang = languages.find(l => l.code === lang) || languages[0];
 
     return (
-        <header className="glass-header sticky top-0 z-50 border-b border-[var(--border-color)] w-full bg-[var(--bg-color)]/60 backdrop-blur-2xl">
+        <header className="glass-header sticky top-0 z-50 border-b border-(--border-color) w-full bg-(--bg-color)/60 backdrop-blur-2xl">
             <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
 
                 {/* Left: Logo — scroll to top when clicked */}
@@ -168,7 +168,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                     <nav className="hidden md:flex items-center gap-6">
                         <Link
                             href={`/${lang}#about`}
-                            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200"
+                            className="text-sm font-medium text-(--text-secondary) hover:text-(--accent-color) transition-colors duration-200"
                             onClick={(e) => {
                                 const targetPath = `/${lang}`;
                                 const isHome = pathname === "/" || pathname === targetPath || pathname === targetPath + "/";
@@ -188,13 +188,13 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         </Link>
                         <Link
                             href="/contact"
-                            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200"
+                            className="text-sm font-medium text-(--text-secondary) hover:text-(--accent-color) transition-colors duration-200"
                         >
                             {mounted ? t["nav.contact"] : "Contact"}
                         </Link>
                         <button
                             onClick={() => setSupportModalOpen(true)}
-                            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors duration-200 flex items-center gap-1.5 cursor-pointer"
+                            className="text-sm font-medium text-(--text-secondary) hover:text-(--accent-color) transition-colors duration-200 flex items-center gap-1.5 cursor-pointer"
                         >
                             <HeartIcon size={14} className="text-pink-500" style={{ position: 'relative', top: '0.5px' }} />
                             {mounted ? t["nav.support"] : "Support"}
@@ -206,7 +206,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         <div className="relative" ref={langRef}>
                             <button
                                 onClick={toggleLangDropdown}
-                                className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--border-color)]/80 text-[var(--text-primary)] text-sm font-medium transition-colors duration-200"
+                                className="flex items-center gap-2 p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) text-sm font-medium transition-colors duration-200"
                             >
                                 {currentLang.flagSvg ? (
                                     <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: currentLang.flagSvg.replace('<svg', '<svg width="20" height="14"') }} />
@@ -221,13 +221,13 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                             </button>
 
                             {isLangOpen && (
-                                <div className={`absolute right-0 mt-2 w-40 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden ${isLangClosing ? 'dropdown-exit' : 'dropdown-enter'}`}>
+                                <div className={`absolute right-0 mt-2 w-40 bg-(--card-bg) border border-(--border-color) rounded-xl shadow-xl overflow-hidden ${isLangClosing ? 'dropdown-exit' : 'dropdown-enter'}`}>
                                     <div className="py-1">
                                         {languages.map((l) => (
                                             <button
                                                 key={l.code}
                                                 onClick={() => handleLangSwitch(l.code as Lang)}
-                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${lang === l.code ? 'bg-[var(--accent-color)]/10 text-[var(--accent-color)] font-bold' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]'}`}
+                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${lang === l.code ? 'bg-(--accent-color)/10 text-(--accent-color) font-bold' : 'text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary)'}`}
                                             >
                                                 {l.flagSvg ? (
                                                     <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: l.flagSvg.replace('<svg', '<svg width="20" height="14"') }} />
@@ -247,7 +247,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                     <button
                         type="button"
                         onClick={toggleTheme}
-                        className="flex items-center justify-center p-2 rounded-lg hover:bg-[var(--border-color)]/80 text-[var(--text-primary)] overflow-hidden transition-colors duration-200"
+                        className="flex items-center justify-center p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) overflow-hidden transition-colors duration-200"
                     >
                         {mounted ? (
                             <div className="relative w-5 h-5">
@@ -266,7 +266,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         <div className="relative" ref={adminRef}>
                             <button
                                 onClick={toggleAdminDropdown}
-                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[var(--accent-color)]/8 hover:bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/15 hover:border-[var(--accent-color)]/30 transition-all duration-200 group"
+                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-(--accent-color)/8 hover:bg-(--accent-color)/15 border border-(--accent-color)/15 hover:border-(--accent-color)/30 transition-all duration-200 group"
                             >
                                 {adminSession.image ? (
                                     <Image
@@ -274,29 +274,29 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                         alt={adminSession.name || "Admin"}
                                         width={22}
                                         height={22}
-                                        className="rounded-full ring-1 ring-[var(--accent-color)]/30"
+                                        className="rounded-full ring-1 ring-(--accent-color)/30"
                                     />
                                 ) : (
-                                    <div className="w-[22px] h-[22px] rounded-full bg-[var(--accent-color)]/20 flex items-center justify-center">
-                                        <ShieldCheck size={12} className="text-[var(--accent-color)]" />
+                                    <div className="w-[22px] h-[22px] rounded-full bg-(--accent-color)/20 flex items-center justify-center">
+                                        <ShieldCheck size={12} className="text-(--accent-color)" />
                                     </div>
                                 )}
-                                <span className="hidden sm:inline text-xs font-bold text-[var(--accent-color)]">
+                                <span className="hidden sm:inline text-xs font-bold text-(--accent-color)">
                                     Yönetici
                                 </span>
                                 <ChevronDownIcon
                                     size={13}
-                                    className={`text-[var(--accent-color)]/50 transition-transform duration-250 ${isAdminOpen ? 'rotate-180' : 'rotate-0'}`}
+                                    className={`text-(--accent-color)/50 transition-transform duration-250 ${isAdminOpen ? 'rotate-180' : 'rotate-0'}`}
                                 />
                             </button>
 
                             {isAdminOpen && (
-                                <div className={`absolute right-0 mt-2 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden ${isAdminClosing ? 'dropdown-exit' : 'dropdown-enter'}`}>
-                                    <div className="px-4 py-3 border-b border-[var(--border-color)]">
-                                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">
+                                <div className={`absolute right-0 mt-2 w-48 bg-(--card-bg) border border-(--border-color) rounded-xl shadow-xl overflow-hidden ${isAdminClosing ? 'dropdown-exit' : 'dropdown-enter'}`}>
+                                    <div className="px-4 py-3 border-b border-(--border-color)">
+                                        <p className="text-xs font-bold text-(--text-primary) truncate">
                                             {adminSession.name || "Admin"}
                                         </p>
-                                        <p className="text-[10px] text-[var(--accent-color)] font-medium mt-0.5 flex items-center gap-1">
+                                        <p className="text-[10px] text-(--accent-color) font-medium mt-0.5 flex items-center gap-1">
                                             <ShieldCheck size={10} />
                                             Yönetici Hesabı
                                         </p>
@@ -305,7 +305,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                         <Link
                                             href="/admin"
                                             onClick={() => closeAdminDropdown()}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)] transition-colors"
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary) transition-colors"
                                         >
                                             <PanelLeft size={15} />
                                             Yönetici Paneli

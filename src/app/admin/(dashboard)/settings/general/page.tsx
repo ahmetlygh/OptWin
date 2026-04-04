@@ -239,14 +239,14 @@ export default function GeneralSettings() {
 
             {/* Errors */}
             {error && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/10 text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/6 border border-red-500/10 text-red-400 text-sm">
                     <AlertCircle size={14} /> {error}
                 </div>
             )}
 
             {/* Maintenance Mode */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-white/[0.04] bg-white/[0.015]">
-                <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between gap-3">
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-white/4 bg-white/15">
+                <div className="px-5 py-3 border-b border-white/4 flex items-center justify-between gap-3">
                     <div className="flex flex-1 items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/10 text-red-500"><ShieldAlert size={16} /></div>
                         <div>
@@ -277,22 +277,22 @@ export default function GeneralSettings() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: gi * 0.04, duration: 0.3 }}
-                    className="rounded-2xl border border-white/[0.04] bg-white/[0.015]"
+                    className="rounded-2xl border border-white/4 bg-white/15"
                 >
-                    <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">
+                    <div className="px-5 py-3 border-b border-white/4 flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${group.color}15`, color: group.color }}>{group.icon}</div>
                         <div>
                             <h2 className="text-sm font-bold text-white">{group.title}</h2>
                             <p className="text-[11px] text-white/25">{group.description}</p>
                         </div>
                     </div>
-                    <div className="divide-y divide-white/[0.03]">
+                    <div className="divide-y divide-white/3">
                         {group.fields.map(field => {
                             const value = settings[field.key] || "";
                             const original = originalSettings[field.key] || "";
                             const changed = value !== original;
                             return (
-                                <div key={field.key} className={`px-5 py-3.5 flex items-center gap-4 transition-colors ${changed ? "bg-[#6b5be6]/[0.03]" : "hover:bg-white/[0.01]"}`}>
+                                <div key={field.key} className={`px-5 py-3.5 flex items-center gap-4 transition-colors ${changed ? "bg-[#6b5be6]/3" : "hover:bg-white/1"}`}>
                                     <div className="w-[180px] sm:w-[220px] 2xl:w-[280px] shrink-0">
                                         <div className="flex items-center gap-2">
                                             {field.icon && <span className="text-white/20">{field.icon}</span>}
@@ -307,7 +307,7 @@ export default function GeneralSettings() {
                                                 <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${value === "true" ? "text-emerald-400" : "text-white/20"}`}>Aktif</span>
                                                 <button
                                                     onClick={() => setSettings(prev => ({ ...prev, [field.key]: value === "true" ? "false" : "true" }))}
-                                                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${value === "true" ? "bg-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-white/[0.06]"}`}
+                                                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${value === "true" ? "bg-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-white/6"}`}
                                                 >
                                                     <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${value === "true" ? "left-7" : "left-1"}`} />
                                                 </button>
@@ -338,7 +338,7 @@ export default function GeneralSettings() {
                                                 value={value}
                                                 onChange={e => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
                                                 placeholder={field.placeholder}
-                                                className="w-full bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.10] focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 placeholder-white/15 focus:outline-none transition-all"
+                                                className="w-full bg-white/2 border border-white/6 hover:border-white/10 focus:border-[#6b5be6]/30 rounded-lg px-3 py-2 text-[13px] text-white/80 placeholder-white/15 focus:outline-none transition-all"
                                             />
                                         )}
                                     </div>
@@ -350,8 +350,8 @@ export default function GeneralSettings() {
             ))}
 
             {/* Danger Zone */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="rounded-2xl border border-red-500/[0.08] bg-red-500/[0.02] overflow-hidden">
-                <button onClick={() => setShowDangerZone(!showDangerZone)} className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-red-500/[0.02] transition-colors">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="rounded-2xl border border-red-500/8 bg-red-500/2 overflow-hidden">
+                <button onClick={() => setShowDangerZone(!showDangerZone)} className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-red-500/2 transition-colors">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center"><AlertTriangle size={16} className="text-red-500/60" /></div>
                         <div className="text-left">
@@ -364,14 +364,14 @@ export default function GeneralSettings() {
                 <AnimatePresence>
                     {showDangerZone && (
                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
-                            <div className="px-5 pb-4 space-y-2.5 border-t border-red-500/[0.06]">
+                            <div className="px-5 pb-4 space-y-2.5 border-t border-red-500/6">
                                 <p className="text-[11px] text-red-400/30 pt-3">Bu işlemler geri alınamaz. Veritabanınızdaki verileri kalıcı olarak siler.</p>
                                 {[
                                     { label: "Tüm İstatistikleri Sıfırla", desc: "Ziyaret, script ve indirme sayaçlarını sıfırla", action: "resetStats" },
                                     { label: "Tüm Mesajları Sil", desc: "İletişim formundan gelen tüm mesajları kalıcı olarak sil", action: "deleteMessages" },
                                     { label: "Günlük İstatistikleri Sil", desc: "DailyStat tablosundaki tüm verileri sil", action: "deleteDailyStats" },
                                 ].map(item => (
-                                    <div key={item.action} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-red-500/[0.03] border border-red-500/[0.06]">
+                                    <div key={item.action} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-red-500/3 border border-red-500/6">
                                         <div>
                                             <p className="text-[13px] font-medium text-red-400/60">{item.label}</p>
                                             <p className="text-[10px] text-red-400/25">{item.desc}</p>
@@ -396,7 +396,7 @@ export default function GeneralSettings() {
                                                     alert("İşlem sırasında sunucu hatası oluştu.");
                                                 }
                                             }} 
-                                            className="h-8 px-3 rounded-lg text-[11px] font-bold text-red-400/50 hover:text-red-400 bg-red-500/[0.06] hover:bg-red-500/[0.12] border border-red-500/[0.10] transition-all flex items-center gap-1.5"
+                                            className="h-8 px-3 rounded-lg text-[11px] font-bold text-red-400/50 hover:text-red-400 bg-red-500/6 hover:bg-red-500/12 border border-red-500/10 transition-all flex items-center gap-1.5"
                                         >
                                             <Trash2 size={11} /> Sil
                                         </button>

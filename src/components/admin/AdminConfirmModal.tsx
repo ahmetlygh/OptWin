@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, X } from "lucide-react";
 
@@ -25,6 +26,9 @@ export function AdminConfirmModal({
     cancelText = "İptal",
     variant = "default",
 }: AdminConfirmModalProps) {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
     /* ── ESC to close ── */
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -37,10 +41,12 @@ export function AdminConfirmModal({
     const isDanger = variant === "danger";
     const accentColor = isDanger ? "red" : "#6b5be6";
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <AnimatePresence>
             {open && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
+                <div className="fixed inset-0 z-9999 flex items-center justify-center p-4" onClick={onClose}>
                     {/* ── backdrop ── */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -56,7 +62,7 @@ export function AdminConfirmModal({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.92, y: 20 }}
                         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-                        className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/[0.06] rounded-2xl w-full max-w-sm overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)]"
+                        className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl w-full max-w-sm overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)]"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* ambient glow */}
@@ -69,16 +75,15 @@ export function AdminConfirmModal({
                             {/* header */}
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={`size-10 rounded-xl flex items-center justify-center ${
-                                        isDanger ? "bg-red-500/10 border border-red-500/20" : "bg-[#6b5be6]/10 border border-[#6b5be6]/20"
-                                    }`}>
+                                    <div className={`size-10 rounded-xl flex items-center justify-center ${isDanger ? "bg-red-500/10 border border-red-500/20" : "bg-[#6b5be6]/10 border border-[#6b5be6]/20"
+                                        }`}>
                                         <AlertCircle size={18} className={isDanger ? "text-red-400" : "text-[#6b5be6]"} />
                                     </div>
                                     <h3 className="text-sm font-black text-white uppercase tracking-tight">{title}</h3>
                                 </div>
                                 <button
                                     onClick={onClose}
-                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/60 transition-colors"
+                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors"
                                 >
                                     <X size={16} />
                                 </button>
@@ -91,17 +96,16 @@ export function AdminConfirmModal({
                             <div className="flex gap-3">
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 h-10 bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/70 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/[0.06]"
+                                    className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 hover:text-white/70 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6"
                                 >
                                     {cancelText}
                                 </button>
                                 <button
                                     onClick={onConfirm}
-                                    className={`flex-1 h-10 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 ${
-                                        isDanger
+                                    className={`flex-1 h-10 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 ${isDanger
                                             ? "bg-red-500/80 hover:bg-red-500 text-white shadow-red-500/15"
                                             : "bg-[#6b5be6] hover:bg-[#5a4bd4] text-white shadow-[#6b5be6]/15"
-                                    }`}
+                                        }`}
                                 >
                                     {confirmText}
                                 </button>
@@ -110,6 +114,7 @@ export function AdminConfirmModal({
                     </motion.div>
                 </div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }

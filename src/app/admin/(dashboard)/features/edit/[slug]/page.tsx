@@ -405,8 +405,8 @@ function SlugFeatureEditor({
         { value: "high", label: "Yüksek Risk" },
     ];
 
-    const inputCls = "w-full h-9 px-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors";
-    const textareaCls = "w-full p-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors resize-none";
+    const inputCls = "w-full h-9 px-3 bg-white/2 border border-white/4 rounded-xl text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors";
+    const textareaCls = "w-full p-3 bg-white/2 border border-white/4 rounded-xl text-sm text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/30 transition-colors resize-none";
     const labelCls = "block text-[10px] font-bold text-white/20 uppercase tracking-wider mb-1.5";
 
     return (
@@ -418,13 +418,13 @@ function SlugFeatureEditor({
                 className="space-y-5"
             >
             {/* Header */}
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full bg-white/2 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-3">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => tryNavigate(onCancel)}
-                        className="size-9 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/40 hover:text-white/70 transition-all border border-white/[0.06]"
+                        className="size-9 flex items-center justify-center rounded-xl bg-white/4 hover:bg-white/8 text-white/40 hover:text-white/70 transition-all border border-white/6"
                     >
                         <ChevronLeft size={16} />
                     </motion.button>
@@ -440,7 +440,7 @@ function SlugFeatureEditor({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         onClick={() => setShowDeleteModal(true)}
-                        className="h-9 px-3 rounded-xl text-[11px] font-bold uppercase tracking-wider text-red-400/60 hover:text-red-400 bg-red-500/[0.04] hover:bg-red-500/[0.08] border border-red-500/[0.08] transition-all flex items-center gap-1.5"
+                        className="h-9 px-3 rounded-xl text-[11px] font-bold uppercase tracking-wider text-red-400/60 hover:text-red-400 bg-red-500/4 hover:bg-red-500/8 border border-red-500/8 transition-all flex items-center gap-1.5"
                     >
                         <Trash2 size={13} />
                         Sil
@@ -449,7 +449,7 @@ function SlugFeatureEditor({
             </motion.div>
 
             {error && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/[0.06] border border-red-500/10 text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/6 border border-red-500/10 text-red-400 text-sm">
                     <AlertCircle size={14} />
                     {error}
                     <button onClick={() => setError("")} className="ml-auto"><X size={14} /></button>
@@ -457,7 +457,7 @@ function SlugFeatureEditor({
             )}
 
             {/* Basic Information */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
+            <div className="rounded-2xl border border-white/4 bg-white/15 p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Temel Bilgiler</h3>
                     <div className="flex items-center gap-4">
@@ -466,7 +466,7 @@ function SlugFeatureEditor({
                             <button
                                 type="button"
                                 onClick={() => updateField("newBadge", !form.newBadge)}
-                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/[0.06]"}`}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.newBadge ? "bg-amber-500/80" : "bg-white/6"}`}
                             >
                                 <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.newBadge ? "left-[19px]" : "left-[3px]"}`} />
                             </button>
@@ -476,7 +476,7 @@ function SlugFeatureEditor({
                             <button
                                 type="button"
                                 onClick={() => updateField("noRisk", !form.noRisk)}
-                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.noRisk ? "bg-blue-500/80" : "bg-white/[0.06]"}`}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.noRisk ? "bg-blue-500/80" : "bg-white/6"}`}
                             >
                                 <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.noRisk ? "left-[19px]" : "left-[3px]"}`} />
                             </button>
@@ -486,7 +486,7 @@ function SlugFeatureEditor({
                             <button
                                 type="button"
                                 onClick={() => updateField("enabled", !form.enabled)}
-                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.enabled ? "bg-emerald-500/80" : "bg-white/[0.06]"}`}
+                                className={`w-9 h-[20px] rounded-full transition-all duration-300 relative ${form.enabled ? "bg-emerald-500/80" : "bg-white/6"}`}
                             >
                                 <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${form.enabled ? "left-[19px]" : "left-[3px]"}`} />
                             </button>
@@ -556,7 +556,7 @@ function SlugFeatureEditor({
                                                     const d = new Date(Date.now() + h * 3600000);
                                                     updateField("newBadgeExpiry", d.toISOString());
                                                 }}
-                                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/[0.03] text-white/40 hover:text-white/70 hover:bg-white/[0.06] border border-white/[0.04] transition-all"
+                                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-white/3 text-white/40 hover:text-white/70 hover:bg-white/6 border border-white/4 transition-all"
                                             >
                                                 {h} saat
                                             </button>
@@ -564,7 +564,7 @@ function SlugFeatureEditor({
                                         <button
                                             type="button"
                                             onClick={() => updateField("newBadgeExpiry", "")}
-                                            className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/[0.06] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/[0.06] transition-all"
+                                            className="h-7 px-2.5 rounded-lg text-[10px] font-bold bg-red-500/6 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/6 transition-all"
                                         >
                                             Temizle
                                         </button>
@@ -583,7 +583,7 @@ function SlugFeatureEditor({
                                                     existing.setFullYear(y, m - 1, d);
                                                     updateField("newBadgeExpiry", existing.toISOString());
                                                 }}
-                                                className={`${inputCls} [color-scheme:dark]`}
+                                                className={`${inputCls} scheme-dark`}
                                             />
                                         </div>
                                         <div className="flex-1 max-w-[140px]">
@@ -598,7 +598,7 @@ function SlugFeatureEditor({
                                                     existing.setHours(h, m, 0, 0);
                                                     updateField("newBadgeExpiry", existing.toISOString());
                                                 }}
-                                                className={`${inputCls} [color-scheme:dark]`}
+                                                className={`${inputCls} scheme-dark`}
                                             />
                                         </div>
                                     </div>
@@ -621,14 +621,14 @@ function SlugFeatureEditor({
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="fixed top-4 right-4 z-[999] px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-sm font-medium shadow-lg backdrop-blur-xl"
+                    className="fixed top-4 right-4 z-999 px-4 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-sm font-medium shadow-lg backdrop-blur-xl"
                 >
                     ✓ {translateToast}
                 </motion.div>
             )}
 
             {/* Translations */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
+            <div className="rounded-2xl border border-white/4 bg-white/15 p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
@@ -668,7 +668,7 @@ function SlugFeatureEditor({
             </div>
 
             {/* Commands */}
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-5 space-y-4">
+            <div className="rounded-2xl border border-white/4 bg-white/15 p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
                     <AdminLangPicker value={commandLang} onChange={setCommandLang} availableLangs={availableLangs} />
@@ -740,7 +740,7 @@ function SlugFeatureEditor({
                 </div>
 
                 {/* Command — language-independent (same for all languages) */}
-                <div className="border-t border-white/[0.04] pt-4">
+                <div className="border-t border-white/4 pt-4">
                     <label className={labelCls}>Komut <span className="text-white/15 font-normal">(tüm dillerde aynı)</span></label>
                     <textarea
                         value={form.commands[commandLang]?.command || ""}

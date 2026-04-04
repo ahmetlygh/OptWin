@@ -49,13 +49,13 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     return (
         <label
             className={`group relative rounded-xl ${isDescVisible ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out ${isSelected
-                ? "bg-[var(--accent-color)]/10 border-[var(--accent-color)] shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-100 md:scale-[1.02]"
-                : "bg-[var(--card-bg)] border-[var(--border-color)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-[var(--accent-color)]/10 md:hover:scale-[1.01]"
+                ? "bg-(--accent-color)/10 border-(--accent-color) shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-100 md:scale-[1.02]"
+                : "bg-(--card-bg) border-(--border-color) hover:border-(--accent-color)/50 hover:shadow-lg hover:shadow-(--accent-color)/10 md:hover:scale-[1.01]"
                 }`}
         >
             {/* Selection glow */}
             {isSelected && (
-                <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-color)]/5 to-transparent pointer-events-none animate-subtle-reveal"></div>
+                <div className="absolute inset-0 bg-linear-to-r from-(--accent-color)/5 to-transparent pointer-events-none animate-subtle-reveal"></div>
             )}
 
             {/* Checkbox indicator */}
@@ -67,7 +67,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                     onChange={() => toggleFeature(feature.slug)}
                 />
                 <div
-                    className={`relative flex items-center justify-center w-[22px] h-[22px] rounded-full border-[2px] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'border-[var(--accent-color)] bg-[var(--accent-color)] shadow-[0_0_12px_rgba(107,91,230,0.5)] scale-110' : 'border-[var(--border-color)] bg-black/20 scale-100 group-hover:border-[var(--accent-color)]/50'}`}
+                    className={`relative flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'border-(--accent-color) bg-(--accent-color) shadow-[0_0_12px_rgba(107,91,230,0.5)] scale-110' : 'border-(--border-color) bg-black/20 scale-100 group-hover:border-(--accent-color)/50'}`}
                 >
                     {isSelected && (
                         <CheckIcon
@@ -81,16 +81,16 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
 
             {/* Content */}
             <div className="flex items-start gap-4 pointer-events-none">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isSelected ? 'bg-[var(--accent-color)]/20 text-[var(--accent-color)] shadow-[0_0_10px_rgba(107,91,230,0.2)]' : 'bg-[var(--accent-color)]/10 text-[var(--accent-color)] group-hover:bg-[var(--accent-color)]/15'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${isSelected ? 'bg-(--accent-color)/20 text-(--accent-color) shadow-[0_0_10px_rgba(107,91,230,0.2)]' : 'bg-(--accent-color)/10 text-(--accent-color) group-hover:bg-(--accent-color)/15'}`}>
                     <FeatureIcon icon={feature.icon} size={18} />
                 </div>
                 <div className="flex-1 pr-6">
                     <div className="flex flex-wrap items-center gap-1.5 mb-1 pointer-events-auto">
-                        <h4 className="text-[var(--text-primary)] font-semibold tracking-tight pointer-events-none">
+                        <h4 className="text-(--text-primary) font-semibold tracking-tight pointer-events-none">
                             <HighlightText text={title} />
                         </h4>
                         {isNewBadgeVisible && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-[var(--accent-color)]/15 border-[var(--accent-color)]/30 text-[var(--accent-color)] pointer-events-none animate-pulse leading-none">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-(--accent-color)/15 border-(--accent-color)/30 text-(--accent-color) pointer-events-none animate-pulse leading-none">
                                 {t["feature.badge.new"]}
                             </span>
                         )}
@@ -111,7 +111,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                                     e.stopPropagation();
                                     setLocalShowDesc(prev => !prev);
                                 }}
-                                className={`flex items-center justify-center rounded-full p-1 transition-colors duration-200 opacity-0 group-hover:opacity-100 ${localShowDesc ? 'text-[var(--accent-color)] bg-[var(--accent-color)]/10' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]'}`}
+                                className={`flex items-center justify-center rounded-full p-1 transition-colors duration-200 opacity-0 group-hover:opacity-100 ${localShowDesc ? 'text-(--accent-color) bg-(--accent-color)/10' : 'text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary)'}`}
                                 title={localShowDesc ? "Hide description" : "Show description"}
                             >
                                 <InfoIcon size={14} />
@@ -121,14 +121,14 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
 
                     {/* Description — GPU-accelerated show/hide with grid trick */}
                     <div
-                        className="transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grid pointer-events-none"
+                        className="transition-[grid-template-rows,opacity] duration-300 ease-in-out grid pointer-events-none"
                         style={{
                             gridTemplateRows: isDescVisible ? '1fr' : '0fr',
                             opacity: isDescVisible ? 1 : 0,
                         }}
                     >
                         <div className="overflow-hidden">
-                            <p className="text-sm text-[var(--text-secondary)] leading-snug pt-0.5">
+                            <p className="text-sm text-(--text-secondary) leading-snug pt-0.5">
                                 <HighlightText text={desc} />
                             </p>
                         </div>
@@ -142,7 +142,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                                 e.stopPropagation();
                                 setDnsModalOpen(true);
                             }}
-                            className="pointer-events-auto mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/30 text-[var(--accent-color)] text-xs font-bold hover:bg-[var(--accent-color)]/25 transition-all duration-200 animate-slide-in-right"
+                            className="pointer-events-auto mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-(--accent-color)/15 border border-(--accent-color)/30 text-(--accent-color) text-xs font-bold hover:bg-(--accent-color)/25 transition-all duration-200 animate-slide-in-right"
                         >
                             <GlobeIcon size={14} />
                             <span>{lang === "tr" ? "Değiştir" : "Change"}: {dnsProvider}</span>

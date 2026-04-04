@@ -86,23 +86,23 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                 <button
                     onClick={collapseAll}
                     disabled={collapsedCategories.size === categories.length}
-                    className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-bg)] hover:border-[var(--accent-color)]/30 disabled:opacity-50 disabled:hover:border-[var(--border-color)] disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)] transition-all duration-200"
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg border border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--card-bg) hover:border-(--accent-color)/30 disabled:opacity-50 disabled:hover:border-(--border-color) disabled:hover:bg-transparent disabled:hover:text-(--text-secondary) transition-all duration-200"
                 >
                     {t["category.collapseAll"] || "Collapse All"}
                 </button>
                 <button
                     onClick={expandAll}
                     disabled={collapsedCategories.size === 0}
-                    className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-bg)] hover:border-[var(--accent-color)]/30 disabled:opacity-50 disabled:hover:border-[var(--border-color)] disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)] transition-all duration-200"
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg border border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--card-bg) hover:border-(--accent-color)/30 disabled:opacity-50 disabled:hover:border-(--border-color) disabled:hover:bg-transparent disabled:hover:text-(--text-secondary) transition-all duration-200"
                 >
                     {t["category.expandAll"] || "Expand All"}
                 </button>
             </div>
 
             {filteredCategories.length === 0 && query && (
-                <div className="flex flex-col items-center justify-center p-12 text-center bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl animate-fade-in-up">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-secondary)] mb-4 opacity-50"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                <div className="flex flex-col items-center justify-center p-12 text-center bg-(--card-bg) border border-(--border-color) rounded-2xl animate-fade-in-up">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-(--text-secondary) mb-4 opacity-50"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                    <h3 className="text-xl font-bold text-(--text-primary) mb-2">
                         {t["search.noResults"]}
                     </h3>
                     <button
@@ -134,15 +134,15 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                                 onClick={() => toggleCategoryCollapse(cat.slug)}
                                 className="flex items-center gap-3 flex-1 cursor-pointer w-full text-left"
                             >
-                                <CategoryIcon icon={cat.icon} className="text-[var(--accent-color)] shrink-0" />
-                                <h3 className="text-xl font-bold text-[var(--text-primary)] whitespace-normal sm:whitespace-nowrap shrink-0">
+                                <CategoryIcon icon={cat.icon} className="text-(--accent-color) shrink-0" />
+                                <h3 className="text-xl font-bold text-(--text-primary) whitespace-normal sm:whitespace-nowrap shrink-0">
                                     {catName}
                                 </h3>
-                                <span className={`text-xs font-semibold tabular-nums transition-colors duration-200 shrink-0 ${selectedCount > 0 ? 'text-[var(--accent-color)]' : 'text-[var(--text-secondary)]'}`}>
+                                <span className={`text-xs font-semibold tabular-nums transition-colors duration-200 shrink-0 ${selectedCount > 0 ? 'text-(--accent-color)' : 'text-(--text-secondary)'}`}>
                                     ({selectedCount}/{totalCount})
                                 </span>
-                                <div className="hidden sm:block h-px flex-1 bg-[var(--border-color)]"></div>
-                                <div className={`text-[var(--text-secondary)] group-hover:text-[var(--accent-color)] transition-all duration-300 ml-auto sm:ml-0 ${isCollapsed ? "-rotate-90" : "rotate-0"}`}>
+                                <div className="hidden sm:block h-px flex-1 bg-(--border-color)"></div>
+                                <div className={`text-(--text-secondary) group-hover:text-(--accent-color) transition-all duration-300 ml-auto sm:ml-0 ${isCollapsed ? "-rotate-90" : "rotate-0"}`}>
                                     <ChevronDownIcon size={18} />
                                 </div>
                             </button>
@@ -152,8 +152,8 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                                 <button
                                     onClick={(e) => selectAllInCategory(cat, e)}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors duration-200 ${allSelected
-                                        ? 'text-[var(--accent-color)]/40 cursor-default'
-                                        : 'text-[var(--text-secondary)] hover:bg-[var(--accent-color)]/15 hover:text-[var(--accent-color)]'
+                                        ? 'text-(--accent-color)/40 cursor-default'
+                                        : 'text-(--text-secondary) hover:bg-(--accent-color)/15 hover:text-(--accent-color)'
                                         }`}
                                     title={t["category.selectAll"] || "Select all"}
                                     disabled={allSelected}
@@ -164,8 +164,8 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
                                 <button
                                     onClick={(e) => deselectAllInCategory(cat, e)}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors duration-200 ${selectedCount === 0
-                                        ? 'text-[var(--text-secondary)]/40 cursor-default'
-                                        : 'text-[var(--text-secondary)] hover:bg-red-500/15 hover:text-red-400'
+                                        ? 'text-(--text-secondary)/40 cursor-default'
+                                        : 'text-(--text-secondary) hover:bg-red-500/15 hover:text-red-400'
                                         }`}
                                     title={t["category.deselectAll"] || "Deselect all"}
                                     disabled={selectedCount === 0}
@@ -178,7 +178,7 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
 
                         {/* Features grid — CSS grid animation */}
                         <div
-                            className="grid transition-[grid-template-rows,opacity] duration-350 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                            className="grid transition-[grid-template-rows,opacity] duration-350 ease-in-out"
                             style={{
                                 gridTemplateRows: isCollapsed ? '0fr' : '1fr',
                                 opacity: isCollapsed ? 0 : 1,

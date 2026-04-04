@@ -67,7 +67,7 @@ export function AdminActionBar({
                     animate={{ y: -32, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                    className="fixed bottom-0 left-[260px] xl:left-[280px] 2xl:left-[300px] right-0 flex justify-center z-[9950] pointer-events-none px-6"
+                    className="fixed bottom-0 left-[260px] xl:left-[280px] 2xl:left-[300px] right-0 flex justify-center z-9950 pointer-events-none px-6"
                 >
                     <div className="pointer-events-auto flex flex-col items-center gap-3">
                         {error && (
@@ -81,15 +81,15 @@ export function AdminActionBar({
                             </motion.div>
                         )}
                         
-                        <div className="bg-[#0a0a10]/98 backdrop-blur-3xl border border-white/[0.08] rounded-3xl shadow-[0_35px_80px_rgba(0,0,0,0.7),0_0_50px_rgba(107,91,230,0.15)] flex items-center gap-2.5 p-2.5 overflow-hidden relative group">
+                        <div className="bg-[#0a0a10]/98 backdrop-blur-3xl border border-white/8 rounded-3xl shadow-[0_35px_80px_rgba(0,0,0,0.7),0_0_50px_rgba(107,91,230,0.15)] flex items-center gap-2.5 p-2.5 overflow-hidden relative group">
                             {/* Ambient Glow */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-color)]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                            <div className="absolute inset-0 bg-linear-to-r from-(--accent-color)/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                             {/* CANCEL BUTTON */}
                             <button
                                 onClick={onCancel}
                                 disabled={saving || saved}
-                                className="h-12 px-6 rounded-2xl text-[12px] font-bold text-white/40 hover:text-white/90 hover:bg-white/[0.05] transition-all flex items-center gap-2.5 disabled:opacity-20 relative z-10"
+                                className="h-12 px-6 rounded-2xl text-[12px] font-bold text-white/40 hover:text-white/90 hover:bg-white/5 transition-all flex items-center gap-2.5 disabled:opacity-20 relative z-10"
                             >
                                 <motion.div animate={{ rotate: saving ? 180 : 0 }}>
                                     <RotateCcw size={15} />
@@ -97,13 +97,13 @@ export function AdminActionBar({
                                 {cancelText}
                             </button>
                             
-                            <div className="w-px h-8 bg-white/[0.08] relative z-10 mx-1" />
+                            <div className="w-px h-8 bg-white/8 relative z-10 mx-1" />
                             
                             {/* SAVE BUTTON */}
                             <button
                                 onClick={onSave}
                                 disabled={saving || saved}
-                                className={`h-12 min-w-[170px] px-8 rounded-2xl text-white font-black text-[11px] uppercase tracking-[0.1em] flex items-center justify-center gap-3 transition-all duration-500 relative z-10 overflow-hidden ${
+                                className={`h-12 min-w-[170px] px-8 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-500 relative z-10 overflow-hidden ${
                                     saved 
                                         ? "bg-transparent shadow-none" 
                                         : "bg-[#6b5be6] hover:bg-[#5a4bd4] shadow-[0_8px_25px_rgba(107,91,230,0.3)] hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(107,91,230,0.4)] active:translate-y-0 active:scale-95"

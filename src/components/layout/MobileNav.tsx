@@ -29,17 +29,17 @@ export function MobileNav() {
         <div className="md:hidden">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center size-10 rounded-lg text-[var(--text-primary)] hover:bg-[var(--accent-color)]/10 transition-colors"
+                className="flex items-center justify-center size-10 rounded-lg text-(--text-primary) hover:bg-(--accent-color)/10 transition-colors"
             >
                 {isOpen ? <XIcon size={24} /> : <MenuIcon size={24} />}
             </button>
 
             {isOpen && (
-                <div className="fixed top-[65px] left-0 w-full bg-[var(--card-bg)]/98 backdrop-blur-2xl border-b border-[var(--border-color)] p-6 flex flex-col gap-6 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-50 animate-dropdown-enter">
+                <div className="fixed top-[65px] left-0 w-full bg-(--card-bg)/98 backdrop-blur-2xl border-b border-(--border-color) p-6 flex flex-col gap-6 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-50 animate-dropdown-enter">
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                            <div className="w-1 h-4 bg-[var(--accent-color)] rounded-full" />
-                            <span className="text-xs font-black text-[var(--text-secondary)] uppercase tracking-widest">
+                            <div className="w-1 h-4 bg-(--accent-color) rounded-full" />
+                            <span className="text-xs font-black text-(--text-secondary) uppercase tracking-widest">
                                 {t["nav.language"]}
                             </span>
                         </div>
@@ -49,8 +49,8 @@ export function MobileNav() {
                                     key={l.code}
                                     onClick={() => setLang(l.code)}
                                     className={`flex items-center justify-between p-3 rounded-xl border transition-all ${lang === l.code
-                                        ? "bg-[var(--accent-color)]/10 border-[var(--accent-color)]/30 text-[var(--accent-color)] font-bold shadow-sm"
-                                        : "bg-white/5 border-transparent text-[var(--text-secondary)] active:scale-95"
+                                        ? "bg-(--accent-color)/10 border-(--accent-color)/30 text-(--accent-color) font-bold shadow-sm"
+                                        : "bg-white/5 border-transparent text-(--text-secondary) active:scale-95"
                                         }`}
                                 >
                                     <span className="text-sm tracking-tight">{l.label}</span>
@@ -60,7 +60,7 @@ export function MobileNav() {
                         </div>
                     </div>
 
-                    <nav className="flex flex-col gap-2 pt-2 border-t border-[var(--border-color)]">
+                    <nav className="flex flex-col gap-2 pt-2 border-t border-(--border-color)">
                         <Link
                             href={`/${lang}#about`}
                             onClick={(e) => {
@@ -73,7 +73,7 @@ export function MobileNav() {
                                                                     router.push(`/${lang}#about`);
                                 }
                             }}
-                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 text-[var(--text-primary)] font-bold active:scale-95 transition-all"
+                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 text-(--text-primary) font-bold active:scale-95 transition-all"
                         >
                             {t["nav.aboutOptwin"]}
                             <MenuIcon size={16} className="opacity-40" />
@@ -83,7 +83,7 @@ export function MobileNav() {
                                 setIsOpen(false);
                                 setSupportModalOpen(true);
                             }}
-                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 text-[var(--text-primary)] font-bold active:scale-95 transition-all text-left"
+                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 text-(--text-primary) font-bold active:scale-95 transition-all text-left"
                         >
                             <span className="flex items-center gap-2">
                                 <HeartIcon size={16} className="text-pink-500" />
