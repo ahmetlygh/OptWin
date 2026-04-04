@@ -113,7 +113,7 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
                     exit={{ opacity: 0, y: -4, scale: 0.96 }}
                     transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                     style={dropdownStyle}
-                    className="z-9990 rounded-xl border border-white/8 bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                    className="z-20000 rounded-xl border border-white/8 bg-[#0d0d12]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
                     <div className="py-1 max-h-60 overflow-y-auto admin-scrollbar">
                         {langs.map((lang) => {
@@ -126,7 +126,7 @@ export function AdminLangPicker({ value, onChange, availableLangs, variant = "he
                                         onChange(lang.code);
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full flex items-center justify-between gap-3 px-3.5 py-2 text-[12px] font-medium transition-all duration-150 ${
+                                    className={`w-full flex items-center justify-between gap-3 px-3.5 py-2 text-[12px] font-medium transition-all duration-150 cursor-pointer ${
                                         isSelected
                                             ? "text-[#6b5be6] bg-[#6b5be6]/8"
                                             : "text-white/50 hover:text-white/90 hover:bg-white/4"

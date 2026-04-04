@@ -457,7 +457,7 @@ function SlugFeatureEditor({
             )}
 
             {/* Basic Information */}
-            <div className="rounded-2xl border border-white/4 bg-white/15 p-5 space-y-4">
+            <div className="rounded-2xl border border-white/4 bg-white/2 backdrop-blur-md p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Temel Bilgiler</h3>
                     <div className="flex items-center gap-4">
@@ -628,7 +628,7 @@ function SlugFeatureEditor({
             )}
 
             {/* Translations */}
-            <div className="rounded-2xl border border-white/4 bg-white/15 p-5 space-y-4">
+            <div className="rounded-2xl border border-white/4 bg-white/2 backdrop-blur-md p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">Çeviriler</h3>
@@ -668,7 +668,7 @@ function SlugFeatureEditor({
             </div>
 
             {/* Commands */}
-            <div className="rounded-2xl border border-white/4 bg-white/15 p-5 space-y-4">
+            <div className="rounded-2xl border border-white/4 bg-white/2 backdrop-blur-md p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-wider">PowerShell Komut</h3>
                     <AdminLangPicker value={commandLang} onChange={setCommandLang} availableLangs={availableLangs} />

@@ -245,8 +245,8 @@ export default function GeneralSettings() {
             )}
 
             {/* Maintenance Mode */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-white/4 bg-white/15">
-                <div className="px-5 py-3 border-b border-white/4 flex items-center justify-between gap-3">
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-white/5 bg-white/2 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+                <div className="px-5 py-3 border-b border-white/4 flex items-center justify-between gap-3 bg-white/1">
                     <div className="flex flex-1 items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/10 text-red-500"><ShieldAlert size={16} /></div>
                         <div>
@@ -277,9 +277,9 @@ export default function GeneralSettings() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: gi * 0.04, duration: 0.3 }}
-                    className="rounded-2xl border border-white/4 bg-white/15"
+                    className="rounded-2xl border border-white/5 bg-white/2 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.1)] overflow-hidden"
                 >
-                    <div className="px-5 py-3 border-b border-white/4 flex items-center gap-3">
+                    <div className="px-5 py-3 border-b border-white/4 flex items-center gap-3 bg-white/1">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${group.color}15`, color: group.color }}>{group.icon}</div>
                         <div>
                             <h2 className="text-sm font-bold text-white">{group.title}</h2>

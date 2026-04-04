@@ -690,8 +690,8 @@ export default function ScriptDefaultsPage() {
                             VARSAYILAN DİLİ KULLAN
                         </button>
                     )}
-                    <label className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0">
-                        <FileUp size={14} className="text-white/40 group-hover:text-amber-400 transition-colors" /><span className="font-black hidden xl:inline">İÇE AKTAR</span>
+                    <label className="flex items-center gap-2.5 h-[42px] px-6 bg-white/4 backdrop-blur-md hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0">
+                        <FileUp size={15} className="text-white/40 group-hover:text-amber-400 transition-colors" /><span className="font-black hidden xl:inline">İÇE AKTAR</span>
                         <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                     </label>
                     <button
@@ -703,15 +703,15 @@ export default function ScriptDefaultsPage() {
                             a.href = url; a.download = `optwin_scripts_${activeLang}.json`; a.click();
                             URL.revokeObjectURL(url);
                         }}
-                        className="flex items-center gap-2 px-6 py-3 bg-white/4 backdrop-blur-md hover:bg-amber-500/15 border border-white/10 hover:border-amber-500/40 text-white/50 hover:text-amber-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0"
+                        className="flex items-center gap-2.5 h-[42px] px-6 bg-white/4 backdrop-blur-md hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/40 text-white/50 hover:text-orange-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer active:scale-95 shrink-0"
                     >
-                        <FileDown size={14} className="text-white/40 group-hover:text-emerald-400 transition-colors" /><span className="font-black hidden xl:inline">DIŞA AKTAR</span>
+                        <FileDown size={15} className="text-white/40 group-hover:text-emerald-400 transition-colors" /><span className="font-black hidden xl:inline">DIŞA AKTAR</span>
                     </button>
                     <button
                         onClick={handleDownloadPreview}
-                        className="flex items-center gap-2 px-6 py-3 bg-white/4 hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer shrink-0"
+                        className="flex items-center gap-2.5 h-[42px] px-6 bg-white/4 hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-500/40 text-white/50 hover:text-emerald-400 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer shrink-0"
                     >
-                        <Download size={14} className="text-white/40" /><span className="font-black hidden xl:inline">ÖNİZLEME</span>
+                        <Download size={15} className="text-white/40" /><span className="font-black hidden xl:inline">ÖNİZLEME</span>
                     </button>
                     <AdminLangPicker value={activeLang} onChange={setActiveLang} availableLangs={languages.map(l => l.code)} />
                 </div>

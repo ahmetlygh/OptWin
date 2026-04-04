@@ -83,7 +83,7 @@ export function AdminConfirmModal({
                                 </div>
                                 <button
                                     onClick={onClose}
-                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors"
+                                    className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors cursor-pointer"
                                 >
                                     <X size={16} />
                                 </button>
@@ -93,23 +93,23 @@ export function AdminConfirmModal({
                             <p className="text-[13px] text-white/40 leading-relaxed font-medium mb-6">{description}</p>
 
                             {/* actions */}
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={onClose}
-                                    className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 hover:text-white/70 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6"
-                                >
-                                    {cancelText}
-                                </button>
-                                <button
-                                    onClick={onConfirm}
-                                    className={`flex-1 h-10 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 ${isDanger
-                                            ? "bg-red-500/80 hover:bg-red-500 text-white shadow-red-500/15"
-                                            : "bg-[#6b5be6] hover:bg-[#5a4bd4] text-white shadow-[#6b5be6]/15"
-                                        }`}
-                                >
-                                    {confirmText}
-                                </button>
-                            </div>
+                             <div className="flex gap-3">
+                                 <button
+                                     onClick={onClose}
+                                     className="flex-1 h-10 bg-white/3 hover:bg-white/6 text-white/50 hover:text-white/70 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all border border-white/6 cursor-pointer"
+                                 >
+                                     {cancelText}
+                                 </button>
+                                 <button
+                                     onClick={onConfirm}
+                                     className={`flex-1 h-10 font-bold text-[12px] uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer ${isDanger
+                                             ? "bg-red-500/80 hover:bg-red-500 text-white shadow-red-500/15"
+                                             : "bg-[#6b5be6] hover:bg-[#5a4bd4] text-white shadow-[#6b5be6]/15"
+                                         }`}
+                                 >
+                                     {confirmText}
+                                 </button>
+                             </div>
                         </div>
                     </motion.div>
                 </div>

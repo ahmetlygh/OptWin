@@ -19,7 +19,7 @@ const neonInput = "w-full bg-white/2 backdrop-blur-md border border-white/6 roun
 
 /* ── Task 1: SEO Live Preview ── */
 const SeoPreview = ({ title, description, code }: { title: string; description: string; code: string }) => (
-    <div className="mt-3 p-3 bg-white/15 border border-white/4 rounded-xl space-y-1">
+    <div className="mt-3 p-3 bg-white/2 backdrop-blur-md border border-white/5 rounded-xl space-y-1 shadow-lg">
         <div className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">Google Önizleme</div>
         <p className="text-[13px] text-[#8ab4f8] font-medium truncate leading-snug">{title || "Sayfa Başlığı"}</p>
         <p className="text-[10px] text-emerald-400/70 truncate">optwin.tech/{code}</p>
@@ -1147,7 +1147,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                     </div>
 
                     {/* ── Translation Area ── */}
-                    <div className="flex-1 min-h-0 bg-white/15 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
+                    <div className="flex-1 min-h-0 bg-white/2 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] relative flex flex-col group border-b-0">
                         <AnimatePresence mode="popLayout">
                             {!isJsonMode ? (
                                 <motion.div key={`ui-mode-${uiKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col h-full absolute inset-0">
@@ -1218,7 +1218,7 @@ export default function LanguageTranslationPage({ params }: { params: Promise<{ 
                         </AnimatePresence>
 
                         {/* ── Global Minimap (Precision Glow markers) ── */}
-                        <div className="absolute right-3 w-[8px] pointer-events-none z-100 bg-white/15 border-x border-white/4" style={{ top: 45, bottom: 0 }}>
+                        <div className="absolute right-3 w-[8px] pointer-events-none z-100 bg-white/5 border-x border-white/4" style={{ top: 45, bottom: 0 }}>
                             <div className="relative w-full h-full">
                                 {minimapMarkers.map((pos, i) => (
                                     <div 

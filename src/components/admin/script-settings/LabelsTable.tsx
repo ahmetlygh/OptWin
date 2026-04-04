@@ -212,8 +212,8 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
     }));
 
     return (
-        <div className="rounded-2xl border border-white/4 bg-white/15 backdrop-blur-md overflow-hidden flex flex-col h-full shadow-2xl">
-            <div className="px-5 py-3 border-b border-white/4 flex flex-col xl:flex-row xl:items-center justify-between shrink-0 gap-3">
+        <div className="rounded-2xl border border-white/5 bg-white/2 backdrop-blur-md overflow-hidden flex flex-col h-full shadow-[0_8px_32px_rgba(0,0,0,0.25)]">
+            <div className="px-5 py-3 border-b border-white/4 bg-white/1 flex flex-col xl:flex-row xl:items-center justify-between shrink-0 gap-3">
                 <div className="flex items-center gap-3">
                     <h3 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] hidden sm:block">ANAHTAR-DEĞER</h3>
                     <span className="text-[10px] bg-white/5 border border-white/5 px-2 py-0.5 rounded text-white/40 font-mono font-bold tracking-wider">
@@ -286,7 +286,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                     const isMissing = missingKeys.includes(key);
 
                     return (
-                        <div key={key} ref={el => { rowRefs.current[key] = el; }} className={`flex flex-col sm:flex-row p-3 gap-2 border-b border-white/3 transition-colors group/row ${(changed && !isMissing) ? "bg-[#6b5be6]/5" : ""} ${isMissing ? "bg-amber-500/8" : "hover:bg-white/15"}`}>
+                        <div key={key} ref={el => { rowRefs.current[key] = el; }} className={`flex flex-col sm:flex-row p-3 gap-2 border-b border-white/3 transition-colors group/row ${(changed && !isMissing) ? "bg-[#6b5be6]/5" : ""} ${isMissing ? "bg-amber-500/8" : "hover:bg-white/5"}`}>
                             
                             <div className="flex items-start sm:items-center sm:w-[220px] shrink-0 gap-3">
                                 <span className="text-center text-[10px] font-mono font-bold text-white/20 pt-1 shrink-0 w-6">{i + 1}</span>
@@ -334,21 +334,21 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                     <button 
                                         onClick={() => handleMoveUp(key)}
                                         disabled={i === 0 || searchQuery !== "" || showMissingOnly}
-                                        className="size-4 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto"
-                                        title="Yukarı Taşı"
-                                    ><ArrowUp size={10} /></button>
-                                    <button 
-                                        onClick={() => handleMoveDown(key)}
-                                        disabled={i === filteredKeys.length - 1 || searchQuery !== "" || showMissingOnly}
-                                        className="size-4 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto"
-                                        title="Aşağı Taşı"
-                                    ><ArrowDown size={10} /></button>
-                                </div>
-                                <button
-                                    onClick={() => setDeleteConfirmKey(key)}
-                                    className="size-8 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500/40 hover:text-red-400 hover:bg-red-500/20 transition-all"
-                                    title="Anahtarı sil"
-                                >
+                                        className="size-4 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto cursor-pointer"
+                                         title="Yukarı Taşı"
+                                     ><ArrowUp size={10} /></button>
+                                     <button 
+                                         onClick={() => handleMoveDown(key)}
+                                         disabled={i === filteredKeys.length - 1 || searchQuery !== "" || showMissingOnly}
+                                         className="size-4 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors disabled:opacity-0 disabled:cursor-auto cursor-pointer"
+                                         title="Aşağı Taşı"
+                                     ><ArrowDown size={10} /></button>
+                                 </div>
+                                 <button
+                                     onClick={() => setDeleteConfirmKey(key)}
+                                     className="size-8 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500/40 hover:text-red-400 hover:bg-red-500/20 transition-all cursor-pointer"
+                                     title="Anahtarı sil"
+                                 >
                                     <Trash2 size={13} />
                                 </button>
                             </div>
@@ -382,7 +382,7 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                                                 <button
                                                     key={s}
                                                     onClick={() => handleSelectSuggestion(s)}
-                                                    className="w-full px-4 py-2.5 text-left text-[11px] font-mono text-[#a78bfa] hover:bg-[#6b5be6]/20 hover:text-white transition-colors flex items-center justify-between"
+                                                    className="w-full px-4 py-2.5 text-left text-[11px] font-mono text-[#a78bfa] hover:bg-[#6b5be6]/20 hover:text-white transition-colors flex items-center justify-between cursor-pointer"
                                                 >
                                                     <span className="font-bold">{s}</span>
                                                     {LABEL_DESCRIPTIONS[s] && (
@@ -408,16 +408,16 @@ export const LabelsTable = React.memo(forwardRef<LabelsTableRef, LabelsTableProp
                             <div className="flex items-center gap-1.5 px-1 justify-end sm:justify-start">
                                 <button
                                     onClick={handleAddRow}
-                                    className="h-9 px-3 flex items-center justify-center rounded-xl bg-[#6b5be6] text-white font-bold text-[10px] hover:bg-[#5a4bd4] transition-all shadow-[0_0_15px_rgba(107,91,230,0.3)] shadow-[#6b5be6]/20"
-                                    title="Ekle"
-                                >
-                                    <Check size={14} className="mr-1" /> Ekle
-                                </button>
-                                <button
-                                    onClick={() => { setShowNewRow(false); setNewKey(""); setNewValue(""); }}
-                                    className="size-9 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5"
-                                    title="İptal"
-                                >
+                                    className="h-9 px-3 flex items-center justify-center rounded-xl bg-[#6b5be6] text-white font-bold text-[10px] hover:bg-[#5a4bd4] transition-all shadow-[0_0_15px_rgba(107,91,230,0.3)] shadow-[#6b5be6]/20 cursor-pointer"
+                                     title="Ekle"
+                                 >
+                                     <Check size={14} className="mr-1" /> Ekle
+                                 </button>
+                                 <button
+                                     onClick={() => { setShowNewRow(false); setNewKey(""); setNewValue(""); }}
+                                     className="size-9 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 cursor-pointer"
+                                     title="İptal"
+                                 >
                                     <X size={14} />
                                 </button>
                             </div>

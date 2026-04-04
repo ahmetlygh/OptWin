@@ -137,29 +137,35 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     };
 
     const openMaintenanceModal = async () => {
+        setShowMaintenanceOn(true);
+        setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
+
         // Fetch current reason if mReasons is empty
-        const allEmpty = Object.values(mReasons).every(v => !v?.trim());
+        const allEmpty = Object.values(mReasons).every(v => typeof v !== 'string' || !v.trim());
         if (allEmpty) {
             try {
                 const res = await fetch("/api/admin/maintenance");
                 const data = await res.json();
                 if (data.reason) {
                     try {
-                        const parsed = JSON.parse(data.reason);
-                        setMReasons(parsed);
+                        const parsed = typeof data.reason === 'string' ? JSON.parse(data.reason) : data.reason;
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            const sanitized = Object.fromEntries(
+                                Object.entries(parsed).map(([k, v]) => [k, String(v)])
+                            );
+                            setMReasons(sanitized);
+                        } else {
+                            setMReasons(prev => ({ ...prev, [mReasonLang]: String(data.reason) }));
+                        }
                     } catch {
-                        // fallback if not JSON
-                        setMReasons(prev => ({ ...prev, [mReasonLang]: data.reason }));
+                        setMReasons(prev => ({ ...prev, [mReasonLang]: String(data.reason) }));
                     }
                 }
             } catch { /* ignore */ }
         }
-
-        setMMinutes(null); setMCustom(false); setMCustomMinutes(""); setMDate(""); setMTime(""); setMTimeMode("duration");
-        setShowMaintenanceOn(true);
     };
 
-    // T4: ESC key closes maintenance modal
+    // ESC key closes maintenance modal
     useEffect(() => {
         if (!showMaintenanceOn) return;
         const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setShowMaintenanceOn(false); };
@@ -254,41 +260,37 @@ export function AdminHeader({ user }: AdminHeaderProps) {
 
                 {/* Right: Actions + User */}
                 <div className="flex items-center gap-3">
-                    {/* Maintenance Active Toggle — ON (Right) = Site Active (maintenance false), OFF (Left) = Maintenance (maintenance true) */}
-                    <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-medium hidden sm:inline transition-colors duration-300 ${maintenanceLoading ? "text-white/20" : maintenance ? "text-amber-400" : "text-emerald-400"}`}>
+                    <div className="flex items-center gap-2.5">
+                        <span className={`text-[11px] font-bold hidden sm:inline uppercase tracking-wider transition-colors duration-300 ${maintenanceLoading ? "text-white/20" : maintenance ? "text-orange-400" : "text-emerald-400"}`}>
                             {maintenanceLoading ? "Yükleniyor..." : maintenance ? "Bakımda" : "Aktif"}
                         </span>
-                        <button
-                            onClick={() => maintenance ? setShowMaintenanceOff(true) : openMaintenanceModal()}
-                            disabled={maintenanceLoading}
-                            className={`relative w-9 h-[20px] rounded-full transition-all duration-300 ${maintenanceLoading ? "bg-white/10" : maintenance ? "bg-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.2)]" : "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]"} ${maintenanceLoading ? "opacity-50" : ""}`}
-                        >
+                         <button
+                             onClick={() => maintenance ? setShowMaintenanceOff(true) : openMaintenanceModal()}
+                             disabled={maintenanceLoading}
+                             className={`relative w-[46px] h-6 rounded-full transition-all duration-300 cursor-pointer ${maintenanceLoading ? "bg-white/10" : maintenance ? "bg-orange-500/80 shadow-[0_0_12px_rgba(245,158,11,0.25)]" : "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]"} ${maintenanceLoading ? "opacity-50" : ""}`}
+                         >
                             {maintenanceLoading ? (
-                                <Loader2 size={10} className="absolute top-[5px] left-1/2 -translate-x-1/2 text-white/50 animate-spin" />
+                                <Loader2 size={12} className="absolute top-[6px] left-1/2 -translate-x-1/2 text-white/50 animate-spin" />
                             ) : (
-                                <span className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${maintenance ? "left-[3px]" : "left-[19px]"}`} />
+                                <span className={`absolute top-[4px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${maintenance ? "left-[4px]" : "left-[26px]"}`} />
                             )}
                         </button>
                     </div>
 
                     <div className="w-px h-5 bg-white/6" />
 
-                    {/* View Site */}
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => setShowViewSite(true)}
-                        className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white/30 hover:text-white/60 bg-white/2 hover:bg-white/4 border border-white/4 transition-all"
+                        className="flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-bold text-white/40 hover:text-white/70 bg-white/2 hover:bg-white/4 border border-white/4 transition-all"
                     >
-                        <ExternalLink size={12} />
+                        <ExternalLink size={14} />
                         <span>Siteye Git</span>
                     </motion.button>
 
-                    {/* Separator */}
                     <div className="w-px h-6 bg-white/6" />
 
-                    {/* User info */}
                     <div className="flex items-center gap-2.5">
                         {user.image ? (
                             <Image
@@ -311,7 +313,6 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                             </div>
                         </div>
 
-                        {/* Sign out */}
                         <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -348,59 +349,56 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 cancelText="İptal"
             />
 
-            {/* Maintenance On Modal — custom with reason + estimated time */}
+            {/* Maintenance On Modal */}
             {mounted && createPortal(
                 <AnimatePresence>
                     {showMaintenanceOn && (
-                        <div className="fixed inset-0 z- 9999 flex items-center justify-center p-4" onClick={() => setShowMaintenanceOn(false)}>
+                        <div className="fixed inset-0 z-10000 flex items-center justify-center p-4" onClick={() => setShowMaintenanceOn(false)}>
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-md" />
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.92, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.92, y: 20 }}
                                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 max-w-md w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
+                                className="relative bg-[#0d0d12]/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-7 max-w-lg w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] overflow-hidden"
                                 onClick={e => e.stopPropagation()}
                             >
-                                {/* ambient glow */}
                                 <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/8 blur-3xl pointer-events-none" />
 
-                                {/* header */}
-                                <div className="relative z-10 flex items-start justify-between mb-5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                            <AlertTriangle size={18} className="text-amber-400" />
+                                <div className="relative z-10 flex items-start justify-between mb-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="size-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                            <AlertTriangle size={22} className="text-amber-400" />
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-black text-white uppercase tracking-tight">Bakıma Al</h3>
-                                            <p className="text-[10px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Ziyaretçiler bakım sayfasına yönlendirilecek</p>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-tight">Bakıma Al</h3>
+                                            <p className="text-[11px] text-white/25 font-bold uppercase tracking-[0.15em] mt-0.5">Ziyaretçiler bakım sayfasına yönlendirilecek</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowMaintenanceOn(false)} className="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors">
-                                        <X size={16} />
-                                    </button>
+                                     <button onClick={() => setShowMaintenanceOn(false)} className="size-9 flex items-center justify-center rounded-xl hover:bg-white/5 text-white/20 hover:text-white/60 transition-colors cursor-pointer">
+                                         <X size={18} />
+                                     </button>
                                 </div>
 
-                                {/* Reason — per language */}
-                                <div className="relative z-10 mb-4">
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
+                                <div className="relative z-10 mb-5">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-[11px] font-bold text-white/25 uppercase tracking-wider">Bakım Sebebi <span className="text-white/15">(opsiyonel)</span></label>
                                         <div className="flex items-center gap-1.5">
-                                            <div className="flex items-center bg-white/3 border border-white/6 rounded-xl px-1 h-7">
-                                                <button
-                                                    onClick={() => setMReasons(prev => ({ ...prev, [mReasonLang]: "" }))}
-                                                    className="p-1.5 text-white/20 hover:text-orange-400 transition-colors"
-                                                    title="Dili temizle"
-                                                >
-                                                    <Eraser size={11} />
+                                            <div className="flex items-center bg-white/3 border border-white/6 rounded-xl px-2 h-9">
+                                                 <button
+                                                     onClick={() => setMReasons(prev => ({ ...prev, [mReasonLang]: "" }))}
+                                                     className="p-2 text-white/20 hover:text-orange-400 transition-colors cursor-pointer"
+                                                     title="Dili temizle"
+                                                 >
+                                                    <Eraser size={16} />
                                                 </button>
-                                                <div className="w-px h-3 bg-white/5" />
-                                                <button
-                                                    onClick={() => setMReasons(Object.fromEntries(reasonLangs.map(l => [l, ""])))}
-                                                    className="p-1.5 text-white/20 hover:text-red-400 transition-colors"
-                                                    title="Tümünü temizle"
-                                                >
-                                                    <Trash2 size={11} />
+                                                <div className="w-px h-4 bg-white/5" />
+                                                 <button
+                                                     onClick={() => setMReasons(Object.fromEntries(reasonLangs.map(l => [l, ""])))}
+                                                     className="p-2 text-white/20 hover:text-red-400 transition-colors cursor-pointer"
+                                                     title="Tümünü temizle"
+                                                 >
+                                                    <Trash2 size={16} />
                                                 </button>
                                             </div>
                                             <AdminLangPicker
@@ -411,78 +409,76 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                         </div>
                                     </div>
                                     <textarea
-                                        value={mReasons[mReasonLang] || ""}
+                                        value={typeof mReasons[mReasonLang] === 'string' ? mReasons[mReasonLang] : ""}
                                         onChange={e => setMReasons(prev => ({ ...prev, [mReasonLang]: e.target.value }))}
                                         placeholder={mReasonLang === "tr" ? "Sistem güncellemesi, veritabanı bakımı..." : "System update, database maintenance..."}
-                                        rows={2}
-                                        className="w-full bg-white/3 border border-white/6 rounded-xl px-3 py-2 text-[13px] text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/50 transition-colors resize-none"
+                                        rows={3}
+                                        className="w-full bg-white/3 border border-white/6 rounded-xl px-4 py-3 text-[14px] text-white/80 placeholder-white/15 focus:outline-none focus:border-[#6b5be6]/50 transition-colors resize-none"
                                     />
-                                    {mReasons[mReasonLang]?.trim() && (
-                                        <button
-                                            type="button"
-                                            disabled={mTranslating}
-                                            onClick={async () => {
-                                                const text = mReasons[mReasonLang];
-                                                if (!text?.trim()) return;
-                                                setMTranslating(true);
-                                                try {
-                                                    const otherLangs = reasonLangs.filter(l => l !== mReasonLang);
-                                                    const res = await fetch("/api/admin/translate", {
-                                                        method: "POST",
-                                                        headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({ text, sourceLang: mReasonLang, targetLangs: otherLangs }),
-                                                    });
-                                                    const data = await res.json();
-                                                    if (data.success) {
-                                                        setMReasons(prev => {
-                                                            const updated = { ...prev };
-                                                            Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => {
-                                                                updated[lang] = translated;
-                                                            });
-                                                            return updated;
-                                                        });
-                                                    }
-                                                } catch { /* ignore */ }
-                                                setMTranslating(false);
-                                            }}
-                                            className="mt-1.5 h-7 px-3 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
-                                        >
-                                            {mTranslating ? <Loader2 size={11} className="animate-spin" /> : <Languages size={11} />}
+                                    {typeof mReasons[mReasonLang] === 'string' && mReasons[mReasonLang].trim() && (
+                                         <button
+                                             type="button"
+                                             disabled={mTranslating}
+                                             onClick={async () => {
+                                                 const text = mReasons[mReasonLang];
+                                                 if (!text?.trim()) return;
+                                                 setMTranslating(true);
+                                                 try {
+                                                     const otherLangs = reasonLangs.filter(l => l !== mReasonLang);
+                                                     const res = await fetch("/api/admin/translate", {
+                                                         method: "POST",
+                                                         headers: { "Content-Type": "application/json" },
+                                                         body: JSON.stringify({ text, sourceLang: mReasonLang, targetLangs: otherLangs }),
+                                                     });
+                                                     const data = await res.json();
+                                                     if (data.success) {
+                                                         setMReasons(prev => {
+                                                             const updated = { ...prev };
+                                                             Object.entries(data.translations as Record<string, string>).forEach(([lang, translated]) => {
+                                                                 updated[lang] = translated;
+                                                             });
+                                                             return updated;
+                                                         });
+                                                     }
+                                                 } catch { /* ignore */ }
+                                                 setMTranslating(false);
+                                             }}
+                                             className="mt-2 h-8 px-4 rounded-xl text-[11px] font-bold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+                                         >
+                                            {mTranslating ? <Loader2 size={13} className="animate-spin" /> : <Languages size={13} />}
                                             {mTranslating ? "Çevriliyor..." : "Diğer Dillere Çevir"}
                                         </button>
                                     )}
                                 </div>
 
-                                {/* Estimated End */}
-                                <div className="relative z-10 mb-5">
-                                    <label className="block text-[10px] font-bold text-white/25 uppercase tracking-wider mb-1.5">Tahmini Bitiş <span className="text-white/15">(opsiyonel)</span></label>
+                                <div className="relative z-10 mb-6">
+                                    <label className="block text-[11px] font-bold text-white/25 uppercase tracking-wider mb-2">Tahmini Bitiş <span className="text-white/15">(opsiyonel)</span></label>
 
-                                    {/* Mode toggle */}
-                                    <div className="flex gap-1 mb-3">
-                                        <button
-                                            onClick={() => setMTimeMode("duration")}
-                                            className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${mTimeMode === "duration" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
-                                                }`}
-                                        >
-                                            Süre seç
-                                        </button>
-                                        <button
-                                            onClick={switchToDatetime}
-                                            className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all border ${mTimeMode === "datetime" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
-                                                }`}
-                                        >
-                                            Tarih ve saat
-                                        </button>
+                                    <div className="flex gap-2 mb-4">
+                                         <button
+                                             onClick={() => setMTimeMode("duration")}
+                                             className={`flex-1 h-10 rounded-xl text-[12px] font-bold transition-all border cursor-pointer ${mTimeMode === "duration" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
+                                                 }`}
+                                         >
+                                             Süre seç
+                                         </button>
+                                         <button
+                                             onClick={switchToDatetime}
+                                             className={`flex-1 h-10 rounded-xl text-[12px] font-bold transition-all border cursor-pointer ${mTimeMode === "datetime" ? "bg-[#6b5be6]/10 text-[#6b5be6] border-[#6b5be6]/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
+                                                 }`}
+                                         >
+                                             Tarih ve saat
+                                         </button>
                                     </div>
 
                                     {mTimeMode === "duration" ? (
-                                        <div className="space-y-2">
-                                            <div className="grid grid-cols-5 gap-1.5">
+                                        <div className="space-y-3">
+                                            <div className="grid grid-cols-5 gap-2">
                                                 {DURATION_PRESETS.map(p => (
                                                     <button
                                                         key={p.minutes}
                                                         onClick={() => { setMMinutes(mMinutes === p.minutes ? null : p.minutes); setMCustom(false); }}
-                                                        className={`h-8 rounded-lg text-[11px] font-bold transition-all border ${!mCustom && mMinutes === p.minutes ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
+                                                        className={`h-10 rounded-xl text-[12px] font-bold transition-all border ${!mCustom && mMinutes === p.minutes ? "bg-orange-500/15 text-orange-400 border-orange-500/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
                                                             }`}
                                                     >
                                                         {p.label}
@@ -490,24 +486,24 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                                 ))}
                                                 <button
                                                     onClick={() => { setMCustom(!mCustom); setMMinutes(null); }}
-                                                    className={`h-8 rounded-lg text-[11px] font-bold transition-all border ${mCustom ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
+                                                    className={`h-10 rounded-xl text-[12px] font-bold transition-all border ${mCustom ? "bg-orange-500/15 text-orange-400 border-orange-500/20" : "bg-white/2 text-white/30 border-white/6 hover:text-white/50"
                                                         }`}
                                                 >
                                                     Özel
                                                 </button>
                                             </div>
                                             {mCustom && (
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-3">
                                                     <input
                                                         type="text"
                                                         inputMode="numeric"
                                                         value={mCustomMinutes}
                                                         onChange={e => setMCustomMinutes(e.target.value.replace(/[^0-9]/g, ""))}
                                                         placeholder="Dakika girin"
-                                                        className="flex-1 h-9 px-3 bg-white/3 border border-white/6 rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-amber-500/30 transition-colors"
+                                                        className="flex-1 h-11 px-4 bg-white/3 border border-white/6 rounded-2xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-orange-500/30 transition-colors"
                                                         autoFocus
                                                     />
-                                                    <span className="text-[10px] text-white/25 font-medium">dakika</span>
+                                                    <span className="text-[11px] text-white/25 font-bold uppercase tracking-wider">dakika</span>
                                                 </div>
                                             )}
                                         </div>
@@ -517,29 +513,28 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                                                 type="date"
                                                 value={mDate}
                                                 onChange={e => setMDate(e.target.value)}
-                                                className="flex-1 h-9 px-3 bg-white/3 border border-white/6 rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors scheme-dark"
+                                                className="flex-1 h-11 px-4 bg-white/3 border border-white/6 rounded-2xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors scheme-dark"
                                             />
                                             <input
                                                 type="time"
                                                 value={mTime}
                                                 onChange={e => setMTime(e.target.value)}
-                                                className="w-28 h-9 px-3 bg-white/3 border border-white/6 rounded-xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors scheme-dark"
+                                                className="w-32 h-11 px-4 bg-white/3 border border-white/6 rounded-2xl text-white text-sm focus:outline-none focus:border-[#6b5be6]/30 transition-colors scheme-dark"
                                             />
-                                            <span className="flex items-center text-[10px] text-white/20 font-mono">UTC+3</span>
+                                            <span className="flex items-center text-[11px] text-white/20 font-mono">UTC+3</span>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Actions */}
-                                <div className="relative z-10 flex gap-3">
-                                    <button onClick={() => setShowMaintenanceOn(false)} className="flex-1 h-10 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white/50 bg-white/3 hover:bg-white/6 border border-white/6 transition-all">
-                                        İptal
-                                    </button>
-                                    <button
-                                        onClick={() => toggleMaintenance(true)}
-                                        className="flex-1 h-10 rounded-xl text-[12px] font-bold uppercase tracking-wider text-white bg-amber-600 hover:bg-amber-500 transition-all shadow-lg shadow-amber-600/15 flex items-center justify-center gap-2 active:scale-95"
-                                    >
-                                        <AlertTriangle size={13} />
+                                <div className="relative z-10 flex gap-4">
+                                     <button onClick={() => setShowMaintenanceOn(false)} className="flex-1 h-12 rounded-2xl text-[13px] font-black uppercase tracking-widest text-white/50 bg-white/3 hover:bg-white/6 border border-white/6 transition-all cursor-pointer">
+                                         İptal
+                                     </button>
+                                     <button
+                                         onClick={() => toggleMaintenance(true)}
+                                         className="flex-1 h-12 rounded-2xl text-[13px] font-black uppercase tracking-widest text-white bg-amber-600 hover:bg-amber-500 transition-all shadow-xl shadow-amber-600/20 flex items-center justify-center gap-2.5 active:scale-95 cursor-pointer"
+                                     >
+                                        <AlertTriangle size={16} />
                                         Bakıma Al
                                     </button>
                                 </div>

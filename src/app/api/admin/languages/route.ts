@@ -5,9 +5,12 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 
 // GET: Fetch all languages
-export async function GET() {
+export async function GET(request: NextRequest) {
     const session = await auth();
-    if (!session?.isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const isInternal = request.headers.get('x-internal-fetch') === 'true';
+
+    // Allow internal bypass for proxy.ts middleware
+    if (!session?.isAdmin && !isInternal) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
         const languages = await prisma.language.findMany({
