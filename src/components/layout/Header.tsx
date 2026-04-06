@@ -7,8 +7,10 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDownIcon, SunIcon, MoonIcon, HeartIcon } from "../shared/Icons";
+import { MobileNav } from "./MobileNav";
 import { ShieldCheck, LogOut, PanelLeft } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { sanitizeSvg } from "@/lib/sanitize";
 
 interface LanguageItem {
     code: string;
@@ -157,9 +159,9 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         <div className="h-9 w-auto flex items-center justify-center">
                             <Image src={serverSettings.site_logo_url || "/optwin.png"} alt={`${siteName} Logo`} width={36} height={36} className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
                         </div>
-                        <h1 className="text-2xl font-black tracking-tight bg-clip-text text-transparent text-gradient mt-0.5">
+                        <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent text-gradient mt-0.5">
                             {siteName}
-                        </h1>
+                        </span>
                     </Link>
                 </div>
 
@@ -209,7 +211,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                 className="flex items-center gap-2 p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) text-sm font-medium transition-colors duration-200"
                             >
                                 {currentLang.flagSvg ? (
-                                    <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: currentLang.flagSvg.replace('<svg', '<svg width="20" height="14"') }} />
+                                    <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: sanitizeSvg(currentLang.flagSvg).replace('<svg', '<svg width="20" height="14"') }} />
                                 ) : (
                                     <span className="w-5 h-3.5 bg-gray-500/20 rounded-[2px]" />
                                 )}
@@ -230,7 +232,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${lang === l.code ? 'bg-(--accent-color)/10 text-(--accent-color) font-bold' : 'text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary)'}`}
                                             >
                                                 {l.flagSvg ? (
-                                                    <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: l.flagSvg.replace('<svg', '<svg width="20" height="14"') }} />
+                                                    <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: sanitizeSvg(l.flagSvg).replace('<svg', '<svg width="20" height="14"') }} />
                                                 ) : (
                                                     <span className="w-5 h-3.5 bg-gray-500/20 rounded-[2px]" />
                                                 )}
@@ -282,7 +284,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                     </div>
                                 )}
                                 <span className="hidden sm:inline text-xs font-bold text-(--accent-color)">
-                                    Yönetici
+                                    {t["admin.role"]}
                                 </span>
                                 <ChevronDownIcon
                                     size={13}
@@ -298,7 +300,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                         </p>
                                         <p className="text-[10px] text-(--accent-color) font-medium mt-0.5 flex items-center gap-1">
                                             <ShieldCheck size={10} />
-                                            Yönetici Hesabı
+                                            {t["admin.account"]}
                                         </p>
                                     </div>
                                     <div className="py-1">
@@ -308,7 +310,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary) transition-colors"
                                         >
                                             <PanelLeft size={15} />
-                                            Yönetici Paneli
+                                            {t["admin.panel"]}
                                         </Link>
                                         <button
                                             onClick={() => {
@@ -318,7 +320,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors"
                                         >
                                             <LogOut size={15} />
-                                            Çıkış Yap
+                                            {t["admin.logout"]}
                                         </button>
                                     </div>
                                 </div>
@@ -326,7 +328,8 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         </div>
                     )}
 
-                    {/* MobileNav removed per user request */}
+                    {/* Mobile Navigation */}
+                    <MobileNav />
                 </div>
 
             </div>

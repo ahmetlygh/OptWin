@@ -149,6 +149,61 @@ const TERMS: Record<string, PageData> = {
     hi: { disclaimer: "यह एक अनुवाद है। विसंगति की स्थिति में अंग्रेजी संस्करण मान्य होगा।", lastUpdated: "मार्च 2026", sections: [{ title: "1. शर्तों की स्वीकृति", content: ["OptWin का उपयोग करके, आप इन शर्तों से सहमत होते हैं।"] }, { title: "2. अस्वीकरण", content: ["OptWin बिना गारंटी के प्रदान किया जाता है। स्क्रिप्ट चलाने से पहले रिस्टोर पॉइंट बनाएं।"] }, { title: "3. संपर्क", content: ["प्रश्नों के लिए, हमारे संपर्क पृष्ठ का उपयोग करें।"] }] },
 };
 
+const VALUE_PROPS: Record<string, PageData> = {
+    en: {
+        lastUpdated: "March 2026",
+        sections: [
+            { title: "No Bloatware", content: ["Windows ships with hidden telemetry and 50+ background apps stealing your RAM. OptWin terminates them instantly."] },
+            { title: "No Background Agents", content: ["Unlike other tools, OptWin generates a standalone script. Zero background usage, zero installations. Run and done."] },
+            { title: "Unlock FPS & Speed", content: ["Unleash your hardware's true potential. Stop giving your CPU cycles to Microsoft's background tracking."] }
+        ]
+    },
+    tr: {
+        lastUpdated: "Mart 2026",
+        sections: [
+            { title: "Ajan Yazılıma Son", content: ["Windows arka planda çalışan 50+ gereksiz servisle RAM'inizi sömürür. OptWin hepsini tek tıkla yok eder."] },
+            { title: "Sıfır Kurulum", content: ["Diğer araçların aksine OptWin arkada sürekli çalışmaz. Sadece script oluşturur, işini yapar ve sistemden çıkar."] },
+            { title: "Kilitli Performansı Aç", content: ["Donanımınızın gerçek gücünü ortaya çıkarın. İşlemcinizin Microsoft reklamları için çalışmasına son verin."] }
+        ]
+    }
+};
+
+const BEFORE_AFTER: Record<string, PageData> = {
+    en: {
+        lastUpdated: "March 2026",
+        sections: [
+            { title: "The Mistake: Default Windows", content: ["High ping spikes from background telemetry", "Constant disk usage from Edge and Cortana", "Stuttering in games due to indexing", "Zero privacy: Activity history sent to servers"] },
+            { title: "The Solution: OptWin 1.3", content: ["Stable, lowest possible latency in games", "Maximum CPU/RAM dedicated to your tasks", "Smooth performance with zero indexing spikes", "100% Privacy: Telemetry completely blocked"] }
+        ]
+    },
+    tr: {
+        lastUpdated: "Mart 2026",
+        sections: [
+            { title: "Hata: Varsayılan Windows", content: ["Arka plan telemetrisi yüzünden ping dalgalanmaları", "Edge ve Cortana kaynaklı sürekli disk kullanımı", "Gereksiz okumalar yüzünden oyunlarda FPS dropları", "Eksik Gizlilik: Aktiviteleriniz sürekli raporlanır"] },
+            { title: "Çözüm: OptWin 1.3", content: ["Oyunlarda sabitleşmiş en düşük gecikme", "CPU ve RAM'in tamamı oyuna/işe aktarılır", "Arka plan işlemleri dondurulmuş pürüzsüz hız", "%100 Gizlilik: Telemetri tamamen engellenir"] }
+        ]
+    }
+};
+
+const HOW_IT_WORKS: Record<string, PageData> = {
+    en: {
+        lastUpdated: "March 2026",
+        sections: [
+            { title: "Select the Bloat", content: ["Click 'Gamer' preset to target gaming barriers."] },
+            { title: "Compile Script", content: ["We generate a custom script based on your limits."] },
+            { title: "Execute & Fly", content: ["Run As Admin and let your PC breathe again."] }
+        ]
+    },
+    tr: {
+        lastUpdated: "Mart 2026",
+        sections: [
+            { title: "Düşmanı Seç", content: ["FPS engelleyen servisleri hedeflenen listeden seç."] },
+            { title: "Silahı Üret", content: ["Sana özel, şeffaf PowerShell scripti oluşturulur."] },
+            { title: "Çalıştır ve Kurtul", content: ["Yönetici olarak çalıştırın ve kilitlenen gücü geri alın."] }
+        ]
+    }
+};
+
 async function seedPageContent(pageSlug: string, data: Record<string, PageData>) {
     console.log(`  📄 Seeding ${pageSlug} page content...`);
     let count = 0;
@@ -183,6 +238,9 @@ async function main() {
     console.log("📄 Seeding page content...\n");
     await seedPageContent("privacy", PRIVACY);
     await seedPageContent("terms", TERMS);
+    await seedPageContent("home-value-props", VALUE_PROPS);
+    await seedPageContent("home-before-after", BEFORE_AFTER);
+    await seedPageContent("home-how-it-works", HOW_IT_WORKS);
     console.log("\n🎉 Page content seeding complete!");
 }
 

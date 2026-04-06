@@ -21,16 +21,19 @@ export function SearchBar() {
                 </div>
                 <input
                     type="text"
+                    id="feature-search"
+                    name="search"
+                    aria-label={t["search.placeholder"]}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full pl-11 pr-24 sm:pr-36 py-3.5 bg-(--card-bg) border border-(--border-color) rounded-xl text-(--text-primary) placeholder-(--text-secondary) focus:ring-2 focus:ring-(--accent-color)/50 focus:border-(--accent-color) shadow-sm transition-all duration-300"
+                    className="block w-full pl-10 pr-24 sm:pr-36 py-2.5 bg-[#0d0d12]/80 backdrop-blur-md border border-white/10 rounded-full text-(--text-primary) placeholder-(--text-secondary) focus:outline-none focus:border-(--accent-color)/60 focus:shadow-[0_0_0_3px_rgba(107,91,230,0.15)] shadow-sm transition-all duration-300 text-[14px]"
                     placeholder={t["search.placeholder"]}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center justify-end gap-2 pointer-events-none">
                     {searchQuery.length > 0 && (
                         <button
                             onClick={() => setSearchQuery("")}
-                            className="pointer-events-auto flex items-center justify-center p-1.5 text-(--text-secondary) hover:text-red-400 hover:bg-black/10 rounded-lg transition-all duration-200 animate-pop-in"
+                            className="pointer-events-auto cursor-pointer flex items-center justify-center p-1.5 text-(--text-secondary) hover:text-red-400 hover:bg-white/5 rounded-lg transition-all duration-200 animate-pop-in"
                         >
                             <XIcon size={18} />
                         </button>
@@ -50,8 +53,8 @@ export function SearchBar() {
             {/* Toggle descriptions button — with text label */}
             <button
                 onClick={toggleDescriptions}
-                className={`shrink-0 h-[50px] flex items-center gap-2 px-4 rounded-xl border transition-all duration-300 ${showDescriptions
-                    ? 'bg-(--card-bg) border-(--border-color) text-(--text-secondary) hover:text-(--accent-color) hover:border-(--accent-color)/50'
+                className={`shrink-0 h-[38px] cursor-pointer flex items-center gap-2 px-4 rounded-full border transition-all duration-300 ${showDescriptions
+                    ? 'bg-(--card-bg)/50 border-white/10 text-(--text-secondary) hover:text-white'
                     : 'bg-(--accent-color)/10 border-(--accent-color)/30 text-(--accent-color)'
                     }`}
                 title={showDescriptions ? t["search.hideDesc"] : t["search.showDesc"]}

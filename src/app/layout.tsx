@@ -65,7 +65,9 @@ export default async function RootLayout({
   if (document.readyState === 'complete') {
     setTimeout(removeSplash, 150);
   } else {
-    window.addEventListener('load', function() { setTimeout(removeSplash, 150); });
+    window.addEventListener('optwin:hydrated', function() { setTimeout(removeSplash, 150); }, { once: true });
+    // Fallback: if hydration event never fires, still remove after 4s
+    setTimeout(removeSplash, 4000);
   }
 })();
                 ` }} />

@@ -6,6 +6,7 @@ import { Settings, ChevronDown, Globe, Check } from "lucide-react";
 import Image from "next/image";
 
 import { LanguageData } from "@/lib/languageService";
+import { sanitizeSvg } from "@/lib/sanitize";
 
 export function MaintenanceUI({ 
     locale, 
@@ -127,7 +128,7 @@ export function MaintenanceUI({
                     }`}
                 >
                     {currentLang.flagSvg ? (
-                        <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-[2px] overflow-hidden [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: currentLang.flagSvg }} />
+                        <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-[2px] overflow-hidden [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: sanitizeSvg(currentLang.flagSvg) }} />
                     ) : (
                         <Globe size={12} className="text-white/25 shrink-0" />
                     )}
@@ -164,7 +165,7 @@ export function MaintenanceUI({
                                         >
                                             <div className="flex items-center gap-2.5 overflow-hidden">
                                                 {l.flagSvg ? (
-                                                    <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-[2px] overflow-hidden [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: l.flagSvg }} />
+                                                    <span className="relative flex items-center justify-center shrink-0 w-4 h-3 rounded-[2px] overflow-hidden [&>svg]:absolute [&>svg]:inset-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: sanitizeSvg(l.flagSvg) }} />
                                                 ) : (
                                                     <span className="w-4 h-3 bg-white/10 rounded-[2px] shrink-0" />
                                                 )}

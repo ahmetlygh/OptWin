@@ -5,6 +5,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { StarIcon, GamepadIcon, ResetIcon, CheckAllIcon, CheckIcon, GlobeIcon, XIcon } from "../shared/Icons";
 import { useState } from "react";
 import { DnsProvider } from "@/types/feature";
+import { DNS_DISPLAY_NAMES } from "@/lib/constants";
 
 type PresetDef = {
     id: string;
@@ -59,23 +60,17 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
         setDnsOpen(true);
     };
 
-    const dnsDisplayName: Record<string, string> = {
-        default: "Default",
-        cloudflare: "Cloudflare",
-        google: "Google",
-        opendns: "OpenDNS",
-        quad9: "Quad9",
-        adguard: "AdGuard",
-    };
+
 
     return (
-        <div className="flex flex-col items-center w-full animate-fade-in-up stagger-children">
-            <div className="flex flex-col md:flex-row flex-wrap gap-3 justify-center items-center w-full md:w-auto px-4 md:px-0">
+        <div className="flex flex-col w-full animate-fade-in-up">
+            <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:justify-center">
+                
                 {presets.map((preset) => (
                     <button
                         key={preset.id}
                         onClick={() => handleApplyPreset(preset.featureSlugs)}
-                        className={`w-full max-w-[320px] md:max-w-none md:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 rounded-xl font-semibold transition-all duration-300 ease-in-out hover:shadow-lg active:scale-95 ${getPresetButtonStyle(preset.slug)}`}
+                        className={`shrink-0 cursor-pointer flex items-center justify-center gap-1.5 px-4 py-1.5 md:py-2 border rounded-full text-[13px] font-bold transition-all duration-300 hover:scale-[1.02] active:scale-95 ${getPresetButtonStyle(preset.slug)}`}
                     >
                         {getPresetIcon(preset.slug)}
                         <span className="whitespace-nowrap">
@@ -84,20 +79,22 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
                     </button>
                 ))}
 
+                <div className="w-px h-6 bg-white/10 shrink-0 self-center hidden md:block mx-1"></div>
+
                 <button
                     onClick={() => { clearFeatures(); setDnsOpen(false); }}
-                    className="w-full max-w-[320px] md:max-w-none md:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 border-(--border-color) bg-transparent text-(--text-primary) rounded-xl font-semibold hover:border-red-500 hover:text-red-500 hover:shadow-lg active:scale-95 transition-all duration-300 ease-in-out"
+                    className="shrink-0 cursor-pointer flex items-center justify-center gap-1.5 px-4 py-1.5 md:py-2 border border-(--border-color) bg-transparent text-(--text-primary) rounded-full text-[13px] font-bold hover:border-red-500 hover:text-red-500 hover:bg-red-500/5 transition-all duration-300 active:scale-95"
                 >
-                    <ResetIcon size={18} />
-                    {t["preset.clearAll"]}
+                    <ResetIcon size={14} />
+                    <span className="whitespace-nowrap">{t["preset.clearAll"]}</span>
                 </button>
 
                 <button
                     onClick={handleSelectAll}
-                    className="w-full max-w-[320px] md:max-w-none md:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 border-(--border-color) bg-transparent text-(--text-primary) rounded-xl font-semibold hover:border-(--accent-color) hover:text-(--accent-color) hover:shadow-lg active:scale-95 transition-all duration-300 ease-in-out"
+                    className="shrink-0 cursor-pointer flex items-center justify-center gap-1.5 px-4 py-1.5 md:py-2 border border-(--border-color) bg-transparent text-(--text-primary) rounded-full text-[13px] font-bold hover:border-(--accent-color) hover:text-(--accent-color) hover:bg-(--accent-color)/5 transition-all duration-300 active:scale-95"
                 >
-                    <CheckAllIcon size={18} />
-                    {t["preset.selectAll"]}
+                    <CheckAllIcon size={14} />
+                    <span className="whitespace-nowrap">{t["preset.selectAll"]}</span>
                 </button>
             </div>
 
@@ -123,7 +120,7 @@ export function PresetControls({ presets, allFeatureSlugs, dnsProviders }: { pre
                                 {t["dns.select"] || "DNS Seç"}
                             </span>
                             <span className="text-xs font-bold text-(--accent-color) bg-(--accent-color)/10 px-2.5 py-1 rounded-lg">
-                                {dnsDisplayName[dnsProvider] || dnsProvider}
+                                {DNS_DISPLAY_NAMES[dnsProvider] || dnsProvider}
                             </span>
                         </button>
 

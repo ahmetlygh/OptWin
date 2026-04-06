@@ -29,9 +29,9 @@ export function Footer({ serverSettings = {} }: FooterProps) {
             {/* Ambient Background subtle glow - Widened */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-px bg-linear-to-r from-transparent via-(--accent-color)/30 to-transparent"></div>
             
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-10 pt-16">
-                <div className="bg-(--card-bg)/40 backdrop-blur-2xl border border-(--border-color) rounded-[3.5rem] p-12 md:p-16 shadow-2xl relative isolation min-h-[450px] flex flex-col justify-between">
-                    <div className="absolute inset-0 bg-linear-to-br from-(--accent-color)/4 to-transparent pointer-events-none rounded-[3.5rem]"></div>
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-16">
+                <div className="bg-(--card-bg)/40 backdrop-blur-xl border border-(--border-color) rounded-lg sm:rounded-xl md:rounded-2xl p-6 sm:p-10 md:p-16 shadow-lg relative isolation min-h-[450px] flex flex-col justify-between">
+                    <div className="absolute inset-0 bg-linear-to-br from-(--accent-color)/4 to-transparent pointer-events-none rounded-lg sm:rounded-xl md:rounded-2xl"></div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start relative z-10">
                         {/* Branding */}
@@ -43,7 +43,7 @@ export function Footer({ serverSettings = {} }: FooterProps) {
                                         alt={siteName} 
                                         width={56} 
                                         height={56} 
-                                        className="object-contain group-hover/logo:scale-110 drop-shadow-[0_0_20px_rgba(107,91,230,0.6)] transition-all duration-500" 
+                                        className="object-contain group-hover/logo:scale-110 transition-all duration-500" 
                                     />
                                     <div className="absolute inset-0 bg-(--accent-color)/10 blur-2xl rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity"></div>
                                 </div>

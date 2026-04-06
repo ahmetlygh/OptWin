@@ -157,6 +157,35 @@ export const cacheService = {
   },
 
   /**
+   * Fetches PageContent sections from Cache or DB
+   */
+  async getPageContent(pageSlug: string, lang: string) {
+    const cacheKey = `optwin:entity:pagecontent:${pageSlug}:${lang}`;
+    const cached = await redisCache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    let content = await prisma.pageContent.findMany({
+      where: { pageSlug, lang },
+      orderBy: { sectionOrder: "asc" },
+    });
+
+    if (content.length === 0 && lang !== "en") {
+        content = await prisma.pageContent.findMany({
+            where: { pageSlug, lang: "en" },
+            orderBy: { sectionOrder: "asc" },
+        });
+    }
+
+    const formatted = content.map((c) => ({
+        title: c.title,
+        content: JSON.parse(c.content) as string[]
+    }));
+
+    await redisCache.set(cacheKey, JSON.stringify(formatted), 86400);
+    return formatted;
+  },
+
+  /**
    * Invalidate specific or ALL entity caches
    */
   async invalidate(type: "feature" | "category" | "dns" | "preset") {
@@ -180,5 +209,6 @@ export const cacheService = {
     if (keys.length > 0) {
       await redisCache.del(keys);
     }
+    // Her ihtimale karşı PageContent pattern invalidate eklenebilir veya ayrı tutulur.
   },
 };

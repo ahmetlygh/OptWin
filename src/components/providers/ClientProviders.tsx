@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useSyncExternalStore, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useOptWinStore, Lang } from "@/store/useOptWinStore";
 import { WarningModal } from "@/components/modals/WarningModal";
@@ -25,16 +25,19 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
     const isChangingLocale = useOptWinStore((state) => state.isChangingLocale);
     const setIsChangingLocale = useOptWinStore((state) => state.setIsChangingLocale);
 
-    // Initial injection of SSR-fetched translations into Zustand
+    // Initial injection of SSR-fetched translations into Zustand — moved to useLayoutEffect
+    // to avoid store mutation during render (React concurrent mode safe)
     const hasInitialInjected = useRef(false);
-    if (initialTranslations && !hasInitialInjected.current) {
-        useOptWinStore.setState({ 
-            dbTranslations: initialTranslations, 
-            translationsLoaded: true,
-            activeLangRequest: lang 
-        });
-        hasInitialInjected.current = true;
-    }
+    useLayoutEffect(() => {
+        if (initialTranslations && !hasInitialInjected.current) {
+            useOptWinStore.setState({ 
+                dbTranslations: initialTranslations, 
+                translationsLoaded: true,
+                activeLangRequest: lang 
+            });
+            hasInitialInjected.current = true;
+        }
+    }, [initialTranslations, lang]);
 
     const pathname = usePathname();
 
@@ -71,7 +74,7 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
         loadTranslations(lang);
     }, [lang, mounted, loadTranslations]);
 
-    // Theme & Class injection
+    // Theme & Class injection + Hydration signal
     useEffect(() => {
         if (!mounted) return;
         const root = document.documentElement;
@@ -83,6 +86,8 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
             root.classList.remove("dark");
         }
         document.body.classList.add("theme-ready");
+        // Signal splash screen that React has hydrated
+        window.dispatchEvent(new Event('optwin:hydrated'));
     }, [theme, mounted]);
 
     useEffect(() => {

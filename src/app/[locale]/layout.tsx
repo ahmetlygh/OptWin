@@ -4,6 +4,17 @@ import { languageService } from "@/lib/languageService";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://optwin.tech";
 
+/** OpenGraph locale mapping for all supported languages */
+const OG_LOCALE_MAP: Record<string, string> = {
+    en: "en_US",
+    tr: "tr_TR",
+    de: "de_DE",
+    fr: "fr_FR",
+    es: "es_ES",
+    zh: "zh_CN",
+    hi: "hi_IN",
+};
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const { locale } = await params;
     const settings = await getSettings(["site_name", "site_description", "site_keywords", "site_favicon_url"]);
@@ -15,9 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     const localizedSeo = currentLang?.seoMetadata || {};
     const siteName = settings.site_name || "OptWin";
     
-    // Task 3: Dynamic Metadata Generation Logic
-    // Logic: [Page Title] - [Site Name]
-    // Here we handle the global fallback. Page specific titles are in page metadata.
+    // Dynamic Metadata Generation Logic
     const globalTitle = localizedSeo.title || `${siteName} - Windows System Optimizer`;
     const description = localizedSeo.description || settings.site_description || "Free, open-source browser-based Windows optimizer.";
     const keywordsStr = localizedSeo.keywords || settings.site_keywords || "windows optimizer, powershell";
@@ -27,19 +36,28 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     const ogDesc = localizedSeo.ogDesc || description;
     const twitterCard = (localizedSeo.twitterCard as any) || "summary";
 
+    // Build hreflang alternates from active languages
+    const languageAlternates: Record<string, string> = {};
+    for (const lang of languages) {
+        languageAlternates[lang.code] = `${siteUrl}/${lang.code}`;
+    }
+
     return {
         title: globalTitle,
         description,
         keywords,
         metadataBase: new URL(siteUrl),
-        alternates: { canonical: "/" },
+        alternates: { 
+            canonical: `${siteUrl}/${locale}`,
+            languages: languageAlternates,
+        },
         openGraph: {
             title: ogTitle,
             description: ogDesc,
-            url: siteUrl,
+            url: `${siteUrl}/${locale}`,
             siteName,
             type: "website",
-            locale: locale === "tr" ? "tr_TR" : "en_US",
+            locale: OG_LOCALE_MAP[locale] || "en_US",
             images: [{ url: "/optwin.png", width: 512, height: 512, alt: `${siteName} Logo` }],
         },
         twitter: {

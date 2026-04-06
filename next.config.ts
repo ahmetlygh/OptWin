@@ -2,13 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  cacheLife: {
-    layout: {
-      stale: 3600,
-      revalidate: 60,
-      expire: 86400,
-    },
-  },
   experimental: {
   },
   images: {

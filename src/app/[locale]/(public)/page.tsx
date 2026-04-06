@@ -3,13 +3,18 @@ import { cacheService } from "@/lib/cache-service";
 import { Hero } from "@/components/layout/Hero";
 import { FeatureGrid } from "@/components/features/FeatureGrid";
 import { ActionArea } from "@/components/layout/ActionArea";
-import { StatsSection } from "@/components/sections/StatsSection";
 import { AboutSection } from "@/components/sections/AboutSection";
+import { ValuePropositionSection } from "@/components/sections/ValuePropositionSection";
+import { BeforeAfterSection } from "@/components/sections/BeforeAfterSection";
+import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { DnsModal } from "@/components/modals/DnsModal";
 import { HashScroller } from "@/components/shared/HashScroller";
 import { StickyControlsPanel } from "@/components/layout/StickyControlsPanel";
 import { getSettings } from "@/lib/settings";
 import { languageService } from "@/lib/languageService";
+import { getTranslationsFromDb } from "@/lib/translations";
+
+export const dynamic = "force-dynamic";
 
 // Task 3: Dynamic Metadata Generation Logic for Home
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -33,25 +38,36 @@ interface HomeProps {
 export default async function Home({ params }: HomeProps) {
     const { locale } = await params;
 
-    const [presets, dnsProviders, allFeatureSlugs] = await Promise.all([
+
+    const [presets, dnsProviders, allFeatureSlugs, translations] = await Promise.all([
         cacheService.getPresets(locale),
         cacheService.getDnsProviders(),
         cacheService.getFeatureSlugs(),
+        getTranslationsFromDb(locale),
     ]);
 
     return (
         <>
             <div className="flex flex-col gap-12 pt-8 animate-fade-in-up">
                 <Hero />
-                <StickyControlsPanel
-                    presets={presets}
-                    allFeatureSlugs={allFeatureSlugs}
-                    dnsProviders={dnsProviders}
-                />
+                
+                {/* Marketing Funnel */}
+                <ValuePropositionSection locale={locale} />
+                <BeforeAfterSection locale={locale} translations={translations} />
+                <HowItWorksSection locale={locale} translations={translations} />
+
+                {/* Application Section */}
+                <div id="features" className="scroll-mt-32">
+                    <StickyControlsPanel
+                        presets={presets}
+                        allFeatureSlugs={allFeatureSlugs}
+                        dnsProviders={dnsProviders}
+                    />
+                </div>
                 <div style={{ overflowAnchor: "none" }}>
                     <FeatureGrid params={Promise.resolve({ locale })} />
                 </div>
-                <StatsSection />
+                
                 <AboutSection />
             </div>
             <ActionArea />

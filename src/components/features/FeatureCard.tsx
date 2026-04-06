@@ -47,10 +47,20 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
     );
 
     return (
-        <label
-            className={`group relative rounded-xl ${isDescVisible ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out ${isSelected
-                ? "bg-(--accent-color)/10 border-(--accent-color) shadow-[0_0_20px_rgba(107,91,230,0.15)] scale-100 md:scale-[1.02]"
-                : "bg-(--card-bg) border-(--border-color) hover:border-(--accent-color)/50 hover:shadow-lg hover:shadow-(--accent-color)/10 md:hover:scale-[1.01]"
+        <div
+            role="checkbox"
+            aria-checked={isSelected}
+            tabIndex={0}
+            onClick={() => toggleFeature(feature.slug)}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleFeature(feature.slug);
+                }
+            }}
+            className={`group relative rounded-xl ${isDescVisible ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-(--accent-color)/50 focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-color) ${isSelected
+                ? "bg-(--accent-color)/8 border-(--accent-color)/60 shadow-sm scale-100 md:scale-[1.01]"
+                : "bg-(--card-bg) border-(--border-color) hover:border-(--accent-color)/40 hover:shadow-md md:hover:scale-[1.01]"
                 }`}
         >
             {/* Selection glow */}
@@ -60,14 +70,8 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
 
             {/* Checkbox indicator */}
             <div className="absolute top-4 right-4 z-10 pointer-events-none">
-                <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={isSelected}
-                    onChange={() => toggleFeature(feature.slug)}
-                />
                 <div
-                    className={`relative flex items-center justify-center w-[22px] h-[22px] rounded-full border-2 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'border-(--accent-color) bg-(--accent-color) shadow-[0_0_12px_rgba(107,91,230,0.5)] scale-110' : 'border-(--border-color) bg-black/20 scale-100 group-hover:border-(--accent-color)/50'}`}
+                    className={`relative flex items-center justify-center w-5 h-5 rounded-full border-2 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'border-(--accent-color) bg-(--accent-color) scale-110' : 'border-(--border-color) bg-black/20 scale-100 group-hover:border-(--accent-color)/50'}`}
                 >
                     {isSelected && (
                         <CheckIcon
@@ -81,7 +85,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
 
             {/* Content */}
             <div className="flex items-start gap-4 pointer-events-none">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${isSelected ? 'bg-(--accent-color)/20 text-(--accent-color) shadow-[0_0_10px_rgba(107,91,230,0.2)]' : 'bg-(--accent-color)/10 text-(--accent-color) group-hover:bg-(--accent-color)/15'}`}>
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${isSelected ? 'bg-(--accent-color)/15 text-(--accent-color)' : 'bg-(--accent-color)/8 text-(--accent-color)/70 group-hover:bg-(--accent-color)/12'}`}>
                     <FeatureIcon icon={feature.icon} size={18} />
                 </div>
                 <div className="flex-1 pr-6">
@@ -150,6 +154,6 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                     )}
                 </div>
             </div>
-        </label>
+        </div>
     );
 });

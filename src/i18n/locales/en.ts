@@ -195,6 +195,29 @@ const en = {
     "maintenance.est": "Estimated time — may finish earlier or later",
     "maintenance.wip": "Work in progress...",
     "maintenance.loading": "Loading...",
+
+    // ARIA Labels (Accessibility)
+    "aria.generateScript": "Generate optimization script",
+    "aria.clearSelection": "Clear all selections",
+    "aria.dnsSwitch": "Change DNS provider",
+
+    // Admin Header
+    "admin.role": "Admin",
+    "admin.account": "Admin Account",
+    "admin.panel": "Admin Panel",
+    "admin.logout": "Sign Out",
+
+    // Landing Page (Phase 4)
+    "hero.cta": "Explore Optimizations",
+    "value.section.title": "Why OptWin?",
+    "beforeAfter.section.title": "Before & After",
+    "beforeAfter.before.title": "Without OptWin",
+    "beforeAfter.after.title": "With OptWin",
+    "howItWorks.section.title": "How It Works",
+    "howItWorks.subtitle": "As simple as 1, 2, 3.",
+    "howItWorks.step1.title": "Select",
+    "howItWorks.step2.title": "Generate",
+    "howItWorks.step3.title": "Run",
 } as const;
 
 export type TranslationKeys = keyof typeof en;

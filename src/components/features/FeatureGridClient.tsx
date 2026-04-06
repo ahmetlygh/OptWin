@@ -80,7 +80,7 @@ export function FeatureGridClient({ categories }: { categories: CategoryData[] }
     };
 
     return (
-        <div className="w-full space-y-12">
+        <div className="w-full space-y-12 scroll-mt-32">
             {/* Collapse/Expand All Categories Toggle */}
             <div className="flex justify-end gap-3 mb-4 mt-6 relative z-20 animate-fade-in-up">
                 <button

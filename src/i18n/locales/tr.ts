@@ -170,6 +170,20 @@ const tr = {
     "maintenance.est": "Tahmini süre — daha erken veya geç bitebilir",
     "maintenance.wip": "Çalışmalar devam ediyor...",
     "maintenance.loading": "Yükleniyor...",
+    "admin.role": "Yönetici",
+    "admin.account": "Yönetici Hesabı",
+    "admin.panel": "Yönetim Paneli",
+    "admin.logout": "Çıkış Yap",
+    "hero.cta": "Optimizasyonları Keşfet",
+    "value.section.title": "Neden OptWin?",
+    "beforeAfter.section.title": "Öncesi ve Sonrası",
+    "beforeAfter.before.title": "OptWin Olmadan",
+    "beforeAfter.after.title": "OptWin ile",
+    "howItWorks.section.title": "Nasıl Çalışır?",
+    "howItWorks.subtitle": "1, 2, 3 kadar basit.",
+    "howItWorks.step1.title": "Seç",
+    "howItWorks.step2.title": "Oluştur",
+    "howItWorks.step3.title": "Çalıştır",
 } as const;
 
 export default tr;

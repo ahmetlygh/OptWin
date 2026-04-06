@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { sanitizeSvg } from "@/lib/sanitize";
 
 interface FlagIconProps {
     flagSvg: string | null;
@@ -32,7 +33,7 @@ export function FlagIcon({ flagSvg, size = "md", className = "" }: FlagIconProps
     return (
         <div 
             className={`relative flex items-center justify-center ${sizes[size]} overflow-hidden rounded-sm shrink-0 border border-white/10 bg-white/5 [&>svg]:w-full [&>svg]:h-full [&>svg]:block [&>svg]:object-cover ${className}`}
-            dangerouslySetInnerHTML={{ __html: flagSvg || "" }}
+            dangerouslySetInnerHTML={{ __html: sanitizeSvg(flagSvg || "") }}
         />
     );
 }

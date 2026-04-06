@@ -54,7 +54,7 @@ export function StickyControlsPanel({
             {/* Sentinel: when this scrolls out of view, the panel is stuck */}
             <div ref={sentinelRef} className="h-0 w-full md:hidden" />
             <section
-                className={`flex flex-col sticky top-16 z-40 bg-(--bg-color)/95 backdrop-blur-sm -mx-6 px-6 border-b border-(--border-color) md:static md:bg-transparent md:border-none md:p-0 md:backdrop-blur-none animate-fade-in-up ${
+                className={`flex flex-col sticky top-16 z-40 bg-(--bg-color)/95 backdrop-blur-sm -mx-6 px-6 border-b border-(--border-color) md:static md:bg-transparent md:border-none md:p-0 md:backdrop-blur-none animate-fade-in-up will-change-[height] ${
                     isExpanded ? "py-4" : "py-2 md:py-0"
                 }`}
             >
@@ -63,7 +63,7 @@ export function StickyControlsPanel({
                     <button
                         type="button"
                         onClick={() => setIsExpanded((prev) => !prev)}
-                        className={`flex items-center gap-2 rounded-lg border border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:text-(--accent-color) hover:border-(--accent-color)/40 transition-all duration-200 ${
+                        className={`cursor-pointer flex items-center gap-2 rounded-lg border border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:text-(--accent-color) hover:border-(--accent-color)/40 transition-all duration-200 ${
                             isExpanded ? "size-8 justify-center" : "h-8 px-3"
                         }`}
                         title={isExpanded ? t["preset.hidePresets"] : t["preset.showPresets"]}
@@ -86,7 +86,7 @@ export function StickyControlsPanel({
                 >
                     <div className="overflow-hidden">
                         <div
-                            className={`flex flex-col gap-6 transition-transform duration-300 md:translate-y-0 ${
+                            className={`flex flex-col gap-3 transition-transform duration-300 md:translate-y-0 ${
                                 isExpanded ? "translate-y-0" : "-translate-y-3"
                             }`}
                         >

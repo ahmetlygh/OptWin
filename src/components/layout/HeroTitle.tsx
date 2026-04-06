@@ -2,6 +2,7 @@
 
 import { useTranslation } from "@/i18n/useTranslation";
 import { useOptWinStore } from "@/store/useOptWinStore";
+import { ArrowRight } from "lucide-react";
 
 /**
  * HeroTitle renders the main hero heading with a highlighted keyword.
@@ -28,10 +29,10 @@ export function HeroTitle() {
     const parts = template.split(/(\{highlight\}|\{prefix\})/g);
 
     return (
-        <div className="min-h-[120px] sm:min-h-[160px] md:min-h-[180px] flex flex-col justify-end">
+        <div className="flex flex-col w-full">
             {/* Title */}
-            <h2 
-                className={`text-[2rem] leading-[1.1] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black tracking-tight mb-3 sm:mb-4 max-w-xl lg:max-w-3xl animate-fade-in-up ${lang === 'zh' ? 'flex flex-wrap items-center gap-0' : ''}`} 
+            <h1 
+                className={`text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold text-white tracking-tight leading-[1.1] mb-4 max-w-2xl animate-fade-in-up ${lang === 'zh' ? 'flex flex-wrap items-center gap-0' : ''}`} 
                 style={{ animationDelay: "0.1s" }}
             >
                 {parts.map((p, i) => {
@@ -55,12 +56,27 @@ export function HeroTitle() {
                     }
                     return null;
                 })}
-            </h2>
+            </h1>
 
             {/* Subtitle */}
-            <p className="text-(--text-secondary) text-[13px] sm:text-base md:text-lg leading-relaxed mb-6 sm:mb-8 max-w-md lg:max-w-lg animate-fade-in-up opacity-90" style={{ animationDelay: "0.2s" }}>
+            <p className="text-(--text-secondary) text-[14px] sm:text-base md:text-lg leading-relaxed mb-8 max-w-lg animate-fade-in-up opacity-90" style={{ animationDelay: "0.2s" }}>
                 {t["hero.subtitle"]}
             </p>
+
+            {/* CTA Button */}
+            <div className="flex animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+                <a 
+                    href="#features" 
+                    onClick={(e) => { 
+                        e.preventDefault(); 
+                        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); 
+                    }} 
+                    className="group cursor-pointer inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-linear-to-r from-(--accent-color) to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-(--accent-color)/30 active:scale-[0.97] transition-all duration-200"
+                >
+                    {t["hero.cta"] || "Explore Optimizations"}
+                    <ArrowRight size={18} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+            </div>
         </div>
     );
 }

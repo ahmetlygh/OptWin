@@ -99,11 +99,11 @@ async function getPreferredLocale(request: NextRequest, activeLocales: string[])
 }
 
 const ALWAYS_ALLOWED = [
-    '/admin', '/api/admin', '/api/auth', '/api/maintenance', '/api/system', '/_next', '/favicon.ico', '/optwin.png', '/background.png', '/assets',
+    '/admin', '/api/admin', '/api/auth', '/api/maintenance', '/api/system', '/_next', '/favicon.ico', '/optwin.png', '/background.png', '/background.webp', '/assets',
 ];
 
 const LOCALE_BYPASS = [
-    '/admin', '/api', '/_next', '/favicon.ico', '/optwin.png', '/background.png', '/assets',
+    '/admin', '/api', '/_next', '/favicon.ico', '/optwin.png', '/background.png', '/background.webp', '/assets',
 ];
 
 export default async function proxy(request: NextRequest) {
@@ -121,7 +121,8 @@ export default async function proxy(request: NextRequest) {
         response.headers.set('x-next-pathname', pathname || '/');
 
         const isApiRequest = pathname.startsWith('/api');
-        const isBypassed = LOCALE_BYPASS.some(p => pathname.startsWith(p) || pathname === p);
+        const hasStaticExtension = /\.(png|jpg|jpeg|webp|gif|svg|ico|css|js|woff2?|ttf|eot|webm|mp4|avif)$/i.test(pathname);
+        const isBypassed = hasStaticExtension || LOCALE_BYPASS.some(p => pathname.startsWith(p) || pathname === p);
         
         const segment = pathname.split('/')[1];
         const hasAnyLocaleSegment = ALL_LOCALES.includes(segment);

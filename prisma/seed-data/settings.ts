@@ -127,4 +127,16 @@ export const defaultUiTranslations = [
     { key: "overlay.close", en: "Close", tr: "Kapat" },
     { key: "overlay.copy", en: "Copy", tr: "Kopyala" },
     { key: "overlay.copied", en: "Copied!", tr: "Kopyalandı!" },
+
+    // Landing Page (Phase 4)
+    { key: "hero.cta", en: "Explore Optimizations", tr: "Optimizasyonları Keşfet" },
+    { key: "value.section.title", en: "Why OptWin?", tr: "Neden OptWin?" },
+    { key: "beforeAfter.section.title", en: "Before & After", tr: "Öncesi ve Sonrası" },
+    { key: "beforeAfter.before.title", en: "Without OptWin", tr: "OptWin Olmadan" },
+    { key: "beforeAfter.after.title", en: "With OptWin", tr: "OptWin ile" },
+    { key: "howItWorks.section.title", en: "How It Works", tr: "Nasıl Çalışır?" },
+    { key: "howItWorks.step1.title", en: "Select", tr: "Seç" },
+    { key: "howItWorks.step2.title", en: "Generate", tr: "Oluştur" },
+    { key: "howItWorks.step3.title", en: "Run", tr: "Çalıştır" },
 ];
+
