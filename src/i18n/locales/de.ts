@@ -168,6 +168,23 @@ const de = {
     "maintenance.est": "Geschaetzte Zeit",
     "maintenance.wip": "Arbeiten im Gange...",
     "maintenance.loading": "Wird geladen...",
+
+    // Terminal (Hero Illustration)
+    "hero.term.safe": "Sicher",
+    "hero.term.openSource": "Open Source",
+    "hero.term.fast": "Schnell",
+    "hero.term.optimized": "Optimiert",
+    "hero.term.cmd1": "Telemetrie deaktivieren",
+    "hero.term.cmd2": "Temp-Dateien bereinigen",
+    "hero.term.cmd3": "Hintergrund-Apps deaktivieren",
+    "hero.term.cmd4": "Dienste optimieren",
+    "hero.term.cmd5": "Datenschutz konfigurieren",
+    "hero.term.allDone": "Alle Aufgaben abgeschlossen",
+    "hero.term.thanks": "Vielen Dank für die Nutzung von OptWin!",
+    "hero.term.preview": "Skript-Vorschau",
+    "hero.term.replay": "Erneut abspielen",
+    "hero.term.expand": "Erweitern",
+    "hero.term.collapse": "Reduzieren",
 } as const;
 
 export default de;

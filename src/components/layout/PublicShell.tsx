@@ -42,7 +42,7 @@ export function PublicShell({ children, serverMaintenance = false, adminSession 
 
             <div className="flex flex-col min-h-screen relative">
                 <Header adminSession={adminSession} serverSettings={serverSettings} />
-                <main className="flex-1 w-full max-w-[1200px] mx-auto pt-6 pb-12 px-6">
+                <main className="flex-1 w-full max-w-[1440px] mx-auto pt-6 pb-12 px-6">
                     {children}
                 </main>
                 <Footer serverSettings={serverSettings} />

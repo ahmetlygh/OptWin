@@ -28,8 +28,8 @@ export function useTranslation() {
                 if ((staticTranslations as Record<string, string>)[prop]) {
                     return (staticTranslations as Record<string, string>)[prop];
                 }
-                // 3. Key itself (development fallback)
-                return prop;
+                // 3. Instead of returning `prop`, return undefined so inline `||` fallbacks work smoothly.
+                return undefined;
             },
         });
     }, [lang, dbTranslations]);

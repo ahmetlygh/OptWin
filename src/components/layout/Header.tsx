@@ -151,7 +151,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
 
     return (
         <header className="glass-header sticky top-0 z-50 border-b border-(--border-color) w-full bg-(--bg-color)/60 backdrop-blur-2xl">
-            <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
 
                 {/* Left: Logo — scroll to top when clicked */}
                 <div className="flex items-center gap-3">
@@ -208,7 +208,8 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         <div className="relative" ref={langRef}>
                             <button
                                 onClick={toggleLangDropdown}
-                                className="flex items-center gap-2 p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) text-sm font-medium transition-colors duration-200"
+                                aria-label={t["aria.language"] || "Change language"}
+                                className="cursor-pointer flex items-center gap-2 p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) text-sm font-medium transition-colors duration-200"
                             >
                                 {currentLang.flagSvg ? (
                                     <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: sanitizeSvg(currentLang.flagSvg).replace('<svg', '<svg width="20" height="14"') }} />
@@ -229,7 +230,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                             <button
                                                 key={l.code}
                                                 onClick={() => handleLangSwitch(l.code as Lang)}
-                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${lang === l.code ? 'bg-(--accent-color)/10 text-(--accent-color) font-bold' : 'text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary)'}`}
+                                                className={`cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${lang === l.code ? 'bg-(--accent-color)/10 text-(--accent-color) font-bold' : 'text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary)'}`}
                                             >
                                                 {l.flagSvg ? (
                                                     <span className="w-5 h-3.5 flex items-center justify-center shrink-0 rounded-[2px] overflow-hidden [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover" dangerouslySetInnerHTML={{ __html: sanitizeSvg(l.flagSvg).replace('<svg', '<svg width="20" height="14"') }} />
@@ -249,7 +250,8 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                     <button
                         type="button"
                         onClick={toggleTheme}
-                        className="flex items-center justify-center p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) overflow-hidden transition-colors duration-200"
+                        aria-label={t["aria.theme"] || "Toggle theme"}
+                        className="cursor-pointer flex items-center justify-center p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) overflow-hidden transition-colors duration-200"
                     >
                         {mounted ? (
                             <div className="relative w-5 h-5">
@@ -268,7 +270,8 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         <div className="relative" ref={adminRef}>
                             <button
                                 onClick={toggleAdminDropdown}
-                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-(--accent-color)/8 hover:bg-(--accent-color)/15 border border-(--accent-color)/15 hover:border-(--accent-color)/30 transition-all duration-200 group"
+                                aria-label={t["aria.admin"] || "Admin menu"}
+                                className="cursor-pointer flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-(--accent-color)/8 hover:bg-(--accent-color)/15 border border-(--accent-color)/15 hover:border-(--accent-color)/30 transition-all duration-200 group"
                             >
                                 {adminSession.image ? (
                                     <Image
@@ -317,7 +320,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                                                 closeAdminDropdown();
                                                 signOut({ callbackUrl: "/" });
                                             }}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                                            className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors"
                                         >
                                             <LogOut size={15} />
                                             {t["admin.logout"]}

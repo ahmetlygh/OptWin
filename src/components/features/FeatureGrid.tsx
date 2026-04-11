@@ -1,4 +1,5 @@
 import { cacheService } from "@/lib/cache-service";
+import { DnsProvider } from "@/types/feature";
 import { FeatureGridClient } from "./FeatureGridClient";
 import type { Category } from "@/types/feature";
 
@@ -11,6 +12,9 @@ export async function FeatureGrid({ params }: FeatureGridProps) {
     
     // REDIS JSON FETCH (Sub-millisecond)
     const categories = await cacheService.getCategories(locale);
+    const presets = await cacheService.getPresets(locale);
+    const allFeatureSlugs = await cacheService.getFeatureSlugs();
+    const dnsProviders = await cacheService.getDnsProviders();
 
-    return <FeatureGridClient categories={categories as Category[]} />;
+    return <FeatureGridClient categories={categories as Category[]} presets={presets} allFeatureSlugs={allFeatureSlugs} dnsProviders={dnsProviders as DnsProvider[]} />;
 }

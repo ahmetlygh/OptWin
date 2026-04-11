@@ -138,5 +138,37 @@ export const defaultUiTranslations = [
     { key: "howItWorks.step1.title", en: "Select", tr: "Seç" },
     { key: "howItWorks.step2.title", en: "Generate", tr: "Oluştur" },
     { key: "howItWorks.step3.title", en: "Run", tr: "Çalıştır" },
+    
+    // Preset & Actions (Phase 13)
+    { key: "preset.mainTitle", en: "Your tailored presets", tr: "Size özel ayarlanmış ön ayarlar" },
+    { key: "preset.sidebarTitle", en: "Quick Presets", tr: "Hızlı Ayarlar" },
+    { key: "preset.showDescriptions", en: "Show Descriptions", tr: "Açıklamaları Göster" },
+    { key: "preset.hideDescriptions", en: "Hide Descriptions", tr: "Açıklamaları Gizle" },
+    { key: "preset.selectAllWarning", en: "All features selected. Please review the list.", tr: "Tüm özellikler seçildi. Lütfen listeyi gözden geçirin." },
+    { key: "preset.clearAll", en: "Reset", tr: "Sıfırla" },
+    { key: "preset.default", en: "Default", tr: "Sistem Varsayılanı" },
+    { key: "preset.recommended.desc", en: "Safe optimizations to improve general system performance without breaking features.", tr: "Sistem özelliklerini bozmadan genel performansı artıran güvenli optimizasyonlar." },
+    { key: "preset.gamer.desc", en: "Extreme optimizations focused purely on maximizing gaming performance and reducing latency.", tr: "Tamamen oyun performansını en üst düzeye çıkarmaya ve gecikmeyi azaltmaya odaklanan agresif optimizasyonlar." },
+    { key: "category.collapseAll", en: "Collapse All", tr: "Tümünü Daralt" },
+    { key: "category.expandAll", en: "Expand All", tr: "Tümünü Genişlet" },
+    
+    // Terminal & Layout Additions
+    { key: 'hero.term.safe', en: 'Safe', tr: 'Güvenli', de: 'Sicher', fr: 'Sûr', es: 'Seguro', zh: '安全', hi: 'सुरक्षित' },
+    { key: 'hero.term.openSource', en: 'Open Source', tr: 'Açık Kaynak', de: 'Open Source', fr: 'Open Source', es: 'Código Abierto', zh: '开源', hi: 'ओपन सोर्स' },
+    { key: 'hero.term.fast', en: 'Fast', tr: 'Hızlı', de: 'Schnell', fr: 'Rapide', es: 'Rápido', zh: '快速', hi: 'तेज़' },
+    { key: 'hero.term.optimized', en: 'Optimized', tr: 'Optimize', de: 'Optimiert', fr: 'Optimisé', es: 'Optimizado', zh: '已优化', hi: 'अनुकूलित' },
+    { key: 'hero.term.cmd1', en: 'Disabling Telemetry', tr: 'Telemetri Kapatılıyor', de: 'Telemetrie wird deaktiviert', fr: 'Désactivation de la télémétrie', es: 'Desactivando Telemetría', zh: '正在禁用遥测', hi: 'टेलीमेट्री अक्षम की जा रही है' },
+    { key: 'hero.term.cmd2', en: 'Clearing Temp/Prefetch', tr: 'Geçici Dosyalar Temizleniyor', de: 'Temp/Prefetch wird geleert', fr: 'Nettoyage des fichiers temporaires', es: 'Borrando Temp/Prefetch', zh: '正在清理临时文件/预取', hi: 'अस्थायी/प्रीफ़ेच साफ़ किया जा रहा है' },
+    { key: 'hero.term.cmd3', en: 'Disabling Background Apps', tr: 'Arka Plan Uygulamaları Kapatılıyor', de: 'Hintergrund-Apps werden deaktiviert', fr: 'Désactivation des applications en arrière-plan', es: 'Desactivando aplicaciones en segundo plano', zh: '正在禁用后台应用', hi: 'पृष्ठभूमि ऐप्स अक्षम किए जा रहे हैं' },
+    { key: 'hero.term.cmd4', en: 'Optimizing Services', tr: 'Servisler Optimize Ediliyor', de: 'Dienste werden optimiert', fr: 'Optimisation des services', es: 'Optimizando Servicios', zh: '正在优化服务', hi: 'सेवाएं अनुकूलित की जा रही हैं' },
+    { key: 'hero.term.cmd5', en: 'Configuring Privacy', tr: 'Gizlilik Ayarlanıyor', de: 'Datenschutz wird konfiguriert', fr: 'Configuration de la confidentialité', es: 'Configurando Privacidad', zh: '正在配置隐私', hi: 'गोपनीयता कॉन्फ़िगर की जा रही है' },
+    { key: 'hero.term.allDone', en: 'All tasks completed', tr: 'Tüm işlemler tamamlandı', de: 'Alle Aufgaben abgeschlossen', fr: 'Toutes les tâches sont terminées', es: 'Todas las tareas completadas', zh: '所有任务已完成', hi: 'सभी कार्य पूर्ण हुए' },
+    { key: 'hero.term.thanks', en: 'Thank you for using OptWin!', tr: 'OptWin kullandığınız için teşekkürler!', de: 'Danke, dass Sie OptWin verwenden!', fr: 'Merci d\\'utiliser OptWin!', es: '¡Gracias por usar OptWin!', zh: '感谢您使用 OptWin！', hi: 'OptWin का उपयोग करने के लिए धन्यवाद!' },
+    { key: 'hero.term.preview', en: 'Script preview', tr: 'Script Önizleme', de: 'Skript-Vorschau', fr: 'Aperçu du script', es: 'Vista previa del script', zh: '脚本预览', hi: 'स्क्रिप्ट पूर्वावलोकन' },
+    { key: 'hero.term.replay', en: 'Click to replay', tr: 'Tekrar oynat', de: 'Zum Wiederholen klicken', fr: 'Cliquer pour rejouer', es: 'Haz clic para repetir', zh: '点击重放', hi: 'रीप्ले करने के लिए क्लिक करें' },
+    { key: 'hero.term.expand', en: 'Expand', tr: 'Genişlet', de: 'Erweitern', fr: 'Développer', es: 'Expandir', zh: '展开', hi: 'विस्तृत करें' },
+    { key: 'hero.term.collapse', en: 'Collapse', tr: 'Daralt', de: 'Reduzieren', fr: 'Réduire', es: 'Contraer', zh: '折叠', hi: 'संकुचित करें' },
+    { key: 'common.hideDescriptions', en: 'Hide Descriptions', tr: 'Açıklamaları Gizle', de: 'Beschreibungen ausblenden', fr: 'Masquer les descriptions', es: 'Ocultar descripciones', zh: '隐藏描述', hi: 'विवरण छुपाएं' },
+    { key: 'common.showDescriptions', en: 'Show Descriptions', tr: 'Açıklamaları Göster', de: 'Beschreibungen anzeigen', fr: 'Afficher les descriptions', es: 'Mostrar descripciones', zh: '显示描述', hi: 'विवरण दिखाएं' }
 ];
 

@@ -168,6 +168,23 @@ const zh = {
     "maintenance.est": "预计时间 - 可能提前或延迟完成",
     "maintenance.wip": "工作正在进行中...",
     "maintenance.loading": "加载中...",
+
+    // Terminal (Hero Illustration)
+    "hero.term.safe": "安全",
+    "hero.term.openSource": "开源",
+    "hero.term.fast": "快速",
+    "hero.term.optimized": "已优化",
+    "hero.term.cmd1": "禁用遥测",
+    "hero.term.cmd2": "清理临时文件",
+    "hero.term.cmd3": "禁用后台应用",
+    "hero.term.cmd4": "优化服务",
+    "hero.term.cmd5": "配置隐私设置",
+    "hero.term.allDone": "所有任务已完成",
+    "hero.term.thanks": "感谢使用 OptWin！",
+    "hero.term.preview": "脚本预览",
+    "hero.term.replay": "点击重播",
+    "hero.term.expand": "展开",
+    "hero.term.collapse": "折叠",
 } as const;
 
 export default zh;

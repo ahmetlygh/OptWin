@@ -168,6 +168,23 @@ const hi = {
     "maintenance.est": "अनुमानित समय - पहले या बाद में पूरा हो सकता है",
     "maintenance.wip": "कार्य प्रगति पर है...",
     "maintenance.loading": "लोड हो रहा है...",
+
+    // Terminal (Hero Illustration)
+    "hero.term.safe": "सुरक्षित",
+    "hero.term.openSource": "ओपन सोर्स",
+    "hero.term.fast": "तेज़",
+    "hero.term.optimized": "ऑप्टिमाइज़्ड",
+    "hero.term.cmd1": "टेलीमेट्री अक्षम हो रही है",
+    "hero.term.cmd2": "अस्थायी फ़ाइलें साफ़ हो रही हैं",
+    "hero.term.cmd3": "पृष्ठभूमि ऐप्स अक्षम हो रहे हैं",
+    "hero.term.cmd4": "सेवाएँ ऑप्टिमाइज़ हो रही हैं",
+    "hero.term.cmd5": "गोपनीयता कॉन्फ़िगर हो रही है",
+    "hero.term.allDone": "सभी कार्य पूर्ण",
+    "hero.term.thanks": "OptWin का उपयोग करने के लिए धन्यवाद!",
+    "hero.term.preview": "स्क्रिप्ट पूर्वावलोकन",
+    "hero.term.replay": "पुनः चलाने के लिए क्लिक करें",
+    "hero.term.expand": "विस्तृत करें",
+    "hero.term.collapse": "संक्षिप्त करें",
 } as const;
 
 export default hi;

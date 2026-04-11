@@ -168,6 +168,23 @@ const es = {
     "maintenance.est": "Tiempo estimado",
     "maintenance.wip": "Trabajos en curso...",
     "maintenance.loading": "Cargando...",
+
+    // Terminal (Hero Illustration)
+    "hero.term.safe": "Seguro",
+    "hero.term.openSource": "Código Abierto",
+    "hero.term.fast": "Rápido",
+    "hero.term.optimized": "Optimizado",
+    "hero.term.cmd1": "Desactivando Telemetría",
+    "hero.term.cmd2": "Limpiando archivos temporales",
+    "hero.term.cmd3": "Desactivando Apps de fondo",
+    "hero.term.cmd4": "Optimizando Servicios",
+    "hero.term.cmd5": "Configurando Privacidad",
+    "hero.term.allDone": "Todas las tareas completadas",
+    "hero.term.thanks": "¡Gracias por usar OptWin!",
+    "hero.term.preview": "Vista previa del script",
+    "hero.term.replay": "Clic para repetir",
+    "hero.term.expand": "Expandir",
+    "hero.term.collapse": "Contraer",
 } as const;
 
 export default es;

@@ -1,9 +1,9 @@
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { headers, cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export default async function RootLayout({
     children,
@@ -22,7 +22,7 @@ export default async function RootLayout({
 
     return (
         <html lang={lang} className={theme} suppressHydrationWarning>
-            <body className={`${inter.variable} antialiased selection:bg-[#6c5ce7] selection:text-white theme-ready`}>
+            <body className={`${outfit.variable} antialiased selection:bg-[#6c5ce7] selection:text-white theme-ready font-sans`}>
                 {/*
                   SPLASH: Injected purely via JS — React never touches this element.
                   This avoids ALL Node.insertBefore / Node.removeChild hydration errors.

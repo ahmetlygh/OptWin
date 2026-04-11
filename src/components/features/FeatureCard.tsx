@@ -6,6 +6,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { Feature } from "@/types/feature";
 import { HighlightText } from "../shared/HighlightText";
 import { FeatureIcon, CheckIcon, GlobeIcon, InfoIcon } from "../shared/Icons";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FeatureCardProps {
     feature: Feature;
@@ -58,9 +59,9 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                     toggleFeature(feature.slug);
                 }
             }}
-            className={`group relative rounded-xl ${isDescVisible ? 'p-5' : 'p-3.5'} border cursor-pointer overflow-hidden transition-all duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-(--accent-color)/50 focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-color) ${isSelected
-                ? "bg-(--accent-color)/8 border-(--accent-color)/60 shadow-sm scale-100 md:scale-[1.01]"
-                : "bg-(--card-bg) border-(--border-color) hover:border-(--accent-color)/40 hover:shadow-md md:hover:scale-[1.01]"
+            className={`group relative rounded-xl ${isDescVisible ? 'p-5' : 'p-3.5'} border border-(--border-color) cursor-pointer overflow-hidden transition-all duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-(--accent-color)/50 focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg-color) ${isSelected
+                ? "bg-purple-500/10 border-purple-500/40 shadow-sm shadow-purple-500/5 hover:-translate-y-1"
+                : "bg-(--card-bg) shadow-sm shadow-black/5 dark:shadow-none hover:border-(--border-color)/80 hover:shadow-md hover:shadow-black/10 dark:hover:shadow-none hover:-translate-y-1"
                 }`}
         >
             {/* Selection glow */}
@@ -68,25 +69,35 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                 <div className="absolute inset-0 bg-linear-to-r from-(--accent-color)/5 to-transparent pointer-events-none animate-subtle-reveal"></div>
             )}
 
-            {/* Checkbox indicator */}
+            {/* Checkbox indicator with framer-motion Pop Effect */}
             <div className="absolute top-4 right-4 z-10 pointer-events-none">
                 <div
-                    className={`relative flex items-center justify-center w-5 h-5 rounded-full border-2 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'border-(--accent-color) bg-(--accent-color) scale-110' : 'border-(--border-color) bg-black/20 scale-100 group-hover:border-(--accent-color)/50'}`}
+                    className={`relative flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isSelected ? 'border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'border-(--border-color) bg-(--card-bg) group-hover:border-purple-500/50'}`}
                 >
-                    {isSelected && (
-                        <CheckIcon
-                            className="text-white animate-check-bounce"
-                            size={14}
-                            strokeWidth={3}
-                        />
-                    )}
+                    <AnimatePresence>
+                        {isSelected && (
+                            <motion.div
+                                initial={{ scale: 0.3, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.3, opacity: 0 }}
+                                transition={{ type: "spring", stiffness: 450, damping: 15 }}
+                                className="absolute inset-0 bg-purple-500 rounded-full flex items-center justify-center"
+                            >
+                                <CheckIcon
+                                    className="text-white"
+                                    size={14}
+                                    strokeWidth={3.5}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
             {/* Content */}
             <div className="flex items-start gap-4 pointer-events-none">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${isSelected ? 'bg-(--accent-color)/15 text-(--accent-color)' : 'bg-(--accent-color)/8 text-(--accent-color)/70 group-hover:bg-(--accent-color)/12'}`}>
-                    <FeatureIcon icon={feature.icon} size={18} />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${isSelected ? 'bg-purple-500/20 text-purple-400' : 'bg-(--border-color) text-(--text-secondary) group-hover:bg-(--border-color)/80 group-hover:text-(--text-primary)'}`}>
+                    <FeatureIcon icon={feature.icon} size={20} />
                 </div>
                 <div className="flex-1 pr-6">
                     <div className="flex flex-wrap items-center gap-1.5 mb-1 pointer-events-auto">
@@ -99,12 +110,12 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                             </span>
                         )}
                         {!feature.noRisk && feature.risk === "medium" && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 border-amber-500/25 text-amber-400 pointer-events-none leading-none">
+                            <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border bg-amber-500/15 border-amber-500/30 text-amber-400 pointer-events-none leading-none shadow-[0_0_6px_rgba(245,158,11,0.15)]">
                                 {t["feature.risk.medium"]}
                             </span>
                         )}
                         {!feature.noRisk && feature.risk === "high" && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-red-500/10 border-red-500/25 text-red-400 pointer-events-none leading-none">
+                            <span className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border bg-red-500/15 border-red-500/30 text-red-500 pointer-events-none leading-none shadow-[0_0_6px_rgba(239,68,68,0.15)]">
                                 {t["feature.risk.high"]}
                             </span>
                         )}
@@ -132,7 +143,7 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                         }}
                     >
                         <div className="overflow-hidden">
-                            <p className="text-sm text-(--text-secondary) leading-snug pt-0.5">
+                            <p className="text-sm text-(--text-secondary) leading-relaxed pt-0.5">
                                 <HighlightText text={desc} />
                             </p>
                         </div>

@@ -151,7 +151,7 @@ export function ScriptOverlay({ serverSettings = {} }: ScriptOverlayProps) {
                             </button>
                             <button
                                 onClick={handleClose}
-                                className="w-full flex items-center justify-center gap-2 h-12 bg-transparent border border-(--border-color) hover:border-(--text-secondary) text-(--text-primary) font-bold rounded-xl transition-all duration-200"
+                                className="w-full flex items-center justify-center gap-2 h-12 bg-(--text-secondary)/5 hover:bg-(--text-secondary)/15 dark:bg-transparent dark:hover:bg-(--border-color)/50 border border-(--border-color) text-(--text-primary) font-bold rounded-xl transition-all duration-200"
                             >
                                 {t["script.cancel"]}
                             </button>
@@ -173,9 +173,9 @@ export function ScriptOverlay({ serverSettings = {} }: ScriptOverlayProps) {
                             {t["script.copy"]}
                         </button>
                     </div>
-                    <div className="flex-1 min-h-0 bg-[#1e1e2e] dark:bg-[#0a0a0f] border-x border-b border-(--border-color) rounded-b-xl overflow-auto script-scrollbar">
-                        <pre className="p-6 m-0">
-                            <code className="text-purple-300 dark:text-purple-400 font-mono text-xs md:text-sm whitespace-pre selection:bg-(--accent-color)/30">{previewCode}</code>
+                    <div className="flex-1 min-h-0 bg-[#0a0a0f] border-x border-b border-(--border-color) rounded-b-xl overflow-auto script-scrollbar">
+                        <pre className="p-6 m-0 select-text">
+                            <code className="text-purple-400 font-mono text-xs md:text-sm whitespace-pre selection:bg-(--accent-color)/30">{previewCode}</code>
                         </pre>
                     </div>
                 </div>

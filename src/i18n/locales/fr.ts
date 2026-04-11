@@ -168,6 +168,23 @@ const fr = {
     "maintenance.est": "Temps estime",
     "maintenance.wip": "Travaux en cours...",
     "maintenance.loading": "Chargement...",
+
+    // Terminal (Hero Illustration)
+    "hero.term.safe": "Sûr",
+    "hero.term.openSource": "Open Source",
+    "hero.term.fast": "Rapide",
+    "hero.term.optimized": "Optimisé",
+    "hero.term.cmd1": "Désactivation de la Télémétrie",
+    "hero.term.cmd2": "Nettoyage des fichiers temporaires",
+    "hero.term.cmd3": "Désactivation des Apps en arrière-plan",
+    "hero.term.cmd4": "Optimisation des Services",
+    "hero.term.cmd5": "Configuration de la Confidentialité",
+    "hero.term.allDone": "Toutes les tâches terminées",
+    "hero.term.thanks": "Merci d'utiliser OptWin !",
+    "hero.term.preview": "Aperçu du script",
+    "hero.term.replay": "Cliquez pour rejouer",
+    "hero.term.expand": "Développer",
+    "hero.term.collapse": "Réduire",
 } as const;
 
 export default fr;

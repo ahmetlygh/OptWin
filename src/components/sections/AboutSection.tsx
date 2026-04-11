@@ -16,7 +16,7 @@ function ValueCard({ icon, titleKey, descKey, accentColor }: ValueCardProps) {
     const { t } = useTranslation();
 
     return (
-        <div className={`bg-(--card-bg)/80 backdrop-blur-sm border border-(--border-color) p-6 rounded-lg hover:-translate-y-1 group shadow-sm hover:shadow-md relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]`}>
+        <div className={`bg-(--card-bg)/80 backdrop-blur-sm border border-(--border-color) p-4 sm:p-5 rounded-lg hover:-translate-y-1 group shadow-sm hover:shadow-md relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]`}>
             <div className={`absolute top-0 right-0 w-24 h-24 ${accentColor}/10 rounded-full blur-2xl pointer-events-none group-hover:${accentColor}/20`} style={{ transition: "background-color 0.3s" }}></div>
             <div className={`w-12 h-12 rounded-lg ${accentColor}/20 text-${accentColor.replace('bg-', '')} flex items-center justify-center mb-4 shadow-inner ring-1 ${accentColor}/50`}>
                 {icon}
@@ -32,25 +32,25 @@ const VALUES = [
         icon: <ShieldIcon size={22} />,
         titleKey: "about.safeSecure" as TranslationKeys,
         descKey: "about.safeSecureDesc" as TranslationKeys,
-        bgClass: "bg-blue-500",
-        textClass: "text-blue-400",
-        ringClass: "ring-blue-500/50",
+        iconBoxClass: "bg-sky-500/25 text-sky-400 ring-1 ring-sky-500/50",
+        glowClass: "bg-sky-500/10",
+        glowHoverClass: "bg-sky-500/20",
     },
     {
         icon: <CodeIcon size={22} />,
         titleKey: "about.openSource" as TranslationKeys,
         descKey: "about.openSourceDesc" as TranslationKeys,
-        bgClass: "bg-emerald-500",
-        textClass: "text-emerald-400",
-        ringClass: "ring-emerald-500/50",
+        iconBoxClass: "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50",
+        glowClass: "bg-emerald-500/10",
+        glowHoverClass: "bg-emerald-500/20",
     },
     {
         icon: <EyeOffIcon size={22} />,
         titleKey: "about.transparent" as TranslationKeys,
         descKey: "about.transparentDesc" as TranslationKeys,
-        bgClass: "bg-(--accent-color)",
-        textClass: "text-(--accent-color)",
-        ringClass: "ring-(--accent-color)/50",
+        iconBoxClass: "bg-(--accent-color)/20 text-(--accent-color) ring-1 ring-(--accent-color)/50",
+        glowClass: "bg-(--accent-color)/10",
+        glowHoverClass: "bg-(--accent-color)/20",
     },
 ] as const;
 
@@ -75,10 +75,10 @@ export function AboutSection() {
                 {VALUES.map((v, i) => (
                     <div
                         key={i}
-                        className="h-full flex flex-col bg-(--card-bg)/80 backdrop-blur-sm border border-(--border-color) p-6 rounded-lg hover:-translate-y-1 group shadow-sm hover:shadow-md relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                        className="h-full flex flex-col bg-(--card-bg)/80 backdrop-blur-sm border border-(--border-color) p-4 sm:p-5 rounded-lg hover:-translate-y-1 group shadow-sm hover:shadow-md relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                     >
-                        <div className={`absolute top-0 right-0 w-24 h-24 ${v.bgClass}/10 rounded-full blur-2xl pointer-events-none group-hover:${v.bgClass}/20`} style={{ transition: "background-color 0.3s" }}></div>
-                        <div className={`w-12 h-12 rounded-lg ${v.bgClass}/20 ${v.textClass} flex items-center justify-center mb-4 shadow-inner ring-1 ${v.ringClass}`}>
+                        <div className={`absolute top-0 right-0 w-24 h-24 ${v.glowClass} rounded-full blur-2xl pointer-events-none transition-colors duration-300 group-hover:${v.glowHoverClass}`}></div>
+                        <div className={`w-12 h-12 rounded-lg ${v.iconBoxClass} flex items-center justify-center mb-4 shadow-inner`}>
                             {v.icon}
                         </div>
                         <h3 className="text-lg font-semibold text-(--text-primary) mb-2 tracking-tight">{t[v.titleKey]}</h3>
@@ -91,7 +91,7 @@ export function AboutSection() {
             <div id="support" className="w-full max-w-md">
                 <button
                     onClick={() => setSupportModalOpen(true)}
-                    className="w-full group bg-linear-to-r from-(--accent-color)/10 to-pink-500/10 border border-(--border-color) hover:border-(--accent-color)/40 rounded-lg p-6 text-center flex flex-col items-center gap-3 hover:-translate-y-1 hover:shadow-md relative overflow-hidden cursor-pointer hover:bg-white/2 active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    className="w-full group bg-linear-to-r from-(--accent-color)/10 to-pink-500/10 border border-(--border-color) hover:border-(--accent-color)/40 rounded-lg p-5 text-center flex flex-col items-center gap-3 hover:-translate-y-1 hover:shadow-md relative overflow-hidden cursor-pointer hover:bg-white/2 active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                 >
                     <div className="absolute inset-0 bg-linear-to-r from-(--accent-color)/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="size-12 rounded-full bg-pink-500/15 text-pink-500 flex items-center justify-center relative z-10 group-hover:scale-110 transition-transform duration-300 shadow-inner">

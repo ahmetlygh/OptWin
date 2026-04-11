@@ -3,6 +3,7 @@ import Image from "next/image";
 import { HeroStats } from "./HeroStats";
 import { HeroTitle } from "./HeroTitle";
 import { HeroIllustration } from "./HeroIllustration";
+import { HeroBackground } from "./HeroBackground";
 
 export async function Hero() {
     const [stats, featuresCount] = await Promise.all([
@@ -29,8 +30,11 @@ export async function Hero() {
             />
 
             {/* Overlays */}
-            <div className="absolute inset-0 bg-linear-to-r from-[#0d0d12]/95 via-[#0d0d12]/80 to-[#0d0d12]/40 z-1 pointer-events-none"></div>
-            <div className="absolute inset-0 bg-linear-to-t from-[#0d0d12]/60 to-transparent z-1 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-linear-to-r from-(--bg-color)/95 via-(--bg-color)/80 to-(--bg-color)/40 z-1 pointer-events-none transition-colors duration-500"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-(--bg-color)/60 to-transparent z-1 pointer-events-none transition-colors duration-500"></div>
+            
+            {/* Ambient Background (6.1) */}
+            <HeroBackground />
 
             {/* Content: Horizontal Layout */}
             <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8 lg:gap-12 px-6 py-12 md:px-12 lg:px-16 lg:py-16">
@@ -40,7 +44,7 @@ export async function Hero() {
                     <HeroTitle />
                     
                     {/* Stats strip */}
-                    <div className="mt-8 pt-6 border-t border-white/10">
+                    <div className="mt-8 pt-6 border-t border-(--border-color)">
                         <HeroStats
                             totalVisits={totalVisits}
                             totalScripts={totalScripts}

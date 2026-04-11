@@ -175,7 +175,7 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
     }, [mounted]);
 
     return (
-        <>
+        <div className="select-none">
             <ChangingLocaleLoader />
             {/* 
               Zero-FOUC Implementation: 
@@ -195,6 +195,6 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
                     <Toast />
                 </>
             )}
-        </>
+        </div>
     );
 }

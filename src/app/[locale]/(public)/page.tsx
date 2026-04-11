@@ -39,12 +39,14 @@ export default async function Home({ params }: HomeProps) {
     const { locale } = await params;
 
 
-    const [presets, dnsProviders, allFeatureSlugs, translations] = await Promise.all([
+    const [presets, dnsProviders, allFeatureSlugs, translations, categories] = await Promise.all([
         cacheService.getPresets(locale),
         cacheService.getDnsProviders(),
         cacheService.getFeatureSlugs(),
         getTranslationsFromDb(locale),
+        cacheService.getCategories(locale),
     ]);
+    const allCategorySlugs = categories.map((c: any) => c.slug);
 
     return (
         <>
@@ -61,6 +63,7 @@ export default async function Home({ params }: HomeProps) {
                     <StickyControlsPanel
                         presets={presets}
                         allFeatureSlugs={allFeatureSlugs}
+                        allCategorySlugs={allCategorySlugs}
                         dnsProviders={dnsProviders}
                     />
                 </div>

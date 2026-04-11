@@ -31,27 +31,15 @@ async function main() {
             create: { slug: cat.slug, order: cat.order, enabled: true },
         });
         categoryMap[cat.slug] = created.id;
-        await prisma.categoryTranslation.upsert({
-            where: { categoryId_lang: { categoryId: created.id, lang: "en" } },
-            update: { name: cat.en },
-            create: { categoryId: created.id, lang: "en", name: cat.en },
-        });
-        await prisma.categoryTranslation.upsert({
-            where: { categoryId_lang: { categoryId: created.id, lang: "tr" } },
-            update: { name: cat.tr },
-            create: { categoryId: created.id, lang: "tr", name: cat.tr },
-        });
-
-        if (translatedData && translatedData.categories[cat.slug]) {
-            for (const lang of extraLangs) {
-                const trName = translatedData.categories[cat.slug][lang];
-                if (trName) {
-                    await prisma.categoryTranslation.upsert({
-                        where: { categoryId_lang: { categoryId: created.id, lang } },
-                        update: { name: trName },
-                        create: { categoryId: created.id, lang, name: trName },
-                    });
-                }
+        const currentLangs = Object.keys(cat).filter(k => !["slug", "order"].includes(k));
+        for (const lang of currentLangs) {
+            const trName = (cat as any)[lang];
+            if (trName) {
+                await prisma.categoryTranslation.upsert({
+                    where: { categoryId_lang: { categoryId: created.id, lang } },
+                    update: { name: trName },
+                    create: { categoryId: created.id, lang, name: trName },
+                });
             }
         }
     }
@@ -150,16 +138,17 @@ async function main() {
     // 5. UI Translations
     console.log("🌍 Creating UI translations...");
     for (const t of defaultUiTranslations) {
-        await prisma.uiTranslation.upsert({
-            where: { key_lang: { key: t.key, lang: "en" } },
-            update: { value: t.en },
-            create: { key: t.key, lang: "en", value: t.en },
-        });
-        await prisma.uiTranslation.upsert({
-            where: { key_lang: { key: t.key, lang: "tr" } },
-            update: { value: t.tr },
-            create: { key: t.key, lang: "tr", value: t.tr },
-        });
+        const langs = Object.keys(t).filter(k => k !== "key");
+        for (const lang of langs) {
+            const val = (t as any)[lang];
+            if (val) {
+                await prisma.uiTranslation.upsert({
+                    where: { key_lang: { key: t.key, lang } },
+                    update: { value: val },
+                    create: { key: t.key, lang, value: val },
+                });
+            }
+        }
     }
     console.log(`  ✅ ${defaultUiTranslations.length * 2} UI translations created\n`);
 

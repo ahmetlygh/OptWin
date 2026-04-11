@@ -42,7 +42,7 @@ export function HeroTitle() {
                         return (
                             <span 
                                 key={i} 
-                                className={`text-transparent bg-clip-text bg-linear-to-r from-(--accent-color) to-purple-400 ${isZh ? 'mr-0! pr-0!' : ''}`}
+                                className={`text-transparent bg-clip-text bg-linear-to-r from-(--accent-color) via-purple-400 to-(--accent-color) hover-bg-flow transition-all cursor-default ${isZh ? 'mr-0! pr-0!' : ''}`}
                             >
                                 {highlightWord}
                             </span>
@@ -71,7 +71,7 @@ export function HeroTitle() {
                         e.preventDefault(); 
                         document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); 
                     }} 
-                    className="group cursor-pointer inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-linear-to-r from-(--accent-color) to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-(--accent-color)/30 active:scale-[0.97] transition-all duration-200"
+                    className="group cursor-pointer inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-linear-to-r from-(--accent-color) via-purple-500 to-(--accent-color) hover-bg-flow text-white font-bold hover:shadow-lg hover:shadow-(--accent-color)/30 active:scale-[0.97] transition-all duration-200"
                 >
                     {t["hero.cta"] || "Explore Optimizations"}
                     <ArrowRight size={18} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform" />

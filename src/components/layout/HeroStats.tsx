@@ -34,10 +34,10 @@ export function HeroStats({ totalVisits, totalScripts, totalDownloads, featuresC
             {stats.map((stat, i) => (
                 <div key={stat.labelKey} className={`items-end gap-4 sm:gap-7 ${stat.mobileHidden ? "hidden sm:flex" : "flex"}`}>
                     <div className="flex flex-col justify-end group">
-                        <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight group-hover:text-(--accent-color) transition-all duration-300 leading-none">
+                        <span className="text-2xl sm:text-3xl font-extrabold text-(--text-primary) tracking-tight group-hover:text-(--accent-color) transition-all duration-300 leading-none">
                             <CountUp end={stat.value} formatter={stat.suffix ? undefined : formatStat} />{stat.suffix || ""}
                         </span>
-                        <span className="text-[10px] sm:text-xs text-(--text-secondary) uppercase tracking-[0.15em] font-semibold mt-1.5 whitespace-nowrap leading-none">
+                        <span className="text-xs sm:text-sm text-(--text-primary)/90 uppercase tracking-widest font-bold mt-1.5 whitespace-nowrap leading-none drop-shadow-sm">
                             {t[stat.labelKey]}
                         </span>
                     </div>

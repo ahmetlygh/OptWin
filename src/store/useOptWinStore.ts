@@ -36,6 +36,8 @@ interface OptWinState {
     setSearchQuery: (query: string) => void;
     showDescriptions: boolean;
     toggleDescriptions: () => void;
+    showPresetDescriptions: boolean;
+    togglePresetDescriptions: () => void;
     collapsedCategories: Set<string>;
     toggleCategoryCollapse: (slug: string) => void;
     setCollapsedCategories: (slugs: string[]) => void;
@@ -63,6 +65,10 @@ interface OptWinState {
     // Transition State
     isChangingLocale: boolean;
     setIsChangingLocale: (val: boolean) => void;
+
+    // Header Stickiness
+    isTopPanelStuck: boolean;
+    setIsTopPanelStuck: (val: boolean) => void;
 }
 
 export const useOptWinStore = create<OptWinState>()(
@@ -75,6 +81,7 @@ export const useOptWinStore = create<OptWinState>()(
             dnsProvider: "cloudflare",
             searchQuery: "",
             showDescriptions: true,
+            showPresetDescriptions: true,
             collapsedCategories: new Set<string>(),
             dbTranslations: {},
             translationsLoaded: false,
@@ -164,6 +171,7 @@ export const useOptWinStore = create<OptWinState>()(
             // Search & Display
             setSearchQuery: (query) => set({ searchQuery: query }),
             toggleDescriptions: () => set((state) => ({ showDescriptions: !state.showDescriptions })),
+            togglePresetDescriptions: () => set((state) => ({ showPresetDescriptions: !state.showPresetDescriptions })),
             toggleCategoryCollapse: (slug) => set((state) => {
                 const next = new Set(state.collapsedCategories);
                 if (next.has(slug)) next.delete(slug);
@@ -202,6 +210,10 @@ export const useOptWinStore = create<OptWinState>()(
             // Transition
             isChangingLocale: false,
             setIsChangingLocale: (val) => set({ isChangingLocale: val }),
+
+            // Header Stickiness
+            isTopPanelStuck: false,
+            setIsTopPanelStuck: (val) => set({ isTopPanelStuck: val }),
         }),
         {
             name: "optwin-store",

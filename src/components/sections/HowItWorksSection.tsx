@@ -25,7 +25,7 @@ export async function HowItWorksSection({ locale, translations }: HowItWorksSect
                 
                 <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-2 hide-scrollbar md:flex-row md:overflow-visible md:snap-none items-start justify-between relative">
                     {/* Connecting Line (Only visible on MD+) */}
-                    <div className="hidden md:block absolute top-[28px] left-[15%] w-[70%] h-px bg-white/10 z-0"></div>
+                    <div className="hidden md:block absolute top-[28px] left-[15%] w-[70%] h-px bg-linear-to-r from-transparent via-(--accent-color)/40 to-transparent z-0"></div>
 
                     {data.map((step: { title: string, content: string[] }, index: number) => {
                         const Icon = icons[index % icons.length];
@@ -35,8 +35,8 @@ export async function HowItWorksSection({ locale, translations }: HowItWorksSect
                         return (
                             <div key={index} className="relative z-10 flex flex-col items-center gap-4 text-center group snap-start min-w-[200px] shrink-0 md:shrink md:min-w-0 w-full md:w-1/3">
                                 {/* Number Sphere */}
-                                <div className="shrink-0 size-14 rounded-full bg-[#0d0d12]/80 border-2 border-white/5 flex items-center justify-center text-white/40 group-hover:bg-(--accent-color)/10 group-hover:border-(--accent-color)/30 group-hover:text-(--accent-color) transition-all duration-300 shadow-xl backdrop-blur-sm">
-                                    <Icon size={24} strokeWidth={1.5} />
+                                <div className="shrink-0 size-14 rounded-full bg-(--accent-color)/10 border-2 border-(--accent-color)/20 flex items-center justify-center text-(--accent-color) group-hover:bg-(--accent-color)/20 group-hover:border-(--accent-color)/40 transition-all duration-300 shadow-[0_0_20px_rgba(108,92,231,0.15)] backdrop-blur-sm group-hover:scale-110">
+                                    <Icon size={24} strokeWidth={2.5} className="drop-shadow-md" />
                                 </div>
 
                                 <div className="flex flex-col md:items-center">

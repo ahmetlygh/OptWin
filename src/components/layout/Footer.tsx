@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { GithubIcon } from "../shared/Icons";
 import { useOptWinStore } from "@/store/useOptWinStore";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 interface FooterProps {
     serverSettings?: Record<string, string>;
@@ -24,19 +24,29 @@ export function Footer({ serverSettings = {} }: FooterProps) {
     const copyrightText = settings.copyright_text || siteName;
     const copyrightYear = settings.copyright_year || new Date().getFullYear().toString();
 
+    const FooterLink = ({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void }) => (
+        <Link
+            href={href}
+            onClick={onClick}
+            className="group/link text-sm font-semibold text-(--text-secondary) hover:text-(--accent-color) transition-all duration-300 flex items-center justify-center gap-2.5 outline-none"
+        >
+            <span className="size-1 rounded-full bg-(--border-color) group-hover/link:bg-(--accent-color) group-hover/link:scale-[2] transition-all duration-300"></span>
+            <span className="group-hover/link:translate-x-0.5 transition-transform duration-300">{children}</span>
+        </Link>
+    );
+
     return (
         <footer className="w-full mt-4 pb-12 sm:pb-8 relative overflow-hidden group">
             {/* Ambient Background subtle glow - Widened */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-px bg-linear-to-r from-transparent via-(--accent-color)/30 to-transparent"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1440px] h-px bg-linear-to-r from-transparent via-(--accent-color)/30 to-transparent"></div>
             
-            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-16">
-                <div className="bg-(--card-bg)/40 backdrop-blur-xl border border-(--border-color) rounded-lg sm:rounded-xl md:rounded-2xl p-6 sm:p-10 md:p-16 shadow-lg relative isolation min-h-[450px] flex flex-col justify-between">
-                    <div className="absolute inset-0 bg-linear-to-br from-(--accent-color)/4 to-transparent pointer-events-none rounded-lg sm:rounded-xl md:rounded-2xl"></div>
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-16">
+                <div className="relative flex flex-col justify-between">
                     
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start relative z-10">
                         {/* Branding */}
                         <div className="md:col-span-4 space-y-7 text-center md:text-left">
-                            <Link href={`/${lang}`} className="inline-flex items-center gap-4 group/logo">
+                            <Link href={`/${lang}`} className="inline-flex items-center gap-4 group/logo outline-none">
                                 <div className="size-14 flex items-center justify-center relative">
                                     <Image 
                                         src={settings.site_logo_url || "/optwin.png"} 
@@ -49,31 +59,27 @@ export function Footer({ serverSettings = {} }: FooterProps) {
                                 </div>
                                 <span className="text-3xl font-black text-gradient tracking-tight">{siteName}</span>
                             </Link>
-                            <p className="text-[14px] text-(--text-secondary) leading-relaxed max-w-sm mx-auto md:mx-0 opacity-80 font-medium tracking-tight">
+                            <p className="text-[14px] text-(--text-secondary) leading-relaxed max-w-xl mx-auto md:mx-0 opacity-80 font-medium tracking-tight">
                                 {t["footer.description"]}
                             </p>
                         </div>
 
-                        {/* Navigation / Links */}
-                        <div className="md:col-span-8 grid grid-cols-2 lg:grid-cols-3 gap-10 text-center md:text-left">
-                            <div className="space-y-6">
-                                <span className="text-[11px] font-black text-(--text-primary) uppercase tracking-[0.2em] opacity-30">{t["footer.legal"]}</span>
-                                <div className="flex flex-col gap-4">
-                                    <Link href="/privacy" className="text-sm font-semibold text-(--text-secondary) hover:text-(--accent-color) transition-all flex items-center gap-3 group/link sm:justify-start justify-center">
-                                        <span className="size-1.5 rounded-full bg-(--border-color) group-hover/link:bg-(--accent-color) group-hover/link:scale-150 transition-all"></span>
-                                        {t["footer.privacy"]}
-                                    </Link>
-                                    <Link href="/terms" className="text-sm font-semibold text-(--text-secondary) hover:text-(--accent-color) transition-all flex items-center gap-3 group/link sm:justify-start justify-center">
-                                        <span className="size-1.5 rounded-full bg-(--border-color) group-hover/link:bg-(--accent-color) group-hover/link:scale-150 transition-all"></span>
-                                        {t["footer.terms"]}
-                                    </Link>
+                        {/* Navigation / Links — all 3 columns with same structure */}
+                        <div className="md:col-span-8 grid grid-cols-2 lg:grid-cols-3 gap-10">
+                            {/* Legal */}
+                            <div className="space-y-5 text-center flex flex-col items-center">
+                                <span className="block text-[11px] font-black text-(--text-primary) uppercase tracking-[0.2em] opacity-30">{t["footer.legal"]}</span>
+                                <div className="flex flex-col items-center gap-3.5">
+                                    <FooterLink href="/privacy">{t["footer.privacy"]}</FooterLink>
+                                    <FooterLink href="/terms">{t["footer.terms"]}</FooterLink>
                                 </div>
                             </div>
                             
-                            <div className="space-y-6">
-                                <span className="text-[11px] font-black text-(--text-primary) uppercase tracking-[0.2em] opacity-30">{t["footer.support"]}</span>
-                                <div className="flex flex-col gap-4">
-                                    <Link 
+                            {/* Support */}
+                            <div className="space-y-5 text-center flex flex-col items-center">
+                                <span className="block text-[11px] font-black text-(--text-primary) uppercase tracking-[0.2em] opacity-30">{t["footer.support"]}</span>
+                                <div className="flex flex-col items-center gap-3.5">
+                                    <FooterLink
                                         href={`/${lang}#about`}
                                         onClick={(e) => {
                                             const homePath = `/${lang}`;
@@ -87,23 +93,19 @@ export function Footer({ serverSettings = {} }: FooterProps) {
                                                 }
                                             }
                                         }}
-                                        className="text-sm font-semibold text-(--text-secondary) hover:text-(--accent-color) transition-all flex items-center gap-3 group/link sm:justify-start justify-center"
                                     >
-                                        <span className="size-1.5 rounded-full bg-(--border-color) group-hover/link:bg-(--accent-color) group-hover/link:scale-150 transition-all"></span>
                                         {t["nav.about"]}
-                                    </Link>
-                                    <Link href="/contact" className="text-sm font-semibold text-(--text-secondary) hover:text-(--accent-color) transition-all flex items-center gap-3 group/link sm:justify-start justify-center">
-                                        <span className="size-1.5 rounded-full bg-(--border-color) group-hover/link:bg-(--accent-color) group-hover/link:scale-150 transition-all"></span>
-                                        {t["footer.contactUs"]}
-                                    </Link>
+                                    </FooterLink>
+                                    <FooterLink href="/contact">{t["footer.contactUs"]}</FooterLink>
                                 </div>
                             </div>
 
-                            <div className="col-span-2 lg:col-span-1 border-t lg:border-t-0 border-(--border-color) pt-10 lg:pt-0 space-y-6">
-                                <span className="text-[11px] font-black text-(--text-primary) uppercase tracking-[0.2em] opacity-30">{t["footer.contact"]}</span>
-                                <div className="flex flex-col gap-3">
+                            {/* Contact */}
+                            <div className="col-span-2 lg:col-span-1 border-t lg:border-t-0 border-(--border-color) pt-8 lg:pt-0 space-y-5 text-center flex flex-col items-center">
+                                <span className="block text-[11px] font-black text-(--text-primary) uppercase tracking-[0.2em] opacity-30">{t["footer.contact"]}</span>
+                                <div className="flex flex-col items-center gap-3">
                                     {contactEmail ? (
-                                        <a href={`mailto:${contactEmail}`} className="text-[15px] font-bold text-(--accent-color) hover:opacity-80 transition-all break-all sm:justify-start justify-center flex items-center tracking-tight">
+                                        <a href={`mailto:${contactEmail}`} className="text-[14px] font-bold text-(--accent-color) hover:opacity-80 transition-all break-all tracking-tight outline-none">
                                             {contactEmail}
                                         </a>
                                     ) : (
@@ -139,7 +141,7 @@ export function Footer({ serverSettings = {} }: FooterProps) {
                                     href={githubUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="size-11 flex items-center justify-center rounded-2xl bg-(--border-color)/40 text-(--text-secondary) hover:bg-(--accent-color) hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-lg shadow-(--accent-color)/5"
+                                    className="size-11 flex items-center justify-center rounded-2xl bg-(--border-color)/40 text-(--text-secondary) hover:bg-(--accent-color) hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-lg shadow-(--accent-color)/5 outline-none"
                                 >
                                     <GithubIcon size={20} />
                                 </a>

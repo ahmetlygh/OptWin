@@ -218,6 +218,35 @@ const en = {
     "howItWorks.step1.title": "Select",
     "howItWorks.step2.title": "Generate",
     "howItWorks.step3.title": "Run",
+
+    // Terminal (Hero Illustration)
+    "hero.term.safe": "Safe",
+    "hero.term.openSource": "Open Source",
+    "hero.term.fast": "Fast",
+    "hero.term.optimized": "Optimized",
+    "hero.term.cmd1": "Disabling Telemetry",
+    "hero.term.cmd2": "Clearing Temp/Prefetch",
+    "hero.term.cmd3": "Disabling Background Apps",
+    "hero.term.cmd4": "Optimizing Services",
+    "hero.term.cmd5": "Configuring Privacy",
+    "hero.term.allDone": "All tasks completed",
+    "hero.term.thanks": "Thank you for using OptWin!",
+    "hero.term.preview": "Script preview",
+    "hero.term.replay": "Click to replay",
+    "hero.term.expand": "Expand",
+    "hero.term.collapse": "Collapse",
+
+    // Sidebar & Preset extras
+    "preset.sidebarTitle": "Quick Settings",
+    "preset.bulkActionsTitle": "Bulk Actions",
+    "preset.mainTitle": "Presets",
+    "preset.mainDescription": "Professionally crafted, one-click configurations to maximize your system performance.",
+    "preset.showDescriptions": "Show Descriptions",
+    "preset.hideDescriptions": "Hide Descriptions",
+    "category.sidebarTitle": "Categories",
+
+    // Scroll to top
+    "nav.scrollToTop": "Scroll to top",
 } as const;
 
 export type TranslationKeys = keyof typeof en;

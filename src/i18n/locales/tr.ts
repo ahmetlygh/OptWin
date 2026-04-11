@@ -184,6 +184,23 @@ const tr = {
     "howItWorks.step1.title": "Seç",
     "howItWorks.step2.title": "Oluştur",
     "howItWorks.step3.title": "Çalıştır",
+
+    // Terminal (Hero Illustration)
+    "hero.term.safe": "Güvenli",
+    "hero.term.openSource": "Açık Kaynak",
+    "hero.term.fast": "Hızlı",
+    "hero.term.optimized": "Optimize Edildi",
+    "hero.term.cmd1": "Telemetri Devre Dışı Bırakılıyor",
+    "hero.term.cmd2": "Geçici Dosyalar Temizleniyor",
+    "hero.term.cmd3": "Arka Plan Uygulamaları Kapatılıyor",
+    "hero.term.cmd4": "Servisler Optimize Ediliyor",
+    "hero.term.cmd5": "Gizlilik Ayarları Yapılandırılıyor",
+    "hero.term.allDone": "Tüm işlemler tamamlandı",
+    "hero.term.thanks": "OptWin kullandığınız için teşekkürler!",
+    "hero.term.preview": "Script önizlemesi",
+    "hero.term.replay": "Tekrar oynatmak için tıklayın",
+    "hero.term.expand": "Genişlet",
+    "hero.term.collapse": "Daralt",
 } as const;
 
 export default tr;
