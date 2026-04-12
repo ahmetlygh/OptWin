@@ -85,8 +85,22 @@ export function GlobalActionButtons({ allCategorySlugs, allFeatureSlugs, dnsProv
     const hasDnsSelected = !!selectedFeatures["changeDNS"];
     const showDnsBar = dnsEverShown && dnsOpen && hasDnsSelected;
 
-    const collapseAll = () => setCollapsedCategories(allCategorySlugs);
-    const expandAll = () => setCollapsedCategories([]);
+    const scrollToFeatures = () => {
+        const el = document.getElementById('features');
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const collapseAll = () => {
+        setCollapsedCategories(allCategorySlugs);
+        scrollToFeatures();
+    };
+
+    const expandAll = () => {
+        setCollapsedCategories([]);
+        scrollToFeatures();
+    };
 
     const handleSelectAll = () => {
         const filtered = allFeatureSlugs.filter(f => f !== "highPerformance");
@@ -128,51 +142,62 @@ export function GlobalActionButtons({ allCategorySlugs, allFeatureSlugs, dnsProv
                 </button>
 
                 {/* PC: full inline provider selector */}
-                <div className={`hidden md:flex w-full bg-(--card-bg) border border-(--accent-color)/25 rounded-2xl p-2 shadow-[0_0_20px_rgba(107,91,230,0.08)] ${isSidebar ? "flex-col" : "items-center"}`}>
-                    <div className={`flex items-center px-3 gap-2 shrink-0 ${isSidebar ? "h-8 border-b border-(--border-color) mb-1 pb-1" : "h-10 border-r border-(--border-color) mr-1"}`}>
+                <div className={`hidden md:flex w-full bg-(--accent-color)/5 border border-(--accent-color)/30 rounded-2xl p-2 shadow-inner ${isSidebar ? "flex-col" : "items-center"}`}>
+                    <div className={`flex items-center px-3 gap-2 shrink-0 ${isSidebar ? "h-8 border-b border-(--accent-color)/20 mb-1 pb-1" : "h-10 border-r border-(--accent-color)/20 mr-2"}`}>
                         <GlobeIcon size={15} className="text-(--accent-color)" />
-                        <span className="text-[11px] font-bold text-(--text-secondary) uppercase tracking-wider">DNS</span>
+                        <span className="text-[11px] font-bold text-(--accent-color) uppercase tracking-wider">DNS</span>
                         {isSidebar && (
-                            <button onClick={() => setDnsOpen(false)} className="ml-auto text-(--text-secondary) hover:text-red-400 cursor-pointer">
+                            <button onClick={() => setDnsOpen(false)} className="ml-auto text-(--text-secondary) hover:text-red-400 cursor-pointer transition-colors">
                                 <XIcon size={14} />
                             </button>
                         )}
                     </div>
 
-                    <div className={`w-full grid ${isSidebar ? "grid-cols-1 gap-1 p-1" : "grid-cols-2 sm:grid-cols-3 xl:flex xl:flex-1 gap-1.5"}`}>
+                    <div className={`w-full flex ${isSidebar ? "flex-col items-stretch gap-1.5 p-1" : "flex-row flex-wrap grow items-center gap-1.5 p-1"}`}>
                         {/* Default provider */}
                         <button
                             onClick={() => setDnsProvider("default")}
-                            className={`cursor-pointer flex xl:flex-1 items-center justify-start gap-2 px-3 h-9 rounded-lg text-[13px] font-bold transition-all duration-200 ease-in-out whitespace-nowrap overflow-hidden ${dnsProvider === "default"
-                                ? "bg-(--accent-color) text-white shadow-md shadow-(--accent-color)/30"
-                                : "bg-transparent text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary)"}
+                            className={`cursor-pointer flex flex-auto items-center justify-start gap-2 px-3 h-9 rounded-lg text-[13px] font-bold transition-all duration-200 ease-in-out whitespace-nowrap overflow-hidden ${dnsProvider === "default"
+                                ? "bg-(--accent-color) text-white shadow-[0_0_15px_rgba(107,91,230,0.4)] border border-(--accent-color)"
+                                : "bg-transparent text-(--text-secondary) hover:bg-(--accent-color)/10 hover:text-(--text-primary) border border-transparent"}
                             `}
                         >
-                            <div className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border ${dnsProvider === "default" ? "border-white" : "border-(--text-secondary)"}`}>
+                            <div className={`flex items-center justify-center w-3.5 h-3.5 shrink-0 rounded-full border ${dnsProvider === "default" ? "border-white" : "border-(--text-secondary)"}`}>
                                 {dnsProvider === "default" && <CheckIcon size={8} strokeWidth={4} />}
                             </div>
-                            {t["preset.default"] || "Default"}
+                            <span className="truncate">{t["preset.default"] || "Sistem Varsayılanı"}</span>
                         </button>
 
-                        {dnsProviders.map(p => (
+                        {dnsProviders.slice(0, 2).map(p => (
                             <button
                                 key={p.slug}
                                 onClick={() => setDnsProvider(p.slug)}
-                                className={`cursor-pointer flex xl:flex-1 items-center justify-start gap-2 px-3 h-9 rounded-lg text-[13px] font-bold transition-all duration-200 ease-in-out whitespace-nowrap overflow-hidden ${dnsProvider === p.slug
-                                    ? "bg-(--accent-color) text-white shadow-md shadow-(--accent-color)/30"
-                                    : "bg-transparent text-(--text-secondary) hover:bg-(--border-color) hover:text-(--text-primary)"}
+                                className={`cursor-pointer flex flex-auto items-center justify-start gap-2 px-3 h-9 rounded-lg text-[13px] font-bold transition-all duration-200 ease-in-out whitespace-nowrap overflow-hidden ${dnsProvider === p.slug
+                                    ? "bg-(--accent-color) text-white shadow-[0_0_15px_rgba(107,91,230,0.4)] border border-(--accent-color)"
+                                    : "bg-transparent text-(--text-secondary) hover:bg-(--accent-color)/10 hover:text-(--text-primary) border border-transparent"}
                                 `}
                             >
-                                <div className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border ${dnsProvider === p.slug ? "border-white" : "border-(--text-secondary)"}`}>
+                                <div className={`flex items-center justify-center w-3.5 h-3.5 shrink-0 rounded-full border ${dnsProvider === p.slug ? "border-white" : "border-(--text-secondary)"}`}>
                                     {dnsProvider === p.slug && <CheckIcon size={8} strokeWidth={4} />}
                                 </div>
-                                {p.name}
+                                <span className="truncate">{p.name}</span>
                             </button>
                         ))}
+                        
+                        {/* More Button to trigger DNS Modal */}
+                        <button
+                            onClick={() => setDnsModalOpen(true)}
+                            className="cursor-pointer flex flex-auto items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-[12px] font-bold transition-all duration-200 ease-in-out bg-transparent border border-(--border-color)/50 text-(--text-secondary) hover:bg-(--accent-color)/10 hover:text-(--accent-color) hover:border-(--accent-color)/30"
+                        >
+                            <div className="flex items-center justify-center shrink-0">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </div>
+                            <span className="truncate whitespace-nowrap">Daha Fazla</span>
+                        </button>
                     </div>
 
                     {!isSidebar && (
-                        <div className="flex items-center pl-1.5 border-l border-(--border-color) shrink-0 ml-auto">
+                        <div className="flex items-center pl-2 border-l border-(--accent-color)/20 shrink-0 ml-auto">
                             <button
                                 onClick={() => setDnsOpen(false)}
                                 className="cursor-pointer size-8 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-red-500/15 hover:text-red-400 transition-colors duration-200"
@@ -193,45 +218,56 @@ export function GlobalActionButtons({ allCategorySlugs, allFeatureSlugs, dnsProv
             <div className={`grid gap-2 ${isSidebar ? "grid-cols-2" : "grid-cols-2 lg:flex lg:flex-wrap"}`}>
 
                 <button
-                    onClick={collapseAll}
-                    disabled={collapsedCategories.size === allCategorySlugs.length}
-                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 h-[34px] rounded-xl border border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--border-color)/30 disabled:opacity-50 disabled:bg-transparent transition-colors duration-200 text-[12px] font-bold ${isSidebar ? "col-span-1 leading-tight text-center" : "flex-1 min-w-[120px]"}`}
+                    onClick={(e) => {
+                        if (collapsedCategories.size === allCategorySlugs.length) { e.preventDefault(); return; }
+                        collapseAll();
+                    }}
+                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 ${isSidebar ? 'h-[40px]' : 'h-[36px]'} rounded-xl border text-[12px] font-bold transition-colors duration-200 ${
+                        collapsedCategories.size === allCategorySlugs.length 
+                            ? "opacity-50 border-(--border-color)/50 bg-transparent text-(--text-secondary)" 
+                            : "border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--border-color)/30"
+                    } ${isSidebar ? "col-span-1 leading-tight text-center" : "flex-1 min-w-[120px]"}`}
                 >
                     <ChevronsDownUp size={14} className="shrink-0" />
                     <span>{t["category.collapseAll"] || "Tümünü Daralt"}</span>
                 </button>
 
                 <button
-                    onClick={expandAll}
-                    disabled={collapsedCategories.size === 0}
-                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 h-[34px] rounded-xl border border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--border-color)/30 disabled:opacity-50 disabled:bg-transparent transition-colors duration-200 text-[12px] font-bold ${isSidebar ? "col-span-1 leading-tight text-center" : "flex-1 min-w-[120px]"}`}
+                    onClick={(e) => {
+                        if (collapsedCategories.size === 0) { e.preventDefault(); return; }
+                        expandAll();
+                    }}
+                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 ${isSidebar ? 'h-[40px]' : 'h-[36px]'} rounded-xl border text-[12px] font-bold transition-colors duration-200 ${
+                        collapsedCategories.size === 0 
+                            ? "opacity-50 border-(--border-color)/50 bg-transparent text-(--text-secondary)" 
+                            : "border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--border-color)/30"
+                    } ${isSidebar ? "col-span-1 leading-tight text-center" : "flex-1 min-w-[120px]"}`}
                 >
                     <ChevronsUpDown size={14} className="shrink-0" />
                     <span>{t["category.expandAll"] || "Tümünü Genişlet"}</span>
                 </button>
 
-                <AnimatePresence>
-                    {selectedCount > 0 && (
-                        <motion.button
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.2, type: "spring", bounce: 0 }}
-                            onClick={handleClearAll}
-                            className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 h-[34px] border border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-[12px] font-bold transition-colors duration-200 ${isSidebar ? "col-span-1" : "col-span-1 lg:flex-1 min-w-[100px]"}`}
-                        >
-                            <ResetIcon size={14} className="shrink-0" />
-                            <span className="leading-tight text-center">{t["preset.clearAll"] || "Sıfırla"}</span>
-                        </motion.button>
-                    )}
-                </AnimatePresence>
-
                 <button
                     onClick={handleSelectAll}
-                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 h-[34px] border border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:border-purple-500/30 hover:text-purple-400 hover:bg-purple-500/10 rounded-xl text-[12px] font-bold transition-colors duration-200 ${isSidebar ? (selectedCount > 0 ? "col-span-1" : "col-span-2") : (selectedCount > 0 ? "col-span-1 lg:flex-1 min-w-[100px]" : "col-span-2 lg:flex-1 min-w-[120px]")}`}
+                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 ${isSidebar ? 'h-[40px]' : 'h-[36px]'} border border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:border-purple-500/30 hover:text-purple-400 hover:bg-purple-500/10 rounded-xl text-[12px] font-bold transition-colors duration-200 ${isSidebar ? "col-span-1" : "col-span-1 lg:flex-1 min-w-[100px]"}`}
                 >
                     <CheckAllIcon size={14} className="shrink-0" />
-                    <span className="leading-tight text-center">{t["preset.selectAll"] || "Hepsini Seç"}</span>
+                    <span className="leading-tight text-center">{t["preset.selectAll"] || "Tümünü Seç"}</span>
+                </button>
+
+                <button
+                    onClick={(e) => {
+                        if (selectedCount === 0) { e.preventDefault(); return; }
+                        handleClearAll();
+                    }}
+                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 ${isSidebar ? 'h-[40px]' : 'h-[36px]'} rounded-xl border text-[12px] font-bold transition-colors duration-200 ${
+                        selectedCount === 0 
+                            ? "opacity-50 border-(--border-color)/50 bg-transparent text-(--text-secondary)" 
+                            : "border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/10"
+                    } ${isSidebar ? "col-span-1" : "col-span-1 lg:flex-1 min-w-[100px]"}`}
+                >
+                    <ResetIcon size={14} className="shrink-0" />
+                    <span className="leading-tight text-center">{t["preset.clearAll"] || "Sıfırla"}</span>
                 </button>
 
             </div>

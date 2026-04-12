@@ -130,27 +130,15 @@ export function FeatureGridClient({ categories, presets, allFeatureSlugs, dnsPro
         });
     };
 
-    // Scroll-preserving description toggle — keeps user at the same visual position
     const handleDescriptionToggle = useCallback(() => {
-        const activeEl = document.getElementById(activeSection);
-        if (activeEl) {
-            isScrollingRef.current = true;
-            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-            scrollTimeoutRef.current = setTimeout(() => { isScrollingRef.current = false; }, 800);
-
-            const rectBefore = activeEl.getBoundingClientRect();
-            const offsetBefore = rectBefore.top;
-            toggleDescriptions();
-            setTimeout(() => { // use setTimeout instead of requestAnimationFrame for layout shift stabilization
-                const rectAfter = activeEl.getBoundingClientRect();
-                const diff = rectAfter.top - offsetBefore;
-                if (Math.abs(diff) > 1) {
-                    window.scrollBy({ top: diff, behavior: 'instant' });
-                }
-            }, 50);
-        } else {
-            toggleDescriptions();
-        }
+        toggleDescriptions();
+        setTimeout(() => {
+            const activeEl = document.getElementById(activeSection);
+            if (activeEl) {
+                const y = activeEl.getBoundingClientRect().top + window.pageYOffset - 120;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+        }, 50);
     }, [activeSection, toggleDescriptions]);
 
     return (
@@ -305,8 +293,15 @@ export function FeatureGridClient({ categories, presets, allFeatureSlugs, dnsPro
                         {/* Category header */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-3 mb-5 w-full group">
                             <button
-                                onClick={() => toggleCategoryCollapse(cat.slug)}
-                                className="flex items-center gap-3 flex-1 cursor-pointer w-full text-left"
+                                onClick={() => {
+                                    toggleCategoryCollapse(cat.slug);
+                                    const el = document.getElementById(cat.slug);
+                                    if (el) {
+                                        const y = el.getBoundingClientRect().top + window.pageYOffset - 120; // 120px offset for sticky header
+                                        window.scrollTo({ top: y, behavior: 'smooth' });
+                                    }
+                                }}
+                                className="flex items-center gap-3 flex-1 cursor-pointer w-full text-left outline-none"
                             >
                                 <CategoryIcon icon={cat.icon} className="text-(--accent-color) shrink-0" />
                                 <h3 className="text-xl font-bold text-(--text-primary) whitespace-normal sm:whitespace-nowrap shrink-0">
@@ -322,30 +317,37 @@ export function FeatureGridClient({ categories, presets, allFeatureSlugs, dnsPro
                             </button>
 
                             {/* Select all / Deselect all buttons */}
-                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto shrink-0">
+                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
                                 <button
-                                    onClick={(e) => selectAllInCategory(cat, e)}
-                                    className={`cursor-pointer disabled:cursor-default flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 border shadow-sm ${allSelected
-                                        ? 'border-(--border-color)/50 bg-transparent text-(--text-secondary)/40 shadow-none'
-                                        : 'border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:bg-purple-500/10 hover:border-purple-500/30 hover:text-purple-400'
-                                        }`}
+                                    onClick={(e) => {
+                                        if (allSelected) { e.preventDefault(); return; }
+                                        selectAllInCategory(cat, e);
+                                    }}
+                                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 border shadow-sm ${
+                                        allSelected
+                                            ? "opacity-50 border-(--border-color)/50 bg-transparent text-(--text-secondary) shadow-none"
+                                            : "border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:bg-purple-500/10 hover:border-purple-500/30 hover:text-purple-400"
+                                    }`}
                                     title={t["category.selectAll"] || "Select all"}
-                                    disabled={allSelected}
                                 >
                                     <CheckAllIcon size={14} />
-                                    <span>{t["category.selectAll"] || "Select All"}</span>
+                                    <span>{t["category.selectAll"] || "Tümünü Seç"}</span>
                                 </button>
+
                                 <button
-                                    onClick={(e) => deselectAllInCategory(cat, e)}
-                                    className={`cursor-pointer disabled:cursor-default flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 border shadow-sm ${selectedCount === 0
-                                        ? 'border-(--border-color)/50 bg-transparent text-(--text-secondary)/40 shadow-none'
-                                        : 'border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
-                                        }`}
+                                    onClick={(e) => {
+                                        if (selectedCount === 0) { e.preventDefault(); return; }
+                                        deselectAllInCategory(cat, e);
+                                    }}
+                                    className={`cursor-pointer flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 border shadow-sm ${
+                                        selectedCount === 0
+                                            ? "opacity-50 border-(--border-color)/50 bg-transparent text-(--text-secondary) shadow-none"
+                                            : "border-(--border-color) bg-(--card-bg) text-(--text-secondary) hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400"
+                                    }`}
                                     title={t["category.deselectAll"] || "Deselect all"}
-                                    disabled={selectedCount === 0}
                                 >
                                     <XIcon size={14} />
-                                    <span>{t["category.deselectAll"] || "Clear"}</span>
+                                    <span>{t["category.deselectAll"] || "Sıfırla"}</span>
                                 </button>
                             </div>
                         </div>

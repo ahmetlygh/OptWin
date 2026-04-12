@@ -28,8 +28,8 @@ const tr = {
     "category.selectAll": "Kategoriyi Seç",
     "category.deselectAll": "Kategoriyi Temizle",
 
-    "preset.clearAll": "Hepsini Sıfırla",
-    "preset.selectAll": "Hepsini Seç",
+    "preset.clearAll": "Sıfırla",
+    "preset.selectAll": "Tümünü Seç",
     "preset.default": "Varsayılan",
     "preset.recommended": "Önerilen Ayarlar",
     "preset.gamer": "Oyuncu Ayarları",
@@ -75,6 +75,7 @@ const tr = {
     "warning.gotIt": "Anladım",
 
     "dns.title": "DNS Sağlayıcısı",
+    "dns.pingTest": "Ping Testi Dosyası (İndir)",
     "dns.description": "Daha hızlı ve güvenli gezinme için bir DNS sağlayıcısı seçin. Bu, ağ bağdaştırıcınızın DNS ayarlarını değiştirir.",
     "dns.reversible": "Geri Alınabilir",
     "dns.systemWide": "Sistem Geneli",

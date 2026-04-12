@@ -8,6 +8,8 @@ import { HighlightText } from "../shared/HighlightText";
 import { FeatureIcon, CheckIcon, GlobeIcon, InfoIcon } from "../shared/Icons";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { DNS_DISPLAY_NAMES } from "@/lib/constants";
+
 interface FeatureCardProps {
     feature: Feature;
 }
@@ -157,10 +159,10 @@ export const FeatureCard = memo(function FeatureCard({ feature }: FeatureCardPro
                                 e.stopPropagation();
                                 setDnsModalOpen(true);
                             }}
-                            className="pointer-events-auto mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-(--accent-color)/15 border border-(--accent-color)/30 text-(--accent-color) text-xs font-bold hover:bg-(--accent-color)/25 transition-all duration-200 animate-slide-in-right"
+                            className="cursor-pointer pointer-events-auto mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-(--accent-color)/15 border border-(--accent-color)/30 text-(--accent-color) text-xs font-bold hover:bg-(--accent-color)/25 transition-all duration-200 animate-slide-in-right"
                         >
                             <GlobeIcon size={14} />
-                            <span>{lang === "tr" ? "Değiştir" : "Change"}: {dnsProvider}</span>
+                            <span>{lang === "tr" ? "Değiştir" : "Change"}: {DNS_DISPLAY_NAMES[dnsProvider] || (dnsProvider.charAt(0).toUpperCase() + dnsProvider.slice(1))}</span>
                         </button>
                     )}
                 </div>

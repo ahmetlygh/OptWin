@@ -75,6 +75,7 @@ const de = {
     "warning.gotIt": "Verstanden",
 
     "dns.title": "DNS-Anbieter",
+    "dns.pingTest": "Ping-Test Herunterladen",
     "dns.description": "Wählen Sie einen DNS-Anbieter für schnelleres und sichereres Surfen. Dies ändert die DNS-Einstellungen Ihres Netzwerkadapters.",
     "dns.reversible": "Umkehrbar",
     "dns.systemWide": "Systemweit",

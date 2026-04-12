@@ -30,7 +30,7 @@ export function DnsModal({ providers }: { providers: DnsProvider[] }) {
             >
                 <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 z-20 size-8 flex items-center justify-center rounded-full bg-(--text-secondary)/10 text-(--text-secondary) hover:bg-(--text-secondary)/20 hover:text-(--text-primary) hover:rotate-90 transition-all duration-200"
+                    className="cursor-pointer absolute top-4 right-4 z-20 size-8 flex items-center justify-center rounded-full bg-(--text-secondary)/10 text-(--text-secondary) hover:bg-(--text-secondary)/20 hover:text-(--text-primary) hover:rotate-90 transition-all duration-200"
                 >
                     <XIcon size={14} />
                 </button>
@@ -60,10 +60,56 @@ export function DnsModal({ providers }: { providers: DnsProvider[] }) {
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-(--border-color) hidden md:block animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+                    <div className="mt-8 pt-4 border-t border-(--border-color) hidden md:flex flex-col gap-3 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+                        <button
+                            onClick={() => {
+                                let psCode = `$servers = @(\n`;
+                                providers.forEach(p => {
+                                    if(p.primary) psCode += `    @{Name="${p.name}"; IP="${p.primary}"},\n`;
+                                });
+                                psCode = psCode.replace(/,\n$/, "\n") + `)
+
+Write-Host "Tum DNS adresleri test ediliyor. Bu islem 5-10 saniye surebilir..." -ForegroundColor Cyan
+$results = @()
+foreach ($s in $servers) {
+    Write-Host "Pinging $($s.Name) ($($s.IP))..."
+    $ping = Test-Connection -ComputerName $s.IP -Count 3 -ErrorAction SilentlyContinue
+    if ($ping) {
+        $avg = ($ping | Measure-Object -Property ResponseTime -Average).Average
+        $results += [PSCustomObject]@{ "Saglayici"=$s.Name; "IP"=$s.IP; "MS"=[math]::Round($avg) }
+    } else {
+        $results += [PSCustomObject]@{ "Saglayici"=$s.Name; "IP"=$s.IP; "MS"=9999 }
+    }
+}
+Write-Host ""
+Write-Host "--- PING SONUCLARI ---" -ForegroundColor Yellow
+$sorted = $results | Sort-Object MS -Descending
+$sorted | Format-Table -AutoSize
+Write-Host "====== EN DUSUK GECIKME ======" -ForegroundColor Green
+$best = $results | Sort-Object MS | Select-Object -First 1
+Write-Host ">>> $($best.Saglayici) ($($best.MS) ms) <<<" -ForegroundColor Cyan -BackgroundColor Black
+Write-Host ""
+`;
+                                const wrapper = `@echo off\ncolor 0b\ntitle OptWin Ping Test\nPowerShell -NoProfile -ExecutionPolicy Bypass -Command "& { [ScriptBlock]::Create((Get-Content '%~f0' | Select-Object -Skip 6 | Out-String)).Invoke() }"\npause\nexit\n`;
+                                const blob = new Blob([wrapper + psCode], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = "OptWin_DNS_Ping.bat";
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }}
+                            className="cursor-pointer w-full flex items-center justify-center gap-2 h-12 bg-(--accent-color)/10 hover:bg-(--accent-color)/20 border border-(--accent-color)/30 text-(--accent-color) font-bold rounded-xl shadow-inner transition-all duration-200"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            {t["dns.pingTest"] || "Download Ping Test"}
+                        </button>
+
                         <button
                             onClick={handleClose}
-                            className="w-full flex items-center justify-center gap-2 h-12 bg-(--accent-color) hover:bg-(--accent-hover) text-white font-bold rounded-xl shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(107,91,230,0.4)]"
+                            className="cursor-pointer w-full flex items-center justify-center gap-2 h-12 bg-(--accent-color) hover:bg-(--accent-hover) text-white font-bold rounded-xl shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(107,91,230,0.4)]"
                         >
                             <CheckIcon size={18} strokeWidth={2.5} />
                             {t["dns.confirmSelection"]}
@@ -135,10 +181,55 @@ export function DnsModal({ providers }: { providers: DnsProvider[] }) {
                     </div>
 
                     {/* Mobile Confirm */}
-                    <div className="pt-4 flex md:hidden">
+                    <div className="pt-4 flex flex-col gap-2 md:hidden">
+                        <button
+                            onClick={() => {
+                                let psCode = `$servers = @(\n`;
+                                providers.forEach(p => {
+                                    if(p.primary) psCode += `    @{Name="${p.name}"; IP="${p.primary}"},\n`;
+                                });
+                                psCode = psCode.replace(/,\n$/, "\n") + `)
+
+Write-Host "Tum DNS adresleri test ediliyor. Bu islem 5-10 saniye surebilir..." -ForegroundColor Cyan
+$results = @()
+foreach ($s in $servers) {
+    Write-Host "Pinging $($s.Name) ($($s.IP))..."
+    $ping = Test-Connection -ComputerName $s.IP -Count 3 -ErrorAction SilentlyContinue
+    if ($ping) {
+        $avg = ($ping | Measure-Object -Property ResponseTime -Average).Average
+        $results += [PSCustomObject]@{ "Saglayici"=$s.Name; "IP"=$s.IP; "MS"=[math]::Round($avg) }
+    } else {
+        $results += [PSCustomObject]@{ "Saglayici"=$s.Name; "IP"=$s.IP; "MS"=9999 }
+    }
+}
+Write-Host ""
+Write-Host "--- PING SONUCLARI ---" -ForegroundColor Yellow
+$sorted = $results | Sort-Object MS -Descending
+$sorted | Format-Table -AutoSize
+Write-Host "====== EN DUSUK GECIKME ======" -ForegroundColor Green
+$best = $results | Sort-Object MS | Select-Object -First 1
+Write-Host ">>> $($best.Saglayici) ($($best.MS) ms) <<<" -ForegroundColor Cyan -BackgroundColor Black
+Write-Host ""
+`;
+                                const wrapper = `@echo off\ncolor 0b\ntitle OptWin Ping Test\nPowerShell -NoProfile -ExecutionPolicy Bypass -Command "& { [ScriptBlock]::Create((Get-Content '%~f0' | Select-Object -Skip 6 | Out-String)).Invoke() }"\npause\nexit\n`;
+                                const blob = new Blob([wrapper + psCode], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = "OptWin_DNS_Ping.bat";
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }}
+                            className="cursor-pointer w-full flex items-center justify-center gap-2 h-12 bg-(--accent-color)/10 hover:bg-(--accent-color)/20 border border-(--accent-color)/30 text-(--accent-color) font-bold rounded-xl shadow-inner transition-all duration-200"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            {t["dns.pingTest"] || "Download Ping Test"}
+                        </button>
                         <button
                             onClick={handleClose}
-                            className="w-full flex items-center justify-center gap-2 h-12 bg-(--accent-color) hover:bg-(--accent-hover) text-white font-bold rounded-xl shadow-lg transition-all duration-200"
+                            className="cursor-pointer w-full flex items-center justify-center gap-2 h-12 bg-(--accent-color) hover:bg-(--accent-hover) text-white font-bold rounded-xl shadow-lg transition-all duration-200"
                         >
                             <CheckIcon size={18} strokeWidth={2.5} />
                             {t["dns.confirm"]}

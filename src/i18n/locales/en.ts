@@ -90,6 +90,7 @@ const en = {
 
     // DNS Modal
     "dns.title": "DNS Provider",
+    "dns.pingTest": "Download Ping Test",
     "dns.description": "Choose a DNS provider for faster and more secure browsing. This changes your network adapter's DNS settings.",
     "dns.reversible": "Reversible",
     "dns.systemWide": "System-wide",

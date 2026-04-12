@@ -52,8 +52,7 @@ export function ActionArea() {
                 <div className={`overflow-hidden transition-all duration-400 ease-in-out ${hasDnsSelected ? "max-w-[100px] sm:max-w-[200px] opacity-100 scale-100" : "max-w-0 opacity-0 scale-90"}`}>
                     <button
                         onClick={() => setDnsModalOpen(true)}
-                        aria-label={t["aria.dnsSwitch"] || "Change DNS provider"}
-                        className="h-12 sm:h-11 flex items-center gap-2 px-3 sm:px-3 rounded-xl bg-(--border-color)/50 hover:bg-(--border-color) transition-all group shrink-0 whitespace-nowrap"
+                        className="cursor-pointer h-12 sm:h-11 flex items-center gap-2 px-3 sm:px-3 rounded-xl bg-(--border-color)/50 hover:bg-(--border-color) transition-all group shrink-0 whitespace-nowrap"
                     >
                         <div className="flex flex-col items-center justify-center leading-none">
                             <div className="size-8 sm:size-7 rounded-lg bg-(--accent-color)/15 text-(--accent-color) flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -73,7 +72,7 @@ export function ActionArea() {
                     onClick={handleGenerate}
                     disabled={isGenerating}
                     aria-label={t["aria.generateScript"] || "Generate optimization script"}
-                    className={`h-12 sm:h-11 px-5 sm:px-7 rounded-xl text-white font-bold text-base sm:text-base flex items-center gap-2 sm:gap-2 transition-all duration-300 shrink-0 ${hasSelections
+                    className={`h-12 sm:h-11 px-5 sm:px-7 rounded-xl text-white font-bold text-base flex items-center gap-2 transition-all duration-300 shrink-0 ${hasSelections
                         ? "bg-linear-to-r from-(--accent-color) to-[#a855f7] hover:shadow-[0_0_30px_rgba(107,91,230,0.5)] hover:-translate-y-0.5 cursor-pointer"
                         : "bg-linear-to-r from-slate-600 to-slate-700 cursor-not-allowed opacity-70"
                         }`}
@@ -95,9 +94,7 @@ export function ActionArea() {
                 {/* Clear Button */}
                 <button
                     onClick={clearFeatures}
-                    className="size-12 sm:size-11 flex items-center justify-center rounded-xl bg-(--border-color)/50 text-(--text-secondary) hover:bg-red-500/15 hover:text-red-400 transition-colors duration-200 shrink-0"
-                    aria-label={t["aria.clearSelection"] || "Clear all selections"}
-                    title={t["aria.clearSelection"] || "Clear selections"}
+                    className="cursor-pointer size-12 sm:size-11 flex items-center justify-center rounded-xl bg-(--border-color)/50 text-(--text-secondary) hover:bg-red-500/15 hover:text-red-400 transition-colors duration-200 shrink-0"
                 >
                     <XIcon size={16} />
                 </button>

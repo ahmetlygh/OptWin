@@ -75,6 +75,7 @@ const fr = {
     "warning.gotIt": "Compris",
 
     "dns.title": "Fournisseur DNS",
+    "dns.pingTest": "Télécharger Test de Ping",
     "dns.description": "Choisissez un fournisseur DNS pour une navigation plus rapide et plus sécurisée. Cela modifie les paramètres DNS de votre adaptateur réseau.",
     "dns.reversible": "Réversible",
     "dns.systemWide": "Système entier",

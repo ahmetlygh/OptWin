@@ -5,52 +5,30 @@ import { useOptWinStore } from "@/store/useOptWinStore";
 import { ShieldIcon, CodeIcon, EyeOffIcon, HeartIcon } from "../shared/Icons";
 import type { TranslationKeys } from "@/i18n/locales/en";
 
-interface ValueCardProps {
-    icon: React.ReactNode;
-    titleKey: TranslationKeys;
-    descKey: TranslationKeys;
-    accentColor: string;
-}
-
-function ValueCard({ icon, titleKey, descKey, accentColor }: ValueCardProps) {
-    const { t } = useTranslation();
-
-    return (
-        <div className={`bg-(--card-bg)/80 backdrop-blur-sm border border-(--border-color) p-4 sm:p-5 rounded-lg hover:-translate-y-1 group shadow-sm hover:shadow-md relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]`}>
-            <div className={`absolute top-0 right-0 w-24 h-24 ${accentColor}/10 rounded-full blur-2xl pointer-events-none group-hover:${accentColor}/20`} style={{ transition: "background-color 0.3s" }}></div>
-            <div className={`w-12 h-12 rounded-lg ${accentColor}/20 text-${accentColor.replace('bg-', '')} flex items-center justify-center mb-4 shadow-inner ring-1 ${accentColor}/50`}>
-                {icon}
-            </div>
-            <h3 className="text-lg font-semibold text-(--text-primary) mb-2 tracking-tight">{t[titleKey]}</h3>
-            <p className="text-(--text-secondary) leading-relaxed text-xs">{t[descKey]}</p>
-        </div>
-    );
-}
-
 const VALUES = [
     {
         icon: <ShieldIcon size={22} />,
         titleKey: "about.safeSecure" as TranslationKeys,
         descKey: "about.safeSecureDesc" as TranslationKeys,
         iconBoxClass: "bg-sky-500/25 text-sky-400 ring-1 ring-sky-500/50",
-        glowClass: "bg-sky-500/10",
-        glowHoverClass: "bg-sky-500/20",
+        glowClass: "bg-sky-500/15",
+        glowHoverClass: "group-hover:bg-sky-500/30",
     },
     {
         icon: <CodeIcon size={22} />,
         titleKey: "about.openSource" as TranslationKeys,
         descKey: "about.openSourceDesc" as TranslationKeys,
         iconBoxClass: "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50",
-        glowClass: "bg-emerald-500/10",
-        glowHoverClass: "bg-emerald-500/20",
+        glowClass: "bg-emerald-500/15",
+        glowHoverClass: "group-hover:bg-emerald-500/30",
     },
     {
         icon: <EyeOffIcon size={22} />,
         titleKey: "about.transparent" as TranslationKeys,
         descKey: "about.transparentDesc" as TranslationKeys,
         iconBoxClass: "bg-(--accent-color)/20 text-(--accent-color) ring-1 ring-(--accent-color)/50",
-        glowClass: "bg-(--accent-color)/10",
-        glowHoverClass: "bg-(--accent-color)/20",
+        glowClass: "bg-(--accent-color)/15",
+        glowHoverClass: "group-hover:bg-(--accent-color)/30",
     },
 ] as const;
 
@@ -77,7 +55,9 @@ export function AboutSection() {
                         key={i}
                         className="h-full flex flex-col bg-(--card-bg)/80 backdrop-blur-sm border border-(--border-color) p-4 sm:p-5 rounded-lg hover:-translate-y-1 group shadow-sm hover:shadow-md relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                     >
-                        <div className={`absolute top-0 right-0 w-24 h-24 ${v.glowClass} rounded-full blur-2xl pointer-events-none transition-colors duration-300 group-hover:${v.glowHoverClass}`}></div>
+                        {/* Glow Blob - Top Right */}
+                        <div className={`absolute top-0 right-0 w-24 h-24 ${v.glowClass} rounded-full blur-2xl pointer-events-none transition-colors duration-300 ${v.glowHoverClass}`}></div>
+                        
                         <div className={`w-12 h-12 rounded-lg ${v.iconBoxClass} flex items-center justify-center mb-4 shadow-inner`}>
                             {v.icon}
                         </div>

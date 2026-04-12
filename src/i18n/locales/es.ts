@@ -75,6 +75,7 @@ const es = {
     "warning.gotIt": "Entendido",
 
     "dns.title": "Proveedor DNS",
+    "dns.pingTest": "Descargar Prueba de Ping",
     "dns.description": "Elige un proveedor DNS para una navegación más rápida y segura. Esto cambia la configuración DNS de tu adaptador de red.",
     "dns.reversible": "Reversible",
     "dns.systemWide": "Todo el sistema",

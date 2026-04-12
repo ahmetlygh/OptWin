@@ -75,6 +75,7 @@ const hi = {
     "warning.gotIt": "समझ गए",
 
     "dns.title": "DNS प्रदाता",
+    "dns.pingTest": "पिंग टेस्ट डाउनलोड करें",
     "dns.description": "तेज़ और अधिक सुरक्षित ब्राउज़िंग के लिए DNS प्रदाता चुनें। यह आपके नेटवर्क एडॉप्टर की DNS सेटिंग्स बदलता है।",
     "dns.reversible": "वापसी योग्य",
     "dns.systemWide": "सिस्टम-व्यापी",

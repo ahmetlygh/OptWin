@@ -69,13 +69,14 @@ export default async function Home({ params }: HomeProps) {
                         dnsProviders={dnsProviders}
                     />
                 </div>
-                <div style={{ overflowAnchor: "none" }}>
+                <div>
                     <FeatureGrid params={Promise.resolve({ locale })} />
                 </div>
                 
                 <AboutSection />
             </div>
             <ActionArea />
+            <DnsModal providers={dnsProviders} />
             <HashScroller />
         </>
     );

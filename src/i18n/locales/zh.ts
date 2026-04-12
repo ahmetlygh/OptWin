@@ -75,6 +75,7 @@ const zh = {
     "warning.gotIt": "知道了",
 
     "dns.title": "DNS 提供商",
+    "dns.pingTest": "下载 Ping 测试",
     "dns.description": "选择一个 DNS 提供商以获得更快、更安全的浏览体验。这将更改网络适配器的 DNS 设置。",
     "dns.reversible": "可逆",
     "dns.systemWide": "系统范围",
