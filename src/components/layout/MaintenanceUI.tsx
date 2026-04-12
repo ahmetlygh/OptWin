@@ -192,7 +192,7 @@ export function MaintenanceUI({
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative z-10 flex flex-col items-center text-center px-6 max-w-lg">
                 <div className="flex items-center gap-4 mb-10 select-none">
-                    <Image src={settings.site_logo_url || "/optwin.png"} alt={siteName} width={68} height={68} className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
+                    <Image src={settings.site_logo_url || "/optwin.png"} alt={siteName} width={68} height={68} priority className="drop-shadow-[0_0_25px_rgba(107,91,230,0.5)] object-contain pointer-events-none" draggable={false} />
                     <h1 className="text-[2.5rem] font-black tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white via-white to-[#6b5be6] leading-none pointer-events-none">{siteName}</h1>
                 </div>
 

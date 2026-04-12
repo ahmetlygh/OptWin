@@ -256,7 +256,7 @@ export function FeatureGridClient({ categories, presets, allFeatureSlugs, dnsPro
                             <div className="w-full h-px bg-(--border-color)/40 my-3"></div>
                             <button
                                 onClick={handleDescriptionToggle}
-                                className={`cursor-pointer w-full h-[34px] flex items-center justify-center gap-2 px-3 rounded-xl border transition-all duration-300 text-[11px] font-bold outline-none focus-visible:outline-none focus-visible:!rounded-xl ${showDescriptions
+                                className={`cursor-pointer w-full h-[34px] flex items-center justify-center gap-2 px-3 rounded-xl border transition-all duration-300 text-[11px] font-bold outline-none focus-visible:outline-none focus-visible:rounded-xl! ${showDescriptions
                                     ? 'bg-(--card-bg) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary)'
                                     : 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20'
                                 }`}

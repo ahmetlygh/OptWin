@@ -3,7 +3,8 @@
   "version": "1.3.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "set NODE_OPTIONS=--no-deprecation && next dev",
+    "dev:debug": "set DEBUG_SETTINGS=true && npm run dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

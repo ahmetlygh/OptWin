@@ -230,7 +230,7 @@ export function HeroIllustration() {
                                 <div className="text-white/50">
                                     <span className="text-green-400/80">PS C:\&gt;</span>{" "}
                                     <span className="text-amber-300/70">{typedCmd}</span>
-                                    {isTyping && <span className="inline-block w-1.5 h-3.5 bg-white/90 animate-cursor-blink ml-1.5 align-middle mb-[1px]" />}
+                                    {isTyping && <span className="inline-block w-1.5 h-3.5 bg-white/90 animate-cursor-blink ml-1.5 align-middle mb-px" />}
                                 </div>
 
                                 {progress >= 1 && <div className="h-2" />}
@@ -284,7 +284,7 @@ export function HeroIllustration() {
                                         <div className="text-white/45">{txt.thanks}</div>
                                         <div className="text-white/50 mt-1">
                                             <span className="text-green-400/80">PS C:\&gt;</span>
-                                            <span className="inline-block w-1.5 h-3.5 bg-white/90 animate-cursor-blink ml-1.5 align-middle mb-[1px]" />
+                                            <span className="inline-block w-1.5 h-3.5 bg-white/90 animate-cursor-blink ml-1.5 align-middle mb-px" />
                                         </div>
                                     </motion.div>
                                 )}

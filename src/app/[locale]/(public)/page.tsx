@@ -19,9 +19,11 @@ export const dynamic = "force-dynamic";
 // Task 3: Dynamic Metadata Generation Logic for Home
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const { locale } = await params;
-    const settings = await getSettings(["site_name"]);
+    const [settings, languages] = await Promise.all([
+        getSettings(["site_name"]),
+        languageService.getActiveLanguages()
+    ]);
     const siteName = settings.site_name || "OptWin";
-    const languages = await languageService.getActiveLanguages();
     const currentLang = languages.find(l => l.code === locale) || languages.find(l => l.isDefault) || languages[0];
     
     // Pattern: [Sayfa Başlığı] - [Site İsmi]

@@ -120,56 +120,54 @@ export function ClientProviders({ children, serverSettings = {}, initialTranslat
         const currentPath = window.location.pathname;
         if (currentPath.startsWith('/admin')) return;
 
-        const es = new EventSource("/api/maintenance/stream");
+        let es: EventSource | null = null;
+        let reconnectTimer: NodeJS.Timeout;
 
-        es.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (typeof data.maintenance !== "boolean") return;
+        const connectSSE = () => {
+            if (!mounted) return;
+            es = new EventSource("/api/maintenance/stream");
 
-                const newState = data.maintenance;
-                const prevState = prevMaintenanceGlobal.current;
+            es.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (typeof data.maintenance !== "boolean") return;
 
-                // Store current state for next comparison
-                prevMaintenanceGlobal.current = newState;
+                    const newState = data.maintenance;
+                    const prevState = prevMaintenanceGlobal.current;
+                    prevMaintenanceGlobal.current = newState;
 
-                // First message: just establish baseline, don't redirect
-                // (proxy already handled the initial page load correctly)
-                if (prevState === null) return;
+                    if (prevState === null || sseRedirectFired.current) return;
 
-                // Prevent multiple redirects
-                if (sseRedirectFired.current) return;
+                    const livePath = window.location.pathname;
+                    const segments = livePath.split('/');
+                    const pathLocale = (segments.length > 1 && locales.includes(segments[1])) ? segments[1] : 'en';
+                    const isOnMaintenancePage = segments.some(s => s === 'maintenance');
 
-                const livePath = window.location.pathname;
-                const segments = livePath.split('/');
-                const pathLocale = (segments.length > 1 && locales.includes(segments[1])) ? segments[1] : 'en';
-                const isOnMaintenancePage = segments.some(s => s === 'maintenance');
+                    if (prevState === false && newState === true && !isOnMaintenancePage) {
+                        sseRedirectFired.current = true;
+                        window.location.replace(`/${pathLocale}/maintenance`);
+                    } else if (prevState === true && newState === false && isOnMaintenancePage) {
+                        sseRedirectFired.current = true;
+                        window.location.replace(`/${pathLocale}`);
+                    }
+                } catch { /* ignore */ }
+            };
 
-                // Case 1: Maintenance just turned ON → redirect to maintenance page
-                if (prevState === false && newState === true && !isOnMaintenancePage) {
-                    sseRedirectFired.current = true;
-                    window.location.replace(`/${pathLocale}/maintenance`);
-                    return;
+            es.onerror = () => {
+                console.debug("[SSE] Reconnecting...");
+                if (es) {
+                    es.close();
+                    es = null;
                 }
-
-                // Case 2: Maintenance just turned OFF → redirect to home page
-                if (prevState === true && newState === false && isOnMaintenancePage) {
-                    sseRedirectFired.current = true;
-                    window.location.replace(`/${pathLocale}`);
-                    return;
-                }
-            } catch { /* ignore parse errors */ }
+                reconnectTimer = setTimeout(connectSSE, 5000);
+            };
         };
 
-        es.onerror = () => {
-            // On SSE connection error, try to reconnect after a delay
-            // The browser's EventSource auto-reconnects, so we just log
-            console.warn("[OptWin SSE] Connection error, auto-reconnecting...");
-        };
+        connectSSE();
 
         return () => {
-            es.close();
-            // Reset redirect guard on unmount so it works on remount
+            if (es) es.close();
+            clearTimeout(reconnectTimer);
             sseRedirectFired.current = false;
         };
     }, [mounted]);

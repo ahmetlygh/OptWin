@@ -6,6 +6,10 @@ const en = {
     "nav.language": "Language",
     "nav.aboutOptwin": "About OptWin",
 
+    // Common
+    "common.hideDescriptions": "Hide Descriptions",
+    "common.showDescriptions": "Show Descriptions",
+
     // Hero
     "hero.titleTemplate": "{highlight} {prefix}",
     "hero.titleHighlight": "Optimize",

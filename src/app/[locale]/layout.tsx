@@ -17,10 +17,12 @@ const OG_LOCALE_MAP: Record<string, string> = {
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
     const { locale } = await params;
-    const settings = await getSettings(["site_name", "site_description", "site_keywords", "site_favicon_url"]);
+    const [settings, languages] = await Promise.all([
+        getSettings(["site_name", "site_description", "site_keywords", "site_favicon_url"]),
+        languageService.getActiveLanguages()
+    ]);
     
     // Get localized SEO Metadata from DB
-    const languages = await languageService.getActiveLanguages();
     const currentLang = languages.find(l => l.code === locale) || languages.find(l => l.isDefault) || languages[0];
     
     const localizedSeo = currentLang?.seoMetadata || {};

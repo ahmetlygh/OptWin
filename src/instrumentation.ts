@@ -7,13 +7,25 @@ export async function register() {
         const globalNode = globalThis as typeof globalThis & { __cronInitialized?: boolean };
 
         if (!globalNode.__cronInitialized) {
-            console.log("🛠️ [Instrumentation] Node/Dev environment detected. Initializing Background Sync Job...");
-
             // Define exactly once
             globalNode.__cronInitialized = true;
 
             // Import the underlying DB-flushing service dynamically to prevent Edge collisions
             const { syncStatsFromRedisToDb } = await import('@/lib/statsSyncService');
+            
+            // PRE-WARMING (Cold Start Elimination)
+            const { settingsService } = await import('@/lib/settingsService');
+            const { languageService } = await import('@/lib/languageService');
+            
+            Promise.all([
+                settingsService.getSettings([
+                    "site_url", "site_name", "site_description", "site_keywords", "site_version", 
+                    "site_logo_url", "site_favicon_url", "github_url", "bmc_url", "contact_email", 
+                    "author_name", "author_url", "bmc_widget_enabled", "copyright_text", "copyright_year",
+                    "default_lang", "default_theme", "theme_primary_color", "maintenanceMode"
+                ]),
+                languageService.getActiveLanguages()
+            ]).catch(() => {});
 
             // Set background timer: 10 Minutes
             const SYNC_INTERVAL_MS = 10 * 60 * 1000;

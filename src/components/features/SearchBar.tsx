@@ -68,7 +68,7 @@ export function SearchBar() {
                     aria-label={t["search.placeholder"]}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full h-11 pl-11 pr-24 sm:pr-36 bg-(--card-bg) backdrop-blur-md border border-(--border-color) hover:border-(--border-color)/80 rounded-2xl text-(--text-primary) placeholder-(--text-secondary) focus:!outline-none focus-visible:!outline-none focus:ring-0 focus:!border-(--accent-color) focus-visible:!rounded-2xl transition-all duration-300 text-[14px] relative z-0"
+                    className="block w-full h-11 pl-11 pr-24 sm:pr-36 bg-(--card-bg) backdrop-blur-md border border-(--border-color) hover:border-(--border-color)/80 rounded-2xl text-(--text-primary) placeholder-(--text-secondary) focus:outline-none! focus-visible:outline-none! focus:ring-0 focus:border-(--accent-color)! focus-visible:rounded-2xl! transition-all duration-300 text-[14px] relative z-0"
                     placeholder={t["search.placeholder"]}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center justify-end gap-2 pointer-events-none">
@@ -97,7 +97,7 @@ export function SearchBar() {
             {/* Toggle descriptions button — synced with Sidebar */}
             <button
                 onClick={toggleDescriptions}
-                className={`shrink-0 cursor-pointer flex items-center justify-center gap-2 px-4 h-11 rounded-2xl border transition-all duration-300 text-[12px] font-bold outline-none focus-visible:outline-none focus-visible:!rounded-2xl ${showDescriptions
+                className={`shrink-0 cursor-pointer flex items-center justify-center gap-2 px-4 h-11 rounded-2xl border transition-all duration-300 text-[12px] font-bold outline-none focus-visible:outline-none focus-visible:rounded-2xl! ${showDescriptions
                     ? 'bg-(--card-bg) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary)'
                     : 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20'
                 }`}

@@ -157,7 +157,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                 <div className="flex items-center gap-3">
                     <Link href="/" onClick={handleLogoClick} className="flex items-center gap-3 group cursor-pointer">
                         <div className="h-9 w-auto flex items-center justify-center">
-                            <Image src={serverSettings.site_logo_url || "/optwin.png"} alt={`${siteName} Logo`} width={36} height={36} className="h-full w-auto object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
+                            <Image src={serverSettings.site_logo_url || "/optwin.png"} alt={`${siteName} Logo`} width={36} height={36} priority className="object-contain drop-shadow-[0_0_12px_rgba(107,91,230,0.5)] group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent text-gradient mt-0.5">
                             {siteName}
@@ -208,7 +208,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         <div className="relative" ref={langRef}>
                             <button
                                 onClick={toggleLangDropdown}
-                                aria-label={t["aria.language"] || "Change language"}
+                                aria-label={(t as any)["aria.language"] || "Change language"}
                                 className="cursor-pointer flex items-center gap-2 p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) text-sm font-medium transition-colors duration-200"
                             >
                                 {currentLang.flagSvg ? (
@@ -250,7 +250,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                     <button
                         type="button"
                         onClick={toggleTheme}
-                        aria-label={t["aria.theme"] || "Toggle theme"}
+                        aria-label={(t as any)["aria.theme"] || "Toggle theme"}
                         className="cursor-pointer flex items-center justify-center p-2 rounded-lg hover:bg-(--border-color)/80 text-(--text-primary) overflow-hidden transition-colors duration-200"
                     >
                         {mounted ? (
@@ -270,7 +270,7 @@ export function Header({ adminSession = null, serverSettings = {} }: HeaderProps
                         <div className="relative" ref={adminRef}>
                             <button
                                 onClick={toggleAdminDropdown}
-                                aria-label={t["aria.admin"] || "Admin menu"}
+                                aria-label={(t as any)["aria.admin"] || "Admin menu"}
                                 className="cursor-pointer flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-(--accent-color)/8 hover:bg-(--accent-color)/15 border border-(--accent-color)/15 hover:border-(--accent-color)/30 transition-all duration-200 group"
                             >
                                 {adminSession.image ? (

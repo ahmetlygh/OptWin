@@ -3,19 +3,20 @@ import "./globals.css";
 import { headers, cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
 
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const outfit = Outfit({ subsets: ["latin"], display: 'swap', preload: false, variable: "--font-outfit" });
 
 export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const headersList = await headers();
+    const [headersList, cookieStore, settings] = await Promise.all([
+        headers(),
+        cookies(),
+        getSettings(["default_lang", "default_theme"])
+    ]);
     const pathname = headersList.get("x-next-pathname") || "";
     const isAdmin = pathname.startsWith("/admin");
-    
-    const settings = await getSettings(["default_lang", "default_theme"]);
-    const cookieStore = await cookies();
 
     const lang = cookieStore.get("NEXT_LOCALE")?.value || settings.default_lang || "en";
     const theme = cookieStore.get("NEXT_THEME")?.value || (isAdmin ? "dark" : settings.default_theme) || "dark";
